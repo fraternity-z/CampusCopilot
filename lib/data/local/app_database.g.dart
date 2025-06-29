@@ -1,0 +1,7398 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'app_database.dart';
+
+// ignore_for_file: type=lint
+class $LlmConfigsTableTable extends LlmConfigsTable
+    with TableInfo<$LlmConfigsTableTable, LlmConfigsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LlmConfigsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _providerMeta =
+      const VerificationMeta('provider');
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+      'provider', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _apiKeyMeta = const VerificationMeta('apiKey');
+  @override
+  late final GeneratedColumn<String> apiKey = GeneratedColumn<String>(
+      'api_key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _baseUrlMeta =
+      const VerificationMeta('baseUrl');
+  @override
+  late final GeneratedColumn<String> baseUrl = GeneratedColumn<String>(
+      'base_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _defaultModelMeta =
+      const VerificationMeta('defaultModel');
+  @override
+  late final GeneratedColumn<String> defaultModel = GeneratedColumn<String>(
+      'default_model', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _defaultEmbeddingModelMeta =
+      const VerificationMeta('defaultEmbeddingModel');
+  @override
+  late final GeneratedColumn<String> defaultEmbeddingModel =
+      GeneratedColumn<String>('default_embedding_model', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _organizationIdMeta =
+      const VerificationMeta('organizationId');
+  @override
+  late final GeneratedColumn<String> organizationId = GeneratedColumn<String>(
+      'organization_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _projectIdMeta =
+      const VerificationMeta('projectId');
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+      'project_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _extraParamsMeta =
+      const VerificationMeta('extraParams');
+  @override
+  late final GeneratedColumn<String> extraParams = GeneratedColumn<String>(
+      'extra_params', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isEnabledMeta =
+      const VerificationMeta('isEnabled');
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+      'is_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_enabled" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        provider,
+        apiKey,
+        baseUrl,
+        defaultModel,
+        defaultEmbeddingModel,
+        organizationId,
+        projectId,
+        extraParams,
+        createdAt,
+        updatedAt,
+        isEnabled
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'llm_configs_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<LlmConfigsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('provider')) {
+      context.handle(_providerMeta,
+          provider.isAcceptableOrUnknown(data['provider']!, _providerMeta));
+    } else if (isInserting) {
+      context.missing(_providerMeta);
+    }
+    if (data.containsKey('api_key')) {
+      context.handle(_apiKeyMeta,
+          apiKey.isAcceptableOrUnknown(data['api_key']!, _apiKeyMeta));
+    } else if (isInserting) {
+      context.missing(_apiKeyMeta);
+    }
+    if (data.containsKey('base_url')) {
+      context.handle(_baseUrlMeta,
+          baseUrl.isAcceptableOrUnknown(data['base_url']!, _baseUrlMeta));
+    }
+    if (data.containsKey('default_model')) {
+      context.handle(
+          _defaultModelMeta,
+          defaultModel.isAcceptableOrUnknown(
+              data['default_model']!, _defaultModelMeta));
+    }
+    if (data.containsKey('default_embedding_model')) {
+      context.handle(
+          _defaultEmbeddingModelMeta,
+          defaultEmbeddingModel.isAcceptableOrUnknown(
+              data['default_embedding_model']!, _defaultEmbeddingModelMeta));
+    }
+    if (data.containsKey('organization_id')) {
+      context.handle(
+          _organizationIdMeta,
+          organizationId.isAcceptableOrUnknown(
+              data['organization_id']!, _organizationIdMeta));
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(_projectIdMeta,
+          projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta));
+    }
+    if (data.containsKey('extra_params')) {
+      context.handle(
+          _extraParamsMeta,
+          extraParams.isAcceptableOrUnknown(
+              data['extra_params']!, _extraParamsMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(_isEnabledMeta,
+          isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LlmConfigsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LlmConfigsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      provider: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}provider'])!,
+      apiKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}api_key'])!,
+      baseUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}base_url']),
+      defaultModel: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}default_model']),
+      defaultEmbeddingModel: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}default_embedding_model']),
+      organizationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}organization_id']),
+      projectId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}project_id']),
+      extraParams: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}extra_params']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isEnabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_enabled'])!,
+    );
+  }
+
+  @override
+  $LlmConfigsTableTable createAlias(String alias) {
+    return $LlmConfigsTableTable(attachedDatabase, alias);
+  }
+}
+
+class LlmConfigsTableData extends DataClass
+    implements Insertable<LlmConfigsTableData> {
+  /// 配置唯一标识符
+  final String id;
+
+  /// 配置名称
+  final String name;
+
+  /// 提供商类型 (openai, google, anthropic)
+  final String provider;
+
+  /// API密钥
+  final String apiKey;
+
+  /// 基础URL（可选，用于代理）
+  final String? baseUrl;
+
+  /// 默认聊天模型
+  final String? defaultModel;
+
+  /// 默认嵌入模型
+  final String? defaultEmbeddingModel;
+
+  /// 组织ID（OpenAI专用）
+  final String? organizationId;
+
+  /// 项目ID（某些供应商）
+  final String? projectId;
+
+  /// 额外配置参数（JSON格式）
+  final String? extraParams;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 最后更新时间
+  final DateTime updatedAt;
+
+  /// 是否启用
+  final bool isEnabled;
+  const LlmConfigsTableData(
+      {required this.id,
+      required this.name,
+      required this.provider,
+      required this.apiKey,
+      this.baseUrl,
+      this.defaultModel,
+      this.defaultEmbeddingModel,
+      this.organizationId,
+      this.projectId,
+      this.extraParams,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.isEnabled});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['provider'] = Variable<String>(provider);
+    map['api_key'] = Variable<String>(apiKey);
+    if (!nullToAbsent || baseUrl != null) {
+      map['base_url'] = Variable<String>(baseUrl);
+    }
+    if (!nullToAbsent || defaultModel != null) {
+      map['default_model'] = Variable<String>(defaultModel);
+    }
+    if (!nullToAbsent || defaultEmbeddingModel != null) {
+      map['default_embedding_model'] = Variable<String>(defaultEmbeddingModel);
+    }
+    if (!nullToAbsent || organizationId != null) {
+      map['organization_id'] = Variable<String>(organizationId);
+    }
+    if (!nullToAbsent || projectId != null) {
+      map['project_id'] = Variable<String>(projectId);
+    }
+    if (!nullToAbsent || extraParams != null) {
+      map['extra_params'] = Variable<String>(extraParams);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    return map;
+  }
+
+  LlmConfigsTableCompanion toCompanion(bool nullToAbsent) {
+    return LlmConfigsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      provider: Value(provider),
+      apiKey: Value(apiKey),
+      baseUrl: baseUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(baseUrl),
+      defaultModel: defaultModel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultModel),
+      defaultEmbeddingModel: defaultEmbeddingModel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultEmbeddingModel),
+      organizationId: organizationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(organizationId),
+      projectId: projectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(projectId),
+      extraParams: extraParams == null && nullToAbsent
+          ? const Value.absent()
+          : Value(extraParams),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isEnabled: Value(isEnabled),
+    );
+  }
+
+  factory LlmConfigsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LlmConfigsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      provider: serializer.fromJson<String>(json['provider']),
+      apiKey: serializer.fromJson<String>(json['apiKey']),
+      baseUrl: serializer.fromJson<String?>(json['baseUrl']),
+      defaultModel: serializer.fromJson<String?>(json['defaultModel']),
+      defaultEmbeddingModel:
+          serializer.fromJson<String?>(json['defaultEmbeddingModel']),
+      organizationId: serializer.fromJson<String?>(json['organizationId']),
+      projectId: serializer.fromJson<String?>(json['projectId']),
+      extraParams: serializer.fromJson<String?>(json['extraParams']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'provider': serializer.toJson<String>(provider),
+      'apiKey': serializer.toJson<String>(apiKey),
+      'baseUrl': serializer.toJson<String?>(baseUrl),
+      'defaultModel': serializer.toJson<String?>(defaultModel),
+      'defaultEmbeddingModel':
+          serializer.toJson<String?>(defaultEmbeddingModel),
+      'organizationId': serializer.toJson<String?>(organizationId),
+      'projectId': serializer.toJson<String?>(projectId),
+      'extraParams': serializer.toJson<String?>(extraParams),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+    };
+  }
+
+  LlmConfigsTableData copyWith(
+          {String? id,
+          String? name,
+          String? provider,
+          String? apiKey,
+          Value<String?> baseUrl = const Value.absent(),
+          Value<String?> defaultModel = const Value.absent(),
+          Value<String?> defaultEmbeddingModel = const Value.absent(),
+          Value<String?> organizationId = const Value.absent(),
+          Value<String?> projectId = const Value.absent(),
+          Value<String?> extraParams = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          bool? isEnabled}) =>
+      LlmConfigsTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        provider: provider ?? this.provider,
+        apiKey: apiKey ?? this.apiKey,
+        baseUrl: baseUrl.present ? baseUrl.value : this.baseUrl,
+        defaultModel:
+            defaultModel.present ? defaultModel.value : this.defaultModel,
+        defaultEmbeddingModel: defaultEmbeddingModel.present
+            ? defaultEmbeddingModel.value
+            : this.defaultEmbeddingModel,
+        organizationId:
+            organizationId.present ? organizationId.value : this.organizationId,
+        projectId: projectId.present ? projectId.value : this.projectId,
+        extraParams: extraParams.present ? extraParams.value : this.extraParams,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        isEnabled: isEnabled ?? this.isEnabled,
+      );
+  LlmConfigsTableData copyWithCompanion(LlmConfigsTableCompanion data) {
+    return LlmConfigsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
+      baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
+      defaultModel: data.defaultModel.present
+          ? data.defaultModel.value
+          : this.defaultModel,
+      defaultEmbeddingModel: data.defaultEmbeddingModel.present
+          ? data.defaultEmbeddingModel.value
+          : this.defaultEmbeddingModel,
+      organizationId: data.organizationId.present
+          ? data.organizationId.value
+          : this.organizationId,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      extraParams:
+          data.extraParams.present ? data.extraParams.value : this.extraParams,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LlmConfigsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('provider: $provider, ')
+          ..write('apiKey: $apiKey, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('defaultModel: $defaultModel, ')
+          ..write('defaultEmbeddingModel: $defaultEmbeddingModel, ')
+          ..write('organizationId: $organizationId, ')
+          ..write('projectId: $projectId, ')
+          ..write('extraParams: $extraParams, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isEnabled: $isEnabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      provider,
+      apiKey,
+      baseUrl,
+      defaultModel,
+      defaultEmbeddingModel,
+      organizationId,
+      projectId,
+      extraParams,
+      createdAt,
+      updatedAt,
+      isEnabled);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LlmConfigsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.provider == this.provider &&
+          other.apiKey == this.apiKey &&
+          other.baseUrl == this.baseUrl &&
+          other.defaultModel == this.defaultModel &&
+          other.defaultEmbeddingModel == this.defaultEmbeddingModel &&
+          other.organizationId == this.organizationId &&
+          other.projectId == this.projectId &&
+          other.extraParams == this.extraParams &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isEnabled == this.isEnabled);
+}
+
+class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> provider;
+  final Value<String> apiKey;
+  final Value<String?> baseUrl;
+  final Value<String?> defaultModel;
+  final Value<String?> defaultEmbeddingModel;
+  final Value<String?> organizationId;
+  final Value<String?> projectId;
+  final Value<String?> extraParams;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isEnabled;
+  final Value<int> rowid;
+  const LlmConfigsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.apiKey = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.defaultModel = const Value.absent(),
+    this.defaultEmbeddingModel = const Value.absent(),
+    this.organizationId = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.extraParams = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LlmConfigsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String provider,
+    required String apiKey,
+    this.baseUrl = const Value.absent(),
+    this.defaultModel = const Value.absent(),
+    this.defaultEmbeddingModel = const Value.absent(),
+    this.organizationId = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.extraParams = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        provider = Value(provider),
+        apiKey = Value(apiKey),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<LlmConfigsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? provider,
+    Expression<String>? apiKey,
+    Expression<String>? baseUrl,
+    Expression<String>? defaultModel,
+    Expression<String>? defaultEmbeddingModel,
+    Expression<String>? organizationId,
+    Expression<String>? projectId,
+    Expression<String>? extraParams,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isEnabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (provider != null) 'provider': provider,
+      if (apiKey != null) 'api_key': apiKey,
+      if (baseUrl != null) 'base_url': baseUrl,
+      if (defaultModel != null) 'default_model': defaultModel,
+      if (defaultEmbeddingModel != null)
+        'default_embedding_model': defaultEmbeddingModel,
+      if (organizationId != null) 'organization_id': organizationId,
+      if (projectId != null) 'project_id': projectId,
+      if (extraParams != null) 'extra_params': extraParams,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LlmConfigsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? provider,
+      Value<String>? apiKey,
+      Value<String?>? baseUrl,
+      Value<String?>? defaultModel,
+      Value<String?>? defaultEmbeddingModel,
+      Value<String?>? organizationId,
+      Value<String?>? projectId,
+      Value<String?>? extraParams,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<bool>? isEnabled,
+      Value<int>? rowid}) {
+    return LlmConfigsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      provider: provider ?? this.provider,
+      apiKey: apiKey ?? this.apiKey,
+      baseUrl: baseUrl ?? this.baseUrl,
+      defaultModel: defaultModel ?? this.defaultModel,
+      defaultEmbeddingModel:
+          defaultEmbeddingModel ?? this.defaultEmbeddingModel,
+      organizationId: organizationId ?? this.organizationId,
+      projectId: projectId ?? this.projectId,
+      extraParams: extraParams ?? this.extraParams,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isEnabled: isEnabled ?? this.isEnabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (apiKey.present) {
+      map['api_key'] = Variable<String>(apiKey.value);
+    }
+    if (baseUrl.present) {
+      map['base_url'] = Variable<String>(baseUrl.value);
+    }
+    if (defaultModel.present) {
+      map['default_model'] = Variable<String>(defaultModel.value);
+    }
+    if (defaultEmbeddingModel.present) {
+      map['default_embedding_model'] =
+          Variable<String>(defaultEmbeddingModel.value);
+    }
+    if (organizationId.present) {
+      map['organization_id'] = Variable<String>(organizationId.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (extraParams.present) {
+      map['extra_params'] = Variable<String>(extraParams.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LlmConfigsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('provider: $provider, ')
+          ..write('apiKey: $apiKey, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('defaultModel: $defaultModel, ')
+          ..write('defaultEmbeddingModel: $defaultEmbeddingModel, ')
+          ..write('organizationId: $organizationId, ')
+          ..write('projectId: $projectId, ')
+          ..write('extraParams: $extraParams, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonasTableTable extends PersonasTable
+    with TableInfo<$PersonasTableTable, PersonasTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonasTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _systemPromptMeta =
+      const VerificationMeta('systemPrompt');
+  @override
+  late final GeneratedColumn<String> systemPrompt = GeneratedColumn<String>(
+      'system_prompt', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _apiConfigIdMeta =
+      const VerificationMeta('apiConfigId');
+  @override
+  late final GeneratedColumn<String> apiConfigId = GeneratedColumn<String>(
+      'api_config_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _lastUsedAtMeta =
+      const VerificationMeta('lastUsedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastUsedAt = GeneratedColumn<DateTime>(
+      'last_used_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+      'category', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('assistant'));
+  static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
+  @override
+  late final GeneratedColumn<String> tags = GeneratedColumn<String>(
+      'tags', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+      'avatar', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isDefaultMeta =
+      const VerificationMeta('isDefault');
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+      'is_default', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_default" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isEnabledMeta =
+      const VerificationMeta('isEnabled');
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+      'is_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_enabled" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _usageCountMeta =
+      const VerificationMeta('usageCount');
+  @override
+  late final GeneratedColumn<int> usageCount = GeneratedColumn<int>(
+      'usage_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _configMeta = const VerificationMeta('config');
+  @override
+  late final GeneratedColumn<String> config = GeneratedColumn<String>(
+      'config', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _capabilitiesMeta =
+      const VerificationMeta('capabilities');
+  @override
+  late final GeneratedColumn<String> capabilities = GeneratedColumn<String>(
+      'capabilities', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _metadataMeta =
+      const VerificationMeta('metadata');
+  @override
+  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
+      'metadata', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        description,
+        systemPrompt,
+        apiConfigId,
+        createdAt,
+        updatedAt,
+        lastUsedAt,
+        category,
+        tags,
+        avatar,
+        isDefault,
+        isEnabled,
+        usageCount,
+        config,
+        capabilities,
+        metadata
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personas_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<PersonasTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('system_prompt')) {
+      context.handle(
+          _systemPromptMeta,
+          systemPrompt.isAcceptableOrUnknown(
+              data['system_prompt']!, _systemPromptMeta));
+    } else if (isInserting) {
+      context.missing(_systemPromptMeta);
+    }
+    if (data.containsKey('api_config_id')) {
+      context.handle(
+          _apiConfigIdMeta,
+          apiConfigId.isAcceptableOrUnknown(
+              data['api_config_id']!, _apiConfigIdMeta));
+    } else if (isInserting) {
+      context.missing(_apiConfigIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+          _lastUsedAtMeta,
+          lastUsedAt.isAcceptableOrUnknown(
+              data['last_used_at']!, _lastUsedAtMeta));
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    }
+    if (data.containsKey('tags')) {
+      context.handle(
+          _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(_avatarMeta,
+          avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta));
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(_isDefaultMeta,
+          isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(_isEnabledMeta,
+          isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta));
+    }
+    if (data.containsKey('usage_count')) {
+      context.handle(
+          _usageCountMeta,
+          usageCount.isAcceptableOrUnknown(
+              data['usage_count']!, _usageCountMeta));
+    }
+    if (data.containsKey('config')) {
+      context.handle(_configMeta,
+          config.isAcceptableOrUnknown(data['config']!, _configMeta));
+    }
+    if (data.containsKey('capabilities')) {
+      context.handle(
+          _capabilitiesMeta,
+          capabilities.isAcceptableOrUnknown(
+              data['capabilities']!, _capabilitiesMeta));
+    }
+    if (data.containsKey('metadata')) {
+      context.handle(_metadataMeta,
+          metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PersonasTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonasTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description'])!,
+      systemPrompt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}system_prompt'])!,
+      apiConfigId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}api_config_id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      lastUsedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_used_at']),
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category'])!,
+      tags: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
+      avatar: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}avatar']),
+      isDefault: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
+      isEnabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_enabled'])!,
+      usageCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}usage_count'])!,
+      config: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}config']),
+      capabilities: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}capabilities'])!,
+      metadata: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata']),
+    );
+  }
+
+  @override
+  $PersonasTableTable createAlias(String alias) {
+    return $PersonasTableTable(attachedDatabase, alias);
+  }
+}
+
+class PersonasTableData extends DataClass
+    implements Insertable<PersonasTableData> {
+  /// 智能体唯一标识符
+  final String id;
+
+  /// 智能体名称
+  final String name;
+
+  /// 智能体描述
+  final String description;
+
+  /// 系统提示词
+  final String systemPrompt;
+
+  /// 关联的API配置ID
+  final String apiConfigId;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 最后更新时间
+  final DateTime updatedAt;
+
+  /// 最后使用时间
+  final DateTime? lastUsedAt;
+
+  /// 智能体类型/分类
+  final String category;
+
+  /// 智能体标签（JSON数组格式）
+  final String tags;
+
+  /// 智能体头像/图标URL
+  final String? avatar;
+
+  /// 是否为默认智能体
+  final bool isDefault;
+
+  /// 是否启用
+  final bool isEnabled;
+
+  /// 使用次数统计
+  final int usageCount;
+
+  /// 智能体配置（JSON格式）
+  final String? config;
+
+  /// 智能体能力列表（JSON格式）
+  final String capabilities;
+
+  /// 元数据（JSON格式）
+  final String? metadata;
+  const PersonasTableData(
+      {required this.id,
+      required this.name,
+      required this.description,
+      required this.systemPrompt,
+      required this.apiConfigId,
+      required this.createdAt,
+      required this.updatedAt,
+      this.lastUsedAt,
+      required this.category,
+      required this.tags,
+      this.avatar,
+      required this.isDefault,
+      required this.isEnabled,
+      required this.usageCount,
+      this.config,
+      required this.capabilities,
+      this.metadata});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['system_prompt'] = Variable<String>(systemPrompt);
+    map['api_config_id'] = Variable<String>(apiConfigId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || lastUsedAt != null) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt);
+    }
+    map['category'] = Variable<String>(category);
+    map['tags'] = Variable<String>(tags);
+    if (!nullToAbsent || avatar != null) {
+      map['avatar'] = Variable<String>(avatar);
+    }
+    map['is_default'] = Variable<bool>(isDefault);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['usage_count'] = Variable<int>(usageCount);
+    if (!nullToAbsent || config != null) {
+      map['config'] = Variable<String>(config);
+    }
+    map['capabilities'] = Variable<String>(capabilities);
+    if (!nullToAbsent || metadata != null) {
+      map['metadata'] = Variable<String>(metadata);
+    }
+    return map;
+  }
+
+  PersonasTableCompanion toCompanion(bool nullToAbsent) {
+    return PersonasTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: Value(description),
+      systemPrompt: Value(systemPrompt),
+      apiConfigId: Value(apiConfigId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      lastUsedAt: lastUsedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAt),
+      category: Value(category),
+      tags: Value(tags),
+      avatar:
+          avatar == null && nullToAbsent ? const Value.absent() : Value(avatar),
+      isDefault: Value(isDefault),
+      isEnabled: Value(isEnabled),
+      usageCount: Value(usageCount),
+      config:
+          config == null && nullToAbsent ? const Value.absent() : Value(config),
+      capabilities: Value(capabilities),
+      metadata: metadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadata),
+    );
+  }
+
+  factory PersonasTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonasTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      systemPrompt: serializer.fromJson<String>(json['systemPrompt']),
+      apiConfigId: serializer.fromJson<String>(json['apiConfigId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
+      category: serializer.fromJson<String>(json['category']),
+      tags: serializer.fromJson<String>(json['tags']),
+      avatar: serializer.fromJson<String?>(json['avatar']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      usageCount: serializer.fromJson<int>(json['usageCount']),
+      config: serializer.fromJson<String?>(json['config']),
+      capabilities: serializer.fromJson<String>(json['capabilities']),
+      metadata: serializer.fromJson<String?>(json['metadata']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'systemPrompt': serializer.toJson<String>(systemPrompt),
+      'apiConfigId': serializer.toJson<String>(apiConfigId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
+      'category': serializer.toJson<String>(category),
+      'tags': serializer.toJson<String>(tags),
+      'avatar': serializer.toJson<String?>(avatar),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'usageCount': serializer.toJson<int>(usageCount),
+      'config': serializer.toJson<String?>(config),
+      'capabilities': serializer.toJson<String>(capabilities),
+      'metadata': serializer.toJson<String?>(metadata),
+    };
+  }
+
+  PersonasTableData copyWith(
+          {String? id,
+          String? name,
+          String? description,
+          String? systemPrompt,
+          String? apiConfigId,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> lastUsedAt = const Value.absent(),
+          String? category,
+          String? tags,
+          Value<String?> avatar = const Value.absent(),
+          bool? isDefault,
+          bool? isEnabled,
+          int? usageCount,
+          Value<String?> config = const Value.absent(),
+          String? capabilities,
+          Value<String?> metadata = const Value.absent()}) =>
+      PersonasTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description ?? this.description,
+        systemPrompt: systemPrompt ?? this.systemPrompt,
+        apiConfigId: apiConfigId ?? this.apiConfigId,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+        category: category ?? this.category,
+        tags: tags ?? this.tags,
+        avatar: avatar.present ? avatar.value : this.avatar,
+        isDefault: isDefault ?? this.isDefault,
+        isEnabled: isEnabled ?? this.isEnabled,
+        usageCount: usageCount ?? this.usageCount,
+        config: config.present ? config.value : this.config,
+        capabilities: capabilities ?? this.capabilities,
+        metadata: metadata.present ? metadata.value : this.metadata,
+      );
+  PersonasTableData copyWithCompanion(PersonasTableCompanion data) {
+    return PersonasTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      systemPrompt: data.systemPrompt.present
+          ? data.systemPrompt.value
+          : this.systemPrompt,
+      apiConfigId:
+          data.apiConfigId.present ? data.apiConfigId.value : this.apiConfigId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastUsedAt:
+          data.lastUsedAt.present ? data.lastUsedAt.value : this.lastUsedAt,
+      category: data.category.present ? data.category.value : this.category,
+      tags: data.tags.present ? data.tags.value : this.tags,
+      avatar: data.avatar.present ? data.avatar.value : this.avatar,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      usageCount:
+          data.usageCount.present ? data.usageCount.value : this.usageCount,
+      config: data.config.present ? data.config.value : this.config,
+      capabilities: data.capabilities.present
+          ? data.capabilities.value
+          : this.capabilities,
+      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonasTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('systemPrompt: $systemPrompt, ')
+          ..write('apiConfigId: $apiConfigId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('category: $category, ')
+          ..write('tags: $tags, ')
+          ..write('avatar: $avatar, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('usageCount: $usageCount, ')
+          ..write('config: $config, ')
+          ..write('capabilities: $capabilities, ')
+          ..write('metadata: $metadata')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      description,
+      systemPrompt,
+      apiConfigId,
+      createdAt,
+      updatedAt,
+      lastUsedAt,
+      category,
+      tags,
+      avatar,
+      isDefault,
+      isEnabled,
+      usageCount,
+      config,
+      capabilities,
+      metadata);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonasTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.systemPrompt == this.systemPrompt &&
+          other.apiConfigId == this.apiConfigId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.lastUsedAt == this.lastUsedAt &&
+          other.category == this.category &&
+          other.tags == this.tags &&
+          other.avatar == this.avatar &&
+          other.isDefault == this.isDefault &&
+          other.isEnabled == this.isEnabled &&
+          other.usageCount == this.usageCount &&
+          other.config == this.config &&
+          other.capabilities == this.capabilities &&
+          other.metadata == this.metadata);
+}
+
+class PersonasTableCompanion extends UpdateCompanion<PersonasTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<String> systemPrompt;
+  final Value<String> apiConfigId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> lastUsedAt;
+  final Value<String> category;
+  final Value<String> tags;
+  final Value<String?> avatar;
+  final Value<bool> isDefault;
+  final Value<bool> isEnabled;
+  final Value<int> usageCount;
+  final Value<String?> config;
+  final Value<String> capabilities;
+  final Value<String?> metadata;
+  final Value<int> rowid;
+  const PersonasTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.systemPrompt = const Value.absent(),
+    this.apiConfigId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.category = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.usageCount = const Value.absent(),
+    this.config = const Value.absent(),
+    this.capabilities = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonasTableCompanion.insert({
+    required String id,
+    required String name,
+    required String description,
+    required String systemPrompt,
+    required String apiConfigId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.lastUsedAt = const Value.absent(),
+    this.category = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.usageCount = const Value.absent(),
+    this.config = const Value.absent(),
+    this.capabilities = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        description = Value(description),
+        systemPrompt = Value(systemPrompt),
+        apiConfigId = Value(apiConfigId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<PersonasTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? systemPrompt,
+    Expression<String>? apiConfigId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? lastUsedAt,
+    Expression<String>? category,
+    Expression<String>? tags,
+    Expression<String>? avatar,
+    Expression<bool>? isDefault,
+    Expression<bool>? isEnabled,
+    Expression<int>? usageCount,
+    Expression<String>? config,
+    Expression<String>? capabilities,
+    Expression<String>? metadata,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (systemPrompt != null) 'system_prompt': systemPrompt,
+      if (apiConfigId != null) 'api_config_id': apiConfigId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (category != null) 'category': category,
+      if (tags != null) 'tags': tags,
+      if (avatar != null) 'avatar': avatar,
+      if (isDefault != null) 'is_default': isDefault,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (usageCount != null) 'usage_count': usageCount,
+      if (config != null) 'config': config,
+      if (capabilities != null) 'capabilities': capabilities,
+      if (metadata != null) 'metadata': metadata,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonasTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? description,
+      Value<String>? systemPrompt,
+      Value<String>? apiConfigId,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? lastUsedAt,
+      Value<String>? category,
+      Value<String>? tags,
+      Value<String?>? avatar,
+      Value<bool>? isDefault,
+      Value<bool>? isEnabled,
+      Value<int>? usageCount,
+      Value<String?>? config,
+      Value<String>? capabilities,
+      Value<String?>? metadata,
+      Value<int>? rowid}) {
+    return PersonasTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      systemPrompt: systemPrompt ?? this.systemPrompt,
+      apiConfigId: apiConfigId ?? this.apiConfigId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      category: category ?? this.category,
+      tags: tags ?? this.tags,
+      avatar: avatar ?? this.avatar,
+      isDefault: isDefault ?? this.isDefault,
+      isEnabled: isEnabled ?? this.isEnabled,
+      usageCount: usageCount ?? this.usageCount,
+      config: config ?? this.config,
+      capabilities: capabilities ?? this.capabilities,
+      metadata: metadata ?? this.metadata,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (systemPrompt.present) {
+      map['system_prompt'] = Variable<String>(systemPrompt.value);
+    }
+    if (apiConfigId.present) {
+      map['api_config_id'] = Variable<String>(apiConfigId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (tags.present) {
+      map['tags'] = Variable<String>(tags.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (usageCount.present) {
+      map['usage_count'] = Variable<int>(usageCount.value);
+    }
+    if (config.present) {
+      map['config'] = Variable<String>(config.value);
+    }
+    if (capabilities.present) {
+      map['capabilities'] = Variable<String>(capabilities.value);
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(metadata.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonasTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('systemPrompt: $systemPrompt, ')
+          ..write('apiConfigId: $apiConfigId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('category: $category, ')
+          ..write('tags: $tags, ')
+          ..write('avatar: $avatar, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('usageCount: $usageCount, ')
+          ..write('config: $config, ')
+          ..write('capabilities: $capabilities, ')
+          ..write('metadata: $metadata, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonaGroupsTableTable extends PersonaGroupsTable
+    with TableInfo<$PersonaGroupsTableTable, PersonaGroupsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonaGroupsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, name, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'persona_groups_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<PersonaGroupsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PersonaGroupsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonaGroupsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $PersonaGroupsTableTable createAlias(String alias) {
+    return $PersonaGroupsTableTable(attachedDatabase, alias);
+  }
+}
+
+class PersonaGroupsTableData extends DataClass
+    implements Insertable<PersonaGroupsTableData> {
+  /// 分组唯一ID
+  final String id;
+
+  /// 分组名称
+  final String name;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+  const PersonaGroupsTableData(
+      {required this.id,
+      required this.name,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PersonaGroupsTableCompanion toCompanion(bool nullToAbsent) {
+    return PersonaGroupsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PersonaGroupsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonaGroupsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PersonaGroupsTableData copyWith(
+          {String? id,
+          String? name,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      PersonaGroupsTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  PersonaGroupsTableData copyWithCompanion(PersonaGroupsTableCompanion data) {
+    return PersonaGroupsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonaGroupsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonaGroupsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PersonaGroupsTableCompanion
+    extends UpdateCompanion<PersonaGroupsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PersonaGroupsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonaGroupsTableCompanion.insert({
+    required String id,
+    required String name,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<PersonaGroupsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonaGroupsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return PersonaGroupsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonaGroupsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ChatSessionsTableTable extends ChatSessionsTable
+    with TableInfo<$ChatSessionsTableTable, ChatSessionsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatSessionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _personaIdMeta =
+      const VerificationMeta('personaId');
+  @override
+  late final GeneratedColumn<String> personaId = GeneratedColumn<String>(
+      'persona_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isArchivedMeta =
+      const VerificationMeta('isArchived');
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+      'is_archived', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_archived" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isPinnedMeta =
+      const VerificationMeta('isPinned');
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+      'is_pinned', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_pinned" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
+  @override
+  late final GeneratedColumn<String> tags = GeneratedColumn<String>(
+      'tags', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _messageCountMeta =
+      const VerificationMeta('messageCount');
+  @override
+  late final GeneratedColumn<int> messageCount = GeneratedColumn<int>(
+      'message_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _totalTokensMeta =
+      const VerificationMeta('totalTokens');
+  @override
+  late final GeneratedColumn<int> totalTokens = GeneratedColumn<int>(
+      'total_tokens', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _configMeta = const VerificationMeta('config');
+  @override
+  late final GeneratedColumn<String> config = GeneratedColumn<String>(
+      'config', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _metadataMeta =
+      const VerificationMeta('metadata');
+  @override
+  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
+      'metadata', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        title,
+        personaId,
+        createdAt,
+        updatedAt,
+        isArchived,
+        isPinned,
+        tags,
+        messageCount,
+        totalTokens,
+        config,
+        metadata
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_sessions_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ChatSessionsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('persona_id')) {
+      context.handle(_personaIdMeta,
+          personaId.isAcceptableOrUnknown(data['persona_id']!, _personaIdMeta));
+    } else if (isInserting) {
+      context.missing(_personaIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+          _isArchivedMeta,
+          isArchived.isAcceptableOrUnknown(
+              data['is_archived']!, _isArchivedMeta));
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(_isPinnedMeta,
+          isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta));
+    }
+    if (data.containsKey('tags')) {
+      context.handle(
+          _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
+    }
+    if (data.containsKey('message_count')) {
+      context.handle(
+          _messageCountMeta,
+          messageCount.isAcceptableOrUnknown(
+              data['message_count']!, _messageCountMeta));
+    }
+    if (data.containsKey('total_tokens')) {
+      context.handle(
+          _totalTokensMeta,
+          totalTokens.isAcceptableOrUnknown(
+              data['total_tokens']!, _totalTokensMeta));
+    }
+    if (data.containsKey('config')) {
+      context.handle(_configMeta,
+          config.isAcceptableOrUnknown(data['config']!, _configMeta));
+    }
+    if (data.containsKey('metadata')) {
+      context.handle(_metadataMeta,
+          metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChatSessionsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatSessionsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      personaId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}persona_id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isArchived: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_archived'])!,
+      isPinned: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_pinned'])!,
+      tags: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
+      messageCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}message_count'])!,
+      totalTokens: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}total_tokens'])!,
+      config: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}config']),
+      metadata: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata']),
+    );
+  }
+
+  @override
+  $ChatSessionsTableTable createAlias(String alias) {
+    return $ChatSessionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ChatSessionsTableData extends DataClass
+    implements Insertable<ChatSessionsTableData> {
+  /// 会话唯一标识符
+  final String id;
+
+  /// 会话标题
+  final String title;
+
+  /// 关联的智能体ID
+  final String personaId;
+
+  /// 会话创建时间
+  final DateTime createdAt;
+
+  /// 最后更新时间
+  final DateTime updatedAt;
+
+  /// 会话是否已归档
+  final bool isArchived;
+
+  /// 会话是否置顶
+  final bool isPinned;
+
+  /// 会话标签（JSON数组格式）
+  final String tags;
+
+  /// 消息总数
+  final int messageCount;
+
+  /// 总token使用量
+  final int totalTokens;
+
+  /// 会话配置（JSON格式）
+  final String? config;
+
+  /// 会话元数据（JSON格式）
+  final String? metadata;
+  const ChatSessionsTableData(
+      {required this.id,
+      required this.title,
+      required this.personaId,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.isArchived,
+      required this.isPinned,
+      required this.tags,
+      required this.messageCount,
+      required this.totalTokens,
+      this.config,
+      this.metadata});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['persona_id'] = Variable<String>(personaId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_archived'] = Variable<bool>(isArchived);
+    map['is_pinned'] = Variable<bool>(isPinned);
+    map['tags'] = Variable<String>(tags);
+    map['message_count'] = Variable<int>(messageCount);
+    map['total_tokens'] = Variable<int>(totalTokens);
+    if (!nullToAbsent || config != null) {
+      map['config'] = Variable<String>(config);
+    }
+    if (!nullToAbsent || metadata != null) {
+      map['metadata'] = Variable<String>(metadata);
+    }
+    return map;
+  }
+
+  ChatSessionsTableCompanion toCompanion(bool nullToAbsent) {
+    return ChatSessionsTableCompanion(
+      id: Value(id),
+      title: Value(title),
+      personaId: Value(personaId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isArchived: Value(isArchived),
+      isPinned: Value(isPinned),
+      tags: Value(tags),
+      messageCount: Value(messageCount),
+      totalTokens: Value(totalTokens),
+      config:
+          config == null && nullToAbsent ? const Value.absent() : Value(config),
+      metadata: metadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadata),
+    );
+  }
+
+  factory ChatSessionsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatSessionsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      personaId: serializer.fromJson<String>(json['personaId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      tags: serializer.fromJson<String>(json['tags']),
+      messageCount: serializer.fromJson<int>(json['messageCount']),
+      totalTokens: serializer.fromJson<int>(json['totalTokens']),
+      config: serializer.fromJson<String?>(json['config']),
+      metadata: serializer.fromJson<String?>(json['metadata']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'personaId': serializer.toJson<String>(personaId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'tags': serializer.toJson<String>(tags),
+      'messageCount': serializer.toJson<int>(messageCount),
+      'totalTokens': serializer.toJson<int>(totalTokens),
+      'config': serializer.toJson<String?>(config),
+      'metadata': serializer.toJson<String?>(metadata),
+    };
+  }
+
+  ChatSessionsTableData copyWith(
+          {String? id,
+          String? title,
+          String? personaId,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          bool? isArchived,
+          bool? isPinned,
+          String? tags,
+          int? messageCount,
+          int? totalTokens,
+          Value<String?> config = const Value.absent(),
+          Value<String?> metadata = const Value.absent()}) =>
+      ChatSessionsTableData(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        personaId: personaId ?? this.personaId,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        isArchived: isArchived ?? this.isArchived,
+        isPinned: isPinned ?? this.isPinned,
+        tags: tags ?? this.tags,
+        messageCount: messageCount ?? this.messageCount,
+        totalTokens: totalTokens ?? this.totalTokens,
+        config: config.present ? config.value : this.config,
+        metadata: metadata.present ? metadata.value : this.metadata,
+      );
+  ChatSessionsTableData copyWithCompanion(ChatSessionsTableCompanion data) {
+    return ChatSessionsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      personaId: data.personaId.present ? data.personaId.value : this.personaId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isArchived:
+          data.isArchived.present ? data.isArchived.value : this.isArchived,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      tags: data.tags.present ? data.tags.value : this.tags,
+      messageCount: data.messageCount.present
+          ? data.messageCount.value
+          : this.messageCount,
+      totalTokens:
+          data.totalTokens.present ? data.totalTokens.value : this.totalTokens,
+      config: data.config.present ? data.config.value : this.config,
+      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSessionsTableData(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('personaId: $personaId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('tags: $tags, ')
+          ..write('messageCount: $messageCount, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('config: $config, ')
+          ..write('metadata: $metadata')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, title, personaId, createdAt, updatedAt,
+      isArchived, isPinned, tags, messageCount, totalTokens, config, metadata);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatSessionsTableData &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.personaId == this.personaId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isArchived == this.isArchived &&
+          other.isPinned == this.isPinned &&
+          other.tags == this.tags &&
+          other.messageCount == this.messageCount &&
+          other.totalTokens == this.totalTokens &&
+          other.config == this.config &&
+          other.metadata == this.metadata);
+}
+
+class ChatSessionsTableCompanion
+    extends UpdateCompanion<ChatSessionsTableData> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> personaId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isArchived;
+  final Value<bool> isPinned;
+  final Value<String> tags;
+  final Value<int> messageCount;
+  final Value<int> totalTokens;
+  final Value<String?> config;
+  final Value<String?> metadata;
+  final Value<int> rowid;
+  const ChatSessionsTableCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.personaId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.messageCount = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.config = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatSessionsTableCompanion.insert({
+    required String id,
+    required String title,
+    required String personaId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isArchived = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.messageCount = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.config = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        title = Value(title),
+        personaId = Value(personaId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<ChatSessionsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? personaId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isArchived,
+    Expression<bool>? isPinned,
+    Expression<String>? tags,
+    Expression<int>? messageCount,
+    Expression<int>? totalTokens,
+    Expression<String>? config,
+    Expression<String>? metadata,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (personaId != null) 'persona_id': personaId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (tags != null) 'tags': tags,
+      if (messageCount != null) 'message_count': messageCount,
+      if (totalTokens != null) 'total_tokens': totalTokens,
+      if (config != null) 'config': config,
+      if (metadata != null) 'metadata': metadata,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatSessionsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? title,
+      Value<String>? personaId,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<bool>? isArchived,
+      Value<bool>? isPinned,
+      Value<String>? tags,
+      Value<int>? messageCount,
+      Value<int>? totalTokens,
+      Value<String?>? config,
+      Value<String?>? metadata,
+      Value<int>? rowid}) {
+    return ChatSessionsTableCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      personaId: personaId ?? this.personaId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isArchived: isArchived ?? this.isArchived,
+      isPinned: isPinned ?? this.isPinned,
+      tags: tags ?? this.tags,
+      messageCount: messageCount ?? this.messageCount,
+      totalTokens: totalTokens ?? this.totalTokens,
+      config: config ?? this.config,
+      metadata: metadata ?? this.metadata,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (personaId.present) {
+      map['persona_id'] = Variable<String>(personaId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (tags.present) {
+      map['tags'] = Variable<String>(tags.value);
+    }
+    if (messageCount.present) {
+      map['message_count'] = Variable<int>(messageCount.value);
+    }
+    if (totalTokens.present) {
+      map['total_tokens'] = Variable<int>(totalTokens.value);
+    }
+    if (config.present) {
+      map['config'] = Variable<String>(config.value);
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(metadata.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSessionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('personaId: $personaId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('tags: $tags, ')
+          ..write('messageCount: $messageCount, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('config: $config, ')
+          ..write('metadata: $metadata, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ChatMessagesTableTable extends ChatMessagesTable
+    with TableInfo<$ChatMessagesTableTable, ChatMessagesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatMessagesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+      'content', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isFromUserMeta =
+      const VerificationMeta('isFromUser');
+  @override
+  late final GeneratedColumn<bool> isFromUser = GeneratedColumn<bool>(
+      'is_from_user', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_from_user" IN (0, 1))'));
+  static const VerificationMeta _timestampMeta =
+      const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+      'timestamp', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _chatSessionIdMeta =
+      const VerificationMeta('chatSessionId');
+  @override
+  late final GeneratedColumn<String> chatSessionId = GeneratedColumn<String>(
+      'chat_session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('text'));
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('sent'));
+  static const VerificationMeta _metadataMeta =
+      const VerificationMeta('metadata');
+  @override
+  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
+      'metadata', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _parentMessageIdMeta =
+      const VerificationMeta('parentMessageId');
+  @override
+  late final GeneratedColumn<String> parentMessageId = GeneratedColumn<String>(
+      'parent_message_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tokenCountMeta =
+      const VerificationMeta('tokenCount');
+  @override
+  late final GeneratedColumn<int> tokenCount = GeneratedColumn<int>(
+      'token_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        content,
+        isFromUser,
+        timestamp,
+        chatSessionId,
+        type,
+        status,
+        metadata,
+        parentMessageId,
+        tokenCount
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_messages_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ChatMessagesTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('is_from_user')) {
+      context.handle(
+          _isFromUserMeta,
+          isFromUser.isAcceptableOrUnknown(
+              data['is_from_user']!, _isFromUserMeta));
+    } else if (isInserting) {
+      context.missing(_isFromUserMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(_timestampMeta,
+          timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    if (data.containsKey('chat_session_id')) {
+      context.handle(
+          _chatSessionIdMeta,
+          chatSessionId.isAcceptableOrUnknown(
+              data['chat_session_id']!, _chatSessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_chatSessionIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('metadata')) {
+      context.handle(_metadataMeta,
+          metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta));
+    }
+    if (data.containsKey('parent_message_id')) {
+      context.handle(
+          _parentMessageIdMeta,
+          parentMessageId.isAcceptableOrUnknown(
+              data['parent_message_id']!, _parentMessageIdMeta));
+    }
+    if (data.containsKey('token_count')) {
+      context.handle(
+          _tokenCountMeta,
+          tokenCount.isAcceptableOrUnknown(
+              data['token_count']!, _tokenCountMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChatMessagesTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatMessagesTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      isFromUser: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_from_user'])!,
+      timestamp: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
+      chatSessionId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}chat_session_id'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      metadata: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata']),
+      parentMessageId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}parent_message_id']),
+      tokenCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}token_count']),
+    );
+  }
+
+  @override
+  $ChatMessagesTableTable createAlias(String alias) {
+    return $ChatMessagesTableTable(attachedDatabase, alias);
+  }
+}
+
+class ChatMessagesTableData extends DataClass
+    implements Insertable<ChatMessagesTableData> {
+  /// 消息唯一标识符
+  final String id;
+
+  /// 消息内容
+  final String content;
+
+  /// 是否来自用户（false表示来自AI）
+  final bool isFromUser;
+
+  /// 消息创建时间
+  final DateTime timestamp;
+
+  /// 关联的聊天会话ID
+  final String chatSessionId;
+
+  /// 消息类型 (text, image, file, system, error)
+  final String type;
+
+  /// 消息状态 (sending, sent, failed, read)
+  final String status;
+
+  /// 消息元数据（JSON格式）
+  final String? metadata;
+
+  /// 父消息ID（用于回复功能）
+  final String? parentMessageId;
+
+  /// 消息使用的token数量
+  final int? tokenCount;
+  const ChatMessagesTableData(
+      {required this.id,
+      required this.content,
+      required this.isFromUser,
+      required this.timestamp,
+      required this.chatSessionId,
+      required this.type,
+      required this.status,
+      this.metadata,
+      this.parentMessageId,
+      this.tokenCount});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['content'] = Variable<String>(content);
+    map['is_from_user'] = Variable<bool>(isFromUser);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['chat_session_id'] = Variable<String>(chatSessionId);
+    map['type'] = Variable<String>(type);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || metadata != null) {
+      map['metadata'] = Variable<String>(metadata);
+    }
+    if (!nullToAbsent || parentMessageId != null) {
+      map['parent_message_id'] = Variable<String>(parentMessageId);
+    }
+    if (!nullToAbsent || tokenCount != null) {
+      map['token_count'] = Variable<int>(tokenCount);
+    }
+    return map;
+  }
+
+  ChatMessagesTableCompanion toCompanion(bool nullToAbsent) {
+    return ChatMessagesTableCompanion(
+      id: Value(id),
+      content: Value(content),
+      isFromUser: Value(isFromUser),
+      timestamp: Value(timestamp),
+      chatSessionId: Value(chatSessionId),
+      type: Value(type),
+      status: Value(status),
+      metadata: metadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadata),
+      parentMessageId: parentMessageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentMessageId),
+      tokenCount: tokenCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenCount),
+    );
+  }
+
+  factory ChatMessagesTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatMessagesTableData(
+      id: serializer.fromJson<String>(json['id']),
+      content: serializer.fromJson<String>(json['content']),
+      isFromUser: serializer.fromJson<bool>(json['isFromUser']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      chatSessionId: serializer.fromJson<String>(json['chatSessionId']),
+      type: serializer.fromJson<String>(json['type']),
+      status: serializer.fromJson<String>(json['status']),
+      metadata: serializer.fromJson<String?>(json['metadata']),
+      parentMessageId: serializer.fromJson<String?>(json['parentMessageId']),
+      tokenCount: serializer.fromJson<int?>(json['tokenCount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'content': serializer.toJson<String>(content),
+      'isFromUser': serializer.toJson<bool>(isFromUser),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'chatSessionId': serializer.toJson<String>(chatSessionId),
+      'type': serializer.toJson<String>(type),
+      'status': serializer.toJson<String>(status),
+      'metadata': serializer.toJson<String?>(metadata),
+      'parentMessageId': serializer.toJson<String?>(parentMessageId),
+      'tokenCount': serializer.toJson<int?>(tokenCount),
+    };
+  }
+
+  ChatMessagesTableData copyWith(
+          {String? id,
+          String? content,
+          bool? isFromUser,
+          DateTime? timestamp,
+          String? chatSessionId,
+          String? type,
+          String? status,
+          Value<String?> metadata = const Value.absent(),
+          Value<String?> parentMessageId = const Value.absent(),
+          Value<int?> tokenCount = const Value.absent()}) =>
+      ChatMessagesTableData(
+        id: id ?? this.id,
+        content: content ?? this.content,
+        isFromUser: isFromUser ?? this.isFromUser,
+        timestamp: timestamp ?? this.timestamp,
+        chatSessionId: chatSessionId ?? this.chatSessionId,
+        type: type ?? this.type,
+        status: status ?? this.status,
+        metadata: metadata.present ? metadata.value : this.metadata,
+        parentMessageId: parentMessageId.present
+            ? parentMessageId.value
+            : this.parentMessageId,
+        tokenCount: tokenCount.present ? tokenCount.value : this.tokenCount,
+      );
+  ChatMessagesTableData copyWithCompanion(ChatMessagesTableCompanion data) {
+    return ChatMessagesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      content: data.content.present ? data.content.value : this.content,
+      isFromUser:
+          data.isFromUser.present ? data.isFromUser.value : this.isFromUser,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      chatSessionId: data.chatSessionId.present
+          ? data.chatSessionId.value
+          : this.chatSessionId,
+      type: data.type.present ? data.type.value : this.type,
+      status: data.status.present ? data.status.value : this.status,
+      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+      parentMessageId: data.parentMessageId.present
+          ? data.parentMessageId.value
+          : this.parentMessageId,
+      tokenCount:
+          data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatMessagesTableData(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('isFromUser: $isFromUser, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('chatSessionId: $chatSessionId, ')
+          ..write('type: $type, ')
+          ..write('status: $status, ')
+          ..write('metadata: $metadata, ')
+          ..write('parentMessageId: $parentMessageId, ')
+          ..write('tokenCount: $tokenCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, content, isFromUser, timestamp,
+      chatSessionId, type, status, metadata, parentMessageId, tokenCount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatMessagesTableData &&
+          other.id == this.id &&
+          other.content == this.content &&
+          other.isFromUser == this.isFromUser &&
+          other.timestamp == this.timestamp &&
+          other.chatSessionId == this.chatSessionId &&
+          other.type == this.type &&
+          other.status == this.status &&
+          other.metadata == this.metadata &&
+          other.parentMessageId == this.parentMessageId &&
+          other.tokenCount == this.tokenCount);
+}
+
+class ChatMessagesTableCompanion
+    extends UpdateCompanion<ChatMessagesTableData> {
+  final Value<String> id;
+  final Value<String> content;
+  final Value<bool> isFromUser;
+  final Value<DateTime> timestamp;
+  final Value<String> chatSessionId;
+  final Value<String> type;
+  final Value<String> status;
+  final Value<String?> metadata;
+  final Value<String?> parentMessageId;
+  final Value<int?> tokenCount;
+  final Value<int> rowid;
+  const ChatMessagesTableCompanion({
+    this.id = const Value.absent(),
+    this.content = const Value.absent(),
+    this.isFromUser = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.chatSessionId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.status = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.parentMessageId = const Value.absent(),
+    this.tokenCount = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatMessagesTableCompanion.insert({
+    required String id,
+    required String content,
+    required bool isFromUser,
+    required DateTime timestamp,
+    required String chatSessionId,
+    this.type = const Value.absent(),
+    this.status = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.parentMessageId = const Value.absent(),
+    this.tokenCount = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        content = Value(content),
+        isFromUser = Value(isFromUser),
+        timestamp = Value(timestamp),
+        chatSessionId = Value(chatSessionId);
+  static Insertable<ChatMessagesTableData> custom({
+    Expression<String>? id,
+    Expression<String>? content,
+    Expression<bool>? isFromUser,
+    Expression<DateTime>? timestamp,
+    Expression<String>? chatSessionId,
+    Expression<String>? type,
+    Expression<String>? status,
+    Expression<String>? metadata,
+    Expression<String>? parentMessageId,
+    Expression<int>? tokenCount,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (content != null) 'content': content,
+      if (isFromUser != null) 'is_from_user': isFromUser,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (chatSessionId != null) 'chat_session_id': chatSessionId,
+      if (type != null) 'type': type,
+      if (status != null) 'status': status,
+      if (metadata != null) 'metadata': metadata,
+      if (parentMessageId != null) 'parent_message_id': parentMessageId,
+      if (tokenCount != null) 'token_count': tokenCount,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatMessagesTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? content,
+      Value<bool>? isFromUser,
+      Value<DateTime>? timestamp,
+      Value<String>? chatSessionId,
+      Value<String>? type,
+      Value<String>? status,
+      Value<String?>? metadata,
+      Value<String?>? parentMessageId,
+      Value<int?>? tokenCount,
+      Value<int>? rowid}) {
+    return ChatMessagesTableCompanion(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      isFromUser: isFromUser ?? this.isFromUser,
+      timestamp: timestamp ?? this.timestamp,
+      chatSessionId: chatSessionId ?? this.chatSessionId,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      metadata: metadata ?? this.metadata,
+      parentMessageId: parentMessageId ?? this.parentMessageId,
+      tokenCount: tokenCount ?? this.tokenCount,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (isFromUser.present) {
+      map['is_from_user'] = Variable<bool>(isFromUser.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (chatSessionId.present) {
+      map['chat_session_id'] = Variable<String>(chatSessionId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(metadata.value);
+    }
+    if (parentMessageId.present) {
+      map['parent_message_id'] = Variable<String>(parentMessageId.value);
+    }
+    if (tokenCount.present) {
+      map['token_count'] = Variable<int>(tokenCount.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatMessagesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('isFromUser: $isFromUser, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('chatSessionId: $chatSessionId, ')
+          ..write('type: $type, ')
+          ..write('status: $status, ')
+          ..write('metadata: $metadata, ')
+          ..write('parentMessageId: $parentMessageId, ')
+          ..write('tokenCount: $tokenCount, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $KnowledgeDocumentsTableTable extends KnowledgeDocumentsTable
+    with TableInfo<$KnowledgeDocumentsTableTable, KnowledgeDocumentsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KnowledgeDocumentsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sizeMeta = const VerificationMeta('size');
+  @override
+  late final GeneratedColumn<int> size = GeneratedColumn<int>(
+      'size', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _filePathMeta =
+      const VerificationMeta('filePath');
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+      'file_path', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fileHashMeta =
+      const VerificationMeta('fileHash');
+  @override
+  late final GeneratedColumn<String> fileHash = GeneratedColumn<String>(
+      'file_hash', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _chunksMeta = const VerificationMeta('chunks');
+  @override
+  late final GeneratedColumn<int> chunks = GeneratedColumn<int>(
+      'chunks', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('pending'));
+  static const VerificationMeta _indexProgressMeta =
+      const VerificationMeta('indexProgress');
+  @override
+  late final GeneratedColumn<double> indexProgress = GeneratedColumn<double>(
+      'index_progress', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
+  static const VerificationMeta _uploadedAtMeta =
+      const VerificationMeta('uploadedAt');
+  @override
+  late final GeneratedColumn<DateTime> uploadedAt = GeneratedColumn<DateTime>(
+      'uploaded_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _processedAtMeta =
+      const VerificationMeta('processedAt');
+  @override
+  late final GeneratedColumn<DateTime> processedAt = GeneratedColumn<DateTime>(
+      'processed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _metadataMeta =
+      const VerificationMeta('metadata');
+  @override
+  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
+      'metadata', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _errorMessageMeta =
+      const VerificationMeta('errorMessage');
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+      'error_message', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        type,
+        size,
+        filePath,
+        fileHash,
+        chunks,
+        status,
+        indexProgress,
+        uploadedAt,
+        processedAt,
+        metadata,
+        errorMessage
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'knowledge_documents_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<KnowledgeDocumentsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('size')) {
+      context.handle(
+          _sizeMeta, size.isAcceptableOrUnknown(data['size']!, _sizeMeta));
+    } else if (isInserting) {
+      context.missing(_sizeMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(_filePathMeta,
+          filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta));
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('file_hash')) {
+      context.handle(_fileHashMeta,
+          fileHash.isAcceptableOrUnknown(data['file_hash']!, _fileHashMeta));
+    } else if (isInserting) {
+      context.missing(_fileHashMeta);
+    }
+    if (data.containsKey('chunks')) {
+      context.handle(_chunksMeta,
+          chunks.isAcceptableOrUnknown(data['chunks']!, _chunksMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('index_progress')) {
+      context.handle(
+          _indexProgressMeta,
+          indexProgress.isAcceptableOrUnknown(
+              data['index_progress']!, _indexProgressMeta));
+    }
+    if (data.containsKey('uploaded_at')) {
+      context.handle(
+          _uploadedAtMeta,
+          uploadedAt.isAcceptableOrUnknown(
+              data['uploaded_at']!, _uploadedAtMeta));
+    } else if (isInserting) {
+      context.missing(_uploadedAtMeta);
+    }
+    if (data.containsKey('processed_at')) {
+      context.handle(
+          _processedAtMeta,
+          processedAt.isAcceptableOrUnknown(
+              data['processed_at']!, _processedAtMeta));
+    }
+    if (data.containsKey('metadata')) {
+      context.handle(_metadataMeta,
+          metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta));
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+          _errorMessageMeta,
+          errorMessage.isAcceptableOrUnknown(
+              data['error_message']!, _errorMessageMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KnowledgeDocumentsTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KnowledgeDocumentsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      size: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}size'])!,
+      filePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_path'])!,
+      fileHash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_hash'])!,
+      chunks: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chunks'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      indexProgress: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}index_progress'])!,
+      uploadedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}uploaded_at'])!,
+      processedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}processed_at']),
+      metadata: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata']),
+      errorMessage: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error_message']),
+    );
+  }
+
+  @override
+  $KnowledgeDocumentsTableTable createAlias(String alias) {
+    return $KnowledgeDocumentsTableTable(attachedDatabase, alias);
+  }
+}
+
+class KnowledgeDocumentsTableData extends DataClass
+    implements Insertable<KnowledgeDocumentsTableData> {
+  /// 文档唯一标识符
+  final String id;
+
+  /// 文档名称
+  final String name;
+
+  /// 文档类型 (pdf, txt, md, docx, etc.)
+  final String type;
+
+  /// 文件大小（字节）
+  final int size;
+
+  /// 文档路径
+  final String filePath;
+
+  /// 文档哈希值（用于去重）
+  final String fileHash;
+
+  /// 文本块数量
+  final int chunks;
+
+  /// 处理状态 (pending, processing, completed, failed)
+  final String status;
+
+  /// 索引进度 (0.0 - 1.0)
+  final double indexProgress;
+
+  /// 上传时间
+  final DateTime uploadedAt;
+
+  /// 最后处理时间
+  final DateTime? processedAt;
+
+  /// 文档元数据（JSON格式）
+  final String? metadata;
+
+  /// 错误信息（如果处理失败）
+  final String? errorMessage;
+  const KnowledgeDocumentsTableData(
+      {required this.id,
+      required this.name,
+      required this.type,
+      required this.size,
+      required this.filePath,
+      required this.fileHash,
+      required this.chunks,
+      required this.status,
+      required this.indexProgress,
+      required this.uploadedAt,
+      this.processedAt,
+      this.metadata,
+      this.errorMessage});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['type'] = Variable<String>(type);
+    map['size'] = Variable<int>(size);
+    map['file_path'] = Variable<String>(filePath);
+    map['file_hash'] = Variable<String>(fileHash);
+    map['chunks'] = Variable<int>(chunks);
+    map['status'] = Variable<String>(status);
+    map['index_progress'] = Variable<double>(indexProgress);
+    map['uploaded_at'] = Variable<DateTime>(uploadedAt);
+    if (!nullToAbsent || processedAt != null) {
+      map['processed_at'] = Variable<DateTime>(processedAt);
+    }
+    if (!nullToAbsent || metadata != null) {
+      map['metadata'] = Variable<String>(metadata);
+    }
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
+    return map;
+  }
+
+  KnowledgeDocumentsTableCompanion toCompanion(bool nullToAbsent) {
+    return KnowledgeDocumentsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      type: Value(type),
+      size: Value(size),
+      filePath: Value(filePath),
+      fileHash: Value(fileHash),
+      chunks: Value(chunks),
+      status: Value(status),
+      indexProgress: Value(indexProgress),
+      uploadedAt: Value(uploadedAt),
+      processedAt: processedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(processedAt),
+      metadata: metadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadata),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
+    );
+  }
+
+  factory KnowledgeDocumentsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KnowledgeDocumentsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      type: serializer.fromJson<String>(json['type']),
+      size: serializer.fromJson<int>(json['size']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      fileHash: serializer.fromJson<String>(json['fileHash']),
+      chunks: serializer.fromJson<int>(json['chunks']),
+      status: serializer.fromJson<String>(json['status']),
+      indexProgress: serializer.fromJson<double>(json['indexProgress']),
+      uploadedAt: serializer.fromJson<DateTime>(json['uploadedAt']),
+      processedAt: serializer.fromJson<DateTime?>(json['processedAt']),
+      metadata: serializer.fromJson<String?>(json['metadata']),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'type': serializer.toJson<String>(type),
+      'size': serializer.toJson<int>(size),
+      'filePath': serializer.toJson<String>(filePath),
+      'fileHash': serializer.toJson<String>(fileHash),
+      'chunks': serializer.toJson<int>(chunks),
+      'status': serializer.toJson<String>(status),
+      'indexProgress': serializer.toJson<double>(indexProgress),
+      'uploadedAt': serializer.toJson<DateTime>(uploadedAt),
+      'processedAt': serializer.toJson<DateTime?>(processedAt),
+      'metadata': serializer.toJson<String?>(metadata),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
+    };
+  }
+
+  KnowledgeDocumentsTableData copyWith(
+          {String? id,
+          String? name,
+          String? type,
+          int? size,
+          String? filePath,
+          String? fileHash,
+          int? chunks,
+          String? status,
+          double? indexProgress,
+          DateTime? uploadedAt,
+          Value<DateTime?> processedAt = const Value.absent(),
+          Value<String?> metadata = const Value.absent(),
+          Value<String?> errorMessage = const Value.absent()}) =>
+      KnowledgeDocumentsTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        type: type ?? this.type,
+        size: size ?? this.size,
+        filePath: filePath ?? this.filePath,
+        fileHash: fileHash ?? this.fileHash,
+        chunks: chunks ?? this.chunks,
+        status: status ?? this.status,
+        indexProgress: indexProgress ?? this.indexProgress,
+        uploadedAt: uploadedAt ?? this.uploadedAt,
+        processedAt: processedAt.present ? processedAt.value : this.processedAt,
+        metadata: metadata.present ? metadata.value : this.metadata,
+        errorMessage:
+            errorMessage.present ? errorMessage.value : this.errorMessage,
+      );
+  KnowledgeDocumentsTableData copyWithCompanion(
+      KnowledgeDocumentsTableCompanion data) {
+    return KnowledgeDocumentsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      type: data.type.present ? data.type.value : this.type,
+      size: data.size.present ? data.size.value : this.size,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      fileHash: data.fileHash.present ? data.fileHash.value : this.fileHash,
+      chunks: data.chunks.present ? data.chunks.value : this.chunks,
+      status: data.status.present ? data.status.value : this.status,
+      indexProgress: data.indexProgress.present
+          ? data.indexProgress.value
+          : this.indexProgress,
+      uploadedAt:
+          data.uploadedAt.present ? data.uploadedAt.value : this.uploadedAt,
+      processedAt:
+          data.processedAt.present ? data.processedAt.value : this.processedAt,
+      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeDocumentsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('size: $size, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileHash: $fileHash, ')
+          ..write('chunks: $chunks, ')
+          ..write('status: $status, ')
+          ..write('indexProgress: $indexProgress, ')
+          ..write('uploadedAt: $uploadedAt, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('metadata: $metadata, ')
+          ..write('errorMessage: $errorMessage')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      type,
+      size,
+      filePath,
+      fileHash,
+      chunks,
+      status,
+      indexProgress,
+      uploadedAt,
+      processedAt,
+      metadata,
+      errorMessage);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KnowledgeDocumentsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.type == this.type &&
+          other.size == this.size &&
+          other.filePath == this.filePath &&
+          other.fileHash == this.fileHash &&
+          other.chunks == this.chunks &&
+          other.status == this.status &&
+          other.indexProgress == this.indexProgress &&
+          other.uploadedAt == this.uploadedAt &&
+          other.processedAt == this.processedAt &&
+          other.metadata == this.metadata &&
+          other.errorMessage == this.errorMessage);
+}
+
+class KnowledgeDocumentsTableCompanion
+    extends UpdateCompanion<KnowledgeDocumentsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> type;
+  final Value<int> size;
+  final Value<String> filePath;
+  final Value<String> fileHash;
+  final Value<int> chunks;
+  final Value<String> status;
+  final Value<double> indexProgress;
+  final Value<DateTime> uploadedAt;
+  final Value<DateTime?> processedAt;
+  final Value<String?> metadata;
+  final Value<String?> errorMessage;
+  final Value<int> rowid;
+  const KnowledgeDocumentsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.type = const Value.absent(),
+    this.size = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.fileHash = const Value.absent(),
+    this.chunks = const Value.absent(),
+    this.status = const Value.absent(),
+    this.indexProgress = const Value.absent(),
+    this.uploadedAt = const Value.absent(),
+    this.processedAt = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  KnowledgeDocumentsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String type,
+    required int size,
+    required String filePath,
+    required String fileHash,
+    this.chunks = const Value.absent(),
+    this.status = const Value.absent(),
+    this.indexProgress = const Value.absent(),
+    required DateTime uploadedAt,
+    this.processedAt = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        type = Value(type),
+        size = Value(size),
+        filePath = Value(filePath),
+        fileHash = Value(fileHash),
+        uploadedAt = Value(uploadedAt);
+  static Insertable<KnowledgeDocumentsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? type,
+    Expression<int>? size,
+    Expression<String>? filePath,
+    Expression<String>? fileHash,
+    Expression<int>? chunks,
+    Expression<String>? status,
+    Expression<double>? indexProgress,
+    Expression<DateTime>? uploadedAt,
+    Expression<DateTime>? processedAt,
+    Expression<String>? metadata,
+    Expression<String>? errorMessage,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (type != null) 'type': type,
+      if (size != null) 'size': size,
+      if (filePath != null) 'file_path': filePath,
+      if (fileHash != null) 'file_hash': fileHash,
+      if (chunks != null) 'chunks': chunks,
+      if (status != null) 'status': status,
+      if (indexProgress != null) 'index_progress': indexProgress,
+      if (uploadedAt != null) 'uploaded_at': uploadedAt,
+      if (processedAt != null) 'processed_at': processedAt,
+      if (metadata != null) 'metadata': metadata,
+      if (errorMessage != null) 'error_message': errorMessage,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  KnowledgeDocumentsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? type,
+      Value<int>? size,
+      Value<String>? filePath,
+      Value<String>? fileHash,
+      Value<int>? chunks,
+      Value<String>? status,
+      Value<double>? indexProgress,
+      Value<DateTime>? uploadedAt,
+      Value<DateTime?>? processedAt,
+      Value<String?>? metadata,
+      Value<String?>? errorMessage,
+      Value<int>? rowid}) {
+    return KnowledgeDocumentsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      size: size ?? this.size,
+      filePath: filePath ?? this.filePath,
+      fileHash: fileHash ?? this.fileHash,
+      chunks: chunks ?? this.chunks,
+      status: status ?? this.status,
+      indexProgress: indexProgress ?? this.indexProgress,
+      uploadedAt: uploadedAt ?? this.uploadedAt,
+      processedAt: processedAt ?? this.processedAt,
+      metadata: metadata ?? this.metadata,
+      errorMessage: errorMessage ?? this.errorMessage,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (size.present) {
+      map['size'] = Variable<int>(size.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (fileHash.present) {
+      map['file_hash'] = Variable<String>(fileHash.value);
+    }
+    if (chunks.present) {
+      map['chunks'] = Variable<int>(chunks.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (indexProgress.present) {
+      map['index_progress'] = Variable<double>(indexProgress.value);
+    }
+    if (uploadedAt.present) {
+      map['uploaded_at'] = Variable<DateTime>(uploadedAt.value);
+    }
+    if (processedAt.present) {
+      map['processed_at'] = Variable<DateTime>(processedAt.value);
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(metadata.value);
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeDocumentsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('size: $size, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileHash: $fileHash, ')
+          ..write('chunks: $chunks, ')
+          ..write('status: $status, ')
+          ..write('indexProgress: $indexProgress, ')
+          ..write('uploadedAt: $uploadedAt, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('metadata: $metadata, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $KnowledgeChunksTableTable extends KnowledgeChunksTable
+    with TableInfo<$KnowledgeChunksTableTable, KnowledgeChunksTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KnowledgeChunksTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _documentIdMeta =
+      const VerificationMeta('documentId');
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+      'document_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+      'content', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _chunkIndexMeta =
+      const VerificationMeta('chunkIndex');
+  @override
+  late final GeneratedColumn<int> chunkIndex = GeneratedColumn<int>(
+      'chunk_index', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _characterCountMeta =
+      const VerificationMeta('characterCount');
+  @override
+  late final GeneratedColumn<int> characterCount = GeneratedColumn<int>(
+      'character_count', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _tokenCountMeta =
+      const VerificationMeta('tokenCount');
+  @override
+  late final GeneratedColumn<int> tokenCount = GeneratedColumn<int>(
+      'token_count', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _embeddingMeta =
+      const VerificationMeta('embedding');
+  @override
+  late final GeneratedColumn<String> embedding = GeneratedColumn<String>(
+      'embedding', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        documentId,
+        content,
+        chunkIndex,
+        characterCount,
+        tokenCount,
+        embedding,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'knowledge_chunks_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<KnowledgeChunksTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+          _documentIdMeta,
+          documentId.isAcceptableOrUnknown(
+              data['document_id']!, _documentIdMeta));
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('chunk_index')) {
+      context.handle(
+          _chunkIndexMeta,
+          chunkIndex.isAcceptableOrUnknown(
+              data['chunk_index']!, _chunkIndexMeta));
+    } else if (isInserting) {
+      context.missing(_chunkIndexMeta);
+    }
+    if (data.containsKey('character_count')) {
+      context.handle(
+          _characterCountMeta,
+          characterCount.isAcceptableOrUnknown(
+              data['character_count']!, _characterCountMeta));
+    } else if (isInserting) {
+      context.missing(_characterCountMeta);
+    }
+    if (data.containsKey('token_count')) {
+      context.handle(
+          _tokenCountMeta,
+          tokenCount.isAcceptableOrUnknown(
+              data['token_count']!, _tokenCountMeta));
+    } else if (isInserting) {
+      context.missing(_tokenCountMeta);
+    }
+    if (data.containsKey('embedding')) {
+      context.handle(_embeddingMeta,
+          embedding.isAcceptableOrUnknown(data['embedding']!, _embeddingMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KnowledgeChunksTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KnowledgeChunksTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      documentId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}document_id'])!,
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      chunkIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chunk_index'])!,
+      characterCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}character_count'])!,
+      tokenCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}token_count'])!,
+      embedding: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}embedding']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $KnowledgeChunksTableTable createAlias(String alias) {
+    return $KnowledgeChunksTableTable(attachedDatabase, alias);
+  }
+}
+
+class KnowledgeChunksTableData extends DataClass
+    implements Insertable<KnowledgeChunksTableData> {
+  /// 文本块唯一标识符
+  final String id;
+
+  /// 所属文档ID
+  final String documentId;
+
+  /// 文本块内容
+  final String content;
+
+  /// 文本块在文档中的序号
+  final int chunkIndex;
+
+  /// 文本块的字符数
+  final int characterCount;
+
+  /// 文本块的token数
+  final int tokenCount;
+
+  /// 嵌入向量（JSON格式存储）
+  final String? embedding;
+
+  /// 创建时间
+  final DateTime createdAt;
+  const KnowledgeChunksTableData(
+      {required this.id,
+      required this.documentId,
+      required this.content,
+      required this.chunkIndex,
+      required this.characterCount,
+      required this.tokenCount,
+      this.embedding,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['document_id'] = Variable<String>(documentId);
+    map['content'] = Variable<String>(content);
+    map['chunk_index'] = Variable<int>(chunkIndex);
+    map['character_count'] = Variable<int>(characterCount);
+    map['token_count'] = Variable<int>(tokenCount);
+    if (!nullToAbsent || embedding != null) {
+      map['embedding'] = Variable<String>(embedding);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  KnowledgeChunksTableCompanion toCompanion(bool nullToAbsent) {
+    return KnowledgeChunksTableCompanion(
+      id: Value(id),
+      documentId: Value(documentId),
+      content: Value(content),
+      chunkIndex: Value(chunkIndex),
+      characterCount: Value(characterCount),
+      tokenCount: Value(tokenCount),
+      embedding: embedding == null && nullToAbsent
+          ? const Value.absent()
+          : Value(embedding),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory KnowledgeChunksTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KnowledgeChunksTableData(
+      id: serializer.fromJson<String>(json['id']),
+      documentId: serializer.fromJson<String>(json['documentId']),
+      content: serializer.fromJson<String>(json['content']),
+      chunkIndex: serializer.fromJson<int>(json['chunkIndex']),
+      characterCount: serializer.fromJson<int>(json['characterCount']),
+      tokenCount: serializer.fromJson<int>(json['tokenCount']),
+      embedding: serializer.fromJson<String?>(json['embedding']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'documentId': serializer.toJson<String>(documentId),
+      'content': serializer.toJson<String>(content),
+      'chunkIndex': serializer.toJson<int>(chunkIndex),
+      'characterCount': serializer.toJson<int>(characterCount),
+      'tokenCount': serializer.toJson<int>(tokenCount),
+      'embedding': serializer.toJson<String?>(embedding),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  KnowledgeChunksTableData copyWith(
+          {String? id,
+          String? documentId,
+          String? content,
+          int? chunkIndex,
+          int? characterCount,
+          int? tokenCount,
+          Value<String?> embedding = const Value.absent(),
+          DateTime? createdAt}) =>
+      KnowledgeChunksTableData(
+        id: id ?? this.id,
+        documentId: documentId ?? this.documentId,
+        content: content ?? this.content,
+        chunkIndex: chunkIndex ?? this.chunkIndex,
+        characterCount: characterCount ?? this.characterCount,
+        tokenCount: tokenCount ?? this.tokenCount,
+        embedding: embedding.present ? embedding.value : this.embedding,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  KnowledgeChunksTableData copyWithCompanion(
+      KnowledgeChunksTableCompanion data) {
+    return KnowledgeChunksTableData(
+      id: data.id.present ? data.id.value : this.id,
+      documentId:
+          data.documentId.present ? data.documentId.value : this.documentId,
+      content: data.content.present ? data.content.value : this.content,
+      chunkIndex:
+          data.chunkIndex.present ? data.chunkIndex.value : this.chunkIndex,
+      characterCount: data.characterCount.present
+          ? data.characterCount.value
+          : this.characterCount,
+      tokenCount:
+          data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
+      embedding: data.embedding.present ? data.embedding.value : this.embedding,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeChunksTableData(')
+          ..write('id: $id, ')
+          ..write('documentId: $documentId, ')
+          ..write('content: $content, ')
+          ..write('chunkIndex: $chunkIndex, ')
+          ..write('characterCount: $characterCount, ')
+          ..write('tokenCount: $tokenCount, ')
+          ..write('embedding: $embedding, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, documentId, content, chunkIndex,
+      characterCount, tokenCount, embedding, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KnowledgeChunksTableData &&
+          other.id == this.id &&
+          other.documentId == this.documentId &&
+          other.content == this.content &&
+          other.chunkIndex == this.chunkIndex &&
+          other.characterCount == this.characterCount &&
+          other.tokenCount == this.tokenCount &&
+          other.embedding == this.embedding &&
+          other.createdAt == this.createdAt);
+}
+
+class KnowledgeChunksTableCompanion
+    extends UpdateCompanion<KnowledgeChunksTableData> {
+  final Value<String> id;
+  final Value<String> documentId;
+  final Value<String> content;
+  final Value<int> chunkIndex;
+  final Value<int> characterCount;
+  final Value<int> tokenCount;
+  final Value<String?> embedding;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const KnowledgeChunksTableCompanion({
+    this.id = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.content = const Value.absent(),
+    this.chunkIndex = const Value.absent(),
+    this.characterCount = const Value.absent(),
+    this.tokenCount = const Value.absent(),
+    this.embedding = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  KnowledgeChunksTableCompanion.insert({
+    required String id,
+    required String documentId,
+    required String content,
+    required int chunkIndex,
+    required int characterCount,
+    required int tokenCount,
+    this.embedding = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        documentId = Value(documentId),
+        content = Value(content),
+        chunkIndex = Value(chunkIndex),
+        characterCount = Value(characterCount),
+        tokenCount = Value(tokenCount),
+        createdAt = Value(createdAt);
+  static Insertable<KnowledgeChunksTableData> custom({
+    Expression<String>? id,
+    Expression<String>? documentId,
+    Expression<String>? content,
+    Expression<int>? chunkIndex,
+    Expression<int>? characterCount,
+    Expression<int>? tokenCount,
+    Expression<String>? embedding,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (documentId != null) 'document_id': documentId,
+      if (content != null) 'content': content,
+      if (chunkIndex != null) 'chunk_index': chunkIndex,
+      if (characterCount != null) 'character_count': characterCount,
+      if (tokenCount != null) 'token_count': tokenCount,
+      if (embedding != null) 'embedding': embedding,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  KnowledgeChunksTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? documentId,
+      Value<String>? content,
+      Value<int>? chunkIndex,
+      Value<int>? characterCount,
+      Value<int>? tokenCount,
+      Value<String?>? embedding,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return KnowledgeChunksTableCompanion(
+      id: id ?? this.id,
+      documentId: documentId ?? this.documentId,
+      content: content ?? this.content,
+      chunkIndex: chunkIndex ?? this.chunkIndex,
+      characterCount: characterCount ?? this.characterCount,
+      tokenCount: tokenCount ?? this.tokenCount,
+      embedding: embedding ?? this.embedding,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (chunkIndex.present) {
+      map['chunk_index'] = Variable<int>(chunkIndex.value);
+    }
+    if (characterCount.present) {
+      map['character_count'] = Variable<int>(characterCount.value);
+    }
+    if (tokenCount.present) {
+      map['token_count'] = Variable<int>(tokenCount.value);
+    }
+    if (embedding.present) {
+      map['embedding'] = Variable<String>(embedding.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeChunksTableCompanion(')
+          ..write('id: $id, ')
+          ..write('documentId: $documentId, ')
+          ..write('content: $content, ')
+          ..write('chunkIndex: $chunkIndex, ')
+          ..write('characterCount: $characterCount, ')
+          ..write('tokenCount: $tokenCount, ')
+          ..write('embedding: $embedding, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CustomModelsTableTable extends CustomModelsTable
+    with TableInfo<$CustomModelsTableTable, CustomModelsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomModelsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _modelIdMeta =
+      const VerificationMeta('modelId');
+  @override
+  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
+      'model_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _providerMeta =
+      const VerificationMeta('provider');
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+      'provider', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _contextWindowMeta =
+      const VerificationMeta('contextWindow');
+  @override
+  late final GeneratedColumn<int> contextWindow = GeneratedColumn<int>(
+      'context_window', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _maxOutputTokensMeta =
+      const VerificationMeta('maxOutputTokens');
+  @override
+  late final GeneratedColumn<int> maxOutputTokens = GeneratedColumn<int>(
+      'max_output_tokens', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _supportsStreamingMeta =
+      const VerificationMeta('supportsStreaming');
+  @override
+  late final GeneratedColumn<bool> supportsStreaming = GeneratedColumn<bool>(
+      'supports_streaming', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_streaming" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _supportsFunctionCallingMeta =
+      const VerificationMeta('supportsFunctionCalling');
+  @override
+  late final GeneratedColumn<bool> supportsFunctionCalling =
+      GeneratedColumn<bool>('supports_function_calling', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("supports_function_calling" IN (0, 1))'),
+          defaultValue: const Constant(false));
+  static const VerificationMeta _supportsVisionMeta =
+      const VerificationMeta('supportsVision');
+  @override
+  late final GeneratedColumn<bool> supportsVision = GeneratedColumn<bool>(
+      'supports_vision', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_vision" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _inputPriceMeta =
+      const VerificationMeta('inputPrice');
+  @override
+  late final GeneratedColumn<double> inputPrice = GeneratedColumn<double>(
+      'input_price', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _outputPriceMeta =
+      const VerificationMeta('outputPrice');
+  @override
+  late final GeneratedColumn<double> outputPrice = GeneratedColumn<double>(
+      'output_price', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _currencyMeta =
+      const VerificationMeta('currency');
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+      'currency', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('USD'));
+  static const VerificationMeta _capabilitiesMeta =
+      const VerificationMeta('capabilities');
+  @override
+  late final GeneratedColumn<String> capabilities = GeneratedColumn<String>(
+      'capabilities', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isBuiltInMeta =
+      const VerificationMeta('isBuiltIn');
+  @override
+  late final GeneratedColumn<bool> isBuiltIn = GeneratedColumn<bool>(
+      'is_built_in', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_built_in" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isEnabledMeta =
+      const VerificationMeta('isEnabled');
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+      'is_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_enabled" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        modelId,
+        provider,
+        description,
+        type,
+        contextWindow,
+        maxOutputTokens,
+        supportsStreaming,
+        supportsFunctionCalling,
+        supportsVision,
+        inputPrice,
+        outputPrice,
+        currency,
+        capabilities,
+        isBuiltIn,
+        isEnabled,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_models_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<CustomModelsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('model_id')) {
+      context.handle(_modelIdMeta,
+          modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta));
+    } else if (isInserting) {
+      context.missing(_modelIdMeta);
+    }
+    if (data.containsKey('provider')) {
+      context.handle(_providerMeta,
+          provider.isAcceptableOrUnknown(data['provider']!, _providerMeta));
+    } else if (isInserting) {
+      context.missing(_providerMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('context_window')) {
+      context.handle(
+          _contextWindowMeta,
+          contextWindow.isAcceptableOrUnknown(
+              data['context_window']!, _contextWindowMeta));
+    }
+    if (data.containsKey('max_output_tokens')) {
+      context.handle(
+          _maxOutputTokensMeta,
+          maxOutputTokens.isAcceptableOrUnknown(
+              data['max_output_tokens']!, _maxOutputTokensMeta));
+    }
+    if (data.containsKey('supports_streaming')) {
+      context.handle(
+          _supportsStreamingMeta,
+          supportsStreaming.isAcceptableOrUnknown(
+              data['supports_streaming']!, _supportsStreamingMeta));
+    }
+    if (data.containsKey('supports_function_calling')) {
+      context.handle(
+          _supportsFunctionCallingMeta,
+          supportsFunctionCalling.isAcceptableOrUnknown(
+              data['supports_function_calling']!,
+              _supportsFunctionCallingMeta));
+    }
+    if (data.containsKey('supports_vision')) {
+      context.handle(
+          _supportsVisionMeta,
+          supportsVision.isAcceptableOrUnknown(
+              data['supports_vision']!, _supportsVisionMeta));
+    }
+    if (data.containsKey('input_price')) {
+      context.handle(
+          _inputPriceMeta,
+          inputPrice.isAcceptableOrUnknown(
+              data['input_price']!, _inputPriceMeta));
+    }
+    if (data.containsKey('output_price')) {
+      context.handle(
+          _outputPriceMeta,
+          outputPrice.isAcceptableOrUnknown(
+              data['output_price']!, _outputPriceMeta));
+    }
+    if (data.containsKey('currency')) {
+      context.handle(_currencyMeta,
+          currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta));
+    }
+    if (data.containsKey('capabilities')) {
+      context.handle(
+          _capabilitiesMeta,
+          capabilities.isAcceptableOrUnknown(
+              data['capabilities']!, _capabilitiesMeta));
+    }
+    if (data.containsKey('is_built_in')) {
+      context.handle(
+          _isBuiltInMeta,
+          isBuiltIn.isAcceptableOrUnknown(
+              data['is_built_in']!, _isBuiltInMeta));
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(_isEnabledMeta,
+          isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomModelsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomModelsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      modelId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}model_id'])!,
+      provider: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}provider'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      contextWindow: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}context_window']),
+      maxOutputTokens: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}max_output_tokens']),
+      supportsStreaming: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}supports_streaming'])!,
+      supportsFunctionCalling: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}supports_function_calling'])!,
+      supportsVision: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}supports_vision'])!,
+      inputPrice: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}input_price']),
+      outputPrice: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}output_price']),
+      currency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}currency'])!,
+      capabilities: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}capabilities']),
+      isBuiltIn: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_built_in'])!,
+      isEnabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_enabled'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $CustomModelsTableTable createAlias(String alias) {
+    return $CustomModelsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CustomModelsTableData extends DataClass
+    implements Insertable<CustomModelsTableData> {
+  /// 模型唯一标识符
+  final String id;
+
+  /// 模型名称
+  final String name;
+
+  /// 模型ID（API调用时使用）
+  final String modelId;
+
+  /// 所属提供商 (openai, google, anthropic)
+  final String provider;
+
+  /// 模型描述
+  final String? description;
+
+  /// 模型类型 (chat, embedding, multimodal)
+  final String type;
+
+  /// 上下文窗口大小
+  final int? contextWindow;
+
+  /// 最大输出token数
+  final int? maxOutputTokens;
+
+  /// 是否支持流式响应
+  final bool supportsStreaming;
+
+  /// 是否支持函数调用
+  final bool supportsFunctionCalling;
+
+  /// 是否支持视觉输入
+  final bool supportsVision;
+
+  /// 输入token价格（每1K token）
+  final double? inputPrice;
+
+  /// 输出token价格（每1K token）
+  final double? outputPrice;
+
+  /// 货币单位
+  final String currency;
+
+  /// 模型能力标签（JSON格式）
+  final String? capabilities;
+
+  /// 是否为内置模型
+  final bool isBuiltIn;
+
+  /// 是否启用
+  final bool isEnabled;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 最后更新时间
+  final DateTime updatedAt;
+  const CustomModelsTableData(
+      {required this.id,
+      required this.name,
+      required this.modelId,
+      required this.provider,
+      this.description,
+      required this.type,
+      this.contextWindow,
+      this.maxOutputTokens,
+      required this.supportsStreaming,
+      required this.supportsFunctionCalling,
+      required this.supportsVision,
+      this.inputPrice,
+      this.outputPrice,
+      required this.currency,
+      this.capabilities,
+      required this.isBuiltIn,
+      required this.isEnabled,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['model_id'] = Variable<String>(modelId);
+    map['provider'] = Variable<String>(provider);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || contextWindow != null) {
+      map['context_window'] = Variable<int>(contextWindow);
+    }
+    if (!nullToAbsent || maxOutputTokens != null) {
+      map['max_output_tokens'] = Variable<int>(maxOutputTokens);
+    }
+    map['supports_streaming'] = Variable<bool>(supportsStreaming);
+    map['supports_function_calling'] = Variable<bool>(supportsFunctionCalling);
+    map['supports_vision'] = Variable<bool>(supportsVision);
+    if (!nullToAbsent || inputPrice != null) {
+      map['input_price'] = Variable<double>(inputPrice);
+    }
+    if (!nullToAbsent || outputPrice != null) {
+      map['output_price'] = Variable<double>(outputPrice);
+    }
+    map['currency'] = Variable<String>(currency);
+    if (!nullToAbsent || capabilities != null) {
+      map['capabilities'] = Variable<String>(capabilities);
+    }
+    map['is_built_in'] = Variable<bool>(isBuiltIn);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CustomModelsTableCompanion toCompanion(bool nullToAbsent) {
+    return CustomModelsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      modelId: Value(modelId),
+      provider: Value(provider),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      type: Value(type),
+      contextWindow: contextWindow == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contextWindow),
+      maxOutputTokens: maxOutputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxOutputTokens),
+      supportsStreaming: Value(supportsStreaming),
+      supportsFunctionCalling: Value(supportsFunctionCalling),
+      supportsVision: Value(supportsVision),
+      inputPrice: inputPrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputPrice),
+      outputPrice: outputPrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputPrice),
+      currency: Value(currency),
+      capabilities: capabilities == null && nullToAbsent
+          ? const Value.absent()
+          : Value(capabilities),
+      isBuiltIn: Value(isBuiltIn),
+      isEnabled: Value(isEnabled),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CustomModelsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomModelsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      modelId: serializer.fromJson<String>(json['modelId']),
+      provider: serializer.fromJson<String>(json['provider']),
+      description: serializer.fromJson<String?>(json['description']),
+      type: serializer.fromJson<String>(json['type']),
+      contextWindow: serializer.fromJson<int?>(json['contextWindow']),
+      maxOutputTokens: serializer.fromJson<int?>(json['maxOutputTokens']),
+      supportsStreaming: serializer.fromJson<bool>(json['supportsStreaming']),
+      supportsFunctionCalling:
+          serializer.fromJson<bool>(json['supportsFunctionCalling']),
+      supportsVision: serializer.fromJson<bool>(json['supportsVision']),
+      inputPrice: serializer.fromJson<double?>(json['inputPrice']),
+      outputPrice: serializer.fromJson<double?>(json['outputPrice']),
+      currency: serializer.fromJson<String>(json['currency']),
+      capabilities: serializer.fromJson<String?>(json['capabilities']),
+      isBuiltIn: serializer.fromJson<bool>(json['isBuiltIn']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'modelId': serializer.toJson<String>(modelId),
+      'provider': serializer.toJson<String>(provider),
+      'description': serializer.toJson<String?>(description),
+      'type': serializer.toJson<String>(type),
+      'contextWindow': serializer.toJson<int?>(contextWindow),
+      'maxOutputTokens': serializer.toJson<int?>(maxOutputTokens),
+      'supportsStreaming': serializer.toJson<bool>(supportsStreaming),
+      'supportsFunctionCalling':
+          serializer.toJson<bool>(supportsFunctionCalling),
+      'supportsVision': serializer.toJson<bool>(supportsVision),
+      'inputPrice': serializer.toJson<double?>(inputPrice),
+      'outputPrice': serializer.toJson<double?>(outputPrice),
+      'currency': serializer.toJson<String>(currency),
+      'capabilities': serializer.toJson<String?>(capabilities),
+      'isBuiltIn': serializer.toJson<bool>(isBuiltIn),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CustomModelsTableData copyWith(
+          {String? id,
+          String? name,
+          String? modelId,
+          String? provider,
+          Value<String?> description = const Value.absent(),
+          String? type,
+          Value<int?> contextWindow = const Value.absent(),
+          Value<int?> maxOutputTokens = const Value.absent(),
+          bool? supportsStreaming,
+          bool? supportsFunctionCalling,
+          bool? supportsVision,
+          Value<double?> inputPrice = const Value.absent(),
+          Value<double?> outputPrice = const Value.absent(),
+          String? currency,
+          Value<String?> capabilities = const Value.absent(),
+          bool? isBuiltIn,
+          bool? isEnabled,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      CustomModelsTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        modelId: modelId ?? this.modelId,
+        provider: provider ?? this.provider,
+        description: description.present ? description.value : this.description,
+        type: type ?? this.type,
+        contextWindow:
+            contextWindow.present ? contextWindow.value : this.contextWindow,
+        maxOutputTokens: maxOutputTokens.present
+            ? maxOutputTokens.value
+            : this.maxOutputTokens,
+        supportsStreaming: supportsStreaming ?? this.supportsStreaming,
+        supportsFunctionCalling:
+            supportsFunctionCalling ?? this.supportsFunctionCalling,
+        supportsVision: supportsVision ?? this.supportsVision,
+        inputPrice: inputPrice.present ? inputPrice.value : this.inputPrice,
+        outputPrice: outputPrice.present ? outputPrice.value : this.outputPrice,
+        currency: currency ?? this.currency,
+        capabilities:
+            capabilities.present ? capabilities.value : this.capabilities,
+        isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+        isEnabled: isEnabled ?? this.isEnabled,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  CustomModelsTableData copyWithCompanion(CustomModelsTableCompanion data) {
+    return CustomModelsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      description:
+          data.description.present ? data.description.value : this.description,
+      type: data.type.present ? data.type.value : this.type,
+      contextWindow: data.contextWindow.present
+          ? data.contextWindow.value
+          : this.contextWindow,
+      maxOutputTokens: data.maxOutputTokens.present
+          ? data.maxOutputTokens.value
+          : this.maxOutputTokens,
+      supportsStreaming: data.supportsStreaming.present
+          ? data.supportsStreaming.value
+          : this.supportsStreaming,
+      supportsFunctionCalling: data.supportsFunctionCalling.present
+          ? data.supportsFunctionCalling.value
+          : this.supportsFunctionCalling,
+      supportsVision: data.supportsVision.present
+          ? data.supportsVision.value
+          : this.supportsVision,
+      inputPrice:
+          data.inputPrice.present ? data.inputPrice.value : this.inputPrice,
+      outputPrice:
+          data.outputPrice.present ? data.outputPrice.value : this.outputPrice,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      capabilities: data.capabilities.present
+          ? data.capabilities.value
+          : this.capabilities,
+      isBuiltIn: data.isBuiltIn.present ? data.isBuiltIn.value : this.isBuiltIn,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomModelsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('modelId: $modelId, ')
+          ..write('provider: $provider, ')
+          ..write('description: $description, ')
+          ..write('type: $type, ')
+          ..write('contextWindow: $contextWindow, ')
+          ..write('maxOutputTokens: $maxOutputTokens, ')
+          ..write('supportsStreaming: $supportsStreaming, ')
+          ..write('supportsFunctionCalling: $supportsFunctionCalling, ')
+          ..write('supportsVision: $supportsVision, ')
+          ..write('inputPrice: $inputPrice, ')
+          ..write('outputPrice: $outputPrice, ')
+          ..write('currency: $currency, ')
+          ..write('capabilities: $capabilities, ')
+          ..write('isBuiltIn: $isBuiltIn, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      modelId,
+      provider,
+      description,
+      type,
+      contextWindow,
+      maxOutputTokens,
+      supportsStreaming,
+      supportsFunctionCalling,
+      supportsVision,
+      inputPrice,
+      outputPrice,
+      currency,
+      capabilities,
+      isBuiltIn,
+      isEnabled,
+      createdAt,
+      updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomModelsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.modelId == this.modelId &&
+          other.provider == this.provider &&
+          other.description == this.description &&
+          other.type == this.type &&
+          other.contextWindow == this.contextWindow &&
+          other.maxOutputTokens == this.maxOutputTokens &&
+          other.supportsStreaming == this.supportsStreaming &&
+          other.supportsFunctionCalling == this.supportsFunctionCalling &&
+          other.supportsVision == this.supportsVision &&
+          other.inputPrice == this.inputPrice &&
+          other.outputPrice == this.outputPrice &&
+          other.currency == this.currency &&
+          other.capabilities == this.capabilities &&
+          other.isBuiltIn == this.isBuiltIn &&
+          other.isEnabled == this.isEnabled &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomModelsTableCompanion
+    extends UpdateCompanion<CustomModelsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> modelId;
+  final Value<String> provider;
+  final Value<String?> description;
+  final Value<String> type;
+  final Value<int?> contextWindow;
+  final Value<int?> maxOutputTokens;
+  final Value<bool> supportsStreaming;
+  final Value<bool> supportsFunctionCalling;
+  final Value<bool> supportsVision;
+  final Value<double?> inputPrice;
+  final Value<double?> outputPrice;
+  final Value<String> currency;
+  final Value<String?> capabilities;
+  final Value<bool> isBuiltIn;
+  final Value<bool> isEnabled;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const CustomModelsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.modelId = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.description = const Value.absent(),
+    this.type = const Value.absent(),
+    this.contextWindow = const Value.absent(),
+    this.maxOutputTokens = const Value.absent(),
+    this.supportsStreaming = const Value.absent(),
+    this.supportsFunctionCalling = const Value.absent(),
+    this.supportsVision = const Value.absent(),
+    this.inputPrice = const Value.absent(),
+    this.outputPrice = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.capabilities = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomModelsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String modelId,
+    required String provider,
+    this.description = const Value.absent(),
+    required String type,
+    this.contextWindow = const Value.absent(),
+    this.maxOutputTokens = const Value.absent(),
+    this.supportsStreaming = const Value.absent(),
+    this.supportsFunctionCalling = const Value.absent(),
+    this.supportsVision = const Value.absent(),
+    this.inputPrice = const Value.absent(),
+    this.outputPrice = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.capabilities = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        modelId = Value(modelId),
+        provider = Value(provider),
+        type = Value(type),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<CustomModelsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? modelId,
+    Expression<String>? provider,
+    Expression<String>? description,
+    Expression<String>? type,
+    Expression<int>? contextWindow,
+    Expression<int>? maxOutputTokens,
+    Expression<bool>? supportsStreaming,
+    Expression<bool>? supportsFunctionCalling,
+    Expression<bool>? supportsVision,
+    Expression<double>? inputPrice,
+    Expression<double>? outputPrice,
+    Expression<String>? currency,
+    Expression<String>? capabilities,
+    Expression<bool>? isBuiltIn,
+    Expression<bool>? isEnabled,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (modelId != null) 'model_id': modelId,
+      if (provider != null) 'provider': provider,
+      if (description != null) 'description': description,
+      if (type != null) 'type': type,
+      if (contextWindow != null) 'context_window': contextWindow,
+      if (maxOutputTokens != null) 'max_output_tokens': maxOutputTokens,
+      if (supportsStreaming != null) 'supports_streaming': supportsStreaming,
+      if (supportsFunctionCalling != null)
+        'supports_function_calling': supportsFunctionCalling,
+      if (supportsVision != null) 'supports_vision': supportsVision,
+      if (inputPrice != null) 'input_price': inputPrice,
+      if (outputPrice != null) 'output_price': outputPrice,
+      if (currency != null) 'currency': currency,
+      if (capabilities != null) 'capabilities': capabilities,
+      if (isBuiltIn != null) 'is_built_in': isBuiltIn,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomModelsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? modelId,
+      Value<String>? provider,
+      Value<String?>? description,
+      Value<String>? type,
+      Value<int?>? contextWindow,
+      Value<int?>? maxOutputTokens,
+      Value<bool>? supportsStreaming,
+      Value<bool>? supportsFunctionCalling,
+      Value<bool>? supportsVision,
+      Value<double?>? inputPrice,
+      Value<double?>? outputPrice,
+      Value<String>? currency,
+      Value<String?>? capabilities,
+      Value<bool>? isBuiltIn,
+      Value<bool>? isEnabled,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return CustomModelsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      modelId: modelId ?? this.modelId,
+      provider: provider ?? this.provider,
+      description: description ?? this.description,
+      type: type ?? this.type,
+      contextWindow: contextWindow ?? this.contextWindow,
+      maxOutputTokens: maxOutputTokens ?? this.maxOutputTokens,
+      supportsStreaming: supportsStreaming ?? this.supportsStreaming,
+      supportsFunctionCalling:
+          supportsFunctionCalling ?? this.supportsFunctionCalling,
+      supportsVision: supportsVision ?? this.supportsVision,
+      inputPrice: inputPrice ?? this.inputPrice,
+      outputPrice: outputPrice ?? this.outputPrice,
+      currency: currency ?? this.currency,
+      capabilities: capabilities ?? this.capabilities,
+      isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+      isEnabled: isEnabled ?? this.isEnabled,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (modelId.present) {
+      map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (contextWindow.present) {
+      map['context_window'] = Variable<int>(contextWindow.value);
+    }
+    if (maxOutputTokens.present) {
+      map['max_output_tokens'] = Variable<int>(maxOutputTokens.value);
+    }
+    if (supportsStreaming.present) {
+      map['supports_streaming'] = Variable<bool>(supportsStreaming.value);
+    }
+    if (supportsFunctionCalling.present) {
+      map['supports_function_calling'] =
+          Variable<bool>(supportsFunctionCalling.value);
+    }
+    if (supportsVision.present) {
+      map['supports_vision'] = Variable<bool>(supportsVision.value);
+    }
+    if (inputPrice.present) {
+      map['input_price'] = Variable<double>(inputPrice.value);
+    }
+    if (outputPrice.present) {
+      map['output_price'] = Variable<double>(outputPrice.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (capabilities.present) {
+      map['capabilities'] = Variable<String>(capabilities.value);
+    }
+    if (isBuiltIn.present) {
+      map['is_built_in'] = Variable<bool>(isBuiltIn.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomModelsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('modelId: $modelId, ')
+          ..write('provider: $provider, ')
+          ..write('description: $description, ')
+          ..write('type: $type, ')
+          ..write('contextWindow: $contextWindow, ')
+          ..write('maxOutputTokens: $maxOutputTokens, ')
+          ..write('supportsStreaming: $supportsStreaming, ')
+          ..write('supportsFunctionCalling: $supportsFunctionCalling, ')
+          ..write('supportsVision: $supportsVision, ')
+          ..write('inputPrice: $inputPrice, ')
+          ..write('outputPrice: $outputPrice, ')
+          ..write('currency: $currency, ')
+          ..write('capabilities: $capabilities, ')
+          ..write('isBuiltIn: $isBuiltIn, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+abstract class _$AppDatabase extends GeneratedDatabase {
+  _$AppDatabase(QueryExecutor e) : super(e);
+  $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $LlmConfigsTableTable llmConfigsTable =
+      $LlmConfigsTableTable(this);
+  late final $PersonasTableTable personasTable = $PersonasTableTable(this);
+  late final $PersonaGroupsTableTable personaGroupsTable =
+      $PersonaGroupsTableTable(this);
+  late final $ChatSessionsTableTable chatSessionsTable =
+      $ChatSessionsTableTable(this);
+  late final $ChatMessagesTableTable chatMessagesTable =
+      $ChatMessagesTableTable(this);
+  late final $KnowledgeDocumentsTableTable knowledgeDocumentsTable =
+      $KnowledgeDocumentsTableTable(this);
+  late final $KnowledgeChunksTableTable knowledgeChunksTable =
+      $KnowledgeChunksTableTable(this);
+  late final $CustomModelsTableTable customModelsTable =
+      $CustomModelsTableTable(this);
+  @override
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        llmConfigsTable,
+        personasTable,
+        personaGroupsTable,
+        chatSessionsTable,
+        chatMessagesTable,
+        knowledgeDocumentsTable,
+        knowledgeChunksTable,
+        customModelsTable
+      ];
+}
+
+typedef $$LlmConfigsTableTableCreateCompanionBuilder = LlmConfigsTableCompanion
+    Function({
+  required String id,
+  required String name,
+  required String provider,
+  required String apiKey,
+  Value<String?> baseUrl,
+  Value<String?> defaultModel,
+  Value<String?> defaultEmbeddingModel,
+  Value<String?> organizationId,
+  Value<String?> projectId,
+  Value<String?> extraParams,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
+typedef $$LlmConfigsTableTableUpdateCompanionBuilder = LlmConfigsTableCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> provider,
+  Value<String> apiKey,
+  Value<String?> baseUrl,
+  Value<String?> defaultModel,
+  Value<String?> defaultEmbeddingModel,
+  Value<String?> organizationId,
+  Value<String?> projectId,
+  Value<String?> extraParams,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
+
+class $$LlmConfigsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $LlmConfigsTableTable> {
+  $$LlmConfigsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get provider => $composableBuilder(
+      column: $table.provider, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get apiKey => $composableBuilder(
+      column: $table.apiKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get defaultModel => $composableBuilder(
+      column: $table.defaultModel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get defaultEmbeddingModel => $composableBuilder(
+      column: $table.defaultEmbeddingModel,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get organizationId => $composableBuilder(
+      column: $table.organizationId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get projectId => $composableBuilder(
+      column: $table.projectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get extraParams => $composableBuilder(
+      column: $table.extraParams, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnFilters(column));
+}
+
+class $$LlmConfigsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $LlmConfigsTableTable> {
+  $$LlmConfigsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+      column: $table.provider, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get apiKey => $composableBuilder(
+      column: $table.apiKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get defaultModel => $composableBuilder(
+      column: $table.defaultModel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get defaultEmbeddingModel => $composableBuilder(
+      column: $table.defaultEmbeddingModel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get organizationId => $composableBuilder(
+      column: $table.organizationId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get projectId => $composableBuilder(
+      column: $table.projectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get extraParams => $composableBuilder(
+      column: $table.extraParams, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LlmConfigsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LlmConfigsTableTable> {
+  $$LlmConfigsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get apiKey =>
+      $composableBuilder(column: $table.apiKey, builder: (column) => column);
+
+  GeneratedColumn<String> get baseUrl =>
+      $composableBuilder(column: $table.baseUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get defaultModel => $composableBuilder(
+      column: $table.defaultModel, builder: (column) => column);
+
+  GeneratedColumn<String> get defaultEmbeddingModel => $composableBuilder(
+      column: $table.defaultEmbeddingModel, builder: (column) => column);
+
+  GeneratedColumn<String> get organizationId => $composableBuilder(
+      column: $table.organizationId, builder: (column) => column);
+
+  GeneratedColumn<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get extraParams => $composableBuilder(
+      column: $table.extraParams, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+}
+
+class $$LlmConfigsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $LlmConfigsTableTable,
+    LlmConfigsTableData,
+    $$LlmConfigsTableTableFilterComposer,
+    $$LlmConfigsTableTableOrderingComposer,
+    $$LlmConfigsTableTableAnnotationComposer,
+    $$LlmConfigsTableTableCreateCompanionBuilder,
+    $$LlmConfigsTableTableUpdateCompanionBuilder,
+    (
+      LlmConfigsTableData,
+      BaseReferences<_$AppDatabase, $LlmConfigsTableTable, LlmConfigsTableData>
+    ),
+    LlmConfigsTableData,
+    PrefetchHooks Function()> {
+  $$LlmConfigsTableTableTableManager(
+      _$AppDatabase db, $LlmConfigsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LlmConfigsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LlmConfigsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LlmConfigsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> provider = const Value.absent(),
+            Value<String> apiKey = const Value.absent(),
+            Value<String?> baseUrl = const Value.absent(),
+            Value<String?> defaultModel = const Value.absent(),
+            Value<String?> defaultEmbeddingModel = const Value.absent(),
+            Value<String?> organizationId = const Value.absent(),
+            Value<String?> projectId = const Value.absent(),
+            Value<String?> extraParams = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LlmConfigsTableCompanion(
+            id: id,
+            name: name,
+            provider: provider,
+            apiKey: apiKey,
+            baseUrl: baseUrl,
+            defaultModel: defaultModel,
+            defaultEmbeddingModel: defaultEmbeddingModel,
+            organizationId: organizationId,
+            projectId: projectId,
+            extraParams: extraParams,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isEnabled: isEnabled,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String provider,
+            required String apiKey,
+            Value<String?> baseUrl = const Value.absent(),
+            Value<String?> defaultModel = const Value.absent(),
+            Value<String?> defaultEmbeddingModel = const Value.absent(),
+            Value<String?> organizationId = const Value.absent(),
+            Value<String?> projectId = const Value.absent(),
+            Value<String?> extraParams = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<bool> isEnabled = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LlmConfigsTableCompanion.insert(
+            id: id,
+            name: name,
+            provider: provider,
+            apiKey: apiKey,
+            baseUrl: baseUrl,
+            defaultModel: defaultModel,
+            defaultEmbeddingModel: defaultEmbeddingModel,
+            organizationId: organizationId,
+            projectId: projectId,
+            extraParams: extraParams,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isEnabled: isEnabled,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$LlmConfigsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $LlmConfigsTableTable,
+    LlmConfigsTableData,
+    $$LlmConfigsTableTableFilterComposer,
+    $$LlmConfigsTableTableOrderingComposer,
+    $$LlmConfigsTableTableAnnotationComposer,
+    $$LlmConfigsTableTableCreateCompanionBuilder,
+    $$LlmConfigsTableTableUpdateCompanionBuilder,
+    (
+      LlmConfigsTableData,
+      BaseReferences<_$AppDatabase, $LlmConfigsTableTable, LlmConfigsTableData>
+    ),
+    LlmConfigsTableData,
+    PrefetchHooks Function()>;
+typedef $$PersonasTableTableCreateCompanionBuilder = PersonasTableCompanion
+    Function({
+  required String id,
+  required String name,
+  required String description,
+  required String systemPrompt,
+  required String apiConfigId,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> lastUsedAt,
+  Value<String> category,
+  Value<String> tags,
+  Value<String?> avatar,
+  Value<bool> isDefault,
+  Value<bool> isEnabled,
+  Value<int> usageCount,
+  Value<String?> config,
+  Value<String> capabilities,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
+typedef $$PersonasTableTableUpdateCompanionBuilder = PersonasTableCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> description,
+  Value<String> systemPrompt,
+  Value<String> apiConfigId,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> lastUsedAt,
+  Value<String> category,
+  Value<String> tags,
+  Value<String?> avatar,
+  Value<bool> isDefault,
+  Value<bool> isEnabled,
+  Value<int> usageCount,
+  Value<String?> config,
+  Value<String> capabilities,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
+
+class $$PersonasTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonasTableTable> {
+  $$PersonasTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get systemPrompt => $composableBuilder(
+      column: $table.systemPrompt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get apiConfigId => $composableBuilder(
+      column: $table.apiConfigId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get usageCount => $composableBuilder(
+      column: $table.usageCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get capabilities => $composableBuilder(
+      column: $table.capabilities, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnFilters(column));
+}
+
+class $$PersonasTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonasTableTable> {
+  $$PersonasTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get systemPrompt => $composableBuilder(
+      column: $table.systemPrompt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get apiConfigId => $composableBuilder(
+      column: $table.apiConfigId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get usageCount => $composableBuilder(
+      column: $table.usageCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get capabilities => $composableBuilder(
+      column: $table.capabilities,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PersonasTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonasTableTable> {
+  $$PersonasTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get systemPrompt => $composableBuilder(
+      column: $table.systemPrompt, builder: (column) => column);
+
+  GeneratedColumn<String> get apiConfigId => $composableBuilder(
+      column: $table.apiConfigId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<String> get avatar =>
+      $composableBuilder(column: $table.avatar, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<int> get usageCount => $composableBuilder(
+      column: $table.usageCount, builder: (column) => column);
+
+  GeneratedColumn<String> get config =>
+      $composableBuilder(column: $table.config, builder: (column) => column);
+
+  GeneratedColumn<String> get capabilities => $composableBuilder(
+      column: $table.capabilities, builder: (column) => column);
+
+  GeneratedColumn<String> get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+}
+
+class $$PersonasTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PersonasTableTable,
+    PersonasTableData,
+    $$PersonasTableTableFilterComposer,
+    $$PersonasTableTableOrderingComposer,
+    $$PersonasTableTableAnnotationComposer,
+    $$PersonasTableTableCreateCompanionBuilder,
+    $$PersonasTableTableUpdateCompanionBuilder,
+    (
+      PersonasTableData,
+      BaseReferences<_$AppDatabase, $PersonasTableTable, PersonasTableData>
+    ),
+    PersonasTableData,
+    PrefetchHooks Function()> {
+  $$PersonasTableTableTableManager(_$AppDatabase db, $PersonasTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonasTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonasTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonasTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> description = const Value.absent(),
+            Value<String> systemPrompt = const Value.absent(),
+            Value<String> apiConfigId = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> lastUsedAt = const Value.absent(),
+            Value<String> category = const Value.absent(),
+            Value<String> tags = const Value.absent(),
+            Value<String?> avatar = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            Value<int> usageCount = const Value.absent(),
+            Value<String?> config = const Value.absent(),
+            Value<String> capabilities = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonasTableCompanion(
+            id: id,
+            name: name,
+            description: description,
+            systemPrompt: systemPrompt,
+            apiConfigId: apiConfigId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            lastUsedAt: lastUsedAt,
+            category: category,
+            tags: tags,
+            avatar: avatar,
+            isDefault: isDefault,
+            isEnabled: isEnabled,
+            usageCount: usageCount,
+            config: config,
+            capabilities: capabilities,
+            metadata: metadata,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String description,
+            required String systemPrompt,
+            required String apiConfigId,
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> lastUsedAt = const Value.absent(),
+            Value<String> category = const Value.absent(),
+            Value<String> tags = const Value.absent(),
+            Value<String?> avatar = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            Value<int> usageCount = const Value.absent(),
+            Value<String?> config = const Value.absent(),
+            Value<String> capabilities = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonasTableCompanion.insert(
+            id: id,
+            name: name,
+            description: description,
+            systemPrompt: systemPrompt,
+            apiConfigId: apiConfigId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            lastUsedAt: lastUsedAt,
+            category: category,
+            tags: tags,
+            avatar: avatar,
+            isDefault: isDefault,
+            isEnabled: isEnabled,
+            usageCount: usageCount,
+            config: config,
+            capabilities: capabilities,
+            metadata: metadata,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PersonasTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $PersonasTableTable,
+    PersonasTableData,
+    $$PersonasTableTableFilterComposer,
+    $$PersonasTableTableOrderingComposer,
+    $$PersonasTableTableAnnotationComposer,
+    $$PersonasTableTableCreateCompanionBuilder,
+    $$PersonasTableTableUpdateCompanionBuilder,
+    (
+      PersonasTableData,
+      BaseReferences<_$AppDatabase, $PersonasTableTable, PersonasTableData>
+    ),
+    PersonasTableData,
+    PrefetchHooks Function()>;
+typedef $$PersonaGroupsTableTableCreateCompanionBuilder
+    = PersonaGroupsTableCompanion Function({
+  required String id,
+  required String name,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$PersonaGroupsTableTableUpdateCompanionBuilder
+    = PersonaGroupsTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$PersonaGroupsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonaGroupsTableTable> {
+  $$PersonaGroupsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$PersonaGroupsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonaGroupsTableTable> {
+  $$PersonaGroupsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PersonaGroupsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonaGroupsTableTable> {
+  $$PersonaGroupsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PersonaGroupsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PersonaGroupsTableTable,
+    PersonaGroupsTableData,
+    $$PersonaGroupsTableTableFilterComposer,
+    $$PersonaGroupsTableTableOrderingComposer,
+    $$PersonaGroupsTableTableAnnotationComposer,
+    $$PersonaGroupsTableTableCreateCompanionBuilder,
+    $$PersonaGroupsTableTableUpdateCompanionBuilder,
+    (
+      PersonaGroupsTableData,
+      BaseReferences<_$AppDatabase, $PersonaGroupsTableTable,
+          PersonaGroupsTableData>
+    ),
+    PersonaGroupsTableData,
+    PrefetchHooks Function()> {
+  $$PersonaGroupsTableTableTableManager(
+      _$AppDatabase db, $PersonaGroupsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonaGroupsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonaGroupsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonaGroupsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonaGroupsTableCompanion(
+            id: id,
+            name: name,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonaGroupsTableCompanion.insert(
+            id: id,
+            name: name,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PersonaGroupsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $PersonaGroupsTableTable,
+    PersonaGroupsTableData,
+    $$PersonaGroupsTableTableFilterComposer,
+    $$PersonaGroupsTableTableOrderingComposer,
+    $$PersonaGroupsTableTableAnnotationComposer,
+    $$PersonaGroupsTableTableCreateCompanionBuilder,
+    $$PersonaGroupsTableTableUpdateCompanionBuilder,
+    (
+      PersonaGroupsTableData,
+      BaseReferences<_$AppDatabase, $PersonaGroupsTableTable,
+          PersonaGroupsTableData>
+    ),
+    PersonaGroupsTableData,
+    PrefetchHooks Function()>;
+typedef $$ChatSessionsTableTableCreateCompanionBuilder
+    = ChatSessionsTableCompanion Function({
+  required String id,
+  required String title,
+  required String personaId,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<bool> isArchived,
+  Value<bool> isPinned,
+  Value<String> tags,
+  Value<int> messageCount,
+  Value<int> totalTokens,
+  Value<String?> config,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
+typedef $$ChatSessionsTableTableUpdateCompanionBuilder
+    = ChatSessionsTableCompanion Function({
+  Value<String> id,
+  Value<String> title,
+  Value<String> personaId,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<bool> isArchived,
+  Value<bool> isPinned,
+  Value<String> tags,
+  Value<int> messageCount,
+  Value<int> totalTokens,
+  Value<String?> config,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
+
+class $$ChatSessionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatSessionsTableTable> {
+  $$ChatSessionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get personaId => $composableBuilder(
+      column: $table.personaId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+      column: $table.isArchived, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+      column: $table.isPinned, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get messageCount => $composableBuilder(
+      column: $table.messageCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get totalTokens => $composableBuilder(
+      column: $table.totalTokens, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnFilters(column));
+}
+
+class $$ChatSessionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatSessionsTableTable> {
+  $$ChatSessionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get personaId => $composableBuilder(
+      column: $table.personaId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+      column: $table.isArchived, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+      column: $table.isPinned, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get messageCount => $composableBuilder(
+      column: $table.messageCount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get totalTokens => $composableBuilder(
+      column: $table.totalTokens, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ChatSessionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatSessionsTableTable> {
+  $$ChatSessionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get personaId =>
+      $composableBuilder(column: $table.personaId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+      column: $table.isArchived, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<int> get messageCount => $composableBuilder(
+      column: $table.messageCount, builder: (column) => column);
+
+  GeneratedColumn<int> get totalTokens => $composableBuilder(
+      column: $table.totalTokens, builder: (column) => column);
+
+  GeneratedColumn<String> get config =>
+      $composableBuilder(column: $table.config, builder: (column) => column);
+
+  GeneratedColumn<String> get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+}
+
+class $$ChatSessionsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ChatSessionsTableTable,
+    ChatSessionsTableData,
+    $$ChatSessionsTableTableFilterComposer,
+    $$ChatSessionsTableTableOrderingComposer,
+    $$ChatSessionsTableTableAnnotationComposer,
+    $$ChatSessionsTableTableCreateCompanionBuilder,
+    $$ChatSessionsTableTableUpdateCompanionBuilder,
+    (
+      ChatSessionsTableData,
+      BaseReferences<_$AppDatabase, $ChatSessionsTableTable,
+          ChatSessionsTableData>
+    ),
+    ChatSessionsTableData,
+    PrefetchHooks Function()> {
+  $$ChatSessionsTableTableTableManager(
+      _$AppDatabase db, $ChatSessionsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatSessionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatSessionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatSessionsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> personaId = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<bool> isArchived = const Value.absent(),
+            Value<bool> isPinned = const Value.absent(),
+            Value<String> tags = const Value.absent(),
+            Value<int> messageCount = const Value.absent(),
+            Value<int> totalTokens = const Value.absent(),
+            Value<String?> config = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatSessionsTableCompanion(
+            id: id,
+            title: title,
+            personaId: personaId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isArchived: isArchived,
+            isPinned: isPinned,
+            tags: tags,
+            messageCount: messageCount,
+            totalTokens: totalTokens,
+            config: config,
+            metadata: metadata,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String title,
+            required String personaId,
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<bool> isArchived = const Value.absent(),
+            Value<bool> isPinned = const Value.absent(),
+            Value<String> tags = const Value.absent(),
+            Value<int> messageCount = const Value.absent(),
+            Value<int> totalTokens = const Value.absent(),
+            Value<String?> config = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatSessionsTableCompanion.insert(
+            id: id,
+            title: title,
+            personaId: personaId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isArchived: isArchived,
+            isPinned: isPinned,
+            tags: tags,
+            messageCount: messageCount,
+            totalTokens: totalTokens,
+            config: config,
+            metadata: metadata,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ChatSessionsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ChatSessionsTableTable,
+    ChatSessionsTableData,
+    $$ChatSessionsTableTableFilterComposer,
+    $$ChatSessionsTableTableOrderingComposer,
+    $$ChatSessionsTableTableAnnotationComposer,
+    $$ChatSessionsTableTableCreateCompanionBuilder,
+    $$ChatSessionsTableTableUpdateCompanionBuilder,
+    (
+      ChatSessionsTableData,
+      BaseReferences<_$AppDatabase, $ChatSessionsTableTable,
+          ChatSessionsTableData>
+    ),
+    ChatSessionsTableData,
+    PrefetchHooks Function()>;
+typedef $$ChatMessagesTableTableCreateCompanionBuilder
+    = ChatMessagesTableCompanion Function({
+  required String id,
+  required String content,
+  required bool isFromUser,
+  required DateTime timestamp,
+  required String chatSessionId,
+  Value<String> type,
+  Value<String> status,
+  Value<String?> metadata,
+  Value<String?> parentMessageId,
+  Value<int?> tokenCount,
+  Value<int> rowid,
+});
+typedef $$ChatMessagesTableTableUpdateCompanionBuilder
+    = ChatMessagesTableCompanion Function({
+  Value<String> id,
+  Value<String> content,
+  Value<bool> isFromUser,
+  Value<DateTime> timestamp,
+  Value<String> chatSessionId,
+  Value<String> type,
+  Value<String> status,
+  Value<String?> metadata,
+  Value<String?> parentMessageId,
+  Value<int?> tokenCount,
+  Value<int> rowid,
+});
+
+class $$ChatMessagesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get chatSessionId => $composableBuilder(
+      column: $table.chatSessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get parentMessageId => $composableBuilder(
+      column: $table.parentMessageId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => ColumnFilters(column));
+}
+
+class $$ChatMessagesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get chatSessionId => $composableBuilder(
+      column: $table.chatSessionId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get parentMessageId => $composableBuilder(
+      column: $table.parentMessageId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ChatMessagesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<String> get chatSessionId => $composableBuilder(
+      column: $table.chatSessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+
+  GeneratedColumn<String> get parentMessageId => $composableBuilder(
+      column: $table.parentMessageId, builder: (column) => column);
+
+  GeneratedColumn<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => column);
+}
+
+class $$ChatMessagesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ChatMessagesTableTable,
+    ChatMessagesTableData,
+    $$ChatMessagesTableTableFilterComposer,
+    $$ChatMessagesTableTableOrderingComposer,
+    $$ChatMessagesTableTableAnnotationComposer,
+    $$ChatMessagesTableTableCreateCompanionBuilder,
+    $$ChatMessagesTableTableUpdateCompanionBuilder,
+    (
+      ChatMessagesTableData,
+      BaseReferences<_$AppDatabase, $ChatMessagesTableTable,
+          ChatMessagesTableData>
+    ),
+    ChatMessagesTableData,
+    PrefetchHooks Function()> {
+  $$ChatMessagesTableTableTableManager(
+      _$AppDatabase db, $ChatMessagesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatMessagesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatMessagesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatMessagesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> content = const Value.absent(),
+            Value<bool> isFromUser = const Value.absent(),
+            Value<DateTime> timestamp = const Value.absent(),
+            Value<String> chatSessionId = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<String?> parentMessageId = const Value.absent(),
+            Value<int?> tokenCount = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatMessagesTableCompanion(
+            id: id,
+            content: content,
+            isFromUser: isFromUser,
+            timestamp: timestamp,
+            chatSessionId: chatSessionId,
+            type: type,
+            status: status,
+            metadata: metadata,
+            parentMessageId: parentMessageId,
+            tokenCount: tokenCount,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String content,
+            required bool isFromUser,
+            required DateTime timestamp,
+            required String chatSessionId,
+            Value<String> type = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<String?> parentMessageId = const Value.absent(),
+            Value<int?> tokenCount = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatMessagesTableCompanion.insert(
+            id: id,
+            content: content,
+            isFromUser: isFromUser,
+            timestamp: timestamp,
+            chatSessionId: chatSessionId,
+            type: type,
+            status: status,
+            metadata: metadata,
+            parentMessageId: parentMessageId,
+            tokenCount: tokenCount,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ChatMessagesTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ChatMessagesTableTable,
+    ChatMessagesTableData,
+    $$ChatMessagesTableTableFilterComposer,
+    $$ChatMessagesTableTableOrderingComposer,
+    $$ChatMessagesTableTableAnnotationComposer,
+    $$ChatMessagesTableTableCreateCompanionBuilder,
+    $$ChatMessagesTableTableUpdateCompanionBuilder,
+    (
+      ChatMessagesTableData,
+      BaseReferences<_$AppDatabase, $ChatMessagesTableTable,
+          ChatMessagesTableData>
+    ),
+    ChatMessagesTableData,
+    PrefetchHooks Function()>;
+typedef $$KnowledgeDocumentsTableTableCreateCompanionBuilder
+    = KnowledgeDocumentsTableCompanion Function({
+  required String id,
+  required String name,
+  required String type,
+  required int size,
+  required String filePath,
+  required String fileHash,
+  Value<int> chunks,
+  Value<String> status,
+  Value<double> indexProgress,
+  required DateTime uploadedAt,
+  Value<DateTime?> processedAt,
+  Value<String?> metadata,
+  Value<String?> errorMessage,
+  Value<int> rowid,
+});
+typedef $$KnowledgeDocumentsTableTableUpdateCompanionBuilder
+    = KnowledgeDocumentsTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> type,
+  Value<int> size,
+  Value<String> filePath,
+  Value<String> fileHash,
+  Value<int> chunks,
+  Value<String> status,
+  Value<double> indexProgress,
+  Value<DateTime> uploadedAt,
+  Value<DateTime?> processedAt,
+  Value<String?> metadata,
+  Value<String?> errorMessage,
+  Value<int> rowid,
+});
+
+class $$KnowledgeDocumentsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $KnowledgeDocumentsTableTable> {
+  $$KnowledgeDocumentsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get size => $composableBuilder(
+      column: $table.size, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileHash => $composableBuilder(
+      column: $table.fileHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chunks => $composableBuilder(
+      column: $table.chunks, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get indexProgress => $composableBuilder(
+      column: $table.indexProgress, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get uploadedAt => $composableBuilder(
+      column: $table.uploadedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage, builder: (column) => ColumnFilters(column));
+}
+
+class $$KnowledgeDocumentsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $KnowledgeDocumentsTableTable> {
+  $$KnowledgeDocumentsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get size => $composableBuilder(
+      column: $table.size, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileHash => $composableBuilder(
+      column: $table.fileHash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chunks => $composableBuilder(
+      column: $table.chunks, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get indexProgress => $composableBuilder(
+      column: $table.indexProgress,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get uploadedAt => $composableBuilder(
+      column: $table.uploadedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+      column: $table.metadata, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$KnowledgeDocumentsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KnowledgeDocumentsTableTable> {
+  $$KnowledgeDocumentsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get size =>
+      $composableBuilder(column: $table.size, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get fileHash =>
+      $composableBuilder(column: $table.fileHash, builder: (column) => column);
+
+  GeneratedColumn<int> get chunks =>
+      $composableBuilder(column: $table.chunks, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<double> get indexProgress => $composableBuilder(
+      column: $table.indexProgress, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get uploadedAt => $composableBuilder(
+      column: $table.uploadedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+      column: $table.errorMessage, builder: (column) => column);
+}
+
+class $$KnowledgeDocumentsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $KnowledgeDocumentsTableTable,
+    KnowledgeDocumentsTableData,
+    $$KnowledgeDocumentsTableTableFilterComposer,
+    $$KnowledgeDocumentsTableTableOrderingComposer,
+    $$KnowledgeDocumentsTableTableAnnotationComposer,
+    $$KnowledgeDocumentsTableTableCreateCompanionBuilder,
+    $$KnowledgeDocumentsTableTableUpdateCompanionBuilder,
+    (
+      KnowledgeDocumentsTableData,
+      BaseReferences<_$AppDatabase, $KnowledgeDocumentsTableTable,
+          KnowledgeDocumentsTableData>
+    ),
+    KnowledgeDocumentsTableData,
+    PrefetchHooks Function()> {
+  $$KnowledgeDocumentsTableTableTableManager(
+      _$AppDatabase db, $KnowledgeDocumentsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KnowledgeDocumentsTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KnowledgeDocumentsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KnowledgeDocumentsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<int> size = const Value.absent(),
+            Value<String> filePath = const Value.absent(),
+            Value<String> fileHash = const Value.absent(),
+            Value<int> chunks = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<double> indexProgress = const Value.absent(),
+            Value<DateTime> uploadedAt = const Value.absent(),
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<String?> errorMessage = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeDocumentsTableCompanion(
+            id: id,
+            name: name,
+            type: type,
+            size: size,
+            filePath: filePath,
+            fileHash: fileHash,
+            chunks: chunks,
+            status: status,
+            indexProgress: indexProgress,
+            uploadedAt: uploadedAt,
+            processedAt: processedAt,
+            metadata: metadata,
+            errorMessage: errorMessage,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String type,
+            required int size,
+            required String filePath,
+            required String fileHash,
+            Value<int> chunks = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<double> indexProgress = const Value.absent(),
+            required DateTime uploadedAt,
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> metadata = const Value.absent(),
+            Value<String?> errorMessage = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeDocumentsTableCompanion.insert(
+            id: id,
+            name: name,
+            type: type,
+            size: size,
+            filePath: filePath,
+            fileHash: fileHash,
+            chunks: chunks,
+            status: status,
+            indexProgress: indexProgress,
+            uploadedAt: uploadedAt,
+            processedAt: processedAt,
+            metadata: metadata,
+            errorMessage: errorMessage,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$KnowledgeDocumentsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $KnowledgeDocumentsTableTable,
+        KnowledgeDocumentsTableData,
+        $$KnowledgeDocumentsTableTableFilterComposer,
+        $$KnowledgeDocumentsTableTableOrderingComposer,
+        $$KnowledgeDocumentsTableTableAnnotationComposer,
+        $$KnowledgeDocumentsTableTableCreateCompanionBuilder,
+        $$KnowledgeDocumentsTableTableUpdateCompanionBuilder,
+        (
+          KnowledgeDocumentsTableData,
+          BaseReferences<_$AppDatabase, $KnowledgeDocumentsTableTable,
+              KnowledgeDocumentsTableData>
+        ),
+        KnowledgeDocumentsTableData,
+        PrefetchHooks Function()>;
+typedef $$KnowledgeChunksTableTableCreateCompanionBuilder
+    = KnowledgeChunksTableCompanion Function({
+  required String id,
+  required String documentId,
+  required String content,
+  required int chunkIndex,
+  required int characterCount,
+  required int tokenCount,
+  Value<String?> embedding,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$KnowledgeChunksTableTableUpdateCompanionBuilder
+    = KnowledgeChunksTableCompanion Function({
+  Value<String> id,
+  Value<String> documentId,
+  Value<String> content,
+  Value<int> chunkIndex,
+  Value<int> characterCount,
+  Value<int> tokenCount,
+  Value<String?> embedding,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$KnowledgeChunksTableTableFilterComposer
+    extends Composer<_$AppDatabase, $KnowledgeChunksTableTable> {
+  $$KnowledgeChunksTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chunkIndex => $composableBuilder(
+      column: $table.chunkIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get characterCount => $composableBuilder(
+      column: $table.characterCount,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get embedding => $composableBuilder(
+      column: $table.embedding, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$KnowledgeChunksTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $KnowledgeChunksTableTable> {
+  $$KnowledgeChunksTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chunkIndex => $composableBuilder(
+      column: $table.chunkIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get characterCount => $composableBuilder(
+      column: $table.characterCount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get embedding => $composableBuilder(
+      column: $table.embedding, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$KnowledgeChunksTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KnowledgeChunksTableTable> {
+  $$KnowledgeChunksTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<int> get chunkIndex => $composableBuilder(
+      column: $table.chunkIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get characterCount => $composableBuilder(
+      column: $table.characterCount, builder: (column) => column);
+
+  GeneratedColumn<int> get tokenCount => $composableBuilder(
+      column: $table.tokenCount, builder: (column) => column);
+
+  GeneratedColumn<String> get embedding =>
+      $composableBuilder(column: $table.embedding, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$KnowledgeChunksTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $KnowledgeChunksTableTable,
+    KnowledgeChunksTableData,
+    $$KnowledgeChunksTableTableFilterComposer,
+    $$KnowledgeChunksTableTableOrderingComposer,
+    $$KnowledgeChunksTableTableAnnotationComposer,
+    $$KnowledgeChunksTableTableCreateCompanionBuilder,
+    $$KnowledgeChunksTableTableUpdateCompanionBuilder,
+    (
+      KnowledgeChunksTableData,
+      BaseReferences<_$AppDatabase, $KnowledgeChunksTableTable,
+          KnowledgeChunksTableData>
+    ),
+    KnowledgeChunksTableData,
+    PrefetchHooks Function()> {
+  $$KnowledgeChunksTableTableTableManager(
+      _$AppDatabase db, $KnowledgeChunksTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KnowledgeChunksTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KnowledgeChunksTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KnowledgeChunksTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> documentId = const Value.absent(),
+            Value<String> content = const Value.absent(),
+            Value<int> chunkIndex = const Value.absent(),
+            Value<int> characterCount = const Value.absent(),
+            Value<int> tokenCount = const Value.absent(),
+            Value<String?> embedding = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeChunksTableCompanion(
+            id: id,
+            documentId: documentId,
+            content: content,
+            chunkIndex: chunkIndex,
+            characterCount: characterCount,
+            tokenCount: tokenCount,
+            embedding: embedding,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String documentId,
+            required String content,
+            required int chunkIndex,
+            required int characterCount,
+            required int tokenCount,
+            Value<String?> embedding = const Value.absent(),
+            required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeChunksTableCompanion.insert(
+            id: id,
+            documentId: documentId,
+            content: content,
+            chunkIndex: chunkIndex,
+            characterCount: characterCount,
+            tokenCount: tokenCount,
+            embedding: embedding,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$KnowledgeChunksTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $KnowledgeChunksTableTable,
+        KnowledgeChunksTableData,
+        $$KnowledgeChunksTableTableFilterComposer,
+        $$KnowledgeChunksTableTableOrderingComposer,
+        $$KnowledgeChunksTableTableAnnotationComposer,
+        $$KnowledgeChunksTableTableCreateCompanionBuilder,
+        $$KnowledgeChunksTableTableUpdateCompanionBuilder,
+        (
+          KnowledgeChunksTableData,
+          BaseReferences<_$AppDatabase, $KnowledgeChunksTableTable,
+              KnowledgeChunksTableData>
+        ),
+        KnowledgeChunksTableData,
+        PrefetchHooks Function()>;
+typedef $$CustomModelsTableTableCreateCompanionBuilder
+    = CustomModelsTableCompanion Function({
+  required String id,
+  required String name,
+  required String modelId,
+  required String provider,
+  Value<String?> description,
+  required String type,
+  Value<int?> contextWindow,
+  Value<int?> maxOutputTokens,
+  Value<bool> supportsStreaming,
+  Value<bool> supportsFunctionCalling,
+  Value<bool> supportsVision,
+  Value<double?> inputPrice,
+  Value<double?> outputPrice,
+  Value<String> currency,
+  Value<String?> capabilities,
+  Value<bool> isBuiltIn,
+  Value<bool> isEnabled,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$CustomModelsTableTableUpdateCompanionBuilder
+    = CustomModelsTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> modelId,
+  Value<String> provider,
+  Value<String?> description,
+  Value<String> type,
+  Value<int?> contextWindow,
+  Value<int?> maxOutputTokens,
+  Value<bool> supportsStreaming,
+  Value<bool> supportsFunctionCalling,
+  Value<bool> supportsVision,
+  Value<double?> inputPrice,
+  Value<double?> outputPrice,
+  Value<String> currency,
+  Value<String?> capabilities,
+  Value<bool> isBuiltIn,
+  Value<bool> isEnabled,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$CustomModelsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomModelsTableTable> {
+  $$CustomModelsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get modelId => $composableBuilder(
+      column: $table.modelId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get provider => $composableBuilder(
+      column: $table.provider, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get contextWindow => $composableBuilder(
+      column: $table.contextWindow, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get maxOutputTokens => $composableBuilder(
+      column: $table.maxOutputTokens,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get supportsStreaming => $composableBuilder(
+      column: $table.supportsStreaming,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get supportsFunctionCalling => $composableBuilder(
+      column: $table.supportsFunctionCalling,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get supportsVision => $composableBuilder(
+      column: $table.supportsVision,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get inputPrice => $composableBuilder(
+      column: $table.inputPrice, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get outputPrice => $composableBuilder(
+      column: $table.outputPrice, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get capabilities => $composableBuilder(
+      column: $table.capabilities, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isBuiltIn => $composableBuilder(
+      column: $table.isBuiltIn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$CustomModelsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomModelsTableTable> {
+  $$CustomModelsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get modelId => $composableBuilder(
+      column: $table.modelId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+      column: $table.provider, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get contextWindow => $composableBuilder(
+      column: $table.contextWindow,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get maxOutputTokens => $composableBuilder(
+      column: $table.maxOutputTokens,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get supportsStreaming => $composableBuilder(
+      column: $table.supportsStreaming,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get supportsFunctionCalling => $composableBuilder(
+      column: $table.supportsFunctionCalling,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get supportsVision => $composableBuilder(
+      column: $table.supportsVision,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get inputPrice => $composableBuilder(
+      column: $table.inputPrice, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get outputPrice => $composableBuilder(
+      column: $table.outputPrice, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get capabilities => $composableBuilder(
+      column: $table.capabilities,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isBuiltIn => $composableBuilder(
+      column: $table.isBuiltIn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CustomModelsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomModelsTableTable> {
+  $$CustomModelsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get modelId =>
+      $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get contextWindow => $composableBuilder(
+      column: $table.contextWindow, builder: (column) => column);
+
+  GeneratedColumn<int> get maxOutputTokens => $composableBuilder(
+      column: $table.maxOutputTokens, builder: (column) => column);
+
+  GeneratedColumn<bool> get supportsStreaming => $composableBuilder(
+      column: $table.supportsStreaming, builder: (column) => column);
+
+  GeneratedColumn<bool> get supportsFunctionCalling => $composableBuilder(
+      column: $table.supportsFunctionCalling, builder: (column) => column);
+
+  GeneratedColumn<bool> get supportsVision => $composableBuilder(
+      column: $table.supportsVision, builder: (column) => column);
+
+  GeneratedColumn<double> get inputPrice => $composableBuilder(
+      column: $table.inputPrice, builder: (column) => column);
+
+  GeneratedColumn<double> get outputPrice => $composableBuilder(
+      column: $table.outputPrice, builder: (column) => column);
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get capabilities => $composableBuilder(
+      column: $table.capabilities, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBuiltIn =>
+      $composableBuilder(column: $table.isBuiltIn, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CustomModelsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CustomModelsTableTable,
+    CustomModelsTableData,
+    $$CustomModelsTableTableFilterComposer,
+    $$CustomModelsTableTableOrderingComposer,
+    $$CustomModelsTableTableAnnotationComposer,
+    $$CustomModelsTableTableCreateCompanionBuilder,
+    $$CustomModelsTableTableUpdateCompanionBuilder,
+    (
+      CustomModelsTableData,
+      BaseReferences<_$AppDatabase, $CustomModelsTableTable,
+          CustomModelsTableData>
+    ),
+    CustomModelsTableData,
+    PrefetchHooks Function()> {
+  $$CustomModelsTableTableTableManager(
+      _$AppDatabase db, $CustomModelsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomModelsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomModelsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomModelsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> modelId = const Value.absent(),
+            Value<String> provider = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<int?> contextWindow = const Value.absent(),
+            Value<int?> maxOutputTokens = const Value.absent(),
+            Value<bool> supportsStreaming = const Value.absent(),
+            Value<bool> supportsFunctionCalling = const Value.absent(),
+            Value<bool> supportsVision = const Value.absent(),
+            Value<double?> inputPrice = const Value.absent(),
+            Value<double?> outputPrice = const Value.absent(),
+            Value<String> currency = const Value.absent(),
+            Value<String?> capabilities = const Value.absent(),
+            Value<bool> isBuiltIn = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CustomModelsTableCompanion(
+            id: id,
+            name: name,
+            modelId: modelId,
+            provider: provider,
+            description: description,
+            type: type,
+            contextWindow: contextWindow,
+            maxOutputTokens: maxOutputTokens,
+            supportsStreaming: supportsStreaming,
+            supportsFunctionCalling: supportsFunctionCalling,
+            supportsVision: supportsVision,
+            inputPrice: inputPrice,
+            outputPrice: outputPrice,
+            currency: currency,
+            capabilities: capabilities,
+            isBuiltIn: isBuiltIn,
+            isEnabled: isEnabled,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String modelId,
+            required String provider,
+            Value<String?> description = const Value.absent(),
+            required String type,
+            Value<int?> contextWindow = const Value.absent(),
+            Value<int?> maxOutputTokens = const Value.absent(),
+            Value<bool> supportsStreaming = const Value.absent(),
+            Value<bool> supportsFunctionCalling = const Value.absent(),
+            Value<bool> supportsVision = const Value.absent(),
+            Value<double?> inputPrice = const Value.absent(),
+            Value<double?> outputPrice = const Value.absent(),
+            Value<String> currency = const Value.absent(),
+            Value<String?> capabilities = const Value.absent(),
+            Value<bool> isBuiltIn = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CustomModelsTableCompanion.insert(
+            id: id,
+            name: name,
+            modelId: modelId,
+            provider: provider,
+            description: description,
+            type: type,
+            contextWindow: contextWindow,
+            maxOutputTokens: maxOutputTokens,
+            supportsStreaming: supportsStreaming,
+            supportsFunctionCalling: supportsFunctionCalling,
+            supportsVision: supportsVision,
+            inputPrice: inputPrice,
+            outputPrice: outputPrice,
+            currency: currency,
+            capabilities: capabilities,
+            isBuiltIn: isBuiltIn,
+            isEnabled: isEnabled,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CustomModelsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CustomModelsTableTable,
+    CustomModelsTableData,
+    $$CustomModelsTableTableFilterComposer,
+    $$CustomModelsTableTableOrderingComposer,
+    $$CustomModelsTableTableAnnotationComposer,
+    $$CustomModelsTableTableCreateCompanionBuilder,
+    $$CustomModelsTableTableUpdateCompanionBuilder,
+    (
+      CustomModelsTableData,
+      BaseReferences<_$AppDatabase, $CustomModelsTableTable,
+          CustomModelsTableData>
+    ),
+    CustomModelsTableData,
+    PrefetchHooks Function()>;
+
+class $AppDatabaseManager {
+  final _$AppDatabase _db;
+  $AppDatabaseManager(this._db);
+  $$LlmConfigsTableTableTableManager get llmConfigsTable =>
+      $$LlmConfigsTableTableTableManager(_db, _db.llmConfigsTable);
+  $$PersonasTableTableTableManager get personasTable =>
+      $$PersonasTableTableTableManager(_db, _db.personasTable);
+  $$PersonaGroupsTableTableTableManager get personaGroupsTable =>
+      $$PersonaGroupsTableTableTableManager(_db, _db.personaGroupsTable);
+  $$ChatSessionsTableTableTableManager get chatSessionsTable =>
+      $$ChatSessionsTableTableTableManager(_db, _db.chatSessionsTable);
+  $$ChatMessagesTableTableTableManager get chatMessagesTable =>
+      $$ChatMessagesTableTableTableManager(_db, _db.chatMessagesTable);
+  $$KnowledgeDocumentsTableTableTableManager get knowledgeDocumentsTable =>
+      $$KnowledgeDocumentsTableTableTableManager(
+          _db, _db.knowledgeDocumentsTable);
+  $$KnowledgeChunksTableTableTableManager get knowledgeChunksTable =>
+      $$KnowledgeChunksTableTableTableManager(_db, _db.knowledgeChunksTable);
+  $$CustomModelsTableTableTableManager get customModelsTable =>
+      $$CustomModelsTableTableTableManager(_db, _db.customModelsTable);
+}

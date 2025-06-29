@@ -1,0 +1,117 @@
+name: ai_assistant
+description: "模块化跨平台AI助手 - 支持多AI供应商、RAG知识库和智能体管理"
+publish_to: 'none'
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+
+  # 状态管理与依赖注入
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # 导航
+  go_router: ^14.2.7
+
+  # 网络请求
+  dio: ^5.4.3+1
+  http: ^1.2.0
+
+  # 加密和哈希
+  crypto: ^3.0.3
+
+  # 本地持久化 - 关系型数据库
+  drift: ^2.18.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.3
+  path: ^1.9.0
+
+  # 本地持久化 - 向量数据库
+  objectbox: ^4.0.2
+  objectbox_flutter_libs: ^4.0.2
+
+  # 简单键值存储
+  shared_preferences: ^2.5.3
+
+  # 数据模型与序列化
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # AI供应商SDK
+  dart_openai: ^5.1.0
+  google_generative_ai: ^0.4.3
+  anthropic_sdk_dart: ^0.2.1
+
+  # 文件处理 (知识库)
+  file_picker: ^8.0.6
+
+  # 加密 (API密钥安全存储)
+  encrypt: ^5.0.3
+
+  # 后台服务
+  flutter_background_service: ^5.0.5
+
+  # 工具类
+  uuid: ^4.4.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+  # 代码生成
+  build_runner: ^2.4.9
+  drift_dev: ^2.18.0
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+  objectbox_generator: ^4.0.2
+
+  # Windows打包
+  msix: ^3.16.7
+
+# MSIX配置 (Windows发布)
+msix_config:
+  display_name: AI Assistant
+  publisher_display_name: AI Assistant Team
+  identity_name: com.aiassistant.app
+  msix_version: 1.0.0.0
+  logo_path: assets/images/logo.png
+  capabilities: 'internetClient,microphone,webcam'
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/data/
