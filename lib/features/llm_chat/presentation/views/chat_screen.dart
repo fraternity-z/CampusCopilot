@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/chat_message.dart';
-import '../../../llm_chat/domain/services/model_management_service.dart';
-import '../providers/chat_model_provider.dart';
 import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/domain/entities/app_settings.dart';
@@ -49,11 +47,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           automaticallyImplyLeading: false,
           title: const Text('AI 助手'),
           actions: [
-            // 模型选择按钮
+            // 智能体选择按钮
             IconButton(
-              icon: const Icon(Icons.extension),
-              onPressed: _showModelSelector,
-              tooltip: '选择模型',
+              icon: const Icon(Icons.person),
+              onPressed: _showPersonaSelector,
+              tooltip: '选择智能体',
+            ),
+            // 聊天历史按钮
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: _showChatHistory,
+              tooltip: '聊天历史',
             ),
             // 设置按钮
             IconButton(
@@ -388,68 +392,144 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  /// 显示设置
-  void _showSettings() {
-    context.push('/settings');
-  }
-
-  /// 显示模型选择弹窗
-  void _showModelSelector() {
-    final provider = ref.read(currentAIProviderProvider);
-    if (provider == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请先在设置中配置 AI 服务')));
-      return;
-    }
-
-    final providerKey = provider.name; // openai / google / anthropic
-
+  /// 显示智能体选择器
+  void _showPersonaSelector() {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final asyncModels = ref.watch(
-              modelsByProviderProvider(providerKey),
-            );
-            final selected = ref.watch(selectedChatModelProvider);
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final personas = ref.watch(personaListProvider);
+          final selectedPersona = ref.watch(selectedPersonaProvider);
 
-            return asyncModels.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('加载模型失败: $e'),
-              ),
-              data: (models) {
-                return ListView(
-                  children: [
-                    const ListTile(
-                      title: Text(
-                        '选择对话使用的模型',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '选择智能体',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ...personas.map(
+                  (persona) => ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      child: Text(
+                        persona.avatar ?? '🤖',
+                        style: const TextStyle(fontSize: 20),
                       ),
                     ),
-                    ...models.map(
-                      (m) => RadioListTile<String>(
-                        title: Text(m.id),
-                        value: m.id,
-                        groupValue: selected,
-                        onChanged: (value) {
-                          ref.read(selectedChatModelProvider.notifier).state =
-                              value;
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
-      },
+                    title: Text(persona.name),
+                    subtitle: Text(persona.description),
+                    trailing: selectedPersona?.id == persona.id
+                        ? Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () {
+                      ref
+                          .read(personaProvider.notifier)
+                          .selectPersona(persona.id);
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('已切换到 ${persona.name}')),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  /// 显示聊天历史
+  void _showChatHistory() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('聊天历史'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: Consumer(
+            builder: (context, ref, child) {
+              final chatState = ref.watch(chatProvider);
+              final messages = chatState.messages;
+
+              if (messages.isEmpty) {
+                return const Center(child: Text('暂无聊天记录'));
+              }
+
+              return ListView.builder(
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final message = messages[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: message.isFromUser
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.secondary,
+                      child: Icon(
+                        message.isFromUser ? Icons.person : Icons.smart_toy,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    title: Text(
+                      message.isFromUser ? '用户' : 'AI助手',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      message.content.length > 50
+                          ? '${message.content.substring(0, 50)}...'
+                          : message.content,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Text(
+                      '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(chatProvider.notifier).clearChat();
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('聊天记录已清空')));
+            },
+            child: const Text('清空记录'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示设置
+  void _showSettings() {
+    context.go('/settings');
   }
 
   /// 格式化时间戳
