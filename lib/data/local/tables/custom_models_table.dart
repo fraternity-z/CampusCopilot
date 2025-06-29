@@ -14,6 +14,10 @@ class CustomModelsTable extends Table {
   /// 模型ID（API调用时使用）
   TextColumn get modelId => text()();
 
+  /// 所属 LLM 配置 ID（llm_configs_table.id）
+  /// 为空表示旧数据或与具体配置无关
+  TextColumn get configId => text().nullable()();
+
   /// 所属提供商 (openai, google, anthropic)
   TextColumn get provider => text()();
 

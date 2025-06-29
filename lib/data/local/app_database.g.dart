@@ -4123,6 +4123,12 @@ class $CustomModelsTableTable extends CustomModelsTable
   late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
       'model_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _configIdMeta =
+      const VerificationMeta('configId');
+  @override
+  late final GeneratedColumn<String> configId = GeneratedColumn<String>(
+      'config_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _providerMeta =
       const VerificationMeta('provider');
   @override
@@ -4245,6 +4251,7 @@ class $CustomModelsTableTable extends CustomModelsTable
         id,
         name,
         modelId,
+        configId,
         provider,
         description,
         type,
@@ -4289,6 +4296,10 @@ class $CustomModelsTableTable extends CustomModelsTable
           modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta));
     } else if (isInserting) {
       context.missing(_modelIdMeta);
+    }
+    if (data.containsKey('config_id')) {
+      context.handle(_configIdMeta,
+          configId.isAcceptableOrUnknown(data['config_id']!, _configIdMeta));
     }
     if (data.containsKey('provider')) {
       context.handle(_providerMeta,
@@ -4398,6 +4409,8 @@ class $CustomModelsTableTable extends CustomModelsTable
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       modelId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}model_id'])!,
+      configId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}config_id']),
       provider: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}provider'])!,
       description: attachedDatabase.typeMapping
@@ -4451,6 +4464,10 @@ class CustomModelsTableData extends DataClass
   /// 模型ID（API调用时使用）
   final String modelId;
 
+  /// 所属 LLM 配置 ID（llm_configs_table.id）
+  /// 为空表示旧数据或与具体配置无关
+  final String? configId;
+
   /// 所属提供商 (openai, google, anthropic)
   final String provider;
 
@@ -4502,6 +4519,7 @@ class CustomModelsTableData extends DataClass
       {required this.id,
       required this.name,
       required this.modelId,
+      this.configId,
       required this.provider,
       this.description,
       required this.type,
@@ -4524,6 +4542,9 @@ class CustomModelsTableData extends DataClass
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['model_id'] = Variable<String>(modelId);
+    if (!nullToAbsent || configId != null) {
+      map['config_id'] = Variable<String>(configId);
+    }
     map['provider'] = Variable<String>(provider);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
@@ -4560,6 +4581,9 @@ class CustomModelsTableData extends DataClass
       id: Value(id),
       name: Value(name),
       modelId: Value(modelId),
+      configId: configId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(configId),
       provider: Value(provider),
       description: description == null && nullToAbsent
           ? const Value.absent()
@@ -4598,6 +4622,7 @@ class CustomModelsTableData extends DataClass
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       modelId: serializer.fromJson<String>(json['modelId']),
+      configId: serializer.fromJson<String?>(json['configId']),
       provider: serializer.fromJson<String>(json['provider']),
       description: serializer.fromJson<String?>(json['description']),
       type: serializer.fromJson<String>(json['type']),
@@ -4624,6 +4649,7 @@ class CustomModelsTableData extends DataClass
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'modelId': serializer.toJson<String>(modelId),
+      'configId': serializer.toJson<String?>(configId),
       'provider': serializer.toJson<String>(provider),
       'description': serializer.toJson<String?>(description),
       'type': serializer.toJson<String>(type),
@@ -4648,6 +4674,7 @@ class CustomModelsTableData extends DataClass
           {String? id,
           String? name,
           String? modelId,
+          Value<String?> configId = const Value.absent(),
           String? provider,
           Value<String?> description = const Value.absent(),
           String? type,
@@ -4668,6 +4695,7 @@ class CustomModelsTableData extends DataClass
         id: id ?? this.id,
         name: name ?? this.name,
         modelId: modelId ?? this.modelId,
+        configId: configId.present ? configId.value : this.configId,
         provider: provider ?? this.provider,
         description: description.present ? description.value : this.description,
         type: type ?? this.type,
@@ -4695,6 +4723,7 @@ class CustomModelsTableData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      configId: data.configId.present ? data.configId.value : this.configId,
       provider: data.provider.present ? data.provider.value : this.provider,
       description:
           data.description.present ? data.description.value : this.description,
@@ -4735,6 +4764,7 @@ class CustomModelsTableData extends DataClass
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('modelId: $modelId, ')
+          ..write('configId: $configId, ')
           ..write('provider: $provider, ')
           ..write('description: $description, ')
           ..write('type: $type, ')
@@ -4760,6 +4790,7 @@ class CustomModelsTableData extends DataClass
       id,
       name,
       modelId,
+      configId,
       provider,
       description,
       type,
@@ -4783,6 +4814,7 @@ class CustomModelsTableData extends DataClass
           other.id == this.id &&
           other.name == this.name &&
           other.modelId == this.modelId &&
+          other.configId == this.configId &&
           other.provider == this.provider &&
           other.description == this.description &&
           other.type == this.type &&
@@ -4806,6 +4838,7 @@ class CustomModelsTableCompanion
   final Value<String> id;
   final Value<String> name;
   final Value<String> modelId;
+  final Value<String?> configId;
   final Value<String> provider;
   final Value<String?> description;
   final Value<String> type;
@@ -4827,6 +4860,7 @@ class CustomModelsTableCompanion
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.modelId = const Value.absent(),
+    this.configId = const Value.absent(),
     this.provider = const Value.absent(),
     this.description = const Value.absent(),
     this.type = const Value.absent(),
@@ -4849,6 +4883,7 @@ class CustomModelsTableCompanion
     required String id,
     required String name,
     required String modelId,
+    this.configId = const Value.absent(),
     required String provider,
     this.description = const Value.absent(),
     required String type,
@@ -4877,6 +4912,7 @@ class CustomModelsTableCompanion
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? modelId,
+    Expression<String>? configId,
     Expression<String>? provider,
     Expression<String>? description,
     Expression<String>? type,
@@ -4899,6 +4935,7 @@ class CustomModelsTableCompanion
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (modelId != null) 'model_id': modelId,
+      if (configId != null) 'config_id': configId,
       if (provider != null) 'provider': provider,
       if (description != null) 'description': description,
       if (type != null) 'type': type,
@@ -4924,6 +4961,7 @@ class CustomModelsTableCompanion
       {Value<String>? id,
       Value<String>? name,
       Value<String>? modelId,
+      Value<String?>? configId,
       Value<String>? provider,
       Value<String?>? description,
       Value<String>? type,
@@ -4945,6 +4983,7 @@ class CustomModelsTableCompanion
       id: id ?? this.id,
       name: name ?? this.name,
       modelId: modelId ?? this.modelId,
+      configId: configId ?? this.configId,
       provider: provider ?? this.provider,
       description: description ?? this.description,
       type: type ?? this.type,
@@ -4977,6 +5016,9 @@ class CustomModelsTableCompanion
     }
     if (modelId.present) {
       map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (configId.present) {
+      map['config_id'] = Variable<String>(configId.value);
     }
     if (provider.present) {
       map['provider'] = Variable<String>(provider.value);
@@ -5039,6 +5081,7 @@ class CustomModelsTableCompanion
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('modelId: $modelId, ')
+          ..write('configId: $configId, ')
           ..write('provider: $provider, ')
           ..write('description: $description, ')
           ..write('type: $type, ')
@@ -6982,6 +7025,7 @@ typedef $$CustomModelsTableTableCreateCompanionBuilder
   required String id,
   required String name,
   required String modelId,
+  Value<String?> configId,
   required String provider,
   Value<String?> description,
   required String type,
@@ -7005,6 +7049,7 @@ typedef $$CustomModelsTableTableUpdateCompanionBuilder
   Value<String> id,
   Value<String> name,
   Value<String> modelId,
+  Value<String?> configId,
   Value<String> provider,
   Value<String?> description,
   Value<String> type,
@@ -7041,6 +7086,9 @@ class $$CustomModelsTableTableFilterComposer
 
   ColumnFilters<String> get modelId => $composableBuilder(
       column: $table.modelId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get configId => $composableBuilder(
+      column: $table.configId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get provider => $composableBuilder(
       column: $table.provider, builder: (column) => ColumnFilters(column));
@@ -7112,6 +7160,9 @@ class $$CustomModelsTableTableOrderingComposer
 
   ColumnOrderings<String> get modelId => $composableBuilder(
       column: $table.modelId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get configId => $composableBuilder(
+      column: $table.configId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get provider => $composableBuilder(
       column: $table.provider, builder: (column) => ColumnOrderings(column));
@@ -7185,6 +7236,9 @@ class $$CustomModelsTableTableAnnotationComposer
 
   GeneratedColumn<String> get modelId =>
       $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get configId =>
+      $composableBuilder(column: $table.configId, builder: (column) => column);
 
   GeneratedColumn<String> get provider =>
       $composableBuilder(column: $table.provider, builder: (column) => column);
@@ -7267,6 +7321,7 @@ class $$CustomModelsTableTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> modelId = const Value.absent(),
+            Value<String?> configId = const Value.absent(),
             Value<String> provider = const Value.absent(),
             Value<String?> description = const Value.absent(),
             Value<String> type = const Value.absent(),
@@ -7289,6 +7344,7 @@ class $$CustomModelsTableTableTableManager extends RootTableManager<
             id: id,
             name: name,
             modelId: modelId,
+            configId: configId,
             provider: provider,
             description: description,
             type: type,
@@ -7311,6 +7367,7 @@ class $$CustomModelsTableTableTableManager extends RootTableManager<
             required String id,
             required String name,
             required String modelId,
+            Value<String?> configId = const Value.absent(),
             required String provider,
             Value<String?> description = const Value.absent(),
             required String type,
@@ -7333,6 +7390,7 @@ class $$CustomModelsTableTableTableManager extends RootTableManager<
             id: id,
             name: name,
             modelId: modelId,
+            configId: configId,
             provider: provider,
             description: description,
             type: type,

@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -50,9 +50,20 @@ class AppDatabase extends _$AppDatabase {
         await _insertDefaultData();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // 处理数据库升级
         if (from < 2) {
+          // 旧版本缺失自定义模型表与分组表，一并创建
           await m.createTable(personaGroupsTable);
+          await m.createTable(customModelsTable);
+        }
+
+        if (from < 3) {
+          // 先确保表存在（早期版本可能遗漏该表）
+          try {
+            await m.addColumn(customModelsTable, customModelsTable.configId);
+          } catch (_) {
+            // 若表不存在（或其它 ALTER 失败），直接创建整张表
+            await m.createTable(customModelsTable);
+          }
         }
       },
       beforeOpen: (details) async {
@@ -375,6 +386,13 @@ class AppDatabase extends _$AppDatabase {
     return batch((batch) {
       batch.insertAllOnConflictUpdate(customModelsTable, models);
     });
+  }
+
+  /// 根据配置ID获取自定义模型
+  Future<List<CustomModelsTableData>> getCustomModelsByConfig(String configId) {
+    return (select(
+      customModelsTable,
+    )..where((t) => t.configId.equals(configId))).get();
   }
 }
 

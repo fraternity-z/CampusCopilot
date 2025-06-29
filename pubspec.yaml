@@ -50,7 +50,7 @@ dependencies:
 
   # 本地持久化 - 关系型数据库
   drift: ^2.18.0
-  sqlite3_flutter_libs: ^0.5.24
+  sqlite3_flutter_libs: ^0.5.34
   path_provider: ^2.1.3
   path: ^1.9.0
 

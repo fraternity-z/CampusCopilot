@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/persona.dart';
 import '../providers/persona_provider.dart';
+import '../../../llm_chat/domain/services/model_management_service.dart';
 
 /// 智能体编辑界面
 ///
@@ -191,20 +192,56 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
 
             const SizedBox(height: 16),
 
-            // 模型选择
-            DropdownButtonFormField<String>(
-              value: _selectedModel,
-              decoration: const InputDecoration(
-                labelText: '模型',
-                border: OutlineInputBorder(),
-              ),
-              items: _getAvailableModels().map((model) {
-                return DropdownMenuItem(value: model, child: Text(model));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedModel = value!;
-                });
+            // 模型选择（动态加载）
+            Consumer(
+              builder: (context, ref, _) {
+                final providerKey = _selectedProvider.toLowerCase();
+                final asyncModels = ref.watch(
+                  modelsByProviderProvider(providerKey),
+                );
+
+                return asyncModels.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, st) => DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: '模型',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _selectedModel,
+                    items: [
+                      DropdownMenuItem(
+                        value: _selectedModel,
+                        child: Text(_selectedModel),
+                      ),
+                    ],
+                    onChanged: null,
+                  ),
+                  data: (models) {
+                    final ids = models.map((m) => m.id).toList();
+                    if (!ids.contains(_selectedModel)) {
+                      _selectedModel = ids.isNotEmpty ? ids.first : '';
+                    }
+                    return DropdownButtonFormField<String>(
+                      value: _selectedModel.isEmpty ? null : _selectedModel,
+                      decoration: const InputDecoration(
+                        labelText: '模型',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ids
+                          .map(
+                            (id) =>
+                                DropdownMenuItem(value: id, child: Text(id)),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedModel = value ?? '';
+                        });
+                      },
+                    );
+                  },
+                );
               },
             ),
           ],
@@ -381,24 +418,8 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
 
   /// 更新可用模型
   void _updateAvailableModels() {
-    final models = _getAvailableModels();
-    if (!models.contains(_selectedModel)) {
-      _selectedModel = models.first;
-    }
-  }
-
-  /// 获取可用模型列表
-  List<String> _getAvailableModels() {
-    switch (_selectedProvider) {
-      case 'OpenAI':
-        return ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'];
-      case 'Google':
-        return ['gemini-pro', 'gemini-pro-vision'];
-      case 'Anthropic':
-        return ['claude-3-sonnet', 'claude-3-opus', 'claude-3-haiku'];
-      default:
-        return ['gpt-3.5-turbo'];
-    }
+    // 触发 Consumer 重建即可
+    setState(() {});
   }
 
   /// 显示提示词模板

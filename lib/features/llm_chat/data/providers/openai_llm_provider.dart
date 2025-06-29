@@ -33,35 +33,45 @@ class OpenAiLlmProvider extends LlmProvider {
   @override
   Future<List<ModelInfo>> listModels() async {
     try {
-      // 返回预定义的模型列表，避免API调用问题
+      // 调用 OpenAI 列出模型 API
+      final models = await OpenAI.instance.model.list();
+
+      // 仅取可用的模型 id，生成 ModelInfo（其它字段用默认）
+      final List<ModelInfo> result = models.map((m) {
+        return ModelInfo(
+          id: m.id,
+          name: m.id, // 默认显示名称与 id 相同，后续可编辑
+          type: ModelType.chat,
+          supportsStreaming: true,
+        );
+      }).toList();
+
+      // 若 API 返回空，降级到静态列表
+      if (result.isEmpty) throw Exception('empty');
+
+      return result;
+    } catch (_) {
+      // 返回预定义的少量静态模型作为兜底
       return [
         const ModelInfo(
           id: 'gpt-3.5-turbo',
-          name: 'GPT-3.5 Turbo',
+          name: 'gpt-3.5-turbo',
           type: ModelType.chat,
-          contextWindow: 4096,
           supportsStreaming: true,
-          supportsFunctionCalling: true,
         ),
         const ModelInfo(
-          id: 'gpt-4',
-          name: 'GPT-4',
+          id: 'gpt-4o',
+          name: 'gpt-4o',
           type: ModelType.chat,
-          contextWindow: 8192,
           supportsStreaming: true,
-          supportsFunctionCalling: true,
         ),
         const ModelInfo(
           id: 'text-embedding-3-small',
-          name: 'Text Embedding 3 Small',
+          name: 'text-embedding-3-small',
           type: ModelType.embedding,
-          contextWindow: 8191,
           supportsStreaming: false,
-          supportsFunctionCalling: false,
         ),
       ];
-    } catch (e) {
-      throw ApiException('获取模型列表失败: ${e.toString()}');
     }
   }
 

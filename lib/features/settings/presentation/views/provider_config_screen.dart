@@ -8,6 +8,7 @@ import '../../../llm_chat/domain/providers/llm_provider.dart';
 import '../../../llm_chat/domain/services/model_management_service.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
+import '../widgets/select_model_dialog.dart';
 
 /// AI提供商配置页面
 class ProviderConfigScreen extends ConsumerStatefulWidget {
@@ -410,7 +411,16 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
   Future<void> _loadModels() async {
     try {
       final service = ref.read(modelManagementServiceProvider);
-      final models = await service.getModelsByProvider(widget.providerId);
+      late List<ModelInfo> models;
+      if (_existingConfig != null) {
+        models = await service.getModelsByConfig(_existingConfig!.id);
+        if (models.isEmpty) {
+          // 回退按 provider 查询（旧数据或未绑定配置的模型）
+          models = await service.getModelsByProvider(widget.providerId);
+        }
+      } else {
+        models = await service.getModelsByProvider(widget.providerId);
+      }
 
       setState(() {
         _availableModels = models;
@@ -498,38 +508,39 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
         updatedAt: DateTime.now(),
       );
 
-      final models = await service.fetchModelsFromAPI(config);
+      // 先获取模型列表
+      final allModels = await service.fetchModelsFromAPI(config);
 
-      // 同步到数据库
-      for (final model in models) {
-        try {
-          await service.addCustomModel(
-            name: model.name,
-            modelId: model.id,
-            provider: widget.providerId,
-            description: model.description,
-            type: model.type,
-            contextWindow: model.contextWindow,
-            maxOutputTokens: model.maxOutputTokens,
-            supportsStreaming: model.supportsStreaming,
-            supportsFunctionCalling: model.supportsFunctionCalling,
-            supportsVision: model.supportsVision,
-            inputPrice: model.pricing?.inputPrice,
-            outputPrice: model.pricing?.outputPrice,
-            currency: model.pricing?.currency ?? 'USD',
-            capabilities: model.capabilities,
-          );
-        } catch (e) {
-          // 忽略重复模型错误
+      if (!mounted) return;
+
+      // 弹出选择对话框
+      final selected = await showDialog<List<ModelInfo>>(
+        context: context,
+        builder: (ctx) => SelectModelDialog(models: allModels),
+      );
+
+      if (selected != null && selected.isNotEmpty) {
+        for (final model in selected) {
+          try {
+            await service.addCustomModel(
+              name: model.name.isEmpty ? model.id : model.name,
+              modelId: model.id,
+              provider: widget.providerId,
+              type: model.type,
+              configId: _existingConfig?.id,
+            );
+          } catch (_) {
+            // ignore dup
+          }
         }
-      }
 
-      await _loadModels();
+        await _loadModels();
 
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('成功获取 ${models.length} 个模型')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('已添加 ${selected.length} 个模型')));
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -568,6 +579,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       context: context,
       builder: (context) => ModelEditDialog(
         providerId: widget.providerId,
+        configId: _existingConfig?.id ?? '',
         model: model,
         onSaved: _loadModels,
       ),
@@ -593,6 +605,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
         outputPrice: model.pricing?.outputPrice,
         currency: model.pricing?.currency ?? 'USD',
         capabilities: model.capabilities,
+        configId: _existingConfig?.id,
       );
       await _loadModels();
     } catch (e) {
@@ -687,12 +700,14 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 /// 模型编辑对话框
 class ModelEditDialog extends ConsumerStatefulWidget {
   final String providerId;
+  final String? configId;
   final ModelInfo? model;
   final VoidCallback onSaved;
 
   const ModelEditDialog({
     super.key,
     required this.providerId,
+    this.configId,
     this.model,
     required this.onSaved,
   });
@@ -705,16 +720,7 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _modelIdController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _contextWindowController = TextEditingController();
-  final _maxOutputTokensController = TextEditingController();
-  final _inputPriceController = TextEditingController();
-  final _outputPriceController = TextEditingController();
-
   ModelType _selectedType = ModelType.chat;
-  bool _supportsStreaming = true;
-  bool _supportsFunctionCalling = false;
-  bool _supportsVision = false;
 
   @override
   void initState() {
@@ -722,19 +728,7 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
     if (widget.model != null) {
       _nameController.text = widget.model!.name;
       _modelIdController.text = widget.model!.id;
-      _descriptionController.text = widget.model!.description ?? '';
-      _contextWindowController.text =
-          widget.model!.contextWindow?.toString() ?? '';
-      _maxOutputTokensController.text =
-          widget.model!.maxOutputTokens?.toString() ?? '';
-      _inputPriceController.text =
-          widget.model!.pricing?.inputPrice?.toString() ?? '';
-      _outputPriceController.text =
-          widget.model!.pricing?.outputPrice?.toString() ?? '';
       _selectedType = widget.model!.type;
-      _supportsStreaming = widget.model!.supportsStreaming;
-      _supportsFunctionCalling = widget.model!.supportsFunctionCalling;
-      _supportsVision = widget.model!.supportsVision;
     }
   }
 
@@ -764,12 +758,6 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
                       value?.isEmpty == true ? '请输入模型ID' : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: '描述'),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
                 DropdownButtonFormField<ModelType>(
                   value: _selectedType,
                   decoration: const InputDecoration(labelText: '模型类型'),
@@ -780,67 +768,6 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
                     );
                   }).toList(),
                   onChanged: (value) => setState(() => _selectedType = value!),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _contextWindowController,
-                        decoration: const InputDecoration(labelText: '上下文窗口'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _maxOutputTokensController,
-                        decoration: const InputDecoration(
-                          labelText: '最大输出Token',
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _inputPriceController,
-                        decoration: const InputDecoration(labelText: '输入价格'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _outputPriceController,
-                        decoration: const InputDecoration(labelText: '输出价格'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  title: const Text('支持流式响应'),
-                  value: _supportsStreaming,
-                  onChanged: (value) =>
-                      setState(() => _supportsStreaming = value!),
-                ),
-                CheckboxListTile(
-                  title: const Text('支持函数调用'),
-                  value: _supportsFunctionCalling,
-                  onChanged: (value) =>
-                      setState(() => _supportsFunctionCalling = value!),
-                ),
-                CheckboxListTile(
-                  title: const Text('支持视觉输入'),
-                  value: _supportsVision,
-                  onChanged: (value) =>
-                      setState(() => _supportsVision = value!),
                 ),
               ],
             ),
@@ -857,21 +784,6 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
     );
   }
 
-  String _getModelTypeName(ModelType type) {
-    switch (type) {
-      case ModelType.chat:
-        return '聊天模型';
-      case ModelType.embedding:
-        return '嵌入模型';
-      case ModelType.multimodal:
-        return '多模态模型';
-      case ModelType.imageGeneration:
-        return '图像生成';
-      case ModelType.speech:
-        return '语音模型';
-    }
-  }
-
   Future<void> _saveModel() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -883,50 +795,16 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
           name: _nameController.text,
           modelId: _modelIdController.text,
           provider: widget.providerId,
-          description: _descriptionController.text.isEmpty
-              ? null
-              : _descriptionController.text,
+          configId: widget.configId,
           type: _selectedType,
-          contextWindow: _contextWindowController.text.isEmpty
-              ? null
-              : int.tryParse(_contextWindowController.text),
-          maxOutputTokens: _maxOutputTokensController.text.isEmpty
-              ? null
-              : int.tryParse(_maxOutputTokensController.text),
-          supportsStreaming: _supportsStreaming,
-          supportsFunctionCalling: _supportsFunctionCalling,
-          supportsVision: _supportsVision,
-          inputPrice: _inputPriceController.text.isEmpty
-              ? null
-              : double.tryParse(_inputPriceController.text),
-          outputPrice: _outputPriceController.text.isEmpty
-              ? null
-              : double.tryParse(_outputPriceController.text),
         );
       } else {
         await service.updateCustomModel(
           id: widget.model!.id,
           name: _nameController.text,
           modelId: _modelIdController.text,
-          description: _descriptionController.text.isEmpty
-              ? null
-              : _descriptionController.text,
+          configId: widget.configId,
           type: _selectedType,
-          contextWindow: _contextWindowController.text.isEmpty
-              ? null
-              : int.tryParse(_contextWindowController.text),
-          maxOutputTokens: _maxOutputTokensController.text.isEmpty
-              ? null
-              : int.tryParse(_maxOutputTokensController.text),
-          supportsStreaming: _supportsStreaming,
-          supportsFunctionCalling: _supportsFunctionCalling,
-          supportsVision: _supportsVision,
-          inputPrice: _inputPriceController.text.isEmpty
-              ? null
-              : double.tryParse(_inputPriceController.text),
-          outputPrice: _outputPriceController.text.isEmpty
-              ? null
-              : double.tryParse(_outputPriceController.text),
         );
       }
 
@@ -940,6 +818,21 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
           context,
         ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
       }
+    }
+  }
+
+  String _getModelTypeName(ModelType type) {
+    switch (type) {
+      case ModelType.chat:
+        return '聊天模型';
+      case ModelType.embedding:
+        return '嵌入模型';
+      case ModelType.multimodal:
+        return '多模态';
+      case ModelType.imageGeneration:
+        return '图像生成';
+      case ModelType.speech:
+        return '语音';
     }
   }
 }

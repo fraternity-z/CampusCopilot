@@ -38,6 +38,7 @@ class ModelManagementService {
     required String name,
     required String modelId,
     required String provider,
+    String? configId,
     String? description,
     required ModelType type,
     int? contextWindow,
@@ -58,7 +59,10 @@ class ModelManagementService {
       name: name,
       modelId: modelId,
       provider: provider.toLowerCase(),
-      description: Value(description),
+      configId: configId != null ? Value(configId) : const Value.absent(),
+      description: description != null
+          ? Value(description)
+          : const Value.absent(),
       type: type.name,
       contextWindow: Value(contextWindow),
       maxOutputTokens: Value(maxOutputTokens),
@@ -96,6 +100,7 @@ class ModelManagementService {
     String? currency,
     List<String>? capabilities,
     bool? isEnabled,
+    String? configId,
   }) async {
     final existingModel = await _database.getCustomModelById(id);
     if (existingModel == null) {
@@ -130,6 +135,7 @@ class ModelManagementService {
           ? Value(outputPrice)
           : const Value.absent(),
       currency: currency != null ? Value(currency) : const Value.absent(),
+      configId: configId != null ? Value(configId) : const Value.absent(),
       capabilities: capabilities != null
           ? Value(capabilities.isNotEmpty ? jsonEncode(capabilities) : null)
           : const Value.absent(),
@@ -404,6 +410,12 @@ class ModelManagementService {
       pricing: pricing,
       capabilities: capabilities,
     );
+  }
+
+  /// 根据配置ID获取模型
+  Future<List<ModelInfo>> getModelsByConfig(String configId) async {
+    final customModels = await _database.getCustomModelsByConfig(configId);
+    return customModels.map(_convertToModelInfo).toList();
   }
 }
 
