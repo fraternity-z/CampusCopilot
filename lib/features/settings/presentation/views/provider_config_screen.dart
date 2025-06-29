@@ -9,6 +9,8 @@ import '../../../llm_chat/domain/services/model_management_service.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
 import '../widgets/select_model_dialog.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../settings/domain/entities/app_settings.dart';
 
 /// AI提供商配置页面
 class ProviderConfigScreen extends ConsumerStatefulWidget {
@@ -463,6 +465,30 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
       await database.upsertLlmConfig(config);
 
+      // 同步到全局设置（仅处理 openai / google / anthropic）
+      final settingsNotifier = ref.read(settingsProvider.notifier);
+      final currentDefault = ref.read(settingsProvider).defaultProvider;
+      if (currentDefault != AIProvider.openai) {
+        settingsNotifier.updateDefaultProvider(AIProvider.openai);
+      }
+      switch (widget.providerId.toLowerCase()) {
+        case 'openai':
+          settingsNotifier.updateOpenAIConfig(
+            OpenAIConfig(
+              apiKey: _apiKeyController.text,
+              baseUrl: _baseUrlController.text.isEmpty
+                  ? null
+                  : _baseUrlController.text,
+              organizationId: _organizationIdController.text.isEmpty
+                  ? null
+                  : _organizationIdController.text,
+              defaultModel: config.defaultModel.value ?? 'gpt-3.5-turbo',
+            ),
+          );
+          break;
+        // 可按需添加 gemini/claude 同步
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -835,4 +861,13 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
         return '语音';
     }
   }
+}
+
+// 临时调试
+void debugPrintCurrentSettings(WidgetRef ref) {
+  final settings = ref.read(settingsProvider);
+  final notifier = ref.read(settingsProvider.notifier);
+  debugPrint('openaiConfig = ${settings.openaiConfig}');
+  debugPrint('available = ${notifier.getAvailableProviders()}');
+  debugPrint('current   = ${notifier.getCurrentProvider()}');
 }
