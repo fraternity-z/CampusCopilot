@@ -137,6 +137,11 @@ class AppDatabase extends _$AppDatabase {
     return (delete(llmConfigsTable)..where((t) => t.id.equals(id))).go();
   }
 
+  /// 获取第一个（任意）LLM配置，作为备用选项
+  Future<LlmConfigsTableData?> getFirstLlmConfig() {
+    return (select(llmConfigsTable)..limit(1)).getSingleOrNull();
+  }
+
   // ==================== 智能体相关查询 ====================
 
   /// 获取所有智能体
@@ -219,6 +224,40 @@ class AppDatabase extends _$AppDatabase {
   /// 删除分组
   Future<int> deletePersonaGroup(String id) {
     return (delete(personaGroupsTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  // ==================== 数据统计查询 ====================
+
+  /// 获取聊天会话总数
+  Future<int> getChatSessionCount() async {
+    final count = chatSessionsTable.id.count();
+    final query = selectOnly(chatSessionsTable)..addColumns([count]);
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  /// 获取消息总数
+  Future<int> getMessageCount() async {
+    final count = chatMessagesTable.id.count();
+    final query = selectOnly(chatMessagesTable)..addColumns([count]);
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  /// 获取智能体总数
+  Future<int> getPersonaCount() async {
+    final count = personasTable.id.count();
+    final query = selectOnly(personasTable)..addColumns([count]);
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  /// 获取知识库文档总数
+  Future<int> getKnowledgeDocumentCount() async {
+    final count = knowledgeDocumentsTable.id.count();
+    final query = selectOnly(knowledgeDocumentsTable)..addColumns([count]);
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
   }
 
   // ==================== 聊天会话相关查询 ====================

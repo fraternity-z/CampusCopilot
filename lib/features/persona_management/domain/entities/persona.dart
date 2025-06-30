@@ -1,11 +1,14 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:drift/drift.dart' as drift;
+import '../../../../data/local/app_database.dart';
+import 'dart:convert';
 
 part 'persona.freezed.dart';
 part 'persona.g.dart';
 
 /// 智能体实体
 ///
-/// 表示一个AI智能体，包含其配置、行为和能力定义
+/// 表示一个AI智能体的身份设定，包含头像、名称和提示词
 @freezed
 class Persona with _$Persona {
   const factory Persona({
@@ -15,14 +18,8 @@ class Persona with _$Persona {
     /// 智能体名称
     required String name,
 
-    /// 智能体描述
-    required String description,
-
-    /// 系统提示词
+    /// 系统提示词（角色设定）
     required String systemPrompt,
-
-    /// 关联的API配置ID
-    required String apiConfigId,
 
     /// 创建时间
     required DateTime createdAt,
@@ -33,14 +30,17 @@ class Persona with _$Persona {
     /// 最后使用时间
     DateTime? lastUsedAt,
 
-    /// 智能体类型/分类
-    @Default('assistant') String category,
+    /// 智能体头像图片路径（本地文件路径）
+    String? avatarImagePath,
 
-    /// 智能体标签
-    @Default([]) List<String> tags,
+    /// 智能体头像emoji（当没有图片时使用）
+    @Default('🤖') String avatarEmoji,
 
-    /// 智能体头像/图标
+    /// 智能体头像 (兼容性字段)
     String? avatar,
+
+    /// API配置ID
+    String? apiConfigId,
 
     /// 是否为默认智能体
     @Default(false) bool isDefault,
@@ -51,11 +51,11 @@ class Persona with _$Persona {
     /// 使用次数统计
     @Default(0) int usageCount,
 
-    /// 智能体配置
-    PersonaConfig? config,
+    /// 智能体简短描述（可选）
+    String? description,
 
-    /// 智能体能力列表
-    @Default([]) List<PersonaCapability> capabilities,
+    /// 智能体标签
+    @Default([]) List<String> tags,
 
     /// 元数据
     Map<String, dynamic>? metadata,
@@ -63,115 +63,41 @@ class Persona with _$Persona {
 
   factory Persona.fromJson(Map<String, dynamic> json) =>
       _$PersonaFromJson(json);
-}
 
-/// 智能体配置
-@freezed
-class PersonaConfig with _$PersonaConfig {
-  const factory PersonaConfig({
-    /// 温度参数
-    @Default(0.7) double temperature,
-
-    /// 最大生成token数
-    @Default(2048) int maxTokens,
-
-    /// Top-p参数
-    @Default(1.0) double topP,
-
-    /// 频率惩罚
-    @Default(0.0) double frequencyPenalty,
-
-    /// 存在惩罚
-    @Default(0.0) double presencePenalty,
-
-    /// 停止词列表
-    @Default([]) List<String> stopSequences,
-
-    /// 是否启用流式响应
-    @Default(true) bool enableStreaming,
-
-    /// 上下文管理策略
-    @Default(ContextStrategy.truncate) ContextStrategy contextStrategy,
-
-    /// 上下文窗口大小
-    @Default(4096) int contextWindowSize,
-
-    /// 是否启用RAG
-    @Default(false) bool enableRAG,
-
-    /// 默认知识库ID列表
-    @Default([]) List<String> defaultKnowledgeBases,
-
-    /// 自定义参数
-    Map<String, dynamic>? customParams,
-  }) = _PersonaConfig;
-
-  factory PersonaConfig.fromJson(Map<String, dynamic> json) =>
-      _$PersonaConfigFromJson(json);
-}
-
-/// 智能体能力
-@freezed
-class PersonaCapability with _$PersonaCapability {
-  const factory PersonaCapability({
-    /// 能力ID
-    required String id,
-
-    /// 能力名称
-    required String name,
-
-    /// 能力描述
-    required String description,
-
-    /// 能力类型
-    required CapabilityType type,
-
-    /// 是否启用
-    @Default(true) bool isEnabled,
-
-    /// 能力配置
-    Map<String, dynamic>? config,
-  }) = _PersonaCapability;
-
-  factory PersonaCapability.fromJson(Map<String, dynamic> json) =>
-      _$PersonaCapabilityFromJson(json);
-}
-
-/// 上下文管理策略
-enum ContextStrategy {
-  /// 截断策略（保留最新消息）
-  truncate,
-
-  /// 摘要策略（摘要旧消息）
-  summarize,
-
-  /// 滑动窗口策略
-  slidingWindow,
-}
-
-/// 能力类型
-enum CapabilityType {
-  /// 工具调用
-  tool,
-
-  /// 知识库检索
-  knowledgeBase,
-
-  /// 代码执行
-  codeExecution,
-
-  /// 图像生成
-  imageGeneration,
-
-  /// 文件处理
-  fileProcessing,
-
-  /// 网络搜索
-  webSearch,
+  factory Persona.defaultPersona() {
+    final now = DateTime.now();
+    return Persona(
+      id: 'default_persona_id',
+      name: '默认助手',
+      systemPrompt: '你是一个乐于助人的AI助手。',
+      createdAt: now,
+      updatedAt: now,
+      isDefault: true,
+    );
+  }
 }
 
 /// Persona扩展方法
 extension PersonaExtensions on Persona {
+  PersonasTableCompanion toCompanion() {
+    return PersonasTableCompanion(
+      id: drift.Value(id),
+      name: drift.Value(name),
+      systemPrompt: drift.Value(systemPrompt),
+      createdAt: drift.Value(createdAt),
+      updatedAt: drift.Value(updatedAt),
+      lastUsedAt: drift.Value(lastUsedAt),
+      avatar: drift.Value(avatarDisplay),
+      apiConfigId: drift.Value(apiConfigId ?? ''),
+      isDefault: drift.Value(isDefault),
+      isEnabled: drift.Value(isEnabled),
+      usageCount: drift.Value(usageCount),
+      description: drift.Value(description ?? ''),
+      tags: drift.Value(jsonEncode(tags)),
+      metadata: drift.Value(metadata != null ? jsonEncode(metadata) : null),
+    );
+  }
+
   /// 是否为新创建的智能体
   bool get isNew => usageCount == 0;
 
@@ -184,6 +110,27 @@ extension PersonaExtensions on Persona {
 
   /// 获取显示名称
   String get displayName => name.isNotEmpty ? name : 'Unnamed Persona';
+
+  /// 获取头像显示内容
+  String get avatarDisplay {
+    // 优先使用 avatar 字段
+    if (avatar != null && avatar!.isNotEmpty) {
+      return avatar!;
+    }
+    // 如果有图片路径，返回路径；否则返回emoji
+    if (avatarImagePath != null && avatarImagePath!.isNotEmpty) {
+      return avatarImagePath!;
+    }
+    return avatarEmoji.isNotEmpty
+        ? avatarEmoji
+        : name.isNotEmpty
+        ? name[0].toUpperCase()
+        : '🤖';
+  }
+
+  /// 是否使用图片头像
+  bool get hasImageAvatar =>
+      avatarImagePath != null && avatarImagePath!.isNotEmpty;
 
   /// 获取最后使用时间描述
   String get lastUsedDescription {
@@ -201,8 +148,20 @@ extension PersonaExtensions on Persona {
     } else if (difference.inDays < 7) {
       return '${difference.inDays}天前';
     } else {
-      return '${lastUsedAt!.month}/${lastUsedAt!.day}';
+      return '很久以前';
     }
+  }
+
+  /// 获取使用频率描述
+  String get usageDescription {
+    if (usageCount == 0) return '从未使用';
+    if (usageCount == 1) return '使用1次';
+    return '使用$usageCount次';
+  }
+
+  /// 复制并更新使用信息
+  Persona copyWithUsage() {
+    return copyWith(usageCount: usageCount + 1, lastUsedAt: DateTime.now());
   }
 
   /// 更新使用统计
@@ -210,43 +169,6 @@ extension PersonaExtensions on Persona {
     return copyWith(
       usageCount: usageCount + 1,
       lastUsedAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  /// 更新配置
-  Persona updateConfig(PersonaConfig newConfig) {
-    return copyWith(config: newConfig, updatedAt: DateTime.now());
-  }
-
-  /// 添加能力
-  Persona addCapability(PersonaCapability capability) {
-    if (capabilities.any((c) => c.id == capability.id)) return this;
-    return copyWith(
-      capabilities: [...capabilities, capability],
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  /// 移除能力
-  Persona removeCapability(String capabilityId) {
-    return copyWith(
-      capabilities: capabilities.where((c) => c.id != capabilityId).toList(),
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  /// 启用/禁用能力
-  Persona toggleCapability(String capabilityId, bool enabled) {
-    final updatedCapabilities = capabilities.map((c) {
-      if (c.id == capabilityId) {
-        return c.copyWith(isEnabled: enabled);
-      }
-      return c;
-    }).toList();
-
-    return copyWith(
-      capabilities: updatedCapabilities,
       updatedAt: DateTime.now(),
     );
   }
@@ -273,5 +195,28 @@ extension PersonaExtensions on Persona {
   /// 取消默认
   Persona unsetAsDefault() {
     return copyWith(isDefault: false, updatedAt: DateTime.now());
+  }
+}
+
+extension PersonasTableDataExtensions on PersonasTableData {
+  Persona toPersona() {
+    return Persona(
+      id: id,
+      name: name,
+      systemPrompt: systemPrompt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      lastUsedAt: lastUsedAt,
+      avatar: avatar,
+      apiConfigId: apiConfigId,
+      isDefault: isDefault,
+      isEnabled: isEnabled,
+      usageCount: usageCount,
+      description: description,
+      tags: (jsonDecode(tags) as List<dynamic>).cast<String>(),
+      metadata: metadata != null
+          ? jsonDecode(metadata!) as Map<String, dynamic>
+          : null,
+    );
   }
 }

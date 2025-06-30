@@ -4,8 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_session.dart';
 import '../../domain/usecases/chat_service.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../persona_management/presentation/providers/persona_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -92,118 +92,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  /// 发送消息
-  Future<void> sendMessage(String content) async {
-    if (content.trim().isEmpty) return;
-
-    // 检查AI配置
-    final currentProvider = _ref.read(currentAIProviderProvider);
-
-    if (currentProvider == null) {
-      state = state.copyWith(
-        error: 'Please configure AI service in settings first',
-      );
-      return;
-    }
-
-    // 确保有当前会话，如果没有则创建一个使用当前智能体的会话
-    if (state.currentSession == null) {
-      await _createNewSession();
-    }
-
-    // 创建用户消息
-    final userMessage = ChatMessage(
-      id: _uuid.v4(),
-      content: content,
-      isFromUser: true,
-      timestamp: DateTime.now(),
-      chatSessionId: state.currentSession?.id ?? 'default',
-    );
-
-    // 添加用户消息到状态
-    state = state.copyWith(
-      messages: [...state.messages, userMessage],
-      isLoading: true,
-      error: null,
-    );
-
-    try {
-      // 发送到AI服务（使用数据库驱动的流式接口）
-      final stream = _chatService.sendMessageStream(
-        sessionId: state.currentSession?.id ?? 'default',
-        content: content,
-      );
-
-      // 创建AI消息占位符
-      final aiMessageId = _uuid.v4();
-      final aiMessage = ChatMessage(
-        id: aiMessageId,
-        content: '',
-        isFromUser: false,
-        timestamp: DateTime.now(),
-        chatSessionId: state.currentSession?.id ?? 'default',
-        status: MessageStatus.sending,
-      );
-
-      state = state.copyWith(messages: [...state.messages, aiMessage]);
-
-      // 处理流式响应
-      await for (final msg in stream) {
-        // 跳过用户消息（已在本地添加）
-        if (msg.isFromUser) continue;
-
-        // 更新AI消息内容
-        final updatedMessages = state.messages.map((m) {
-          if (m.id == aiMessageId) {
-            return m.copyWith(content: msg.content, status: msg.status);
-          }
-          return m;
-        }).toList();
-
-        state = state.copyWith(
-          messages: updatedMessages,
-          isLoading: msg.status != MessageStatus.sent,
-        );
-
-        if (msg.status == MessageStatus.sent) {
-          break;
-        }
-      }
-    } catch (e) {
-      // 处理错误
-      state = state.copyWith(isLoading: false, error: e.toString());
-
-      // 移除失败的AI消息或标记为失败
-      final updatedMessages = state.messages.map((msg) {
-        if (!msg.isFromUser && msg.content.isEmpty) {
-          return msg.copyWith(
-            content: 'Failed to get response: ${e.toString()}',
-            status: MessageStatus.failed,
-          );
-        }
-        return msg;
-      }).toList();
-
-      state = state.copyWith(messages: updatedMessages);
-    }
-  }
-
-  /// 创建新的聊天会话（私有方法）
-  Future<void> _createNewSession() async {
-    final selectedPersona = _ref.read(selectedPersonaProvider);
-    final personaId = selectedPersona?.id ?? 'default';
-
-    final session = ChatSession(
-      id: _uuid.v4(),
-      title: 'New Chat',
-      personaId: personaId,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    state = state.copyWith(currentSession: session, messages: [], error: null);
-  }
-
   /// 创建新的聊天会话（公共方法）
   Future<void> createNewSession() async {
     try {
@@ -258,6 +146,107 @@ class ChatNotifier extends StateNotifier<ChatState> {
       await sendMessage(lastUserMessage.content);
     }
   }
+
+  /// 附加文件
+  void attachFiles(List<PlatformFile> files) {
+    state = state.copyWith(attachedFiles: [...state.attachedFiles, ...files]);
+  }
+
+  /// 移除文件
+  void removeFile(PlatformFile file) {
+    state = state.copyWith(
+      attachedFiles: state.attachedFiles
+          .where((f) => f.path != file.path)
+          .toList(),
+    );
+  }
+
+  /// 清除所有附件
+  void clearAttachments() {
+    state = state.copyWith(attachedFiles: []);
+  }
+
+  /// 发送消息
+  Future<void> sendMessage(String text) async {
+    final currentSession = state.currentSession;
+    if (currentSession == null) {
+      await createNewSession();
+      // 等待新会话创建后再次发送
+      if (state.currentSession != null) {
+        await sendMessage(text);
+      }
+      return;
+    }
+
+    if (text.isEmpty && state.attachedFiles.isEmpty) return;
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    // 将附件信息合并到消息内容中
+    String messageContent = text;
+    if (state.attachedFiles.isNotEmpty) {
+      final fileNames = state.attachedFiles.map((f) => f.name).join(', ');
+      messageContent = '$text\n\n[附件: $fileNames]';
+      // 发送后清除附件
+      state = state.copyWith(attachedFiles: []);
+    }
+
+    final aiMessageId = _uuid.v4();
+    try {
+      // sendMessageStream 内部会处理用户消息的创建和保存
+      final stream = _chatService.sendMessageStream(
+        sessionId: currentSession.id,
+        content: messageContent,
+      );
+
+      // 创建一个临时的 AI 消息占位符
+      final aiPlaceholder = ChatMessage(
+        id: aiMessageId,
+        chatSessionId: currentSession.id,
+        content: '...',
+        isFromUser: false,
+        timestamp: DateTime.now(),
+        status: MessageStatus.sending,
+      );
+
+      // 先将会话消息和占位符更新到UI
+      final initialMessages = await _chatService.getSessionMessages(
+        currentSession.id,
+      );
+      state = state.copyWith(messages: [...initialMessages, aiPlaceholder]);
+
+      String fullResponse = '';
+      await for (final messageChunk in stream) {
+        if (!messageChunk.isFromUser) {
+          fullResponse = messageChunk.content;
+          final updatedMessages = state.messages.map((m) {
+            return m.id == aiMessageId
+                ? m.copyWith(content: fullResponse, status: messageChunk.status)
+                : m;
+          }).toList();
+          state = state.copyWith(
+            messages: updatedMessages,
+            isLoading: messageChunk.status != MessageStatus.sent,
+          );
+        }
+      }
+    } catch (e) {
+      // 如果发生错误，更新占位符消息为错误提示
+      final updatedMessages = state.messages.map((m) {
+        return m.id == aiMessageId
+            ? m.copyWith(content: '抱歉，发生错误: $e', status: MessageStatus.failed)
+            : m;
+      }).toList();
+      state = state.copyWith(
+        messages: updatedMessages,
+        isLoading: false,
+        error: e.toString(),
+      );
+    } finally {
+      // 确保最终加载状态为 false
+      state = state.copyWith(isLoading: false);
+    }
+  }
 }
 
 /// 聊天状态
@@ -267,6 +256,7 @@ class ChatState {
   final bool isLoading;
   final String? error;
   final List<ChatSession> sessions;
+  final List<PlatformFile> attachedFiles;
 
   const ChatState({
     this.messages = const [],
@@ -274,6 +264,7 @@ class ChatState {
     this.isLoading = false,
     this.error,
     this.sessions = const [],
+    this.attachedFiles = const [],
   });
 
   ChatState copyWith({
@@ -282,6 +273,7 @@ class ChatState {
     bool? isLoading,
     String? error,
     List<ChatSession>? sessions,
+    List<PlatformFile>? attachedFiles,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -289,6 +281,7 @@ class ChatState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       sessions: sessions ?? this.sessions,
+      attachedFiles: attachedFiles ?? this.attachedFiles,
     );
   }
 

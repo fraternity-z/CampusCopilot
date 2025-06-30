@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
@@ -12,6 +13,7 @@ import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../data/local/app_database.dart';
 import 'dart:convert';
+import '../../../persona_management/domain/entities/persona.dart';
 
 /// 聊天服务
 ///
@@ -79,11 +81,12 @@ class ChatService {
     required String content,
     String? parentMessageId,
   }) async {
+    final String? pId = parentMessageId;
     // 1. 创建用户消息
     final userMessage = ChatMessageFactory.createUserMessage(
       content: content,
       chatSessionId: sessionId,
-      parentMessageId: parentMessageId,
+      parentMessageId: pId,
     );
 
     // 2. 保存用户消息到数据库
@@ -156,41 +159,67 @@ class ChatService {
     required String content,
     String? parentMessageId,
   }) async* {
+    debugPrint('🚀 开始发送消息: $content');
+
+    final String? pId = parentMessageId;
     // 1. 创建用户消息
     final userMessage = ChatMessageFactory.createUserMessage(
       content: content,
       chatSessionId: sessionId,
-      parentMessageId: parentMessageId,
+      parentMessageId: pId,
     );
 
     // 2. 保存用户消息到数据库
     await _database.insertMessage(_messageToCompanion(userMessage));
+    debugPrint('✅ 用户消息已保存');
     yield userMessage;
 
     try {
       // 3. 获取会话和智能体信息
       final session = await _getSessionById(sessionId);
+      debugPrint('📝 会话ID: ${session.id}, 智能体ID: ${session.personaId}');
+
       final persona = await _getPersonaById(session.personaId);
+      debugPrint('🤖 智能体: ${persona.name}, 提示词: ${persona.systemPrompt}');
+
       final llmConfig = await _getLlmConfigById(persona.apiConfigId);
+      debugPrint('🔧 LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 4. 创建LLM Provider
       final provider = LlmProviderFactory.createProvider(
         llmConfig.toLlmConfig(),
       );
+      debugPrint('🤖 AI Provider已创建');
 
-      // 5. 构建上下文消息
-      final contextMessages = await _buildContextMessages(
-        sessionId,
-        session.config,
-      );
+      // 5. 构建上下文消息（最近10条消息作为上下文）
+      final recentMessages = await _database.getMessagesBySession(sessionId);
+      final contextMessages = recentMessages
+          .take(10) // 最近10条消息作为上下文
+          .map(
+            (msg) => ChatMessage(
+              id: msg.id,
+              content: msg.content,
+              isFromUser: msg.isFromUser,
+              timestamp: msg.timestamp,
+              chatSessionId: msg.chatSessionId,
+            ),
+          )
+          .toList();
 
-      // 6. 生成流式AI响应
+      debugPrint('💬 上下文消息数量: ${contextMessages.length}');
+
+      // 6. 构建聊天选项 - 使用会话配置和智能体提示词
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
-        systemPrompt: persona.systemPrompt,
+        systemPrompt: persona.systemPrompt, // 使用智能体的提示词
         temperature: session.config?.temperature ?? 0.7,
         maxTokens: session.config?.maxTokens ?? 2048,
         stream: true,
+      );
+
+      debugPrint('⚙️ 开始调用AI API');
+      debugPrint(
+        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
       );
 
       String accumulatedContent = '';
@@ -200,41 +229,65 @@ class ChatService {
         contextMessages,
         options: chatOptions,
       )) {
+        debugPrint(
+          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}',
+        );
+
+        if (chunk.isDone) {
+          // 流结束，保存最终消息到数据库
+          if (aiMessageId != null) {
+            final finalMessage = ChatMessageFactory.createAIMessage(
+              content: accumulatedContent,
+              chatSessionId: sessionId,
+              parentMessageId: userMessage.id,
+              tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
+            ).copyWith(id: aiMessageId);
+
+            await _database.insertMessage(_messageToCompanion(finalMessage));
+            debugPrint('✅ AI消息已保存到数据库');
+
+            // 7. 更新会话统计
+            await _updateSessionStats(
+              sessionId,
+              chunk.tokenUsage?.totalTokens ?? 0,
+            );
+
+            // 8. 更新智能体使用统计
+            await _database.updatePersonaUsage(persona.id);
+
+            yield finalMessage.copyWith(status: MessageStatus.sent);
+          }
+          break;
+        }
+
+        // 累积内容
         if (chunk.delta != null && chunk.delta!.isNotEmpty) {
           accumulatedContent += chunk.delta!;
+        }
 
-          // 创建或更新AI消息
-          final aiMessage = ChatMessageFactory.createAIMessage(
+        // 创建或更新AI消息
+        if (aiMessageId == null) {
+          aiMessageId = ChatMessageFactory.createAIMessage(
             content: accumulatedContent,
             chatSessionId: sessionId,
             parentMessageId: userMessage.id,
-            tokenCount: chunk.tokenUsage?.totalTokens,
-          );
-
-          if (aiMessageId == null) {
-            // 首次创建消息
-            aiMessageId = aiMessage.id;
-            await _database.insertMessage(_messageToCompanion(aiMessage));
-          } else {
-            // 更新现有消息
-            await _database.updateMessageStatus(
-              aiMessageId,
-              aiMessage.status.name,
-            );
-          }
-
-          yield aiMessage;
+          ).id;
+          debugPrint('🆔 创建AI消息ID: $aiMessageId');
         }
 
-        if (chunk.isDone && chunk.tokenUsage != null) {
-          // 更新会话统计
-          await _updateSessionStats(sessionId, chunk.tokenUsage!.totalTokens);
-
-          // 更新智能体使用统计
-          await _database.updatePersonaUsage(persona.id);
-        }
+        yield ChatMessage(
+          id: aiMessageId,
+          content: accumulatedContent,
+          isFromUser: false,
+          timestamp: DateTime.now(),
+          chatSessionId: sessionId,
+          status: MessageStatus.sending,
+        );
       }
     } catch (e) {
+      debugPrint('❌ 发送消息时出错: $e');
+      debugPrint('❌ 错误堆栈: ${StackTrace.current}');
+
       // 创建错误消息
       final errorMessage = ChatMessageFactory.createErrorMessage(
         content: '抱歉，生成回复时出现错误：${e.toString()}',
@@ -305,20 +358,38 @@ class ChatService {
   }
 
   /// 获取智能体信息
-  Future<PersonasTableData> _getPersonaById(String personaId) async {
+  Future<Persona> _getPersonaById(String personaId) async {
     final personaData = await _database.getPersonaById(personaId);
     if (personaData == null) {
-      throw DatabaseException('智能体不存在: $personaId');
+      debugPrint('⚠️ 智能体不存在: $personaId, 使用默认智能体');
+      // 返回一个默认的或备用的Persona
+      final defaultPersona = Persona.defaultPersona();
+      await _database.upsertPersona(defaultPersona.toCompanion());
+      return defaultPersona;
     }
-    return personaData;
+    return personaData.toPersona();
   }
 
   /// 获取LLM配置信息
-  Future<LlmConfigsTableData> _getLlmConfigById(String configId) async {
-    final configData = await _database.getLlmConfigById(configId);
-    if (configData == null) {
-      throw DatabaseException('LLM配置不存在: $configId');
+  Future<LlmConfigsTableData> _getLlmConfigById(String? configId) async {
+    LlmConfigsTableData? configData;
+
+    // 如果提供了配置ID，则尝试按ID获取
+    if (configId != null && configId.isNotEmpty) {
+      configData = await _database.getLlmConfigById(configId);
     }
+
+    // 如果未找到或未提供ID，则回退到第一个可用配置
+    if (configData == null) {
+      debugPrint('⚠️ LLM配置不存在或未提供: $configId, 尝试寻找第一个可用配置');
+      final firstConfig = await _database.getFirstLlmConfig();
+      if (firstConfig == null) {
+        throw DatabaseException('没有可用的LLM配置');
+      }
+      debugPrint('✅ 使用第一个可用LLM配置: ${firstConfig.name}');
+      return firstConfig;
+    }
+
     return configData;
   }
 
@@ -335,10 +406,12 @@ class ChatService {
       tags: Value(jsonEncode(session.tags)),
       messageCount: Value(session.messageCount),
       totalTokens: Value(session.totalTokens),
-      config: Value(session.config != null ? jsonEncode(session.config) : null),
-      metadata: Value(
-        session.metadata != null ? jsonEncode(session.metadata) : null,
-      ),
+      config: session.config != null
+          ? Value(jsonEncode(session.config))
+          : const Value.absent(),
+      metadata: session.metadata != null
+          ? Value(jsonEncode(session.metadata))
+          : const Value.absent(),
     );
   }
 
@@ -352,11 +425,15 @@ class ChatService {
       chatSessionId: message.chatSessionId,
       type: Value(message.type.name),
       status: Value(message.status.name),
-      metadata: Value(
-        message.metadata != null ? jsonEncode(message.metadata) : null,
-      ),
-      parentMessageId: Value(message.parentMessageId),
-      tokenCount: Value(message.tokenCount),
+      metadata: message.metadata != null
+          ? Value(jsonEncode(message.metadata))
+          : const Value.absent(),
+      parentMessageId: message.parentMessageId != null
+          ? Value(message.parentMessageId!)
+          : const Value.absent(),
+      tokenCount: message.tokenCount != null
+          ? Value(message.tokenCount!)
+          : const Value.absent(),
     );
   }
 }

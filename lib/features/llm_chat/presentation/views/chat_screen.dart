@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/domain/entities/app_settings.dart';
-import '../../../persona_management/presentation/providers/persona_provider.dart';
 
 /// 聊天界面
 ///
@@ -35,140 +35,260 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: _buildMainChatArea());
+    return Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea());
+  }
+
+  /// 构建应用栏
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: Consumer(
+        builder: (context, ref, child) {
+          final session = ref.watch(currentChatSessionProvider);
+          return Text(session?.title ?? 'AI 助手');
+        },
+      ),
+      actions: [
+        _buildModelSelector(),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: _showSettings,
+          tooltip: '设置',
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
   }
 
   /// 构建主聊天区域
   Widget _buildMainChatArea() {
     return Column(
       children: [
-        // 应用栏
-        AppBar(
-          automaticallyImplyLeading: false,
-          title: const Text('AI 助手'),
-          actions: [
-            // 智能体选择按钮
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: _showPersonaSelector,
-              tooltip: '选择智能体',
-            ),
-            // 聊天历史按钮
-            IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: _showChatHistory,
-              tooltip: '聊天历史',
-            ),
-            // 设置按钮
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: _showSettings,
-              tooltip: '设置',
-            ),
-          ],
-        ),
-
-        // 当前智能体信息栏
         _buildPersonaInfoBar(),
-
-        // 消息列表
         Expanded(child: _buildMessageList()),
-
-        // 输入区域
         _buildInputArea(),
       ],
     );
   }
 
-  /// 构建智能体信息栏
+  /// 构建模型选择器
+  Widget _buildModelSelector() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final allModelsAsync = ref.watch(databaseAvailableModelsProvider);
+        final currentModelAsync = ref.watch(databaseCurrentModelProvider);
+
+        return allModelsAsync.when(
+          data: (allModels) => currentModelAsync.when(
+            data: (currentModel) => PopupMenuButton<String>(
+              tooltip: '选择模型',
+              icon: const Icon(Icons.tune),
+              onSelected: (value) async {
+                if (value == 'configure') {
+                  context.go('/settings/models');
+                } else {
+                  await ref.read(settingsProvider.notifier).switchModel(value);
+                }
+              },
+              itemBuilder: (context) {
+                final items = <PopupMenuEntry<String>>[];
+
+                if (allModels.isEmpty) {
+                  // 如果没有可用模型，显示配置选项
+                  items.add(
+                    PopupMenuItem<String>(
+                      enabled: false,
+                      child: Text(
+                        '未配置AI模型',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                      ),
+                    ),
+                  );
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'configure',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.settings,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(child: Text('前往配置AI')),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  final groupedModels =
+                      <AIProvider, List<ModelInfoWithProvider>>{};
+
+                  // 按提供商分组模型
+                  for (final model in allModels) {
+                    groupedModels
+                        .putIfAbsent(model.provider, () => [])
+                        .add(model);
+                  }
+
+                  groupedModels.forEach((provider, models) {
+                    if (items.isNotEmpty) {
+                      items.add(const PopupMenuDivider());
+                    }
+
+                    // 添加提供商标题
+                    items.add(
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        child: Text(
+                          models.first.providerName,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ),
+                    );
+
+                    // 添加该提供商的模型
+                    for (final model in models) {
+                      items.add(
+                        PopupMenuItem<String>(
+                          value: model.id,
+                          child: Row(
+                            children: [
+                              if (currentModel?.id == model.id) ...[
+                                Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                              ] else
+                                const SizedBox(width: 24),
+                              Expanded(child: Text(model.name)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  });
+
+                  // 在模型列表后添加配置选项
+                  if (items.isNotEmpty) {
+                    items.add(const PopupMenuDivider());
+                  }
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'configure',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.settings,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(child: Text('管理AI配置')),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return items;
+              },
+            ),
+            loading: () =>
+                const IconButton(icon: Icon(Icons.tune), onPressed: null),
+            error: (_, __) =>
+                const IconButton(icon: Icon(Icons.tune), onPressed: null),
+          ),
+          loading: () =>
+              const IconButton(icon: Icon(Icons.tune), onPressed: null),
+          error: (_, __) =>
+              const IconButton(icon: Icon(Icons.tune), onPressed: null),
+        );
+      },
+    );
+  }
+
+  /// 构建模型信息栏
   Widget _buildPersonaInfoBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         border: Border(
           bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: const Icon(Icons.smart_toy, size: 20, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Consumer(
-                  builder: (context, ref, child) {
-                    final selectedPersona = ref.watch(selectedPersonaProvider);
-                    return Text(
-                      selectedPersona?.name ?? '通用助手',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+      child: Consumer(
+        builder: (context, ref, child) {
+          final currentModelAsync = ref.watch(databaseCurrentModelProvider);
+          return Row(
+            children: [
+              Icon(
+                Icons.psychology_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: currentModelAsync.when(
+                  data: (currentModel) => Text(
+                    currentModel?.name ?? 'AI 助手',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  loading: () => const Text('加载中...'),
+                  error: (_, __) => const Text('AI 助手'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              currentModelAsync.when(
+                data: (currentModel) => Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: currentModel != null
+                        ? Colors.green.shade400
+                        : Colors.red.shade400,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (currentModel != null
+                                    ? Colors.green.shade400
+                                    : Colors.red.shade400)
+                                .withAlpha(128),
+                        blurRadius: 4,
+                        spreadRadius: 1,
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final currentProvider = ref.watch(
-                      currentAIProviderProvider,
-                    );
-                    final settings = ref.watch(settingsProvider);
-
-                    String modelName = 'No AI configured';
-                    if (currentProvider != null) {
-                      switch (currentProvider) {
-                        case AIProvider.openai:
-                          modelName =
-                              settings.openaiConfig?.defaultModel ??
-                              'GPT-3.5 Turbo';
-                          break;
-                        case AIProvider.gemini:
-                          modelName =
-                              settings.geminiConfig?.defaultModel ??
-                              'Gemini Pro';
-                          break;
-                        case AIProvider.claude:
-                          modelName =
-                              settings.claudeConfig?.defaultModel ??
-                              'Claude 3 Sonnet';
-                          break;
-                      }
-                    }
-
-                    return Text(
-                      modelName,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    );
-                  },
+                loading: () => const SizedBox(
+                  width: 8,
+                  height: 8,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-              ],
-            ),
-          ),
-          // 连接状态指示器
-          Consumer(
-            builder: (context, ref, child) {
-              final currentProvider = ref.watch(currentAIProviderProvider);
-              final isConnected = currentProvider != null;
-
-              return Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: isConnected ? Colors.green : Colors.red,
-                  shape: BoxShape.circle,
+                error: (_, __) => Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade400,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -178,23 +298,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Consumer(
       builder: (context, ref, child) {
         final messages = ref.watch(chatMessagesProvider);
-        // 序列化流加载状态供未来使用，但暂未使用
-        // final isLoading = ref.watch(chatLoadingProvider);
         final error = ref.watch(chatErrorProvider);
 
         if (messages.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(102),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   '开始新的对话',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withAlpha(204),
+                  ),
                 ),
-                SizedBox(height: 8),
-                Text('输入消息开始与AI助手聊天', style: TextStyle(color: Colors.grey)),
+                const SizedBox(height: 8),
+                Text(
+                  '向您的 AI 助手发送消息以开始',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withAlpha(153),
+                  ),
+                ),
               ],
             ),
           );
@@ -219,36 +352,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildErrorMessage(String error) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red),
-          const SizedBox(width: 8),
+          Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Error',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
-                  ),
-                ),
-                Text(error),
-              ],
+            child: Text(
+              error,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              ref.read(chatProvider.notifier).clearError();
-            },
-            child: Text('Dismiss'),
+          IconButton(
+            onPressed: () => ref.read(chatProvider.notifier).clearError(),
+            icon: Icon(
+              Icons.close,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
           ),
         ],
       ),
@@ -258,9 +387,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// 构建消息气泡
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.isFromUser;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
@@ -270,21 +402,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (!isUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: const Icon(Icons.smart_toy, size: 16, color: Colors.white),
+              backgroundColor: colorScheme.primary.withAlpha(26),
+              child: Icon(
+                Icons.smart_toy_outlined,
+                size: 18,
+                color: colorScheme.primary,
+              ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
           ],
           Flexible(
             child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
-              ),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: isUser
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ? colorScheme.primaryContainer
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16).copyWith(
                   bottomLeft: isUser
                       ? const Radius.circular(16)
@@ -299,22 +432,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   Text(
                     message.content,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: textTheme.bodyLarge?.copyWith(
                       color: isUser
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     _formatTimestamp(message.timestamp),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isUser
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.onPrimary.withValues(alpha: 0.7)
-                          : Theme.of(context).colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.7),
+                    style: textTheme.bodySmall?.copyWith(
+                      color:
+                          (isUser
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSurface)
+                              .withAlpha(153),
                     ),
                   ),
                 ],
@@ -322,11 +454,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           if (isUser) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              child: const Icon(Icons.person, size: 16, color: Colors.white),
+              backgroundColor: colorScheme.secondary.withAlpha(26),
+              child: Icon(
+                Icons.person_outline,
+                size: 18,
+                color: colorScheme.secondary,
+              ),
             ),
           ],
         ],
@@ -336,115 +472,125 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   /// 构建输入区域
   Widget _buildInputArea() {
+    final attachedFiles = ref.watch(
+      chatProvider.select((s) => s.attachedFiles),
+    );
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                hintText: '输入消息...',
-                border: OutlineInputBorder(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 显示已附加的文件
+            if (attachedFiles.isNotEmpty)
+              _buildAttachedFiles(context, ref, attachedFiles),
+
+            // 输入框和按钮
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _pickFiles(ref),
+                      icon: const Icon(Icons.add_circle_outline),
+                      tooltip: '附件',
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: const InputDecoration(
+                          hintText: '输入消息...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendMessage(ref),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => _sendMessage(ref),
+                      style: ElevatedButton.styleFrom(
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(12),
+                      ),
+                      child: const Icon(Icons.send),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _sendMessage,
-            icon: const Icon(Icons.send),
-            tooltip: '发送',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// 发送消息
-  void _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty) return;
-
-    // 清空输入框
-    _messageController.clear();
-
-    // 发送消息到状态管理
-    await ref.read(chatProvider.notifier).sendMessage(message);
-
-    // 滚动到底部
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  /// 显示智能体选择器
-  void _showPersonaSelector() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Consumer(
-        builder: (context, ref, child) {
-          final personas = ref.watch(personaListProvider);
-          final selectedPersona = ref.watch(selectedPersonaProvider);
-
+  /// 构建已附加文件列表
+  Widget _buildAttachedFiles(
+    BuildContext context,
+    WidgetRef ref,
+    List<PlatformFile> files,
+  ) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 8),
+      height: 80, // 固定高度以便滚动
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: files.length,
+        itemBuilder: (context, index) {
+          final file = files[index];
           return Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '选择智能体',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                Icon(
+                  Icons.insert_drive_file,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  size: 20,
                 ),
-                const SizedBox(height: 16),
-                ...personas.map(
-                  (persona) => ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      child: Text(
-                        persona.avatar ?? '🤖',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ),
-                    title: Text(persona.name),
-                    subtitle: Text(persona.description),
-                    trailing: selectedPersona?.id == persona.id
-                        ? Icon(
-                            Icons.check_circle,
-                            color: Theme.of(context).colorScheme.primary,
-                          )
-                        : null,
-                    onTap: () {
-                      ref
-                          .read(personaProvider.notifier)
-                          .selectPersona(persona.id);
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已切换到 ${persona.name}')),
-                      );
-                    },
+                const SizedBox(width: 8),
+                Text(
+                  file.name,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  onPressed: () {
+                    ref.read(chatProvider.notifier).removeFile(file);
+                  },
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                ),
               ],
             ),
           );
@@ -453,78 +599,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  /// 显示聊天历史
-  void _showChatHistory() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('聊天历史'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: Consumer(
-            builder: (context, ref, child) {
-              final chatState = ref.watch(chatProvider);
-              final messages = chatState.messages;
+  /// 选择文件
+  Future<void> _pickFiles(WidgetRef ref) async {
+    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+    if (result != null) {
+      ref.read(chatProvider.notifier).attachFiles(result.files);
+    }
+  }
 
-              if (messages.isEmpty) {
-                return const Center(child: Text('暂无聊天记录'));
-              }
-
-              return ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final message = messages[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: message.isFromUser
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.secondary,
-                      child: Icon(
-                        message.isFromUser ? Icons.person : Icons.smart_toy,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    title: Text(
-                      message.isFromUser ? '用户' : 'AI助手',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      message.content.length > 50
-                          ? '${message.content.substring(0, 50)}...'
-                          : message.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Text(
-                      '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref.read(chatProvider.notifier).clearChat();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('聊天记录已清空')));
-            },
-            child: const Text('清空记录'),
-          ),
-        ],
-      ),
-    );
+  /// 发送消息
+  void _sendMessage(WidgetRef ref) {
+    final text = _messageController.text.trim();
+    ref.read(chatProvider.notifier).sendMessage(text);
+    _messageController.clear();
   }
 
   /// 显示设置

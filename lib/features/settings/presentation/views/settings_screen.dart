@@ -11,7 +11,15 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('设置'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('设置'),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/chat'),
+          tooltip: '返回聊天',
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

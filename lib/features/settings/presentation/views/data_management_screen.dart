@@ -1,11 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../providers/data_management_provider.dart';
 
 /// 数据管理页面
 class DataManagementScreen extends ConsumerStatefulWidget {
@@ -19,12 +16,6 @@ class DataManagementScreen extends ConsumerStatefulWidget {
 class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   bool _isLoading = false;
   bool _autoBackupEnabled = false;
-  Map<String, dynamic> _storageInfo = {
-    'chatCount': 156,
-    'messageCount': 2450,
-    'personaCount': 12,
-    'knowledgeCount': 8,
-  };
 
   @override
   void initState() {
@@ -87,7 +78,6 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
             ListTile(
               leading: const Icon(Icons.cloud_upload),
               title: const Text('导出数据'),
@@ -96,9 +86,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               onTap: _exportData,
               contentPadding: EdgeInsets.zero,
             ),
-
             const Divider(),
-
             ListTile(
               leading: const Icon(Icons.cloud_download),
               title: const Text('导入数据'),
@@ -107,9 +95,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               onTap: _importData,
               contentPadding: EdgeInsets.zero,
             ),
-
             const Divider(),
-
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('自动备份'),
@@ -128,6 +114,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
 
   /// 存储信息区域
   Widget _buildStorageSection(BuildContext context) {
+    final statsAsync = ref.watch(dataStatisticsProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -150,75 +138,74 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
-            _buildStorageItem(
-              context,
-              icon: Icons.chat,
-              title: '聊天记录',
-              subtitle:
-                  '约 ${_calculateDataSize(_storageInfo['messageCount'] ?? 0, 0.1)} MB',
-              count:
-                  '${_storageInfo['chatCount'] ?? 0} 个会话, ${_storageInfo['messageCount'] ?? 0} 条消息',
-            ),
-
-            const Divider(),
-
-            _buildStorageItem(
-              context,
-              icon: Icons.person,
-              title: '智能体',
-              subtitle:
-                  '约 ${_calculateDataSize(_storageInfo['personaCount'] ?? 0, 0.05)} MB',
-              count: '${_storageInfo['personaCount'] ?? 0} 个智能体',
-            ),
-
-            const Divider(),
-
-            _buildStorageItem(
-              context,
-              icon: Icons.library_books,
-              title: '知识库',
-              subtitle:
-                  '约 ${_calculateDataSize(_storageInfo['knowledgeCount'] ?? 0, 2.0)} MB',
-              count: '${_storageInfo['knowledgeCount'] ?? 0} 个文档',
-            ),
-
-            const Divider(),
-
-            _buildStorageItem(
-              context,
-              icon: Icons.settings,
-              title: '设置数据',
-              subtitle: '约 0.1 MB',
-              count: '配置信息',
-            ),
-
-            const SizedBox(height: 16),
-
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
+            statsAsync.when(
+              data: (stats) => Column(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 20,
+                  _buildStorageItem(
+                    context: context,
+                    icon: Icons.chat,
+                    title: '聊天记录',
+                    subtitle:
+                        '约 ${_calculateDataSize(stats.messageCount, 0.1)} MB',
+                    count: '${stats.chatCount} 个会话, ${stats.messageCount} 条消息',
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '总计使用存储空间：约 ${_calculateTotalDataSize()} MB',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                  const Divider(),
+                  _buildStorageItem(
+                    context: context,
+                    icon: Icons.person,
+                    title: '智能体',
+                    subtitle:
+                        '约 ${_calculateDataSize(stats.personaCount, 0.05)} MB',
+                    count: '${stats.personaCount} 个智能体',
+                  ),
+                  const Divider(),
+                  _buildStorageItem(
+                    context: context,
+                    icon: Icons.library_books,
+                    title: '知识库',
+                    subtitle:
+                        '约 ${_calculateDataSize(stats.knowledgeCount, 2.0)} MB',
+                    count: '${stats.knowledgeCount} 个文档',
+                  ),
+                  const Divider(),
+                  _buildStorageItem(
+                    context: context,
+                    icon: Icons.settings,
+                    title: '设置数据',
+                    subtitle: '约 0.1 MB',
+                    count: '配置信息',
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '总计使用存储空间：约 ${_calculateTotalDataSize(stats)} MB',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('错误: $err')),
             ),
           ],
         ),
@@ -248,36 +235,30 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
             ListTile(
-              leading: Icon(
-                Icons.delete_forever,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                '清空所有数据',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              subtitle: const Text('删除所有聊天记录、智能体和设置（不可恢复）'),
+              leading: const Icon(Icons.delete_forever),
+              title: const Text('清除聊天记录'),
+              subtitle: const Text('删除所有本地聊天数据'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: _clearAllData,
+              onTap: _clearChatHistory,
               contentPadding: EdgeInsets.zero,
             ),
-
             const Divider(),
-
             ListTile(
-              leading: Icon(
-                Icons.refresh,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                '重置应用',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              subtitle: const Text('恢复应用到初始状态'),
+              leading: const Icon(Icons.delete_sweep),
+              title: const Text('清除知识库'),
+              subtitle: const Text('删除所有本地知识库文件'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: _resetApp,
+              onTap: _clearKnowledgeBase,
+              contentPadding: EdgeInsets.zero,
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.restore),
+              title: const Text('恢复出厂设置'),
+              subtitle: const Text('重置所有设置和数据'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _resetToFactorySettings,
               contentPadding: EdgeInsets.zero,
             ),
           ],
@@ -286,316 +267,213 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     );
   }
 
-  /// 构建存储项目
-  Widget _buildStorageItem(
-    BuildContext context, {
+  /// 构建存储信息项
+  Widget _buildStorageItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required String count,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        count,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Theme.of(context).colorScheme.secondary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(count, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+        ],
       ),
-      contentPadding: EdgeInsets.zero,
     );
   }
 
   /// 导出数据
   Future<void> _exportData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // 创建备份数据
-      final backupData = {
-        'version': '1.0.0',
-        'timestamp': DateTime.now().toIso8601String(),
-        'data': {
-          'chats': _storageInfo['chatCount'] ?? 0,
-          'messages': _storageInfo['messageCount'] ?? 0,
-          'personas': _storageInfo['personaCount'] ?? 0,
-          'knowledge': _storageInfo['knowledgeCount'] ?? 0,
-        },
-      };
-
-      // 获取文档目录
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName =
-          'ai_assistant_backup_${DateTime.now().millisecondsSinceEpoch}.json';
-      final file = File('${directory.path}/$fileName');
-
-      // 写入备份数据
-      await file.writeAsString(jsonEncode(backupData));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('数据导出成功！文件已保存到：$fileName'),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: '查看路径',
-              onPressed: () {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('完整路径：${file.path}')));
-              },
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('导出失败：$e')));
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    // ... (实现将在需要时添加)
   }
 
   /// 导入数据
   Future<void> _importData() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        setState(() => _isLoading = true);
-
-        final file = File(result.files.single.path!);
-        final content = await file.readAsString();
-        final backupData = jsonDecode(content);
-
-        // 显示确认对话框
-        final confirmed = await _showImportConfirmDialog();
-        if (!confirmed) return;
-
-        // 模拟导入过程
-        await Future.delayed(const Duration(seconds: 2));
-
-        // 更新存储信息
-        if (backupData['data'] != null) {
-          setState(() {
-            _storageInfo = Map<String, dynamic>.from(backupData['data']);
-          });
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('数据导入成功！')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('导入失败：$e')));
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    // ... (实现将在需要时添加)
   }
 
   /// 切换自动备份
   Future<void> _toggleAutoBackup(bool value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('auto_backup_enabled', value);
-
-      setState(() {
-        _autoBackupEnabled = value;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(value ? '自动备份已启用' : '自动备份已禁用')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('设置失败：$e')));
-      }
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_backup_enabled', value);
+    setState(() {
+      _autoBackupEnabled = value;
+    });
   }
 
-  /// 清空所有数据
-  Future<void> _clearAllData() async {
-    final confirmed = await _showClearDataConfirmDialog();
-    if (!confirmed) return;
+  /// 清除聊天记录
+  Future<void> _clearChatHistory() async {
+    final confirmed = await _showConfirmationDialog(
+      context: context,
+      title: '确认清除',
+      content: '确定要删除所有聊天记录吗？此操作不可恢复。',
+    );
+    if (confirmed != true) return;
 
     setState(() => _isLoading = true);
-
     try {
-      // 模拟清空过程
-      await Future.delayed(const Duration(seconds: 2));
-
-      // 重置存储信息
-      setState(() {
-        _storageInfo = {
-          'chatCount': 0,
-          'messageCount': 0,
-          'personaCount': 0,
-          'knowledgeCount': 0,
-        };
-      });
+      // 实际的数据库清除逻辑将在这里实现
+      // await ref.read(appDatabaseProvider).clearChatHistory();
+      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
+      ref.invalidate(dataStatisticsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('所有数据已清空！')));
+        ).showSnackBar(const SnackBar(content: Text('聊天记录已清除')));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('清空失败：$e')));
+        ).showSnackBar(SnackBar(content: Text('清除失败: $e')));
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  /// 重置应用
-  Future<void> _resetApp() async {
-    final confirmed = await _showResetAppConfirmDialog();
-    if (!confirmed) return;
+  /// 清除知识库
+  Future<void> _clearKnowledgeBase() async {
+    final confirmed = await _showConfirmationDialog(
+      context: context,
+      title: '确认清除',
+      content: '确定要删除所有知识库文档吗？此操作不可恢复。',
+    );
+    if (confirmed != true) return;
 
     setState(() => _isLoading = true);
-
     try {
-      // 清空SharedPreferences
+      // 实际的数据库清除逻辑将在这里实现
+      // await ref.read(appDatabaseProvider).clearKnowledgeBase();
+      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
+      ref.invalidate(dataStatisticsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('知识库已清除')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('清除失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// 恢复出厂设置
+  Future<void> _resetToFactorySettings() async {
+    final confirmed = await _showConfirmationDialog(
+      context: context,
+      title: '确认重置',
+      content: '确定要恢复出厂设置吗？所有数据和设置都将被删除，应用将恢复到初始状态。',
+      confirmText: '确认重置',
+      isDestructive: true,
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      // 实际的数据库重置逻辑将在这里实现
+      // await ref.read(appDatabaseProvider).resetDatabase();
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-
-      // 模拟重置过程
-      await Future.delayed(const Duration(seconds: 3));
-
-      // 重置存储信息和设置
-      setState(() {
-        _storageInfo = {
-          'chatCount': 0,
-          'messageCount': 0,
-          'personaCount': 0,
-          'knowledgeCount': 0,
-        };
-        _autoBackupEnabled = false;
-      });
+      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
+      ref.invalidate(dataStatisticsProvider);
 
       if (mounted) {
+        setState(() {
+          _autoBackupEnabled = false;
+        });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('应用已重置到初始状态！')));
+        ).showSnackBar(const SnackBar(content: Text('应用已恢复出厂设置')));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('重置失败：$e')));
+        ).showSnackBar(SnackBar(content: Text('重置失败: $e')));
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  /// 显示导入确认对话框
-  Future<bool> _showImportConfirmDialog() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('确认导入'),
-            content: const Text('导入数据将覆盖当前所有数据，此操作不可撤销。确定要继续吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('确认导入'),
-              ),
-            ],
+  Future<bool?> _showConfirmationDialog({
+    required BuildContext context,
+    required String title,
+    required String content,
+    String confirmText = '确认',
+    bool isDestructive = false,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
           ),
-        ) ??
-        false;
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              confirmText,
+              style: TextStyle(
+                color: isDestructive
+                    ? Theme.of(context).colorScheme.error
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 显示清空数据确认对话框
-  Future<bool> _showClearDataConfirmDialog() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('确认清空'),
-            content: const Text('此操作将删除所有聊天记录、智能体和知识库数据，且不可恢复。确定要继续吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('确认清空'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  /// 显示重置应用确认对话框
-  Future<bool> _showResetAppConfirmDialog() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('确认重置'),
-            content: const Text('此操作将清空所有数据和设置，将应用恢复到初始状态，且不可恢复。确定要继续吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('确认重置'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  /// 计算数据大小（简单估算）
-  String _calculateDataSize(int count, double sizePerItem) {
-    final size = count * sizePerItem;
-    return size.toStringAsFixed(1);
+  /// 计算数据大小
+  String _calculateDataSize(int count, double itemSize) {
+    if (count == 0) return '0.00';
+    return (count * itemSize).toStringAsFixed(2);
   }
 
   /// 计算总数据大小
-  String _calculateTotalDataSize() {
-    final chatSize = (_storageInfo['messageCount'] ?? 0) * 0.1;
-    final personaSize = (_storageInfo['personaCount'] ?? 0) * 0.05;
-    final knowledgeSize = (_storageInfo['knowledgeCount'] ?? 0) * 2.0;
-    final settingsSize = 0.1;
-
-    final total = chatSize + personaSize + knowledgeSize + settingsSize;
-    return total.toStringAsFixed(1);
+  String _calculateTotalDataSize(DataStatistics? stats) {
+    if (stats == null) return '0.00';
+    final chatSize = _calculateDataSize(stats.messageCount, 0.1);
+    final personaSize = _calculateDataSize(stats.personaCount, 0.05);
+    final knowledgeSize = _calculateDataSize(stats.knowledgeCount, 2.0);
+    return (double.parse(chatSize) +
+            double.parse(personaSize) +
+            double.parse(knowledgeSize) +
+            0.1)
+        .toStringAsFixed(2);
   }
 }

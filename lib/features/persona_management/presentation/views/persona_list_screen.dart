@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/persona.dart';
 import '../providers/persona_provider.dart';
+import 'widgets/persona_avatar.dart';
 
 /// 智能体列表界面
 ///
@@ -85,7 +86,8 @@ class _PersonaListScreenState extends ConsumerState<PersonaListScreen> {
               (persona) =>
                   _searchQuery.isEmpty ||
                   persona.name.toLowerCase().contains(_searchQuery) ||
-                  persona.description.toLowerCase().contains(_searchQuery),
+                  (persona.description?.toLowerCase().contains(_searchQuery) ??
+                      false),
             )
             .toList();
 
@@ -184,16 +186,7 @@ class _PersonaListScreenState extends ConsumerState<PersonaListScreen> {
               Row(
                 children: [
                   // 智能体头像
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    child: Text(
-                      persona.avatar ?? '🤖',
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
+                  PersonaAvatar(persona: persona, radius: 24),
                   const SizedBox(width: 16),
 
                   // 智能体信息
@@ -208,7 +201,7 @@ class _PersonaListScreenState extends ConsumerState<PersonaListScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          persona.description,
+                          persona.description ?? '这个智能体还没有描述',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: Theme.of(

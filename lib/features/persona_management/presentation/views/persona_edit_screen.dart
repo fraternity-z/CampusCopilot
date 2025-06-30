@@ -1,18 +1,21 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/persona.dart';
 import '../providers/persona_provider.dart';
-import '../../../llm_chat/domain/services/model_management_service.dart';
 
 /// 智能体编辑界面
 ///
 /// 用于创建和编辑智能体，包含：
-/// - 基本信息编辑
-/// - 系统提示词编辑
-/// - API配置选择
-/// - 模型参数设置
+/// - 头像设置（上传图片或选择emoji）
+/// - 名称编辑
+/// - 提示词编辑（角色设定）
 class PersonaEditScreen extends ConsumerStatefulWidget {
   final String? personaId;
 
@@ -25,15 +28,12 @@ class PersonaEditScreen extends ConsumerStatefulWidget {
 class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
   final _systemPromptController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
 
-  String _selectedProvider = 'OpenAI';
-  String _selectedModel = 'gpt-3.5-turbo';
-  String _selectedAvatar = '🤖';
-  double _temperature = 0.7;
-  int _maxTokens = 2048;
-  bool _isDefault = false;
+  String? _avatarImagePath;
+  String _avatarEmoji = '🤖';
+  bool _useImageAvatar = false;
 
   bool get _isEditing => widget.personaId != null;
 
@@ -42,15 +42,12 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
     super.initState();
     if (_isEditing) {
       _loadPersonaData();
-    } else {
-      _setDefaultValues();
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
     _systemPromptController.dispose();
     super.dispose();
   }
@@ -67,23 +64,18 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // 基本信息卡片
-            _buildBasicInfoCard(),
+            // 头像设置卡片
+            _buildAvatarCard(),
 
             const SizedBox(height: 16),
 
-            // API配置卡片
-            _buildApiConfigCard(),
+            // 名称设置卡片
+            _buildNameCard(),
 
             const SizedBox(height: 16),
 
-            // 系统提示词卡片
+            // 提示词设置卡片
             _buildSystemPromptCard(),
-
-            const SizedBox(height: 16),
-
-            // 高级设置卡片
-            _buildAdvancedSettingsCard(),
 
             const SizedBox(height: 32),
 
@@ -95,8 +87,8 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
     );
   }
 
-  /// 构建基本信息卡片
-  Widget _buildBasicInfoCard() {
+  /// 构建头像设置卡片
+  Widget _buildAvatarCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -104,14 +96,122 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '基本信息',
+              '头像',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
 
-            // 名称输入框
+            // 头像预览
+            Center(
+              child: GestureDetector(
+                onTap: _showAvatarOptions,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: _buildAvatarContent(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 头像选项按钮
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image),
+                    label: const Text('上传图片'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _showEmojiPicker,
+                    icon: const Icon(Icons.emoji_emotions),
+                    label: const Text('选择表情'),
+                  ),
+                ),
+              ],
+            ),
+
+            if (_useImageAvatar && _avatarImagePath != null) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _removeImage,
+                  icon: const Icon(Icons.delete_outline, size: 16),
+                  label: const Text('移除图片'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建头像内容
+  Widget _buildAvatarContent() {
+    if (_useImageAvatar && _avatarImagePath != null) {
+      return ClipOval(
+        child: Image.file(
+          File(_avatarImagePath!),
+          width: 76,
+          height: 76,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        ),
+      );
+    }
+    return _buildDefaultAvatar();
+  }
+
+  /// 构建默认头像（emoji或名称首字母）
+  Widget _buildDefaultAvatar() {
+    String displayText = _avatarEmoji;
+    if (_avatarEmoji.isEmpty && _nameController.text.isNotEmpty) {
+      displayText = _nameController.text[0].toUpperCase();
+    }
+
+    return Center(
+      child: Text(displayText, style: const TextStyle(fontSize: 32)),
+    );
+  }
+
+  /// 构建名称设置卡片
+  Widget _buildNameCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '名称',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
@@ -119,6 +219,12 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
                 hintText: '为你的智能体起个名字',
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value) {
+                // 当名称改变时，如果使用的是默认头像，需要更新显示
+                if (!_useImageAvatar) {
+                  setState(() {});
+                }
+              },
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return '请输入智能体名称';
@@ -126,131 +232,13 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
                 return null;
               },
             ),
-
-            const SizedBox(height: 16),
-
-            // 描述输入框
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: '描述',
-                hintText: '简单描述这个智能体的用途',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入智能体描述';
-                }
-                return null;
-              },
-            ),
           ],
         ),
       ),
     );
   }
 
-  /// 构建API配置卡片
-  Widget _buildApiConfigCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'AI模型配置',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-
-            // 供应商选择
-            DropdownButtonFormField<String>(
-              value: _selectedProvider,
-              decoration: const InputDecoration(
-                labelText: 'AI供应商',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'OpenAI', child: Text('OpenAI')),
-                DropdownMenuItem(value: 'Google', child: Text('Google Gemini')),
-                DropdownMenuItem(
-                  value: 'Anthropic',
-                  child: Text('Anthropic Claude'),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedProvider = value!;
-                  _updateAvailableModels();
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // 模型选择（动态加载）
-            Consumer(
-              builder: (context, ref, _) {
-                final providerKey = _selectedProvider.toLowerCase();
-                final asyncModels = ref.watch(
-                  modelsByProviderProvider(providerKey),
-                );
-
-                return asyncModels.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (err, st) => DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: '模型',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedModel,
-                    items: [
-                      DropdownMenuItem(
-                        value: _selectedModel,
-                        child: Text(_selectedModel),
-                      ),
-                    ],
-                    onChanged: null,
-                  ),
-                  data: (models) {
-                    final ids = models.map((m) => m.id).toList();
-                    if (!ids.contains(_selectedModel)) {
-                      _selectedModel = ids.isNotEmpty ? ids.first : '';
-                    }
-                    return DropdownButtonFormField<String>(
-                      value: _selectedModel.isEmpty ? null : _selectedModel,
-                      decoration: const InputDecoration(
-                        labelText: '模型',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: ids
-                          .map(
-                            (id) =>
-                                DropdownMenuItem(value: id, child: Text(id)),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedModel = value ?? '';
-                        });
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建系统提示词卡片
+  /// 构建提示词设置卡片
   Widget _buildSystemPromptCard() {
     return Card(
       child: Padding(
@@ -261,7 +249,7 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
             Row(
               children: [
                 Text(
-                  '系统提示词',
+                  '提示词',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -276,76 +264,24 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '定义智能体的角色、行为和回答风格',
+              '定义智能体的角色、性格和行为方式。这是给AI的指令，用来告诉AI如何扮演这个角色。',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
-
-            // 系统提示词输入框
             TextFormField(
               controller: _systemPromptController,
               decoration: const InputDecoration(
-                hintText: '输入系统提示词...',
+                hintText: '例如：你是一个专业的编程助手，擅长解答技术问题...',
                 border: OutlineInputBorder(),
               ),
               maxLines: 8,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return '请输入系统提示词';
+                  return '请输入提示词';
                 }
                 return null;
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建高级设置卡片
-  Widget _buildAdvancedSettingsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '高级设置',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-
-            // 温度设置
-            Text('创造性 (Temperature): ${_temperature.toStringAsFixed(1)}'),
-            Slider(
-              value: _temperature,
-              min: 0.0,
-              max: 2.0,
-              divisions: 20,
-              onChanged: (value) {
-                setState(() {
-                  _temperature = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // 最大令牌数设置
-            TextFormField(
-              initialValue: _maxTokens.toString(),
-              decoration: const InputDecoration(
-                labelText: '最大令牌数',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                _maxTokens = int.tryParse(value) ?? 2048;
               },
             ),
           ],
@@ -362,8 +298,8 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _testPersona,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('测试'),
+              icon: const Icon(Icons.chat),
+              label: const Text('开始对话'),
             ),
           ),
           const SizedBox(width: 16),
@@ -390,36 +326,162 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
 
       if (persona != null) {
         _nameController.text = persona.name;
-        _descriptionController.text = persona.description;
         _systemPromptController.text = persona.systemPrompt;
-        _selectedAvatar = persona.avatar ?? '🤖';
+        _avatarEmoji = persona.avatarEmoji;
+        _avatarImagePath = persona.avatarImagePath;
         setState(() {
-          _isDefault = persona.isDefault;
+          _useImageAvatar = persona.hasImageAvatar;
         });
       }
-    } else {
-      // 创建模式：设置默认值
-      _setDefaultValues();
     }
   }
 
-  /// 设置默认值
-  void _setDefaultValues() {
-    _systemPromptController.text = '''你是一个有用的AI助手。请遵循以下原则：
-
-1. 提供准确、有用的信息
-2. 保持友好和专业的语调
-3. 如果不确定答案，请诚实说明
-4. 根据上下文调整回答的详细程度
-5. 优先使用中文回答，除非用户明确要求其他语言
-
-请根据用户的问题提供最佳回答。''';
+  /// 显示头像选项
+  void _showAvatarOptions() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择头像'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.emoji_emotions),
+                title: const Text('选择表情'),
+                onTap: _showEmojiPicker,
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                title: const Text('上传图片'),
+                onTap: _pickImage,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 更新可用模型
-  void _updateAvailableModels() {
-    // 触发 Consumer 重建即可
-    setState(() {});
+  /// 选择表情
+  void _showEmojiPicker() {
+    final commonEmojis = [
+      '🤖',
+      '👨‍💻',
+      '👩‍💻',
+      '🎯',
+      '💡',
+      '🚀',
+      '⭐',
+      '🔥',
+      '💯',
+      '🎨',
+      '📚',
+      '🔧',
+      '⚡',
+      '🌟',
+      '🎪',
+      '🎭',
+      '🎮',
+      '🎵',
+      '🍕',
+      '☕',
+      '🌙',
+      '🌈',
+      '🦄',
+      '🐱',
+      '🐶',
+      '🦉',
+      '🐧',
+      '🦊',
+      '🐼',
+      '🦋',
+      '🌸',
+      '🌺',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择表情'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 200,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 8,
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+            ),
+            itemCount: commonEmojis.length,
+            itemBuilder: (context, index) {
+              final emoji = commonEmojis[index];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _avatarEmoji = emoji;
+                    _useImageAvatar = false;
+                  });
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _avatarEmoji == emoji
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 上传图片
+  void _pickImage() async {
+    final pickedFile = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = '${Uuid().v4()}.jpg';
+      final newFile = await file.copy('${appDir.path}/$fileName');
+      _avatarImagePath = newFile.path;
+      setState(() {
+        _useImageAvatar = true;
+      });
+    }
+  }
+
+  /// 移除图片
+  void _removeImage() {
+    _avatarImagePath = null;
+    setState(() {
+      _useImageAvatar = false;
+    });
   }
 
   /// 显示提示词模板
@@ -516,11 +578,9 @@ class _PersonaEditScreenState extends ConsumerState<PersonaEditScreen> {
       final persona = Persona(
         id: widget.personaId ?? '', // 如果是新建，ID会在Provider中生成
         name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
         systemPrompt: _systemPromptController.text.trim(),
-        avatar: _selectedAvatar,
-        isDefault: _isDefault,
-        apiConfigId: 'default', // 暂时使用默认配置
+        avatarImagePath: _useImageAvatar ? _avatarImagePath : null,
+        avatarEmoji: _useImageAvatar ? '🤖' : _avatarEmoji,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

@@ -16,6 +16,8 @@ import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart
 import '../features/llm_chat/presentation/providers/chat_provider.dart';
 import '../features/llm_chat/domain/entities/chat_session.dart';
 import '../../features/persona_management/presentation/providers/persona_group_provider.dart';
+import '../features/persona_management/presentation/providers/persona_provider.dart';
+import '../features/persona_management/domain/entities/persona.dart';
 import '../data/local/app_database.dart';
 
 /// 侧边栏折叠状态管理
@@ -240,7 +242,7 @@ class NavigationSidebar extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'AI 助手',
+                      'Anywherechat',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -473,6 +475,25 @@ class NavigationSidebar extends ConsumerWidget {
   Widget _buildAssistantsContent(BuildContext context, WidgetRef ref) {
     final groupState = ref.watch(personaGroupProvider);
     final groups = groupState.groups;
+    final selectedGroupId = groupState.selectedGroupId;
+    final personas = ref.watch(personaListProvider);
+
+    // 根据选中的分组过滤助手（暂时通过助手名称模拟分组关系）
+    List<Persona> filteredPersonas;
+    if (selectedGroupId != null) {
+      final selectedGroup = groupState.selectedGroup;
+      if (selectedGroup != null) {
+        // 暂时通过简单的名称匹配来模拟分组关系
+        // 后续可以添加真正的groupId字段
+        filteredPersonas = personas.where((persona) {
+          return _getPersonaGroupId(persona) == selectedGroupId;
+        }).toList();
+      } else {
+        filteredPersonas = [];
+      }
+    } else {
+      filteredPersonas = personas;
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -513,6 +534,44 @@ class NavigationSidebar extends ConsumerWidget {
 
         const SizedBox(height: 24),
 
+        // 当前过滤状态提示
+        if (selectedGroupId != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.filter_list,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '正在显示分组: ${groupState.selectedGroup?.name ?? "未知"}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () =>
+                      ref.read(personaGroupProvider.notifier).clearSelection(),
+                  child: Icon(
+                    Icons.clear,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // 分组列表
         if (groups.isEmpty) ...[
           Center(
@@ -529,9 +588,9 @@ class NavigationSidebar extends ConsumerWidget {
 
         const SizedBox(height: 24),
 
-        // 未分组助手标题
+        // 助手列表标题
         Text(
-          '未分组助手',
+          selectedGroupId != null ? '分组助手' : '所有助手',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
@@ -540,21 +599,32 @@ class NavigationSidebar extends ConsumerWidget {
 
         const SizedBox(height: 8),
 
-        // 默认助手
-        _buildAssistantItem(
-          context,
-          icon: '默',
-          iconBg: Theme.of(context).colorScheme.primary,
-          title: '默认助手',
-          subtitle: '2个对话',
-          onTap: () => context.go('/chat'),
-        ),
+        // 助手列表
+        if (filteredPersonas.isEmpty) ...[
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                selectedGroupId != null ? '该分组暂无助手' : '暂无助手',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ] else ...[
+          ...filteredPersonas.map(
+            (persona) => _buildPersonaItem(context, ref, persona),
+          ),
+        ],
 
         const SizedBox(height: 16),
 
         // 助手统计
         Text(
-          '共 1 个助手',
+          selectedGroupId != null
+              ? '分组中共 ${filteredPersonas.length} 个助手'
+              : '共 ${filteredPersonas.length} 个助手',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -564,37 +634,234 @@ class NavigationSidebar extends ConsumerWidget {
     );
   }
 
-  /// 构建分组条目
-  Widget _buildGroupItem(
+  /// 获取助手的分组ID（暂时用助手类型来模拟）
+  String? _getPersonaGroupId(Persona persona) {
+    // 暂时通过助手名称来模拟分组关系
+    // 后续可以添加真正的groupId字段到数据库
+    if (persona.name.contains('编程') || persona.name.contains('代码')) {
+      return 'programming-group'; // 假设有一个编程分组
+    } else if (persona.name.contains('写作') || persona.name.contains('文案')) {
+      return 'writing-group'; // 假设有一个写作分组
+    }
+    return null; // 未分组
+  }
+
+  /// 构建助手条目
+  Widget _buildPersonaItem(
     BuildContext context,
     WidgetRef ref,
-    PersonaGroupsTableData group,
+    Persona persona,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
-          // TODO: 未来可实现点击分组过滤助手
+          // 选择助手并跳转到聊天页面
+          ref.read(personaProvider.notifier).selectPersona(persona.id);
+          context.go('/chat');
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
           ),
           child: Row(
             children: [
-              const Icon(Icons.folder, size: 18),
+              // 助手头像
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Text(
+                    persona.avatar ?? persona.name.substring(0, 1),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // 助手信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      persona.name,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (persona.description?.isNotEmpty == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        persona.description!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              // 默认标记
+              if (persona.isDefault) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '默认',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // 更多操作按钮
+              PopupMenuButton<String>(
+                onSelected: (value) =>
+                    _handlePersonaAction(context, ref, value, persona),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                  if (!persona.isDefault)
+                    const PopupMenuItem(value: 'delete', child: Text('删除')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 处理助手菜单操作
+  void _handlePersonaAction(
+    BuildContext context,
+    WidgetRef ref,
+    String action,
+    Persona persona,
+  ) {
+    switch (action) {
+      case 'edit':
+        // 跳转到编辑页面
+        context.go('/personas/edit/${persona.id}');
+        break;
+      case 'delete':
+        _showDeletePersonaDialog(context, ref, persona);
+        break;
+    }
+  }
+
+  /// 显示删除助手确认对话框
+  void _showDeletePersonaDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Persona persona,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除助手'),
+        content: Text('确定要删除助手 "${persona.name}" 吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(personaProvider.notifier).deletePersona(persona.id);
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建分组条目
+  Widget _buildGroupItem(
+    BuildContext context,
+    WidgetRef ref,
+    PersonaGroupsTableData group,
+  ) {
+    final groupState = ref.watch(personaGroupProvider);
+    final isSelected = groupState.selectedGroupId == group.id;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          // 点击分组进行过滤
+          final notifier = ref.read(personaGroupProvider.notifier);
+          if (isSelected) {
+            // 如果当前分组已选中，则取消选择（显示所有助手）
+            notifier.clearSelection();
+          } else {
+            // 选中当前分组
+            notifier.selectGroup(group.id);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: isSelected
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            border: isSelected
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected ? Icons.folder_open : Icons.folder,
+                size: 18,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : null,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   group.name,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : null,
+                  ),
                 ),
               ),
+              if (isSelected) ...[
+                Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+              ],
               PopupMenuButton<String>(
                 onSelected: (value) =>
                     _handleGroupAction(context, ref, value, group),
@@ -999,81 +1266,6 @@ class NavigationSidebar extends ConsumerWidget {
     );
   }
 
-  /// 构建助手条目
-  Widget _buildAssistantItem(
-    BuildContext context, {
-    required String icon,
-    required Color iconBg,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: iconBg,
-                child: Text(
-                  icon,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_horiz,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                onSelected: (value) {
-                  _handleAssistantMenuAction(context, value);
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                  const PopupMenuItem(value: 'delete', child: Text('删除')),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 构建聊天会话条目
   Widget _buildChatSessionTile(
     BuildContext context, {
@@ -1310,58 +1502,6 @@ class NavigationSidebar extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  /// 处理助手菜单操作
-  void _handleAssistantMenuAction(BuildContext context, String action) {
-    switch (action) {
-      case 'edit':
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('编辑助手'),
-            content: const Text('编辑助手功能将在后续版本中实现！'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('确定'),
-              ),
-            ],
-          ),
-        );
-        break;
-      case 'delete':
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('删除助手'),
-            content: const Text('确定要删除该助手吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // 删除助手功能暂未实现，显示提示
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('删除助手功能将在后续版本中实现'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: const Text('删除'),
-              ),
-            ],
-          ),
-        );
-        break;
-    }
   }
 }
 

@@ -7,16 +7,37 @@ import '../../../../core/di/database_providers.dart';
 
 class PersonaGroupState {
   final List<PersonaGroupsTableData> groups;
+  final String? selectedGroupId;
   final String? error;
 
-  const PersonaGroupState({this.groups = const [], this.error});
+  const PersonaGroupState({
+    this.groups = const [],
+    this.selectedGroupId,
+    this.error,
+  });
 
   PersonaGroupState copyWith({
     List<PersonaGroupsTableData>? groups,
+    String? selectedGroupId,
     String? error,
   }) {
-    return PersonaGroupState(groups: groups ?? this.groups, error: error);
+    return PersonaGroupState(
+      groups: groups ?? this.groups,
+      selectedGroupId: selectedGroupId ?? this.selectedGroupId,
+      error: error,
+    );
   }
+
+  PersonaGroupsTableData? get selectedGroup {
+    if (selectedGroupId == null) return null;
+    try {
+      return groups.firstWhere((group) => group.id == selectedGroupId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool get hasSelectedGroup => selectedGroupId != null;
 }
 
 class PersonaGroupNotifier extends StateNotifier<PersonaGroupState> {
@@ -34,6 +55,14 @@ class PersonaGroupNotifier extends StateNotifier<PersonaGroupState> {
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  void selectGroup(String? groupId) {
+    state = state.copyWith(selectedGroupId: groupId);
+  }
+
+  void clearSelection() {
+    state = state.copyWith(selectedGroupId: null);
   }
 
   Future<void> createGroup(String name) async {
@@ -70,6 +99,10 @@ class PersonaGroupNotifier extends StateNotifier<PersonaGroupState> {
 
   Future<void> deleteGroup(String id) async {
     try {
+      if (state.selectedGroupId == id) {
+        state = state.copyWith(selectedGroupId: null);
+      }
+
       await _database.deletePersonaGroup(id);
       await _loadGroups();
     } catch (e) {

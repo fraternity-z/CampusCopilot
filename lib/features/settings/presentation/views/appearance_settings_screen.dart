@@ -72,7 +72,7 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                       if (value != null) {
                         ref
                             .read(settingsProvider.notifier)
-                            .updateThemeMode(value);
+                            .updateThemeMode(_getThemeModeFromString(value));
                       }
                     },
                   ),
@@ -118,8 +118,8 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                 Text(
                   '动画效果',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -166,7 +166,9 @@ class AppearanceSettingsScreen extends ConsumerWidget {
 
             ListTile(
               title: const Text('界面语言'),
-              subtitle: Text(_getLanguageName(ref.watch(settingsProvider).language)),
+              subtitle: Text(
+                _getLanguageName(ref.watch(settingsProvider).language),
+              ),
               trailing: DropdownButton<String>(
                 value: ref.watch(settingsProvider).language,
                 items: const [
@@ -295,6 +297,19 @@ class AppearanceSettingsScreen extends ConsumerWidget {
         return '深色';
       case app_settings.ThemeMode.system:
         return '跟随系统';
+    }
+  }
+
+  /// 将字符串转换为ThemeMode
+  app_settings.ThemeMode _getThemeModeFromString(String themeModeString) {
+    switch (themeModeString) {
+      case '浅色':
+        return app_settings.ThemeMode.light;
+      case '深色':
+        return app_settings.ThemeMode.dark;
+      case '跟随系统':
+      default:
+        return app_settings.ThemeMode.system;
     }
   }
 

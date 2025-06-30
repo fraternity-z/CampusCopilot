@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// 应用主题配置
 ///
@@ -11,114 +12,139 @@ class AppTheme {
   // 私有构造函数，防止实例化
   AppTheme._();
 
-  // 主色调
-  static const Color primaryColor = Color(0xFF2196F3);
-  static const Color secondaryColor = Color(0xFF03DAC6);
-  static const Color errorColor = Color(0xFFB00020);
+  // 基础颜色
+  static const Color _primaryColor = Color(0xFF4A90E2);
+  static const Color _secondaryColor = Color(0xFF50E3C2);
+  static const Color _errorColor = Color(0xFFD0021B);
 
   /// 浅色主题
   static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
+    final baseTheme = ThemeData.light(useMaterial3: true);
+    final textTheme = GoogleFonts.notoSansScTextTheme(baseTheme.textTheme);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primaryColor,
+      secondary: _secondaryColor,
+      error: _errorColor,
       brightness: Brightness.light,
+    );
 
-      // 颜色方案
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.light,
-      ),
-
-      // 应用栏主题
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
+    return baseTheme.copyWith(
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 1,
+        centerTitle: true,
       ),
-
-      // 卡片主题
       cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: colorScheme.surfaceContainer,
       ),
-
-      // 输入框主题
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
         filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 12,
+          vertical: 14,
         ),
       ),
-
-      // 按钮主题
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          elevation: 2,
         ),
       ),
-
-      // 列表瓦片主题
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: colorScheme.onSurfaceVariant,
+        ),
       ),
-
-      // 分割线主题
-      dividerTheme: const DividerThemeData(thickness: 1, space: 1),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant.withAlpha(128),
+        thickness: 1,
+        space: 1,
+      ),
     );
   }
 
   /// 深色主题
   static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
+    final baseTheme = ThemeData.dark(useMaterial3: true);
+    final textTheme = GoogleFonts.notoSansScTextTheme(baseTheme.textTheme);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primaryColor,
+      secondary: _secondaryColor,
+      error: _errorColor,
       brightness: Brightness.dark,
-
-      // 颜色方案
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.dark,
-      ),
-
-      // 应用栏主题
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
+    );
+    return baseTheme.copyWith(
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 1,
+        centerTitle: true,
       ),
-
-      // 卡片主题
       cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: colorScheme.surfaceContainer,
       ),
-
-      // 输入框主题
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
         filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 12,
+          vertical: 14,
         ),
       ),
-
-      // 按钮主题
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          elevation: 2,
         ),
       ),
-
-      // 列表瓦片主题
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: colorScheme.onSurfaceVariant,
+        ),
       ),
-
-      // 分割线主题
-      dividerTheme: const DividerThemeData(thickness: 1, space: 1),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant.withAlpha(128),
+        thickness: 1,
+        space: 1,
+      ),
     );
   }
 }
@@ -127,31 +153,34 @@ class AppTheme {
 extension AppColors on ColorScheme {
   /// 成功色
   Color get success => brightness == Brightness.light
-      ? const Color(0xFF4CAF50)
-      : const Color(0xFF81C784);
+      ? const Color(0xFF28A745)
+      : const Color(0xFF218838);
 
   /// 警告色
   Color get warning => brightness == Brightness.light
-      ? const Color(0xFFFF9800)
-      : const Color(0xFFFFB74D);
+      ? const Color(0xFFFFC107)
+      : const Color(0xFFD39E00);
 
   /// 信息色
   Color get info => brightness == Brightness.light
-      ? const Color(0xFF2196F3)
-      : const Color(0xFF64B5F6);
+      ? const Color(0xFF17A2B8)
+      : const Color(0xFF117A8B);
 }
 
 /// 文本样式扩展
 extension AppTextStyles on TextTheme {
   /// 聊天消息样式
-  TextStyle get chatMessage => bodyLarge!.copyWith(height: 1.4);
+  TextStyle? get chatMessage =>
+      bodyLarge?.copyWith(height: 1.5, letterSpacing: 0.2);
 
   /// 代码样式
-  TextStyle get code => bodyMedium!.copyWith(
+  TextStyle? get code => bodyMedium?.copyWith(
     fontFamily: 'monospace',
-    backgroundColor: Colors.grey.withValues(alpha: 0.1),
+    backgroundColor: Colors.black.withAlpha(13),
+    letterSpacing: 0.1,
   );
 
   /// 标签样式
-  TextStyle get label => labelMedium!.copyWith(fontWeight: FontWeight.w500);
+  TextStyle? get label =>
+      labelMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.3);
 }
