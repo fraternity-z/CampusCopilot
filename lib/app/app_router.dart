@@ -63,6 +63,96 @@ final modelParametersProvider = StateProvider<ModelParameters>((ref) {
   return const ModelParameters();
 });
 
+/// 代码块设置状态管理
+class CodeBlockSettings {
+  final String codeStyle; // 代码风格：auto, light, dark
+  final bool enableCodeEditing; // 启用代码块编辑功能
+  final bool enableLineNumbers; // 在代码块左侧显示行号
+  final bool enableCodeFolding; // 长代码块可以折叠显示
+  final bool enableCodeWrapping; // 长代码行可以自动换行
+  final bool defaultCollapseCodeBlocks; // 新代码块默认以折叠状态显示
+  final bool enableMermaidDiagrams; // 启用Mermaid图表渲染功能
+
+  const CodeBlockSettings({
+    this.codeStyle = 'auto',
+    this.enableCodeEditing = true,
+    this.enableLineNumbers = true,
+    this.enableCodeFolding = true,
+    this.enableCodeWrapping = true,
+    this.defaultCollapseCodeBlocks = false,
+    this.enableMermaidDiagrams = true,
+  });
+
+  CodeBlockSettings copyWith({
+    String? codeStyle,
+    bool? enableCodeEditing,
+    bool? enableLineNumbers,
+    bool? enableCodeFolding,
+    bool? enableCodeWrapping,
+    bool? defaultCollapseCodeBlocks,
+    bool? enableMermaidDiagrams,
+  }) {
+    return CodeBlockSettings(
+      codeStyle: codeStyle ?? this.codeStyle,
+      enableCodeEditing: enableCodeEditing ?? this.enableCodeEditing,
+      enableLineNumbers: enableLineNumbers ?? this.enableLineNumbers,
+      enableCodeFolding: enableCodeFolding ?? this.enableCodeFolding,
+      enableCodeWrapping: enableCodeWrapping ?? this.enableCodeWrapping,
+      defaultCollapseCodeBlocks:
+          defaultCollapseCodeBlocks ?? this.defaultCollapseCodeBlocks,
+      enableMermaidDiagrams:
+          enableMermaidDiagrams ?? this.enableMermaidDiagrams,
+    );
+  }
+}
+
+final codeBlockSettingsProvider = StateProvider<CodeBlockSettings>((ref) {
+  return const CodeBlockSettings();
+});
+
+/// 常规设置状态管理
+class GeneralSettings {
+  final bool enableMarkdownRendering;
+  final bool enableAutoSave;
+  final bool enableNotifications;
+  final double fontSize;
+  final String language;
+
+  const GeneralSettings({
+    this.enableMarkdownRendering = true,
+    this.enableAutoSave = true,
+    this.enableNotifications = true,
+    this.fontSize = 14.0,
+    this.language = 'zh-CN',
+  });
+
+  GeneralSettings copyWith({
+    bool? enableMarkdownRendering,
+    bool? enableAutoSave,
+    bool? enableNotifications,
+    double? fontSize,
+    String? language,
+  }) {
+    return GeneralSettings(
+      enableMarkdownRendering:
+          enableMarkdownRendering ?? this.enableMarkdownRendering,
+      enableAutoSave: enableAutoSave ?? this.enableAutoSave,
+      enableNotifications: enableNotifications ?? this.enableNotifications,
+      fontSize: fontSize ?? this.fontSize,
+      language: language ?? this.language,
+    );
+  }
+}
+
+final generalSettingsProvider = StateProvider<GeneralSettings>((ref) {
+  return const GeneralSettings();
+});
+
+/// 侧边栏折叠状态管理
+final sidebarModelParamsExpandedProvider = StateProvider<bool>((ref) => false);
+final sidebarCodeBlockExpandedProvider = StateProvider<bool>((ref) => false);
+final sidebarGeneralExpandedProvider = StateProvider<bool>((ref) => false);
+
 /// 应用路由配置
 ///
 /// 使用GoRouter实现声明式路由，支持：
@@ -1104,101 +1194,63 @@ class NavigationSidebar extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          '模型参数',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        // 模型参数折叠栏
+        _buildCollapsibleSection(
+          context,
+          ref,
+          title: '模型参数',
+          icon: Icons.tune,
+          isExpanded: ref.watch(sidebarModelParamsExpandedProvider),
+          onToggle: () {
+            ref.read(sidebarModelParamsExpandedProvider.notifier).state = !ref
+                .read(sidebarModelParamsExpandedProvider);
+          },
+          content: _buildModelParametersContent(context, ref),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // 温度设置
-        _buildParameterSlider(
+        // 代码块设置折叠栏
+        _buildCollapsibleSection(
           context,
-          label: '温度 (Temperature)',
-          value: ref.watch(modelParametersProvider).temperature,
-          min: 0.0,
-          max: 2.0,
-          divisions: 20,
-          onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(temperature: value);
+          ref,
+          title: '代码块设置',
+          icon: Icons.code,
+          isExpanded: ref.watch(sidebarCodeBlockExpandedProvider),
+          onToggle: () {
+            ref.read(sidebarCodeBlockExpandedProvider.notifier).state = !ref
+                .read(sidebarCodeBlockExpandedProvider);
           },
+          content: _buildCodeBlockSettingsContent(context, ref),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // 最大 Token 设置
-        _buildParameterSlider(
+        // 常规设置折叠栏
+        _buildCollapsibleSection(
           context,
-          label: '最大 Token 数',
-          value: ref.watch(modelParametersProvider).maxTokens,
-          min: 256,
-          max: 4096,
-          divisions: 15,
-          onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(maxTokens: value);
+          ref,
+          title: '常规设置',
+          icon: Icons.settings,
+          isExpanded: ref.watch(sidebarGeneralExpandedProvider),
+          onToggle: () {
+            ref.read(sidebarGeneralExpandedProvider.notifier).state = !ref.read(
+              sidebarGeneralExpandedProvider,
+            );
           },
-        ),
-
-        const SizedBox(height: 16),
-
-        // Top P 设置
-        _buildParameterSlider(
-          context,
-          label: 'Top P',
-          value: ref.watch(modelParametersProvider).topP,
-          min: 0.0,
-          max: 1.0,
-          divisions: 10,
-          onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(topP: value);
-          },
+          content: _buildGeneralSettingsContent(context, ref),
         ),
 
         const SizedBox(height: 24),
 
-        Text(
-          '对话设置',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 上下文长度设置
-        _buildParameterSlider(
-          context,
-          label: '上下文长度',
-          value: ref.watch(modelParametersProvider).contextLength,
-          min: 1,
-          max: 20,
-          divisions: 19,
-          onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(contextLength: value);
-          },
-        ),
-
-        const SizedBox(height: 24),
-
-        // 重置按钮
+        // 重置所有设置按钮
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
             onPressed: () {
-              ref.read(modelParametersProvider.notifier).state =
-                  const ModelParameters();
+              _showResetSettingsDialog(context, ref);
             },
-            child: const Text('重置为默认值'),
+            child: const Text('重置所有设置'),
           ),
         ),
       ],
@@ -1452,6 +1504,494 @@ class NavigationSidebar extends ConsumerWidget {
           activeColor: Theme.of(context).colorScheme.primary,
         ),
       ],
+    );
+  }
+
+  /// 构建折叠栏组件
+  Widget _buildCollapsibleSection(
+    BuildContext context,
+    WidgetRef ref, {
+    required String title,
+    required IconData icon,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required Widget content,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          // 标题栏
+          InkWell(
+            onTap: onToggle,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(8),
+                  bottom: isExpanded ? Radius.zero : const Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 内容区域
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            height: isExpanded ? null : 0,
+            child: isExpanded
+                ? Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(8),
+                      ),
+                    ),
+                    child: content,
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建模型参数内容
+  Widget _buildModelParametersContent(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        // 温度设置
+        _buildParameterSlider(
+          context,
+          label: '温度 (Temperature)',
+          value: ref.watch(modelParametersProvider).temperature,
+          min: 0.0,
+          max: 2.0,
+          divisions: 20,
+          onChanged: (value) {
+            ref.read(modelParametersProvider.notifier).state = ref
+                .read(modelParametersProvider)
+                .copyWith(temperature: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 最大 Token 设置
+        _buildParameterSlider(
+          context,
+          label: '最大 Token 数',
+          value: ref.watch(modelParametersProvider).maxTokens,
+          min: 256,
+          max: 4096,
+          divisions: 15,
+          onChanged: (value) {
+            ref.read(modelParametersProvider.notifier).state = ref
+                .read(modelParametersProvider)
+                .copyWith(maxTokens: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // Top P 设置
+        _buildParameterSlider(
+          context,
+          label: 'Top P',
+          value: ref.watch(modelParametersProvider).topP,
+          min: 0.0,
+          max: 1.0,
+          divisions: 10,
+          onChanged: (value) {
+            ref.read(modelParametersProvider.notifier).state = ref
+                .read(modelParametersProvider)
+                .copyWith(topP: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 上下文长度设置
+        _buildParameterSlider(
+          context,
+          label: '上下文长度',
+          value: ref.watch(modelParametersProvider).contextLength,
+          min: 1,
+          max: 20,
+          divisions: 19,
+          onChanged: (value) {
+            ref.read(modelParametersProvider.notifier).state = ref
+                .read(modelParametersProvider)
+                .copyWith(contextLength: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 重置模型参数按钮
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: () {
+              ref.read(modelParametersProvider.notifier).state =
+                  const ModelParameters();
+            },
+            child: const Text('重置模型参数'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建代码块设置内容
+  Widget _buildCodeBlockSettingsContent(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(codeBlockSettingsProvider);
+
+    return Column(
+      children: [
+        // 代码风格选择
+        _buildCodeStyleDropdown(
+          context,
+          ref,
+          value: settings.codeStyle,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(codeBlockSettingsProvider.notifier).state = settings
+                  .copyWith(codeStyle: value);
+            }
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // 代码编辑开关
+        _buildSettingSwitch(
+          context,
+          title: '代码编辑',
+          subtitle: '启用代码块编辑功能',
+          value: settings.enableCodeEditing,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableCodeEditing: value);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // 行号显示开关
+        _buildSettingSwitch(
+          context,
+          title: '代码显示行号',
+          subtitle: '在代码块左侧显示行号',
+          value: settings.enableLineNumbers,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableLineNumbers: value);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // 代码折叠开关
+        _buildSettingSwitch(
+          context,
+          title: '代码可折叠',
+          subtitle: '长代码块可以折叠显示',
+          value: settings.enableCodeFolding,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableCodeFolding: value);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // 代码换行开关
+        _buildSettingSwitch(
+          context,
+          title: '代码可换行',
+          subtitle: '长代码行可以自动换行',
+          value: settings.enableCodeWrapping,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableCodeWrapping: value);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // 默认收起代码块开关
+        _buildSettingSwitch(
+          context,
+          title: '默认收起代码块',
+          subtitle: '新代码块默认以折叠状态显示',
+          value: settings.defaultCollapseCodeBlocks,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(defaultCollapseCodeBlocks: value);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Mermaid图表开关
+        _buildSettingSwitch(
+          context,
+          title: 'Mermaid图表',
+          subtitle: '启用Mermaid图表渲染功能',
+          value: settings.enableMermaidDiagrams,
+          onChanged: (value) {
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableMermaidDiagrams: value);
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 构建常规设置内容
+  Widget _buildGeneralSettingsContent(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(generalSettingsProvider);
+
+    return Column(
+      children: [
+        // Markdown渲染开关
+        _buildSettingSwitch(
+          context,
+          title: 'Markdown 渲染',
+          subtitle: '启用 Markdown 语法支持',
+          value: settings.enableMarkdownRendering,
+          onChanged: (value) {
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableMarkdownRendering: value);
+          },
+        ),
+        const SizedBox(height: 12),
+        // 自动保存开关
+        _buildSettingSwitch(
+          context,
+          title: '自动保存',
+          subtitle: '自动保存对话记录',
+          value: settings.enableAutoSave,
+          onChanged: (value) {
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableAutoSave: value);
+          },
+        ),
+        const SizedBox(height: 12),
+        // 通知开关
+        _buildSettingSwitch(
+          context,
+          title: '系统通知',
+          subtitle: '接收应用通知',
+          value: settings.enableNotifications,
+          onChanged: (value) {
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableNotifications: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 字体大小设置
+        _buildParameterSlider(
+          context,
+          label: '字体大小',
+          value: settings.fontSize,
+          min: 10.0,
+          max: 20.0,
+          divisions: 10,
+          onChanged: (value) {
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(fontSize: value);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 语言选择
+        _buildDropdownSetting(
+          context,
+          title: '界面语言',
+          value: settings.language,
+          items: const ['zh-CN', 'en-US', 'ja-JP', 'ko-KR'],
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(generalSettingsProvider.notifier).state = settings
+                  .copyWith(language: value);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 构建设置开关
+  Widget _buildSettingSwitch(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(value: value, onChanged: onChanged),
+      ],
+    );
+  }
+
+  /// 构建下拉菜单设置
+  Widget _buildDropdownSetting(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+          ),
+          items: items.map((item) {
+            return DropdownMenuItem<String>(value: item, child: Text(item));
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  /// 构建代码风格下拉菜单（带有友好的显示文本）
+  Widget _buildCodeStyleDropdown(
+    BuildContext context,
+    WidgetRef ref, {
+    required String value,
+    required ValueChanged<String?> onChanged,
+  }) {
+    // 代码风格选项映射
+    final Map<String, String> codeStyleOptions = {
+      'auto': 'Auto 自动跟随系统主题',
+      'light': 'Light 浅色主题',
+      'dark': 'Dark 深色主题',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '代码风格',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '当前：${codeStyleOptions[value] ?? value}',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+          ),
+          items: codeStyleOptions.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Text(entry.value),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  /// 显示重置设置对话框
+  void _showResetSettingsDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('重置所有设置'),
+        content: const Text('确定要重置所有设置为默认值吗？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 重置所有设置
+              ref.read(modelParametersProvider.notifier).state =
+                  const ModelParameters();
+              ref.read(codeBlockSettingsProvider.notifier).state =
+                  const CodeBlockSettings();
+              ref.read(generalSettingsProvider.notifier).state =
+                  const GeneralSettings();
+            },
+            child: const Text('重置'),
+          ),
+        ],
+      ),
     );
   }
 
