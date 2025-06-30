@@ -65,7 +65,6 @@ final modelParametersProvider = StateProvider<ModelParameters>((ref) {
 
 /// 代码块设置状态管理
 class CodeBlockSettings {
-  final String codeStyle; // 代码风格：auto, light, dark
   final bool enableCodeEditing; // 启用代码块编辑功能
   final bool enableLineNumbers; // 在代码块左侧显示行号
   final bool enableCodeFolding; // 长代码块可以折叠显示
@@ -74,7 +73,6 @@ class CodeBlockSettings {
   final bool enableMermaidDiagrams; // 启用Mermaid图表渲染功能
 
   const CodeBlockSettings({
-    this.codeStyle = 'auto',
     this.enableCodeEditing = true,
     this.enableLineNumbers = true,
     this.enableCodeFolding = true,
@@ -84,7 +82,6 @@ class CodeBlockSettings {
   });
 
   CodeBlockSettings copyWith({
-    String? codeStyle,
     bool? enableCodeEditing,
     bool? enableLineNumbers,
     bool? enableCodeFolding,
@@ -93,7 +90,6 @@ class CodeBlockSettings {
     bool? enableMermaidDiagrams,
   }) {
     return CodeBlockSettings(
-      codeStyle: codeStyle ?? this.codeStyle,
       enableCodeEditing: enableCodeEditing ?? this.enableCodeEditing,
       enableLineNumbers: enableLineNumbers ?? this.enableLineNumbers,
       enableCodeFolding: enableCodeFolding ?? this.enableCodeFolding,
@@ -1168,8 +1164,8 @@ class NavigationSidebar extends ConsumerWidget {
                   return _buildChatSessionTile(
                     context,
                     title: session.title,
-                    subtitle: '${session.messageCount}条消息',
-                    time: _formatSessionTime(session.updatedAt),
+                    subtitle: _formatSessionTime(session.updatedAt),
+                    time: '',
                     isSelected: isSelected,
                     onTap: () {
                       ref.read(chatProvider.notifier).selectSession(session.id);
@@ -1672,20 +1668,6 @@ class NavigationSidebar extends ConsumerWidget {
 
     return Column(
       children: [
-        // 代码风格选择
-        _buildCodeStyleDropdown(
-          context,
-          ref,
-          value: settings.codeStyle,
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(codeBlockSettingsProvider.notifier).state = settings
-                  .copyWith(codeStyle: value);
-            }
-          },
-        ),
-        const SizedBox(height: 16),
-
         // 代码编辑开关
         _buildSettingSwitch(
           context,
@@ -1903,58 +1885,6 @@ class NavigationSidebar extends ConsumerWidget {
           ),
           items: items.map((item) {
             return DropdownMenuItem<String>(value: item, child: Text(item));
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  /// 构建代码风格下拉菜单（带有友好的显示文本）
-  Widget _buildCodeStyleDropdown(
-    BuildContext context,
-    WidgetRef ref, {
-    required String value,
-    required ValueChanged<String?> onChanged,
-  }) {
-    // 代码风格选项映射
-    final Map<String, String> codeStyleOptions = {
-      'auto': 'Auto 自动跟随系统主题',
-      'light': 'Light 浅色主题',
-      'dark': 'Dark 深色主题',
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '代码风格',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '当前：${codeStyleOptions[value] ?? value}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: value,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-          ),
-          items: codeStyleOptions.entries.map((entry) {
-            return DropdownMenuItem<String>(
-              value: entry.key,
-              child: Text(entry.value),
-            );
           }).toList(),
           onChanged: onChanged,
         ),

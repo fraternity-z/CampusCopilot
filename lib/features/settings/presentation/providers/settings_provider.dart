@@ -10,9 +10,11 @@ import '../../../../data/local/app_database.dart';
 /// 设置状态管理
 class SettingsNotifier extends StateNotifier<AppSettings> {
   final AppDatabase? _database;
+  final Ref? _ref;
 
-  SettingsNotifier({AppDatabase? database})
+  SettingsNotifier({AppDatabase? database, Ref? ref})
     : _database = database,
+      _ref = ref,
       super(const AppSettings()) {
     _loadSettings();
   }
@@ -240,6 +242,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
               }
               break;
           }
+
+          // 强制刷新相关的FutureProvider
+          if (_ref != null) {
+            _ref.invalidate(databaseCurrentModelProvider);
+            _ref.invalidate(databaseAvailableModelsProvider);
+            _ref.invalidate(databaseCurrentProviderProvider);
+          }
+
           break;
         }
       }
@@ -252,7 +262,7 @@ final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
   ref,
 ) {
   final database = ref.read(appDatabaseProvider);
-  return SettingsNotifier(database: database);
+  return SettingsNotifier(database: database, ref: ref);
 });
 
 /// 当前AI提供商Provider

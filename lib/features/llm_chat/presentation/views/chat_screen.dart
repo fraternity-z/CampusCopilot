@@ -7,6 +7,7 @@ import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/domain/entities/app_settings.dart';
+import 'widgets/message_content_widget.dart';
 
 /// 聊天界面
 ///
@@ -87,6 +88,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   context.go('/settings/models');
                 } else {
                   await ref.read(settingsProvider.notifier).switchModel(value);
+                  ref.invalidate(databaseCurrentModelProvider);
+                  ref.invalidate(databaseAvailableModelsProvider);
                 }
               },
               itemBuilder: (context) {
@@ -430,13 +433,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    message.content,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: isUser
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
-                    ),
+                  MessageContentWidget(
+                    content: message.content,
+                    isFromUser: isUser,
                   ),
                   const SizedBox(height: 6),
                   Text(

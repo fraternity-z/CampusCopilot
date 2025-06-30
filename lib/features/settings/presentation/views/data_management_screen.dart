@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
 import '../providers/data_management_provider.dart';
+import '../../../llm_chat/presentation/providers/chat_provider.dart';
+import '../providers/settings_provider.dart';
+import '../../../../core/exceptions/app_exceptions.dart';
 
 /// 数据管理页面
 class DataManagementScreen extends ConsumerStatefulWidget {
@@ -299,12 +304,204 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
 
   /// 导出数据
   Future<void> _exportData() async {
-    // ... (实现将在需要时添加)
+    try {
+      setState(() => _isLoading = true);
+
+      final backupPath = await ref
+          .read(dataManagementProvider.notifier)
+          .exportData();
+
+      if (backupPath != null && mounted) {
+        // 提取文件名
+        final fileName = backupPath.split('/').last.split('\\').last;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('数据导出成功！'),
+                const SizedBox(height: 4),
+                Text(
+                  '文件：$fileName',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: '打开文件夹',
+              onPressed: () => _openFileLocation(backupPath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('导出失败: ${_getErrorMessage(e)}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   /// 导入数据
   Future<void> _importData() async {
-    // ... (实现将在需要时添加)
+    // 首先显示警告对话框
+    final confirmed = await _showImportWarningDialog();
+    if (confirmed != true) return;
+
+    try {
+      setState(() => _isLoading = true);
+
+      final success = await ref
+          .read(dataManagementProvider.notifier)
+          .importData();
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('数据导入成功！应用将重新加载以应用更改。'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: '立即重启',
+              onPressed: () => _restartApp(),
+            ),
+          ),
+        );
+
+        // 刷新相关的Provider
+        ref.invalidate(dataStatisticsProvider);
+        ref.invalidate(chatProvider);
+        ref.invalidate(settingsProvider);
+
+        // 延迟重启应用
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) _restartApp();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('导入失败: ${_getErrorMessage(e)}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// 显示导入警告对话框
+  Future<bool?> _showImportWarningDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
+            const SizedBox(width: 8),
+            const Text('重要提醒'),
+          ],
+        ),
+        content: const Text(
+          '导入数据将：\n\n'
+          '• 覆盖所有现有聊天记录\n'
+          '• 覆盖所有AI模型配置\n'
+          '• 覆盖所有智能体设置\n'
+          '• 覆盖所有应用设置\n\n'
+          '此操作不可撤销。建议在导入前先导出当前数据作为备份。\n\n'
+          '确定要继续吗？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              '确认导入',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 打开文件位置
+  Future<void> _openFileLocation(String filePath) async {
+    try {
+      final file = File(filePath);
+      final directory = file.parent.path;
+
+      if (Platform.isWindows) {
+        await Process.run('explorer', [directory]);
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [directory]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [directory]);
+      } else {
+        // 复制路径到剪贴板作为备选方案
+        await Clipboard.setData(ClipboardData(text: directory));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('文件路径已复制到剪贴板')));
+        }
+      }
+    } catch (e) {
+      // 如果无法打开文件夹，复制路径到剪贴板
+      final directory = File(filePath).parent.path;
+      await Clipboard.setData(ClipboardData(text: directory));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法打开文件夹，路径已复制到剪贴板')));
+      }
+    }
+  }
+
+  /// 重启应用
+  void _restartApp() {
+    if (Platform.isAndroid || Platform.isIOS) {
+      SystemNavigator.pop();
+    } else {
+      exit(0);
+    }
+  }
+
+  /// 获取错误消息
+  String _getErrorMessage(dynamic error) {
+    if (error is BackupException) {
+      switch (error.code) {
+        case 'BACKUP_CREATE_FAILED':
+          return '创建备份失败，请检查存储权限和磁盘空间';
+        case 'BACKUP_RESTORE_FAILED':
+          return '恢复备份失败，请检查文件完整性';
+        case 'INVALID_BACKUP_FILE':
+          return '无效的备份文件，请选择正确的 .aibackup 文件';
+        case 'CORRUPTED_BACKUP':
+          return '备份文件已损坏，无法恢复';
+        default:
+          return error.message;
+      }
+    }
+    return error.toString();
   }
 
   /// 切换自动备份

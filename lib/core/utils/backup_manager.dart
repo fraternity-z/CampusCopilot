@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:archive/archive.dart';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
@@ -31,8 +32,7 @@ class BackupManager {
       final timestamp = DateFormat(
         AppConstants.backupDateFormat,
       ).format(DateTime.now());
-      final backupFileName =
-          'ai_assistant_backup_$timestamp${AppConstants.backupFileExtension}';
+      final backupFileName = 'ai_assistant_backup_$timestamp.zip';
 
       // 确定备份路径
       final backupPath = customPath ?? await _getDefaultBackupPath();
@@ -52,17 +52,8 @@ class BackupManager {
         checksum: _calculateChecksum(backupData),
       );
 
-      // 组装最终备份数据
-      final finalBackupData = {
-        'metadata': metadata.toJson(),
-        'data': backupData,
-      };
-
-      // 写入备份文件
-      await backupFile.writeAsString(
-        jsonEncode(finalBackupData),
-        encoding: utf8,
-      );
+      // 创建ZIP压缩包
+      await _createZipBackup(backupFile, metadata, backupData);
 
       // 更新备份记录
       await _updateBackupHistory(backupFile.path, metadata);
@@ -85,19 +76,31 @@ class BackupManager {
         throw BackupException.invalidBackupFile();
       }
 
-      // 读取备份文件
-      final backupContent = await backupFile.readAsString(encoding: utf8);
-      final backupJson = jsonDecode(backupContent) as Map<String, dynamic>;
+      // 检查文件格式（ZIP 或 旧的 JSON 格式）
+      final isZipFile = backupFilePath.endsWith('.zip');
 
-      // 验证备份文件格式
-      if (!backupJson.containsKey('metadata') ||
-          !backupJson.containsKey('data')) {
-        throw BackupException.invalidBackupFile();
+      BackupMetadata metadata;
+      Map<String, dynamic> backupData;
+
+      if (isZipFile) {
+        // 处理ZIP格式的备份文件
+        final result = await _extractZipBackup(backupFile);
+        metadata = result['metadata'] as BackupMetadata;
+        backupData = result['data'] as Map<String, dynamic>;
+      } else {
+        // 处理旧的JSON格式的备份文件（向后兼容）
+        final backupContent = await backupFile.readAsString(encoding: utf8);
+        final backupJson = jsonDecode(backupContent) as Map<String, dynamic>;
+
+        // 验证备份文件格式
+        if (!backupJson.containsKey('metadata') ||
+            !backupJson.containsKey('data')) {
+          throw BackupException.invalidBackupFile();
+        }
+
+        metadata = BackupMetadata.fromJson(backupJson['metadata']);
+        backupData = backupJson['data'] as Map<String, dynamic>;
       }
-
-      // 解析元数据
-      final metadata = BackupMetadata.fromJson(backupJson['metadata']);
-      final backupData = backupJson['data'] as Map<String, dynamic>;
 
       // 验证数据完整性
       final calculatedChecksum = _calculateChecksum(backupData);
@@ -160,22 +163,129 @@ class BackupManager {
         return false;
       }
 
-      final backupContent = await backupFile.readAsString(encoding: utf8);
-      final backupJson = jsonDecode(backupContent) as Map<String, dynamic>;
+      // 检查文件格式（ZIP 或 旧的 JSON 格式）
+      final isZipFile = backupFilePath.endsWith('.zip');
 
-      if (!backupJson.containsKey('metadata') ||
-          !backupJson.containsKey('data')) {
-        return false;
+      BackupMetadata metadata;
+      Map<String, dynamic> backupData;
+
+      if (isZipFile) {
+        // 处理ZIP格式的备份文件
+        final result = await _extractZipBackup(backupFile);
+        metadata = result['metadata'] as BackupMetadata;
+        backupData = result['data'] as Map<String, dynamic>;
+      } else {
+        // 处理旧的JSON格式的备份文件（向后兼容）
+        final backupContent = await backupFile.readAsString(encoding: utf8);
+        final backupJson = jsonDecode(backupContent) as Map<String, dynamic>;
+
+        if (!backupJson.containsKey('metadata') ||
+            !backupJson.containsKey('data')) {
+          return false;
+        }
+
+        metadata = BackupMetadata.fromJson(backupJson['metadata']);
+        backupData = backupJson['data'] as Map<String, dynamic>;
       }
-
-      final metadata = BackupMetadata.fromJson(backupJson['metadata']);
-      final backupData = backupJson['data'] as Map<String, dynamic>;
 
       final calculatedChecksum = _calculateChecksum(backupData);
       return calculatedChecksum == metadata.checksum;
     } catch (e) {
       return false;
     }
+  }
+
+  /// 创建ZIP压缩包
+  Future<void> _createZipBackup(
+    File backupFile,
+    BackupMetadata metadata,
+    Map<String, dynamic> backupData,
+  ) async {
+    final archive = Archive();
+
+    // 添加元数据文件
+    final metadataJson = jsonEncode(metadata.toJson());
+    final metadataBytes = utf8.encode(metadataJson);
+    archive.addFile(
+      ArchiveFile('metadata.json', metadataBytes.length, metadataBytes),
+    );
+
+    // 添加配置数据文件
+    if (backupData.containsKey('preferences')) {
+      final preferencesJson = jsonEncode(backupData['preferences']);
+      final preferencesBytes = utf8.encode(preferencesJson);
+      archive.addFile(
+        ArchiveFile(
+          'preferences.json',
+          preferencesBytes.length,
+          preferencesBytes,
+        ),
+      );
+    }
+
+    // 添加Drift数据库文件
+    if (backupData.containsKey('drift_database')) {
+      final driftDbBytes = base64Decode(backupData['drift_database']);
+      archive.addFile(
+        ArchiveFile('drift_database.db', driftDbBytes.length, driftDbBytes),
+      );
+    }
+
+    // 添加ObjectBox数据库文件
+    if (backupData.containsKey('objectbox_database')) {
+      final objectboxDbBytes = base64Decode(backupData['objectbox_database']);
+      archive.addFile(
+        ArchiveFile(
+          'objectbox_database.mdb',
+          objectboxDbBytes.length,
+          objectboxDbBytes,
+        ),
+      );
+    }
+
+    // 压缩并写入文件
+    final encoder = ZipEncoder();
+    final zipBytes = encoder.encode(archive);
+    await backupFile.writeAsBytes(zipBytes!);
+  }
+
+  /// 解压ZIP备份文件
+  Future<Map<String, dynamic>> _extractZipBackup(File backupFile) async {
+    final bytes = await backupFile.readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
+
+    BackupMetadata? metadata;
+    final backupData = <String, dynamic>{};
+
+    for (final file in archive) {
+      if (file.isFile) {
+        final fileName = file.name;
+        final fileBytes = file.content as List<int>;
+
+        switch (fileName) {
+          case 'metadata.json':
+            final metadataJson = utf8.decode(fileBytes);
+            metadata = BackupMetadata.fromJson(jsonDecode(metadataJson));
+            break;
+          case 'preferences.json':
+            final preferencesJson = utf8.decode(fileBytes);
+            backupData['preferences'] = jsonDecode(preferencesJson);
+            break;
+          case 'drift_database.db':
+            backupData['drift_database'] = base64Encode(fileBytes);
+            break;
+          case 'objectbox_database.mdb':
+            backupData['objectbox_database'] = base64Encode(fileBytes);
+            break;
+        }
+      }
+    }
+
+    if (metadata == null) {
+      throw BackupException.invalidBackupFile();
+    }
+
+    return {'metadata': metadata, 'data': backupData};
   }
 
   /// 收集备份数据
@@ -188,28 +298,36 @@ class BackupManager {
         .getKeys()
         .where((key) => !key.startsWith('flutter.'))
         .fold<Map<String, dynamic>>({}, (map, key) {
-      final value = prefs.get(key);
-      if (value != null) {
-        map[key] = value;
-      }
-      return map;
-    });
+          final value = prefs.get(key);
+          if (value != null) {
+            map[key] = value;
+          }
+          return map;
+        });
 
     // 备份Drift数据库
     final dbFolder = await getApplicationDocumentsDirectory();
-    final driftDbFile = File(path.join(dbFolder.path, AppConstants.databaseName));
+    final driftDbFile = File(
+      path.join(dbFolder.path, AppConstants.databaseName),
+    );
     if (await driftDbFile.exists()) {
-      backupData['drift_database'] = base64Encode(await driftDbFile.readAsBytes());
+      backupData['drift_database'] = base64Encode(
+        await driftDbFile.readAsBytes(),
+      );
     }
 
     // 备份ObjectBox数据库
-    final objectboxDir = Directory(path.join(dbFolder.path, AppConstants.objectBoxDirectory));
+    final objectboxDir = Directory(
+      path.join(dbFolder.path, AppConstants.objectBoxDirectory),
+    );
     if (await objectboxDir.exists()) {
       // For simplicity, we'll just back up the main data file.
       // A more robust solution would be to archive the whole directory.
       final objectboxFile = File(path.join(objectboxDir.path, 'data.mdb'));
       if (await objectboxFile.exists()) {
-        backupData['objectbox_database'] = base64Encode(await objectboxFile.readAsBytes());
+        backupData['objectbox_database'] = base64Encode(
+          await objectboxFile.readAsBytes(),
+        );
       }
     }
 
@@ -245,19 +363,27 @@ class BackupManager {
     // 恢复Drift数据库
     if (backupData.containsKey('drift_database')) {
       final dbFolder = await getApplicationDocumentsDirectory();
-      final driftDbFile = File(path.join(dbFolder.path, AppConstants.databaseName));
-      await driftDbFile.writeAsBytes(base64Decode(backupData['drift_database']));
+      final driftDbFile = File(
+        path.join(dbFolder.path, AppConstants.databaseName),
+      );
+      await driftDbFile.writeAsBytes(
+        base64Decode(backupData['drift_database']),
+      );
     }
 
     // 恢复ObjectBox数据库
     if (backupData.containsKey('objectbox_database')) {
       final dbFolder = await getApplicationDocumentsDirectory();
-      final objectboxDir = Directory(path.join(dbFolder.path, AppConstants.objectBoxDirectory));
+      final objectboxDir = Directory(
+        path.join(dbFolder.path, AppConstants.objectBoxDirectory),
+      );
       if (!await objectboxDir.exists()) {
         await objectboxDir.create(recursive: true);
       }
       final objectboxFile = File(path.join(objectboxDir.path, 'data.mdb'));
-      await objectboxFile.writeAsBytes(base64Decode(backupData['objectbox_database']));
+      await objectboxFile.writeAsBytes(
+        base64Decode(backupData['objectbox_database']),
+      );
     }
   }
 
@@ -337,7 +463,8 @@ class BackupManager {
           .where(
             (entity) =>
                 entity is File &&
-                entity.path.endsWith(AppConstants.backupFileExtension),
+                (entity.path.endsWith('.zip') ||
+                    entity.path.endsWith(AppConstants.backupFileExtension)),
           )
           .cast<File>()
           .toList();

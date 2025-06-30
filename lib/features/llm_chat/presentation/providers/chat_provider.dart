@@ -191,15 +191,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(attachedFiles: []);
     }
 
-    final aiMessageId = _uuid.v4();
     try {
-      // sendMessageStream 内部会处理用户消息的创建和保存
-      final stream = _chatService.sendMessageStream(
-        sessionId: currentSession.id,
+      // 首先创建用户消息并立即显示在UI中
+      final userMessage = ChatMessage(
+        id: _uuid.v4(),
+        chatSessionId: currentSession.id,
         content: messageContent,
+        isFromUser: true,
+        timestamp: DateTime.now(),
+        status: MessageStatus.sent,
       );
 
-      // 创建一个临时的 AI 消息占位符
+      // 立即将用户消息添加到UI
+      state = state.copyWith(messages: [...state.messages, userMessage]);
+
+      // 创建AI消息占位符
+      final aiMessageId = _uuid.v4();
       final aiPlaceholder = ChatMessage(
         id: aiMessageId,
         chatSessionId: currentSession.id,
@@ -209,14 +216,25 @@ class ChatNotifier extends StateNotifier<ChatState> {
         status: MessageStatus.sending,
       );
 
-      // 先将会话消息和占位符更新到UI
-      final initialMessages = await _chatService.getSessionMessages(
-        currentSession.id,
+      // 添加AI占位符到UI
+      state = state.copyWith(messages: [...state.messages, aiPlaceholder]);
+
+      // 开始流式响应
+      final stream = _chatService.sendMessageStream(
+        sessionId: currentSession.id,
+        content: messageContent,
       );
-      state = state.copyWith(messages: [...initialMessages, aiPlaceholder]);
 
       String fullResponse = '';
+      bool isFirstUserMessage = true;
+
       await for (final messageChunk in stream) {
+        if (messageChunk.isFromUser && isFirstUserMessage) {
+          // 跳过第一个用户消息，因为我们已经在UI中显示了
+          isFirstUserMessage = false;
+          continue;
+        }
+
         if (!messageChunk.isFromUser) {
           fullResponse = messageChunk.content;
           final updatedMessages = state.messages.map((m) {
@@ -230,15 +248,27 @@ class ChatNotifier extends StateNotifier<ChatState> {
           );
         }
       }
+
+      // 消息发送完成后，重新加载会话信息以更新计数
+      await _loadChatSessions();
     } catch (e) {
-      // 如果发生错误，更新占位符消息为错误提示
-      final updatedMessages = state.messages.map((m) {
-        return m.id == aiMessageId
-            ? m.copyWith(content: '抱歉，发生错误: $e', status: MessageStatus.failed)
-            : m;
-      }).toList();
+      // 如果发生错误，移除占位符并显示错误消息
+      final errorMessage = ChatMessage(
+        id: _uuid.v4(),
+        chatSessionId: currentSession.id,
+        content: '抱歉，发生错误: $e',
+        isFromUser: false,
+        timestamp: DateTime.now(),
+        status: MessageStatus.failed,
+      );
+
+      // 移除占位符，添加错误消息
+      final messagesWithoutPlaceholder = state.messages
+          .where((m) => !(m.content == '...' && !m.isFromUser))
+          .toList();
+
       state = state.copyWith(
-        messages: updatedMessages,
+        messages: [...messagesWithoutPlaceholder, errorMessage],
         isLoading: false,
         error: e.toString(),
       );
