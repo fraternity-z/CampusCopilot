@@ -113,6 +113,7 @@ class GeneralSettings {
   final bool enableNotifications;
   final double fontSize;
   final String language;
+  final String mathEngine; // 新增：数学引擎选择
 
   const GeneralSettings({
     this.enableMarkdownRendering = true,
@@ -120,6 +121,7 @@ class GeneralSettings {
     this.enableNotifications = true,
     this.fontSize = 14.0,
     this.language = 'zh-CN',
+    this.mathEngine = 'katex', // 默认使用KaTeX
   });
 
   GeneralSettings copyWith({
@@ -128,6 +130,7 @@ class GeneralSettings {
     bool? enableNotifications,
     double? fontSize,
     String? language,
+    String? mathEngine,
   }) {
     return GeneralSettings(
       enableMarkdownRendering:
@@ -136,6 +139,7 @@ class GeneralSettings {
       enableNotifications: enableNotifications ?? this.enableNotifications,
       fontSize: fontSize ?? this.fontSize,
       language: language ?? this.language,
+      mathEngine: mathEngine ?? this.mathEngine,
     );
   }
 }
@@ -1805,15 +1809,29 @@ class NavigationSidebar extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         // 语言选择
-        _buildDropdownSetting(
+        _buildDropdownField(
           context,
-          title: '界面语言',
+          title: '语言',
           value: settings.language,
-          items: const ['zh-CN', 'en-US', 'ja-JP', 'ko-KR'],
+          items: const ['zh-CN', 'en-US'],
           onChanged: (value) {
             if (value != null) {
               ref.read(generalSettingsProvider.notifier).state = settings
                   .copyWith(language: value);
+            }
+          },
+        ),
+        const SizedBox(height: 16),
+        // 数学引擎选择
+        _buildDropdownField(
+          context,
+          title: '数学引擎',
+          value: settings.mathEngine,
+          items: const ['katex', 'mathjax'],
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(generalSettingsProvider.notifier).state = settings
+                  .copyWith(mathEngine: value);
             }
           },
         ),
@@ -1857,7 +1875,7 @@ class NavigationSidebar extends ConsumerWidget {
   }
 
   /// 构建下拉菜单设置
-  Widget _buildDropdownSetting(
+  Widget _buildDropdownField(
     BuildContext context, {
     required String title,
     required String value,

@@ -6,8 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
-import '../../../settings/domain/entities/app_settings.dart';
+
 import 'widgets/message_content_widget.dart';
+import 'widgets/model_selector_dialog.dart';
 
 /// 聊天界面
 ///
@@ -80,141 +81,206 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         return allModelsAsync.when(
           data: (allModels) => currentModelAsync.when(
-            data: (currentModel) => PopupMenuButton<String>(
-              tooltip: '选择模型',
-              icon: const Icon(Icons.tune),
-              onSelected: (value) async {
-                if (value == 'configure') {
-                  context.go('/settings/models');
-                } else {
-                  await ref.read(settingsProvider.notifier).switchModel(value);
-                  ref.invalidate(databaseCurrentModelProvider);
-                  ref.invalidate(databaseAvailableModelsProvider);
-                }
-              },
-              itemBuilder: (context) {
-                final items = <PopupMenuEntry<String>>[];
-
-                if (allModels.isEmpty) {
-                  // 如果没有可用模型，显示配置选项
-                  items.add(
-                    PopupMenuItem<String>(
-                      enabled: false,
-                      child: Text(
-                        '未配置AI模型',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                      ),
-                    ),
-                  );
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: 'configure',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.settings,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(child: Text('前往配置AI')),
-                        ],
-                      ),
-                    ),
-                  );
-                } else {
-                  final groupedModels =
-                      <AIProvider, List<ModelInfoWithProvider>>{};
-
-                  // 按提供商分组模型
-                  for (final model in allModels) {
-                    groupedModels
-                        .putIfAbsent(model.provider, () => [])
-                        .add(model);
-                  }
-
-                  groupedModels.forEach((provider, models) {
-                    if (items.isNotEmpty) {
-                      items.add(const PopupMenuDivider());
-                    }
-
-                    // 添加提供商标题
-                    items.add(
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        child: Text(
-                          models.first.providerName,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
+            data: (currentModel) => Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => ModelSelectorDialog(
+                        allModels: allModels,
+                        currentModel: currentModel,
                       ),
                     );
-
-                    // 添加该提供商的模型
-                    for (final model in models) {
-                      items.add(
-                        PopupMenuItem<String>(
-                          value: model.id,
-                          child: Row(
-                            children: [
-                              if (currentModel?.id == model.id) ...[
-                                Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                              ] else
-                                const SizedBox(width: 24),
-                              Expanded(child: Text(model.name)),
-                            ],
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                      );
-                    }
-                  });
-
-                  // 在模型列表后添加配置选项
-                  if (items.isNotEmpty) {
-                    items.add(const PopupMenuDivider());
-                  }
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: 'configure',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.settings,
+                          child: Icon(
+                            Icons.tune,
                             size: 16,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                          const SizedBox(width: 8),
-                          const Expanded(child: Text('管理AI配置')),
+                        ),
+                        const SizedBox(width: 8),
+                        if (currentModel != null) ...[
+                          Text(
+                            currentModel.name,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ] else ...[
+                          Text(
+                            '选择模型',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
                         ],
-                      ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
-                  );
-                }
-
-                return items;
-              },
+                  ),
+                ),
+              ),
             ),
-            loading: () =>
-                const IconButton(icon: Icon(Icons.tune), onPressed: null),
-            error: (_, __) =>
-                const IconButton(icon: Icon(Icons.tune), onPressed: null),
+            loading: () => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '加载中...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            error: (_, __) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '加载失败',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          loading: () =>
-              const IconButton(icon: Icon(Icons.tune), onPressed: null),
-          error: (_, __) =>
-              const IconButton(icon: Icon(Icons.tune), onPressed: null),
+          loading: () => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '加载中...',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          error: (_, __) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.error.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '加载失败',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

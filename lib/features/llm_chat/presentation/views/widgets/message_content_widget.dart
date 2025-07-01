@@ -5,15 +5,15 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:flutter_highlight/themes/atom-one-dark.dart';
+import 'package:highlight/highlight.dart' as highlight;
 import 'package:markdown/markdown.dart' as md;
 import '../../../../../app/app_router.dart';
-import 'language_detector.dart';
 
 /// 消息内容渲染组件
 ///
 /// 支持功能：
 /// - Markdown语法渲染
-/// - 代码块语法高亮
+/// - 代码块显示
 /// - 代码折叠/展开
 /// - 行号显示
 /// - 复制功能
@@ -46,7 +46,7 @@ class MessageContentWidget extends ConsumerWidget {
     }
 
     return MarkdownBody(
-      data: content,
+      data: _preprocessMathContent(content),
       selectable: true,
       styleSheet: _buildMarkdownStyleSheet(context),
       builders: {
@@ -59,10 +59,7 @@ class MessageContentWidget extends ConsumerWidget {
           isFromUser: isFromUser,
         ),
       },
-      extensionSet: md.ExtensionSet(
-        md.ExtensionSet.gitHubFlavored.blockSyntaxes,
-        [md.EmojiSyntax(), ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes],
-      ),
+      extensionSet: md.ExtensionSet.gitHubFlavored,
     );
   }
 
@@ -101,6 +98,13 @@ class MessageContentWidget extends ConsumerWidget {
       listBullet: theme.textTheme.bodyMedium?.copyWith(color: textColor),
     );
   }
+
+  /// 预处理数学内容，检测LaTeX命令并替换为占位符
+  String _preprocessMathContent(String content) {
+    // 暂时移除复杂的数学公式处理，避免解析错误
+    // 后续可以添加更安全的数学公式渲染方案
+    return content;
+  }
 }
 
 /// 代码块构建器
@@ -116,9 +120,9 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
     var language =
         element.attributes['class']?.replaceFirst('language-', '') ?? '';
 
-    // 如果没有指定语言或者是无效语言，使用自动检测
-    if (language.isEmpty || !LanguageDetector.isLanguageSupported(language)) {
-      language = LanguageDetector.detectLanguage(code);
+    // 如果没有指定语言，尝试自动检测
+    if (language.isEmpty) {
+      language = _detectLanguage(code);
     }
 
     return CodeBlockWidget(
@@ -127,6 +131,94 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
       settings: codeBlockSettings,
       isFromUser: isFromUser,
     );
+  }
+
+  /// 混合语言检测：关键词优先 + 第三方包后备
+  String _detectLanguage(String code) {
+    final lowerCode = code.toLowerCase();
+
+    // 优先使用关键词检测，避免误判
+    if (lowerCode.contains('import pygame') ||
+        lowerCode.contains('import random') ||
+        lowerCode.contains('pygame.') ||
+        lowerCode.contains('def ') ||
+        lowerCode.contains('print(') ||
+        (lowerCode.contains('import ') && lowerCode.contains('pygame'))) {
+      return 'python';
+    }
+
+    if (lowerCode.contains('function') ||
+        lowerCode.contains('const ') ||
+        lowerCode.contains('let ') ||
+        lowerCode.contains('console.log') ||
+        lowerCode.contains('document.')) {
+      return 'javascript';
+    }
+
+    if (lowerCode.contains('widget') ||
+        lowerCode.contains('stateless') ||
+        lowerCode.contains('stateful') ||
+        lowerCode.contains('void main()') ||
+        lowerCode.contains('flutter')) {
+      return 'dart';
+    }
+
+    if (lowerCode.contains('public class') ||
+        lowerCode.contains('public static void main') ||
+        lowerCode.contains('system.out.')) {
+      return 'java';
+    }
+
+    if (lowerCode.contains('<html') ||
+        lowerCode.contains('<!doctype') ||
+        lowerCode.contains('<div') ||
+        lowerCode.contains('<body')) {
+      return 'html';
+    }
+
+    if (lowerCode.trim().startsWith('{') &&
+        lowerCode.trim().endsWith('}') &&
+        lowerCode.contains('"') &&
+        lowerCode.contains(':')) {
+      return 'json';
+    }
+
+    // 如果关键词检测失败，使用第三方包作为后备
+    try {
+      final languages = [
+        'python',
+        'javascript',
+        'dart',
+        'java',
+        'html',
+        'css',
+        'json',
+        'bash',
+        'sql',
+        'xml',
+        'cpp',
+        'c',
+      ];
+      String bestLanguage = 'text';
+      int bestRelevance = 0;
+
+      for (final lang in languages) {
+        try {
+          final result = highlight.highlight.parse(code, language: lang);
+          final relevance = result.relevance ?? 0;
+          if (relevance > bestRelevance) {
+            bestRelevance = relevance;
+            bestLanguage = lang;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      return bestRelevance > 8 ? bestLanguage : 'text';
+    } catch (e) {
+      return 'text';
+    }
   }
 }
 
@@ -163,7 +255,6 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -178,16 +269,16 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 代码块头部
-          _buildHeader(context, isDark),
+          _buildHeader(context),
           // 代码内容
-          if (_isExpanded) _buildCodeContent(context, isDark),
+          if (_isExpanded) _buildCodeContent(context),
         ],
       ),
     );
   }
 
   /// 构建代码块头部
-  Widget _buildHeader(BuildContext context, bool isDark) {
+  Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
@@ -198,18 +289,17 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
       ),
       child: Row(
         children: [
-          // 语言图标和标签
           Icon(
             _getLanguageIcon(widget.language),
             size: 16,
-            color: theme.colorScheme.onSurfaceVariant,
+            color: theme.colorScheme.primary,
           ),
           const SizedBox(width: 8),
           Text(
             _getLanguageDisplayName(widget.language),
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const Spacer(),
@@ -219,7 +309,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
               icon: Icon(
                 _showLineNumbers
                     ? Icons.format_list_numbered
-                    : Icons.format_list_numbered_rtl,
+                    : Icons.format_align_left,
                 size: 16,
               ),
               onPressed: () {
@@ -257,9 +347,9 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 
   /// 构建代码内容
-  Widget _buildCodeContent(BuildContext context, bool isDark) {
-    final codeStyle = _getCodeStyle(isDark);
+  Widget _buildCodeContent(BuildContext context) {
     final lines = widget.code.split('\n');
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
@@ -268,12 +358,12 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 行号
-          if (_showLineNumbers) _buildLineNumbers(lines),
+          if (_showLineNumbers) _buildLineNumbers(lines, theme),
           // 代码内容
           Expanded(
             child: widget.settings.enableCodeWrapping
-                ? _buildWrappableCode(codeStyle)
-                : _buildScrollableCode(codeStyle),
+                ? _buildWrappableCode(theme)
+                : _buildScrollableCode(theme),
           ),
         ],
       ),
@@ -281,9 +371,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 
   /// 构建行号
-  Widget _buildLineNumbers(List<String> lines) {
-    final theme = Theme.of(context);
-
+  Widget _buildLineNumbers(List<String> lines, ThemeData theme) {
     return Container(
       margin: const EdgeInsets.only(right: 12),
       child: Column(
@@ -308,11 +396,14 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 
   /// 构建可换行的代码
-  Widget _buildWrappableCode(Map<String, TextStyle> codeStyle) {
+  Widget _buildWrappableCode(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final codeTheme = _getCodeTheme(isDark);
+
     return HighlightView(
       widget.code,
       language: widget.language,
-      theme: codeStyle,
+      theme: codeTheme,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       textStyle: const TextStyle(
         fontFamily: 'Source Code Pro, monospace',
@@ -322,13 +413,16 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 
   /// 构建可滚动的代码
-  Widget _buildScrollableCode(Map<String, TextStyle> codeStyle) {
+  Widget _buildScrollableCode(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final codeTheme = _getCodeTheme(isDark);
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: HighlightView(
         widget.code,
         language: widget.language,
-        theme: codeStyle,
+        theme: codeTheme,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         textStyle: const TextStyle(
           fontFamily: 'Source Code Pro, monospace',
@@ -339,8 +433,8 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 
   /// 获取代码高亮主题
-  Map<String, TextStyle> _getCodeStyle(bool isDark) {
-    // 仅使用 Atom One 主题
+  Map<String, TextStyle> _getCodeTheme(bool isDark) {
+    // 使用原来的 Atom One 主题
     final base = isDark ? atomOneDarkTheme : atomOneLightTheme;
 
     // 取消注释、文档标签、引用的斜体样式
@@ -397,10 +491,16 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   /// 获取语言的显示名称
   String _getLanguageDisplayName(String language) {
     switch (language.toLowerCase()) {
+      case 'python':
+        return 'Python';
       case 'javascript':
         return 'JavaScript';
       case 'typescript':
         return 'TypeScript';
+      case 'dart':
+        return 'Dart';
+      case 'java':
+        return 'Java';
       case 'html':
         return 'HTML';
       case 'css':

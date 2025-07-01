@@ -93,8 +93,11 @@ dependencies:
   # Markdown渲染和代码高亮
   flutter_markdown: ^0.7.3+2
   flutter_highlight: ^0.7.0
-  syntax_highlight: ^0.4.0
+  highlight: ^0.7.0
   markdown: ^7.2.2
+  
+  # 数学公式渲染
+  flutter_math_fork: ^0.7.4
 
   # 压缩和解压
   archive: ^3.6.1
