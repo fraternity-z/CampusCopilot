@@ -5,6 +5,45 @@ import 'package:go_router/go_router.dart';
 import '../../../../settings/domain/entities/app_settings.dart';
 import '../../../../settings/presentation/providers/settings_provider.dart';
 
+/// AIProvider扩展方法，提供UI相关的辅助功能
+extension AIProviderUIHelpers on AIProvider {
+  /// 获取提供商图标
+  IconData get icon {
+    switch (this) {
+      case AIProvider.openai:
+        return Icons.psychology;
+      case AIProvider.gemini:
+        return Icons.auto_awesome;
+      case AIProvider.claude:
+        return Icons.smart_toy;
+    }
+  }
+
+  /// 获取提供商颜色
+  Color get color {
+    switch (this) {
+      case AIProvider.openai:
+        return const Color(0xFF10B981);
+      case AIProvider.gemini:
+        return const Color(0xFF4285F4);
+      case AIProvider.claude:
+        return const Color(0xFFFF6B35);
+    }
+  }
+
+  /// 获取提供商名称
+  String get displayName {
+    switch (this) {
+      case AIProvider.openai:
+        return 'OpenAI';
+      case AIProvider.gemini:
+        return 'Google Gemini';
+      case AIProvider.claude:
+        return 'Anthropic Claude';
+    }
+  }
+}
+
 /// 模型选择弹窗
 class ModelSelectorDialog extends ConsumerStatefulWidget {
   final List<ModelInfoWithProvider> allModels;
@@ -292,6 +331,10 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
     BuildContext context,
     Map<AIProvider, List<ModelInfoWithProvider>> groupedModels,
   ) {
+    // 在列表顶层监听一次当前模型，避免每个item都监听
+    final currentModelAsync = ref.watch(databaseCurrentModelProvider);
+    final currentModelId = currentModelAsync.whenOrNull(data: (m) => m?.id);
+
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
       shrinkWrap: true,
@@ -299,7 +342,13 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
         ...groupedModels.entries.map((entry) {
           final provider = entry.key;
           final models = entry.value;
-          return _buildProviderSection(context, provider, models);
+          // 将当前模型ID传递给子组件
+          return _buildProviderSection(
+            context,
+            provider,
+            models,
+            currentModelId,
+          );
         }),
       ],
     );
@@ -310,6 +359,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
     BuildContext context,
     AIProvider provider,
     List<ModelInfoWithProvider> models,
+    String? currentModelId,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,34 +372,30 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: _getProviderColor(provider).withValues(alpha: 0.1),
+                  color: provider.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  _getProviderIcon(provider),
-                  size: 16,
-                  color: _getProviderColor(provider),
-                ),
+                child: Icon(provider.icon, size: 16, color: provider.color),
               ),
               const SizedBox(width: 8),
               Text(
-                _getProviderName(provider),
+                provider.displayName,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: _getProviderColor(provider),
+                  color: provider.color,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _getProviderColor(provider).withValues(alpha: 0.1),
+                  color: provider.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   '${models.length}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: _getProviderColor(provider),
+                    color: provider.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -359,7 +405,9 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
         ),
 
         // 模型列表
-        ...models.map((model) => _buildModelItem(context, model)),
+        ...models.map(
+          (model) => _buildModelItem(context, model, currentModelId),
+        ),
 
         const SizedBox(height: 8),
       ],
@@ -367,14 +415,13 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
   }
 
   /// 构建模型项
-  Widget _buildModelItem(BuildContext context, ModelInfoWithProvider model) {
-    // 实时获取当前模型状态
-    final currentModelAsync = ref.watch(databaseCurrentModelProvider);
-    final isSelected =
-        currentModelAsync.whenOrNull(
-          data: (currentModel) => currentModel?.id == model.id,
-        ) ??
-        (widget.currentModel?.id == model.id);
+  Widget _buildModelItem(
+    BuildContext context,
+    ModelInfoWithProvider model,
+    String? currentModelId,
+  ) {
+    // 直接使用传递的currentModelId进行判断，避免重复监听
+    final isSelected = model.id == currentModelId;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -383,20 +430,21 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
         child: InkWell(
           onTap: () async {
             if (!isSelected) {
+              // 在异步操作前获取context引用，避免async gap问题
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
               try {
                 await ref.read(settingsProvider.notifier).switchModel(model.id);
-                // 短暂延迟确保状态更新
-                await Future.delayed(const Duration(milliseconds: 200));
+                // 移除不必要的Future.delayed
               } catch (e) {
-                // 如果切换失败，显示错误信息
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('切换模型失败: $e')));
-                }
+                messenger.showSnackBar(SnackBar(content: Text('切换模型失败: $e')));
               }
-            }
-            if (context.mounted) {
+
+              // 使用提前获取的navigator引用
+              navigator.pop();
+            } else {
+              // 如果已选中，直接关闭弹窗
               Navigator.pop(context);
             }
           },
@@ -576,42 +624,6 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
         ),
       ),
     );
-  }
-
-  /// 获取提供商图标
-  IconData _getProviderIcon(AIProvider provider) {
-    switch (provider) {
-      case AIProvider.openai:
-        return Icons.psychology;
-      case AIProvider.gemini:
-        return Icons.auto_awesome;
-      case AIProvider.claude:
-        return Icons.smart_toy;
-    }
-  }
-
-  /// 获取提供商颜色
-  Color _getProviderColor(AIProvider provider) {
-    switch (provider) {
-      case AIProvider.openai:
-        return const Color(0xFF10B981);
-      case AIProvider.gemini:
-        return const Color(0xFF4285F4);
-      case AIProvider.claude:
-        return const Color(0xFFFF6B35);
-    }
-  }
-
-  /// 获取提供商名称
-  String _getProviderName(AIProvider provider) {
-    switch (provider) {
-      case AIProvider.openai:
-        return 'OpenAI';
-      case AIProvider.gemini:
-        return 'Google Gemini';
-      case AIProvider.claude:
-        return 'Anthropic Claude';
-    }
   }
 
   /// 格式化数字

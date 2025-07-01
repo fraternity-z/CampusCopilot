@@ -18,7 +18,7 @@ import '../../../../../app/app_router.dart';
 /// - 行号显示
 /// - 复制功能
 /// - 多种主题
-class MessageContentWidget extends ConsumerWidget {
+class MessageContentWidget extends ConsumerStatefulWidget {
   final String content;
   final bool isFromUser;
 
@@ -29,16 +29,25 @@ class MessageContentWidget extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessageContentWidget> createState() =>
+      _MessageContentWidgetState();
+}
+
+class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
+  MarkdownStyleSheet? _cachedStyleSheet;
+  ThemeData? _lastTheme;
+
+  @override
+  Widget build(BuildContext context) {
     final generalSettings = ref.watch(generalSettingsProvider);
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
 
     // 如果不启用Markdown渲染，直接返回纯文本
     if (!generalSettings.enableMarkdownRendering) {
       return SelectableText(
-        content,
+        widget.content,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: isFromUser
+          color: widget.isFromUser
               ? Theme.of(context).colorScheme.onPrimaryContainer
               : Theme.of(context).colorScheme.onSurface,
         ),
@@ -46,27 +55,40 @@ class MessageContentWidget extends ConsumerWidget {
     }
 
     return MarkdownBody(
-      data: _preprocessMathContent(content),
+      data: _preprocessMathContent(widget.content),
       selectable: true,
-      styleSheet: _buildMarkdownStyleSheet(context),
+      styleSheet: _getMarkdownStyleSheet(context),
       builders: {
         'code': CodeBlockBuilder(
           codeBlockSettings: codeBlockSettings,
-          isFromUser: isFromUser,
+          isFromUser: widget.isFromUser,
         ),
         'pre': CodeBlockBuilder(
           codeBlockSettings: codeBlockSettings,
-          isFromUser: isFromUser,
+          isFromUser: widget.isFromUser,
         ),
       },
       extensionSet: md.ExtensionSet.gitHubFlavored,
     );
   }
 
+  /// 获取缓存的Markdown样式表
+  MarkdownStyleSheet _getMarkdownStyleSheet(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // 如果主题改变了，重新构建样式表
+    if (_cachedStyleSheet == null || _lastTheme != theme) {
+      _lastTheme = theme;
+      _cachedStyleSheet = _buildMarkdownStyleSheet(context);
+    }
+
+    return _cachedStyleSheet!;
+  }
+
   /// 构建Markdown样式表
   MarkdownStyleSheet _buildMarkdownStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = isFromUser
+    final textColor = widget.isFromUser
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface;
 
@@ -183,9 +205,9 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
       return 'json';
     }
 
-    // 如果关键词检测失败，使用第三方包作为后备
+    // 优化的第三方包后备方案，减少重复计算
     try {
-      final languages = [
+      const languages = [
         'python',
         'javascript',
         'dart',
@@ -241,9 +263,34 @@ class CodeBlockWidget extends StatefulWidget {
   State<CodeBlockWidget> createState() => _CodeBlockWidgetState();
 }
 
+/// 语言信息类
+class LanguageInfo {
+  final IconData icon;
+  final String displayName;
+
+  const LanguageInfo({required this.icon, required this.displayName});
+}
+
+/// 语言信息映射表
+const Map<String, LanguageInfo> _languageInfoMap = {
+  'dart': LanguageInfo(icon: Icons.flutter_dash, displayName: 'Dart'),
+  'python': LanguageInfo(icon: Icons.smart_toy, displayName: 'Python'),
+  'javascript': LanguageInfo(icon: Icons.javascript, displayName: 'JavaScript'),
+  'typescript': LanguageInfo(icon: Icons.javascript, displayName: 'TypeScript'),
+  'java': LanguageInfo(icon: Icons.coffee, displayName: 'Java'),
+  'html': LanguageInfo(icon: Icons.web, displayName: 'HTML'),
+  'css': LanguageInfo(icon: Icons.style, displayName: 'CSS'),
+  'json': LanguageInfo(icon: Icons.data_object, displayName: 'JSON'),
+  'yaml': LanguageInfo(icon: Icons.settings, displayName: 'YAML'),
+  'bash': LanguageInfo(icon: Icons.terminal, displayName: 'Shell'),
+  'sql': LanguageInfo(icon: Icons.storage, displayName: 'SQL'),
+  'text': LanguageInfo(icon: Icons.code, displayName: 'Plain Text'),
+};
+
 class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   bool _isExpanded = true;
   bool _showLineNumbers = true;
+  bool _isCopied = false;
 
   @override
   void initState() {
@@ -337,9 +384,13 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
             ),
           // 复制按钮
           IconButton(
-            icon: const Icon(Icons.copy, size: 16),
+            icon: Icon(
+              _isCopied ? Icons.check : Icons.copy,
+              size: 16,
+              color: _isCopied ? Colors.green : null,
+            ),
             onPressed: () => _copyCode(context),
-            tooltip: '复制代码',
+            tooltip: _isCopied ? '已复制' : '复制代码',
           ),
         ],
       ),
@@ -417,16 +468,18 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
     final isDark = theme.brightness == Brightness.dark;
     final codeTheme = _getCodeTheme(isDark);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: HighlightView(
-        widget.code,
-        language: widget.language,
-        theme: codeTheme,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        textStyle: const TextStyle(
-          fontFamily: 'Source Code Pro, monospace',
-          fontSize: 14,
+    return Scrollbar(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: HighlightView(
+          widget.code,
+          language: widget.language,
+          theme: codeTheme,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          textStyle: const TextStyle(
+            fontFamily: 'Source Code Pro, monospace',
+            fontSize: 14,
+          ),
         ),
       ),
     );
@@ -450,73 +503,40 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
 
   /// 复制代码到剪贴板
   void _copyCode(BuildContext context) {
+    if (_isCopied) return; // 防止重复点击
+
     Clipboard.setData(ClipboardData(text: widget.code));
+
+    setState(() {
+      _isCopied = true;
+    });
+
+    // 显示SnackBar反馈
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('代码已复制到剪贴板'),
         duration: Duration(seconds: 2),
       ),
     );
+
+    // 2秒后恢复按钮状态
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isCopied = false;
+        });
+      }
+    });
   }
 
   /// 获取语言对应的图标
   IconData _getLanguageIcon(String language) {
-    switch (language.toLowerCase()) {
-      case 'dart':
-        return Icons.flutter_dash;
-      case 'python':
-        return Icons.smart_toy;
-      case 'javascript':
-      case 'typescript':
-        return Icons.javascript;
-      case 'java':
-        return Icons.coffee;
-      case 'html':
-        return Icons.web;
-      case 'css':
-        return Icons.style;
-      case 'json':
-        return Icons.data_object;
-      case 'yaml':
-        return Icons.settings;
-      case 'bash':
-        return Icons.terminal;
-      case 'sql':
-        return Icons.storage;
-      default:
-        return Icons.code;
-    }
+    return _languageInfoMap[language.toLowerCase()]?.icon ?? Icons.code;
   }
 
   /// 获取语言的显示名称
   String _getLanguageDisplayName(String language) {
-    switch (language.toLowerCase()) {
-      case 'python':
-        return 'Python';
-      case 'javascript':
-        return 'JavaScript';
-      case 'typescript':
-        return 'TypeScript';
-      case 'dart':
-        return 'Dart';
-      case 'java':
-        return 'Java';
-      case 'html':
-        return 'HTML';
-      case 'css':
-        return 'CSS';
-      case 'json':
-        return 'JSON';
-      case 'yaml':
-        return 'YAML';
-      case 'bash':
-        return 'Shell';
-      case 'sql':
-        return 'SQL';
-      case 'text':
-        return 'Plain Text';
-      default:
-        return language.toUpperCase();
-    }
+    return _languageInfoMap[language.toLowerCase()]?.displayName ??
+        language.toUpperCase();
   }
 }

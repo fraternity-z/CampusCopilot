@@ -130,14 +130,17 @@ class ChatService {
         tokenCount: result.tokenUsage.totalTokens,
       );
 
-      // 8. 保存AI消息到数据库
-      await _database.insertMessage(_messageToCompanion(aiMessage));
+      // 使用事务保证所有相关操作的原子性
+      await _database.transaction(() async {
+        // 8. 保存AI消息到数据库
+        await _database.insertMessage(_messageToCompanion(aiMessage));
 
-      // 9. 更新会话统计
-      await _updateSessionStats(sessionId, result.tokenUsage.totalTokens);
+        // 9. 更新会话统计
+        await _updateSessionStats(session, result.tokenUsage.totalTokens);
 
-      // 10. 更新智能体使用统计
-      await _database.updatePersonaUsage(persona.id);
+        // 10. 更新智能体使用统计
+        await _database.updatePersonaUsage(persona.id);
+      });
 
       return aiMessage;
     } catch (e) {
@@ -243,17 +246,23 @@ class ChatService {
               tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
             ).copyWith(id: aiMessageId);
 
-            await _database.insertMessage(_messageToCompanion(finalMessage));
-            debugPrint('✅ AI消息已保存到数据库');
+            // 使用事务保证所有相关操作的原子性
+            await _database.transaction(() async {
+              // 保存AI消息
+              await _database.insertMessage(_messageToCompanion(finalMessage));
+              debugPrint('✅ AI消息已保存到数据库');
 
-            // 7. 更新会话统计
-            await _updateSessionStats(
-              sessionId,
-              chunk.tokenUsage?.totalTokens ?? 0,
-            );
+              // 更新会话统计
+              await _updateSessionStats(
+                session,
+                chunk.tokenUsage?.totalTokens ?? 0,
+              );
 
-            // 8. 更新智能体使用统计
-            await _database.updatePersonaUsage(persona.id);
+              // 更新智能体使用统计
+              await _database.updatePersonaUsage(persona.id);
+            });
+
+            debugPrint('✅ AI消息、会话和智能体统计已在事务中原子性保存');
 
             yield finalMessage.copyWith(status: MessageStatus.sent);
           }
@@ -340,8 +349,7 @@ class ChatService {
   }
 
   /// 更新会话统计
-  Future<void> _updateSessionStats(String sessionId, int tokenCount) async {
-    final session = await _getSessionById(sessionId);
+  Future<void> _updateSessionStats(ChatSession session, int tokenCount) async {
     final updatedSession = session.incrementMessageCount().addTokenUsage(
       tokenCount,
     );
@@ -462,7 +470,15 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
         config: _parseConfig(config),
         metadata: _parseMetadata(metadata),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // 详细记录解析失败的错误信息，便于调试
+      debugPrint('❌ Failed to parse ChatSessionData: $id');
+      debugPrint('❌ Error: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
+      debugPrint(
+        '❌ Raw data - title: $title, personaId: $personaId, config: $config',
+      );
+
       // 如果解析失败，返回一个基本的ChatSession
       return ChatSession(
         id: id,
@@ -487,7 +503,9 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
         return List<String>.from(decoded);
       }
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ Failed to parse tags JSON: $tagsJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return [];
     }
   }
@@ -501,7 +519,9 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
         }
       }
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ Failed to parse config JSON: $configJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return null;
     }
   }
@@ -515,7 +535,9 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
         }
       }
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ Failed to parse metadata JSON: $metadataJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return null;
     }
   }
