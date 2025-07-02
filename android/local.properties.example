@@ -1,0 +1,22 @@
+# Android本地配置文件示例
+# 将此文件复制为 local.properties 并填入正确的路径
+
+## Flutter SDK路径
+flutter.sdk=C:\\flutter
+# flutter.sdk=/Users/username/flutter  # macOS示例
+# flutter.sdk=/home/username/flutter   # Linux示例
+
+## Android SDK路径 (可选，通常会自动检测)
+# sdk.dir=C:\\Android\\Sdk
+# sdk.dir=/Users/username/Library/Android/sdk  # macOS示例
+# sdk.dir=/home/username/Android/Sdk            # Linux示例
+
+## 构建配置
+flutter.buildMode=release
+flutter.versionName=1.0.0
+flutter.versionCode=1
+
+## 注意事项:
+# 1. 此文件包含本地路径，不应提交到版本控制
+# 2. CI/CD工作流会自动生成此文件
+# 3. 本地开发时需要根据实际Flutter安装路径修改 

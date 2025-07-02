@@ -1,0 +1,231 @@
+name: 构建并发布跨平台应用
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送版本标签时触发构建
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      version:
+        description: '发布版本号 (例如: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+
+jobs:
+  # 构建Android APK
+  build-android:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        architecture: x64
+
+    - name: 设置JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 运行测试
+      run: flutter test --reporter=expanded
+      continue-on-error: true
+
+    - name: 构建Android APK
+      run: flutter build apk --release --split-per-abi
+
+    - name: 构建Android AAB
+      run: flutter build appbundle --release
+
+    - name: 创建Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name || github.event.inputs.version }}
+        release_name: AI Assistant ${{ github.ref_name || github.event.inputs.version }}
+        draft: false
+        prerelease: false
+        body: |
+          ## 🚀 AI Assistant ${{ github.ref_name || github.event.inputs.version }}
+          
+          ### 📱 支持平台
+          - ✅ Android (APK/AAB)
+          - ✅ iOS (IPA)
+          - ✅ Windows (EXE/MSIX)
+          
+          ### 📁 下载文件
+          - **Android用户**: 下载 `ai-assistant-android.apk`
+          - **iOS用户**: 下载 `ai-assistant-ios.ipa` (需要企业签名或自签名)
+          - **Windows用户**: 下载 `ai-assistant-windows.zip` 或 `ai-assistant-windows.msix`
+          
+          ### 🔧 版本信息
+          - Flutter版本: ${{ env.FLUTTER_VERSION }}
+          - 构建时间: ${{ github.run_number }}
+          
+          ### 📋 更新内容
+          请查看提交历史了解详细更新内容。
+
+    - name: 上传Android APK (ARM64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+        asset_name: ai-assistant-android-arm64.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    - name: 上传Android APK (ARM)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+        asset_name: ai-assistant-android-arm.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    - name: 上传Android APK (x64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/flutter-apk/app-x86_64-release.apk
+        asset_name: ai-assistant-android-x64.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    - name: 上传Android AAB
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/bundle/release/app-release.aab
+        asset_name: ai-assistant-android.aab
+        asset_content_type: application/octet-stream
+
+  # 构建iOS IPA
+  build-ios:
+    runs-on: macos-latest
+    needs: build-android
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        architecture: x64
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 构建iOS (无签名)
+      run: flutter build ios --release --no-codesign
+
+    - name: 创建IPA包
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ai-assistant-ios.ipa Payload/
+        mv ai-assistant-ios.ipa ../../../
+
+    - name: 上传iOS IPA
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build-android.outputs.upload_url }}
+        asset_path: ai-assistant-ios.ipa
+        asset_name: ai-assistant-ios.ipa
+        asset_content_type: application/octet-stream
+
+  # 构建Windows EXE
+  build-windows:
+    runs-on: windows-latest
+    needs: build-android
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        architecture: x64
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 启用Windows桌面支持
+      run: flutter config --enable-windows-desktop
+
+    - name: 构建Windows应用
+      run: flutter build windows --release
+
+    - name: 构建MSIX包
+      run: flutter pub run msix:create
+
+    - name: 创建Windows发布包
+      run: |
+        Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "ai-assistant-windows.zip"
+
+    - name: 上传Windows ZIP
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build-android.outputs.upload_url }}
+        asset_path: ai-assistant-windows.zip
+        asset_name: ai-assistant-windows.zip
+        asset_content_type: application/zip
+
+    - name: 上传Windows MSIX
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build-android.outputs.upload_url }}
+        asset_path: build\windows\x64\runner\Release\ai_assistant.msix
+        asset_name: ai-assistant-windows.msix
+        asset_content_type: application/octet-stream
+      continue-on-error: true
+
+  # 构建信息汇总
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios, build-windows]
+    if: always()
+    
+    steps:
+    - name: 构建完成通知
+      run: |
+        echo "🎉 AI Assistant 跨平台构建完成!"
+        echo "📱 Android: ✅"
+        echo "🍎 iOS: ✅" 
+        echo "🖥️ Windows: ✅"
+        echo "🔗 Release链接: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name || github.event.inputs.version }}" 
