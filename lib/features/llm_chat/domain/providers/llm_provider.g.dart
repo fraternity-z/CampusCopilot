@@ -114,6 +114,8 @@ _$ChatOptionsImpl _$$ChatOptionsImplFromJson(Map<String, dynamic> json) =>
       tools: (json['tools'] as List<dynamic>?)
           ?.map((e) => ToolDefinition.fromJson(e as Map<String, dynamic>))
           .toList(),
+      reasoningEffort: json['reasoningEffort'] as String?,
+      maxReasoningTokens: (json['maxReasoningTokens'] as num?)?.toInt(),
       customParams: json['customParams'] as Map<String, dynamic>?,
     );
 
@@ -129,6 +131,8 @@ Map<String, dynamic> _$$ChatOptionsImplToJson(_$ChatOptionsImpl instance) =>
       'stream': instance.stream,
       'systemPrompt': instance.systemPrompt,
       'tools': instance.tools,
+      'reasoningEffort': instance.reasoningEffort,
+      'maxReasoningTokens': instance.maxReasoningTokens,
       'customParams': instance.customParams,
     };
 
@@ -159,6 +163,7 @@ _$ChatResultImpl _$$ChatResultImplFromJson(Map<String, dynamic> json) =>
           .toList(),
       responseTimeMs: (json['responseTimeMs'] as num?)?.toInt(),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      thinkingContent: json['thinkingContent'] as String?,
     );
 
 Map<String, dynamic> _$$ChatResultImplToJson(_$ChatResultImpl instance) =>
@@ -170,6 +175,7 @@ Map<String, dynamic> _$$ChatResultImplToJson(_$ChatResultImpl instance) =>
       'toolCalls': instance.toolCalls,
       'responseTimeMs': instance.responseTimeMs,
       'metadata': instance.metadata,
+      'thinkingContent': instance.thinkingContent,
     };
 
 const _$FinishReasonEnumMap = {
@@ -195,6 +201,9 @@ _$StreamedChatResultImpl _$$StreamedChatResultImplFromJson(
       toolCalls: (json['toolCalls'] as List<dynamic>?)
           ?.map((e) => ToolCall.fromJson(e as Map<String, dynamic>))
           .toList(),
+      thinkingDelta: json['thinkingDelta'] as String?,
+      thinkingContent: json['thinkingContent'] as String?,
+      thinkingComplete: json['thinkingComplete'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$StreamedChatResultImplToJson(
@@ -207,6 +216,9 @@ Map<String, dynamic> _$$StreamedChatResultImplToJson(
       'tokenUsage': instance.tokenUsage,
       'finishReason': _$FinishReasonEnumMap[instance.finishReason],
       'toolCalls': instance.toolCalls,
+      'thinkingDelta': instance.thinkingDelta,
+      'thinkingContent': instance.thinkingContent,
+      'thinkingComplete': instance.thinkingComplete,
     };
 
 _$TokenUsageImpl _$$TokenUsageImplFromJson(Map<String, dynamic> json) =>

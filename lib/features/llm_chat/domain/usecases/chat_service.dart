@@ -115,6 +115,10 @@ class ChatService {
         systemPrompt: persona.systemPrompt,
         temperature: session.config?.temperature ?? 0.7,
         maxTokens: session.config?.maxTokens ?? 2048,
+        // 思考链相关参数暂时使用默认设置
+        reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
+        maxReasoningTokens: 2000,
+        customParams: _buildThinkingParams(llmConfig.defaultModel),
       );
 
       debugPrint(
@@ -127,12 +131,17 @@ class ChatService {
       );
 
       // 7. 创建AI响应消息
-      final aiMessage = ChatMessageFactory.createAIMessage(
-        content: result.content,
-        chatSessionId: sessionId,
-        parentMessageId: userMessage.id,
-        tokenCount: result.tokenUsage.totalTokens,
-      ).copyWith(modelName: llmConfig.defaultModel);
+      final aiMessage =
+          ChatMessageFactory.createAIMessage(
+            content: result.content,
+            chatSessionId: sessionId,
+            parentMessageId: userMessage.id,
+            tokenCount: result.tokenUsage.totalTokens,
+          ).copyWith(
+            modelName: llmConfig.defaultModel,
+            thinkingContent: result.thinkingContent,
+            thinkingComplete: result.thinkingContent != null,
+          );
 
       // 使用事务保证所有相关操作的原子性
       await _database.transaction(() async {
@@ -222,6 +231,10 @@ class ChatService {
         temperature: session.config?.temperature ?? 0.7,
         maxTokens: session.config?.maxTokens ?? 2048,
         stream: true,
+        // 思考链相关参数
+        reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
+        maxReasoningTokens: 2000,
+        customParams: _buildThinkingParams(llmConfig.defaultModel),
       );
 
       debugPrint(
@@ -233,6 +246,7 @@ class ChatService {
       );
 
       String accumulatedContent = '';
+      String accumulatedThinking = '';
       String? aiMessageId;
 
       await for (final chunk in provider.generateChatStream(
@@ -240,24 +254,34 @@ class ChatService {
         options: chatOptions,
       )) {
         debugPrint(
-          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}',
+          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}, thinking长度=${chunk.thinkingDelta?.length ?? 0}',
         );
 
         if (chunk.isDone) {
           // 流结束，保存最终消息到数据库
           if (aiMessageId != null) {
-            final finalMessage = ChatMessageFactory.createAIMessage(
-              content: accumulatedContent,
-              chatSessionId: sessionId,
-              parentMessageId: userMessage.id,
-              tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
-            ).copyWith(id: aiMessageId, modelName: llmConfig.defaultModel);
+            final finalMessage =
+                ChatMessageFactory.createAIMessage(
+                  content: accumulatedContent,
+                  chatSessionId: sessionId,
+                  parentMessageId: userMessage.id,
+                  tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
+                ).copyWith(
+                  id: aiMessageId,
+                  modelName: llmConfig.defaultModel,
+                  thinkingContent: accumulatedThinking.isNotEmpty
+                      ? accumulatedThinking
+                      : null,
+                  thinkingComplete: true,
+                );
 
             // 使用事务保证所有相关操作的原子性
             await _database.transaction(() async {
               // 保存AI消息
               await _database.insertMessage(_messageToCompanion(finalMessage));
-              debugPrint('✅ AI消息已保存到数据库');
+              debugPrint(
+                '✅ AI消息已保存到数据库 (包含思考链: ${accumulatedThinking.isNotEmpty})',
+              );
 
               // 更新会话统计
               await _updateSessionStats(
@@ -276,7 +300,13 @@ class ChatService {
           break;
         }
 
-        // 累积内容
+        // 累积思考链内容
+        if (chunk.thinkingDelta != null && chunk.thinkingDelta!.isNotEmpty) {
+          accumulatedThinking += chunk.thinkingDelta!;
+          debugPrint('🧠 思考链增量: ${chunk.thinkingDelta!.length} 字符');
+        }
+
+        // 累积主要内容
         if (chunk.delta != null && chunk.delta!.isNotEmpty) {
           accumulatedContent += chunk.delta!;
         }
@@ -299,6 +329,10 @@ class ChatService {
           chatSessionId: sessionId,
           status: MessageStatus.sending,
           modelName: llmConfig.defaultModel,
+          thinkingContent: accumulatedThinking.isNotEmpty
+              ? accumulatedThinking
+              : null,
+          thinkingComplete: chunk.thinkingComplete,
         );
       }
     } catch (e) {
@@ -450,7 +484,65 @@ class ChatService {
       tokenCount: message.tokenCount != null
           ? Value(message.tokenCount!)
           : const Value.absent(),
+      thinkingContent: message.thinkingContent != null
+          ? Value(message.thinkingContent!)
+          : const Value.absent(),
+      thinkingComplete: Value(message.thinkingComplete),
+      modelName: message.modelName != null
+          ? Value(message.modelName!)
+          : const Value.absent(),
     );
+  }
+
+  /// 获取思考努力程度
+  String? _getReasoningEffort(String? model) {
+    if (model == null) return null;
+
+    // 检查是否为思考模型
+    final thinkingModels = {
+      'o1',
+      'o1-preview',
+      'o1-mini',
+      'o3',
+      'o3-mini',
+      'deepseek-reasoner',
+      'deepseek-r1',
+    };
+
+    final isThinkingModel = thinkingModels.any(
+      (thinking) => model.toLowerCase().contains(thinking.toLowerCase()),
+    );
+
+    return isThinkingModel ? 'medium' : null;
+  }
+
+  /// 构建思考链参数
+  Map<String, dynamic>? _buildThinkingParams(String? model) {
+    if (model == null) return null;
+
+    final params = <String, dynamic>{};
+
+    // OpenAI o系列模型
+    if (model.toLowerCase().contains('o1') ||
+        model.toLowerCase().contains('o3')) {
+      params['reasoning_effort'] = 'medium';
+    }
+
+    // Gemini思考模型
+    if (model.toLowerCase().contains('gemini') &&
+        model.toLowerCase().contains('thinking')) {
+      params['max_tokens_for_reasoning'] = 2000;
+    }
+
+    // DeepSeek思考模型
+    if (model.toLowerCase().contains('deepseek') &&
+        (model.toLowerCase().contains('reasoner') ||
+            model.toLowerCase().contains('r1'))) {
+      // DeepSeek R1可能需要特殊参数
+      params['enable_reasoning'] = true;
+    }
+
+    return params.isNotEmpty ? params : null;
   }
 }
 
@@ -570,6 +662,9 @@ extension ChatMessageDataExtension on ChatMessagesTableData {
       metadata: metadata?.isNotEmpty == true ? jsonDecode(metadata!) : null,
       parentMessageId: parentMessageId,
       tokenCount: tokenCount,
+      thinkingContent: thinkingContent,
+      thinkingComplete: thinkingComplete,
+      modelName: modelName,
     );
   }
 }

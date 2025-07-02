@@ -1222,6 +1222,13 @@ mixin _$ChatOptions {
   /// 工具列表（函数调用）
   List<ToolDefinition>? get tools => throw _privateConstructorUsedError;
 
+  /// 思考努力程度（用于o1/o3等模型）
+  /// 可选值：'low', 'medium', 'high'
+  String? get reasoningEffort => throw _privateConstructorUsedError;
+
+  /// 最大思考token数（用于Gemini等模型）
+  int? get maxReasoningTokens => throw _privateConstructorUsedError;
+
   /// 自定义参数
   Map<String, dynamic>? get customParams => throw _privateConstructorUsedError;
 
@@ -1252,6 +1259,8 @@ abstract class $ChatOptionsCopyWith<$Res> {
       bool? stream,
       String? systemPrompt,
       List<ToolDefinition>? tools,
+      String? reasoningEffort,
+      int? maxReasoningTokens,
       Map<String, dynamic>? customParams});
 }
 
@@ -1280,6 +1289,8 @@ class _$ChatOptionsCopyWithImpl<$Res, $Val extends ChatOptions>
     Object? stream = freezed,
     Object? systemPrompt = freezed,
     Object? tools = freezed,
+    Object? reasoningEffort = freezed,
+    Object? maxReasoningTokens = freezed,
     Object? customParams = freezed,
   }) {
     return _then(_value.copyWith(
@@ -1323,6 +1334,14 @@ class _$ChatOptionsCopyWithImpl<$Res, $Val extends ChatOptions>
           ? _value.tools
           : tools // ignore: cast_nullable_to_non_nullable
               as List<ToolDefinition>?,
+      reasoningEffort: freezed == reasoningEffort
+          ? _value.reasoningEffort
+          : reasoningEffort // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxReasoningTokens: freezed == maxReasoningTokens
+          ? _value.maxReasoningTokens
+          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
       customParams: freezed == customParams
           ? _value.customParams
           : customParams // ignore: cast_nullable_to_non_nullable
@@ -1350,6 +1369,8 @@ abstract class _$$ChatOptionsImplCopyWith<$Res>
       bool? stream,
       String? systemPrompt,
       List<ToolDefinition>? tools,
+      String? reasoningEffort,
+      int? maxReasoningTokens,
       Map<String, dynamic>? customParams});
 }
 
@@ -1376,6 +1397,8 @@ class __$$ChatOptionsImplCopyWithImpl<$Res>
     Object? stream = freezed,
     Object? systemPrompt = freezed,
     Object? tools = freezed,
+    Object? reasoningEffort = freezed,
+    Object? maxReasoningTokens = freezed,
     Object? customParams = freezed,
   }) {
     return _then(_$ChatOptionsImpl(
@@ -1419,6 +1442,14 @@ class __$$ChatOptionsImplCopyWithImpl<$Res>
           ? _value._tools
           : tools // ignore: cast_nullable_to_non_nullable
               as List<ToolDefinition>?,
+      reasoningEffort: freezed == reasoningEffort
+          ? _value.reasoningEffort
+          : reasoningEffort // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxReasoningTokens: freezed == maxReasoningTokens
+          ? _value.maxReasoningTokens
+          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
       customParams: freezed == customParams
           ? _value._customParams
           : customParams // ignore: cast_nullable_to_non_nullable
@@ -1441,6 +1472,8 @@ class _$ChatOptionsImpl implements _ChatOptions {
       this.stream,
       this.systemPrompt,
       final List<ToolDefinition>? tools,
+      this.reasoningEffort,
+      this.maxReasoningTokens,
       final Map<String, dynamic>? customParams})
       : _stopSequences = stopSequences,
         _tools = tools,
@@ -1507,6 +1540,15 @@ class _$ChatOptionsImpl implements _ChatOptions {
     return EqualUnmodifiableListView(value);
   }
 
+  /// 思考努力程度（用于o1/o3等模型）
+  /// 可选值：'low', 'medium', 'high'
+  @override
+  final String? reasoningEffort;
+
+  /// 最大思考token数（用于Gemini等模型）
+  @override
+  final int? maxReasoningTokens;
+
   /// 自定义参数
   final Map<String, dynamic>? _customParams;
 
@@ -1522,7 +1564,7 @@ class _$ChatOptionsImpl implements _ChatOptions {
 
   @override
   String toString() {
-    return 'ChatOptions(model: $model, temperature: $temperature, maxTokens: $maxTokens, topP: $topP, frequencyPenalty: $frequencyPenalty, presencePenalty: $presencePenalty, stopSequences: $stopSequences, stream: $stream, systemPrompt: $systemPrompt, tools: $tools, customParams: $customParams)';
+    return 'ChatOptions(model: $model, temperature: $temperature, maxTokens: $maxTokens, topP: $topP, frequencyPenalty: $frequencyPenalty, presencePenalty: $presencePenalty, stopSequences: $stopSequences, stream: $stream, systemPrompt: $systemPrompt, tools: $tools, reasoningEffort: $reasoningEffort, maxReasoningTokens: $maxReasoningTokens, customParams: $customParams)';
   }
 
   @override
@@ -1546,6 +1588,10 @@ class _$ChatOptionsImpl implements _ChatOptions {
             (identical(other.systemPrompt, systemPrompt) ||
                 other.systemPrompt == systemPrompt) &&
             const DeepCollectionEquality().equals(other._tools, _tools) &&
+            (identical(other.reasoningEffort, reasoningEffort) ||
+                other.reasoningEffort == reasoningEffort) &&
+            (identical(other.maxReasoningTokens, maxReasoningTokens) ||
+                other.maxReasoningTokens == maxReasoningTokens) &&
             const DeepCollectionEquality()
                 .equals(other._customParams, _customParams));
   }
@@ -1564,6 +1610,8 @@ class _$ChatOptionsImpl implements _ChatOptions {
       stream,
       systemPrompt,
       const DeepCollectionEquality().hash(_tools),
+      reasoningEffort,
+      maxReasoningTokens,
       const DeepCollectionEquality().hash(_customParams));
 
   /// Create a copy of ChatOptions
@@ -1594,6 +1642,8 @@ abstract class _ChatOptions implements ChatOptions {
       final bool? stream,
       final String? systemPrompt,
       final List<ToolDefinition>? tools,
+      final String? reasoningEffort,
+      final int? maxReasoningTokens,
       final Map<String, dynamic>? customParams}) = _$ChatOptionsImpl;
 
   factory _ChatOptions.fromJson(Map<String, dynamic> json) =
@@ -1638,6 +1688,15 @@ abstract class _ChatOptions implements ChatOptions {
   /// 工具列表（函数调用）
   @override
   List<ToolDefinition>? get tools;
+
+  /// 思考努力程度（用于o1/o3等模型）
+  /// 可选值：'low', 'medium', 'high'
+  @override
+  String? get reasoningEffort;
+
+  /// 最大思考token数（用于Gemini等模型）
+  @override
+  int? get maxReasoningTokens;
 
   /// 自定义参数
   @override
@@ -1892,6 +1951,9 @@ mixin _$ChatResult {
   /// 额外元数据
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
 
+  /// 思考链内容（AI思考过程）
+  String? get thinkingContent => throw _privateConstructorUsedError;
+
   /// Serializes this ChatResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -1915,7 +1977,8 @@ abstract class $ChatResultCopyWith<$Res> {
       FinishReason finishReason,
       List<ToolCall>? toolCalls,
       int? responseTimeMs,
-      Map<String, dynamic>? metadata});
+      Map<String, dynamic>? metadata,
+      String? thinkingContent});
 
   $TokenUsageCopyWith<$Res> get tokenUsage;
 }
@@ -1942,6 +2005,7 @@ class _$ChatResultCopyWithImpl<$Res, $Val extends ChatResult>
     Object? toolCalls = freezed,
     Object? responseTimeMs = freezed,
     Object? metadata = freezed,
+    Object? thinkingContent = freezed,
   }) {
     return _then(_value.copyWith(
       content: null == content
@@ -1972,6 +2036,10 @@ class _$ChatResultCopyWithImpl<$Res, $Val extends ChatResult>
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -2001,7 +2069,8 @@ abstract class _$$ChatResultImplCopyWith<$Res>
       FinishReason finishReason,
       List<ToolCall>? toolCalls,
       int? responseTimeMs,
-      Map<String, dynamic>? metadata});
+      Map<String, dynamic>? metadata,
+      String? thinkingContent});
 
   @override
   $TokenUsageCopyWith<$Res> get tokenUsage;
@@ -2027,6 +2096,7 @@ class __$$ChatResultImplCopyWithImpl<$Res>
     Object? toolCalls = freezed,
     Object? responseTimeMs = freezed,
     Object? metadata = freezed,
+    Object? thinkingContent = freezed,
   }) {
     return _then(_$ChatResultImpl(
       content: null == content
@@ -2057,6 +2127,10 @@ class __$$ChatResultImplCopyWithImpl<$Res>
           ? _value._metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2071,7 +2145,8 @@ class _$ChatResultImpl implements _ChatResult {
       required this.finishReason,
       final List<ToolCall>? toolCalls,
       this.responseTimeMs,
-      final Map<String, dynamic>? metadata})
+      final Map<String, dynamic>? metadata,
+      this.thinkingContent})
       : _toolCalls = toolCalls,
         _metadata = metadata;
 
@@ -2124,9 +2199,13 @@ class _$ChatResultImpl implements _ChatResult {
     return EqualUnmodifiableMapView(value);
   }
 
+  /// 思考链内容（AI思考过程）
+  @override
+  final String? thinkingContent;
+
   @override
   String toString() {
-    return 'ChatResult(content: $content, model: $model, tokenUsage: $tokenUsage, finishReason: $finishReason, toolCalls: $toolCalls, responseTimeMs: $responseTimeMs, metadata: $metadata)';
+    return 'ChatResult(content: $content, model: $model, tokenUsage: $tokenUsage, finishReason: $finishReason, toolCalls: $toolCalls, responseTimeMs: $responseTimeMs, metadata: $metadata, thinkingContent: $thinkingContent)';
   }
 
   @override
@@ -2144,7 +2223,9 @@ class _$ChatResultImpl implements _ChatResult {
                 .equals(other._toolCalls, _toolCalls) &&
             (identical(other.responseTimeMs, responseTimeMs) ||
                 other.responseTimeMs == responseTimeMs) &&
-            const DeepCollectionEquality().equals(other._metadata, _metadata));
+            const DeepCollectionEquality().equals(other._metadata, _metadata) &&
+            (identical(other.thinkingContent, thinkingContent) ||
+                other.thinkingContent == thinkingContent));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2157,7 +2238,8 @@ class _$ChatResultImpl implements _ChatResult {
       finishReason,
       const DeepCollectionEquality().hash(_toolCalls),
       responseTimeMs,
-      const DeepCollectionEquality().hash(_metadata));
+      const DeepCollectionEquality().hash(_metadata),
+      thinkingContent);
 
   /// Create a copy of ChatResult
   /// with the given fields replaced by the non-null parameter values.
@@ -2183,7 +2265,8 @@ abstract class _ChatResult implements ChatResult {
       required final FinishReason finishReason,
       final List<ToolCall>? toolCalls,
       final int? responseTimeMs,
-      final Map<String, dynamic>? metadata}) = _$ChatResultImpl;
+      final Map<String, dynamic>? metadata,
+      final String? thinkingContent}) = _$ChatResultImpl;
 
   factory _ChatResult.fromJson(Map<String, dynamic> json) =
       _$ChatResultImpl.fromJson;
@@ -2215,6 +2298,10 @@ abstract class _ChatResult implements ChatResult {
   /// 额外元数据
   @override
   Map<String, dynamic>? get metadata;
+
+  /// 思考链内容（AI思考过程）
+  @override
+  String? get thinkingContent;
 
   /// Create a copy of ChatResult
   /// with the given fields replaced by the non-null parameter values.
@@ -2251,6 +2338,15 @@ mixin _$StreamedChatResult {
   /// 工具调用（如果有）
   List<ToolCall>? get toolCalls => throw _privateConstructorUsedError;
 
+  /// 思考链增量内容
+  String? get thinkingDelta => throw _privateConstructorUsedError;
+
+  /// 思考链累积内容
+  String? get thinkingContent => throw _privateConstructorUsedError;
+
+  /// 思考链是否完成
+  bool get thinkingComplete => throw _privateConstructorUsedError;
+
   /// Serializes this StreamedChatResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -2274,7 +2370,10 @@ abstract class $StreamedChatResultCopyWith<$Res> {
       String? model,
       TokenUsage? tokenUsage,
       FinishReason? finishReason,
-      List<ToolCall>? toolCalls});
+      List<ToolCall>? toolCalls,
+      String? thinkingDelta,
+      String? thinkingContent,
+      bool thinkingComplete});
 
   $TokenUsageCopyWith<$Res>? get tokenUsage;
 }
@@ -2301,6 +2400,9 @@ class _$StreamedChatResultCopyWithImpl<$Res, $Val extends StreamedChatResult>
     Object? tokenUsage = freezed,
     Object? finishReason = freezed,
     Object? toolCalls = freezed,
+    Object? thinkingDelta = freezed,
+    Object? thinkingContent = freezed,
+    Object? thinkingComplete = null,
   }) {
     return _then(_value.copyWith(
       delta: freezed == delta
@@ -2331,6 +2433,18 @@ class _$StreamedChatResultCopyWithImpl<$Res, $Val extends StreamedChatResult>
           ? _value.toolCalls
           : toolCalls // ignore: cast_nullable_to_non_nullable
               as List<ToolCall>?,
+      thinkingDelta: freezed == thinkingDelta
+          ? _value.thinkingDelta
+          : thinkingDelta // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingComplete: null == thinkingComplete
+          ? _value.thinkingComplete
+          : thinkingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -2364,7 +2478,10 @@ abstract class _$$StreamedChatResultImplCopyWith<$Res>
       String? model,
       TokenUsage? tokenUsage,
       FinishReason? finishReason,
-      List<ToolCall>? toolCalls});
+      List<ToolCall>? toolCalls,
+      String? thinkingDelta,
+      String? thinkingContent,
+      bool thinkingComplete});
 
   @override
   $TokenUsageCopyWith<$Res>? get tokenUsage;
@@ -2390,6 +2507,9 @@ class __$$StreamedChatResultImplCopyWithImpl<$Res>
     Object? tokenUsage = freezed,
     Object? finishReason = freezed,
     Object? toolCalls = freezed,
+    Object? thinkingDelta = freezed,
+    Object? thinkingContent = freezed,
+    Object? thinkingComplete = null,
   }) {
     return _then(_$StreamedChatResultImpl(
       delta: freezed == delta
@@ -2420,6 +2540,18 @@ class __$$StreamedChatResultImplCopyWithImpl<$Res>
           ? _value._toolCalls
           : toolCalls // ignore: cast_nullable_to_non_nullable
               as List<ToolCall>?,
+      thinkingDelta: freezed == thinkingDelta
+          ? _value.thinkingDelta
+          : thinkingDelta // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingComplete: null == thinkingComplete
+          ? _value.thinkingComplete
+          : thinkingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -2434,7 +2566,10 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
       this.model,
       this.tokenUsage,
       this.finishReason,
-      final List<ToolCall>? toolCalls})
+      final List<ToolCall>? toolCalls,
+      this.thinkingDelta,
+      this.thinkingContent,
+      this.thinkingComplete = false})
       : _toolCalls = toolCalls;
 
   factory _$StreamedChatResultImpl.fromJson(Map<String, dynamic> json) =>
@@ -2478,9 +2613,22 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
     return EqualUnmodifiableListView(value);
   }
 
+  /// 思考链增量内容
+  @override
+  final String? thinkingDelta;
+
+  /// 思考链累积内容
+  @override
+  final String? thinkingContent;
+
+  /// 思考链是否完成
+  @override
+  @JsonKey()
+  final bool thinkingComplete;
+
   @override
   String toString() {
-    return 'StreamedChatResult(delta: $delta, content: $content, isDone: $isDone, model: $model, tokenUsage: $tokenUsage, finishReason: $finishReason, toolCalls: $toolCalls)';
+    return 'StreamedChatResult(delta: $delta, content: $content, isDone: $isDone, model: $model, tokenUsage: $tokenUsage, finishReason: $finishReason, toolCalls: $toolCalls, thinkingDelta: $thinkingDelta, thinkingContent: $thinkingContent, thinkingComplete: $thinkingComplete)';
   }
 
   @override
@@ -2497,7 +2645,13 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
             (identical(other.finishReason, finishReason) ||
                 other.finishReason == finishReason) &&
             const DeepCollectionEquality()
-                .equals(other._toolCalls, _toolCalls));
+                .equals(other._toolCalls, _toolCalls) &&
+            (identical(other.thinkingDelta, thinkingDelta) ||
+                other.thinkingDelta == thinkingDelta) &&
+            (identical(other.thinkingContent, thinkingContent) ||
+                other.thinkingContent == thinkingContent) &&
+            (identical(other.thinkingComplete, thinkingComplete) ||
+                other.thinkingComplete == thinkingComplete));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2510,7 +2664,10 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
       model,
       tokenUsage,
       finishReason,
-      const DeepCollectionEquality().hash(_toolCalls));
+      const DeepCollectionEquality().hash(_toolCalls),
+      thinkingDelta,
+      thinkingContent,
+      thinkingComplete);
 
   /// Create a copy of StreamedChatResult
   /// with the given fields replaced by the non-null parameter values.
@@ -2537,7 +2694,10 @@ abstract class _StreamedChatResult implements StreamedChatResult {
       final String? model,
       final TokenUsage? tokenUsage,
       final FinishReason? finishReason,
-      final List<ToolCall>? toolCalls}) = _$StreamedChatResultImpl;
+      final List<ToolCall>? toolCalls,
+      final String? thinkingDelta,
+      final String? thinkingContent,
+      final bool thinkingComplete}) = _$StreamedChatResultImpl;
 
   factory _StreamedChatResult.fromJson(Map<String, dynamic> json) =
       _$StreamedChatResultImpl.fromJson;
@@ -2569,6 +2729,18 @@ abstract class _StreamedChatResult implements StreamedChatResult {
   /// 工具调用（如果有）
   @override
   List<ToolCall>? get toolCalls;
+
+  /// 思考链增量内容
+  @override
+  String? get thinkingDelta;
+
+  /// 思考链累积内容
+  @override
+  String? get thinkingContent;
+
+  /// 思考链是否完成
+  @override
+  bool get thinkingComplete;
 
   /// Create a copy of StreamedChatResult
   /// with the given fields replaced by the non-null parameter values.

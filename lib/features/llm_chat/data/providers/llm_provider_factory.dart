@@ -19,6 +19,7 @@ class LlmProviderFactory {
         return GoogleLlmProvider(config);
       case 'anthropic':
         return AnthropicLlmProvider(config);
+
       default:
         throw ApiException('不支持的AI供应商: ${config.provider}');
     }
@@ -85,11 +86,7 @@ class LlmProviderFactory {
 
   /// 获取支持的供应商列表
   static List<String> getSupportedProviders() {
-    return [
-      'openai',
-      'google',
-      'anthropic',
-    ];
+    return ['openai', 'google', 'anthropic'];
   }
 
   /// 检查供应商是否支持
@@ -106,6 +103,7 @@ class LlmProviderFactory {
         return 'gemini-pro';
       case 'anthropic':
         return 'claude-3-sonnet-20240229';
+
       default:
         return null;
     }
@@ -120,6 +118,7 @@ class LlmProviderFactory {
         return 'embedding-001';
       case 'anthropic':
         return null; // Anthropic目前不提供嵌入模型
+
       default:
         return null;
     }
@@ -134,6 +133,7 @@ class LlmProviderFactory {
         return 'Google Gemini';
       case 'anthropic':
         return 'Anthropic Claude';
+
       default:
         return provider;
     }
@@ -148,6 +148,7 @@ class LlmProviderFactory {
         return 'Google的Gemini系列模型，支持多模态输入';
       case 'anthropic':
         return 'Anthropic的Claude系列模型，注重安全性和有用性';
+
       default:
         return '未知供应商';
     }
@@ -162,6 +163,7 @@ class LlmProviderFactory {
         return ['apiKey'];
       case 'anthropic':
         return ['apiKey'];
+
       default:
         return ['apiKey'];
     }
@@ -176,6 +178,7 @@ class LlmProviderFactory {
         return ['baseUrl'];
       case 'anthropic':
         return ['baseUrl'];
+
       default:
         return [];
     }

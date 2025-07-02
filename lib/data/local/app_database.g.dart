@@ -2492,6 +2492,28 @@ class $ChatMessagesTableTable extends ChatMessagesTable
   late final GeneratedColumn<int> tokenCount = GeneratedColumn<int>(
       'token_count', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _thinkingContentMeta =
+      const VerificationMeta('thinkingContent');
+  @override
+  late final GeneratedColumn<String> thinkingContent = GeneratedColumn<String>(
+      'thinking_content', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _thinkingCompleteMeta =
+      const VerificationMeta('thinkingComplete');
+  @override
+  late final GeneratedColumn<bool> thinkingComplete = GeneratedColumn<bool>(
+      'thinking_complete', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("thinking_complete" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _modelNameMeta =
+      const VerificationMeta('modelName');
+  @override
+  late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
+      'model_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -2503,7 +2525,10 @@ class $ChatMessagesTableTable extends ChatMessagesTable
         status,
         metadata,
         parentMessageId,
-        tokenCount
+        tokenCount,
+        thinkingContent,
+        thinkingComplete,
+        modelName
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2573,6 +2598,22 @@ class $ChatMessagesTableTable extends ChatMessagesTable
           tokenCount.isAcceptableOrUnknown(
               data['token_count']!, _tokenCountMeta));
     }
+    if (data.containsKey('thinking_content')) {
+      context.handle(
+          _thinkingContentMeta,
+          thinkingContent.isAcceptableOrUnknown(
+              data['thinking_content']!, _thinkingContentMeta));
+    }
+    if (data.containsKey('thinking_complete')) {
+      context.handle(
+          _thinkingCompleteMeta,
+          thinkingComplete.isAcceptableOrUnknown(
+              data['thinking_complete']!, _thinkingCompleteMeta));
+    }
+    if (data.containsKey('model_name')) {
+      context.handle(_modelNameMeta,
+          modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta));
+    }
     return context;
   }
 
@@ -2602,6 +2643,12 @@ class $ChatMessagesTableTable extends ChatMessagesTable
           DriftSqlType.string, data['${effectivePrefix}parent_message_id']),
       tokenCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}token_count']),
+      thinkingContent: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}thinking_content']),
+      thinkingComplete: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}thinking_complete'])!,
+      modelName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}model_name']),
     );
   }
 
@@ -2642,6 +2689,15 @@ class ChatMessagesTableData extends DataClass
 
   /// 消息使用的token数量
   final int? tokenCount;
+
+  /// 思考链内容（AI思考过程）
+  final String? thinkingContent;
+
+  /// 思考链是否完整
+  final bool thinkingComplete;
+
+  /// 使用的模型名称（用于特殊处理）
+  final String? modelName;
   const ChatMessagesTableData(
       {required this.id,
       required this.content,
@@ -2652,7 +2708,10 @@ class ChatMessagesTableData extends DataClass
       required this.status,
       this.metadata,
       this.parentMessageId,
-      this.tokenCount});
+      this.tokenCount,
+      this.thinkingContent,
+      required this.thinkingComplete,
+      this.modelName});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2671,6 +2730,13 @@ class ChatMessagesTableData extends DataClass
     }
     if (!nullToAbsent || tokenCount != null) {
       map['token_count'] = Variable<int>(tokenCount);
+    }
+    if (!nullToAbsent || thinkingContent != null) {
+      map['thinking_content'] = Variable<String>(thinkingContent);
+    }
+    map['thinking_complete'] = Variable<bool>(thinkingComplete);
+    if (!nullToAbsent || modelName != null) {
+      map['model_name'] = Variable<String>(modelName);
     }
     return map;
   }
@@ -2693,6 +2759,13 @@ class ChatMessagesTableData extends DataClass
       tokenCount: tokenCount == null && nullToAbsent
           ? const Value.absent()
           : Value(tokenCount),
+      thinkingContent: thinkingContent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thinkingContent),
+      thinkingComplete: Value(thinkingComplete),
+      modelName: modelName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelName),
     );
   }
 
@@ -2710,6 +2783,9 @@ class ChatMessagesTableData extends DataClass
       metadata: serializer.fromJson<String?>(json['metadata']),
       parentMessageId: serializer.fromJson<String?>(json['parentMessageId']),
       tokenCount: serializer.fromJson<int?>(json['tokenCount']),
+      thinkingContent: serializer.fromJson<String?>(json['thinkingContent']),
+      thinkingComplete: serializer.fromJson<bool>(json['thinkingComplete']),
+      modelName: serializer.fromJson<String?>(json['modelName']),
     );
   }
   @override
@@ -2726,6 +2802,9 @@ class ChatMessagesTableData extends DataClass
       'metadata': serializer.toJson<String?>(metadata),
       'parentMessageId': serializer.toJson<String?>(parentMessageId),
       'tokenCount': serializer.toJson<int?>(tokenCount),
+      'thinkingContent': serializer.toJson<String?>(thinkingContent),
+      'thinkingComplete': serializer.toJson<bool>(thinkingComplete),
+      'modelName': serializer.toJson<String?>(modelName),
     };
   }
 
@@ -2739,7 +2818,10 @@ class ChatMessagesTableData extends DataClass
           String? status,
           Value<String?> metadata = const Value.absent(),
           Value<String?> parentMessageId = const Value.absent(),
-          Value<int?> tokenCount = const Value.absent()}) =>
+          Value<int?> tokenCount = const Value.absent(),
+          Value<String?> thinkingContent = const Value.absent(),
+          bool? thinkingComplete,
+          Value<String?> modelName = const Value.absent()}) =>
       ChatMessagesTableData(
         id: id ?? this.id,
         content: content ?? this.content,
@@ -2753,6 +2835,11 @@ class ChatMessagesTableData extends DataClass
             ? parentMessageId.value
             : this.parentMessageId,
         tokenCount: tokenCount.present ? tokenCount.value : this.tokenCount,
+        thinkingContent: thinkingContent.present
+            ? thinkingContent.value
+            : this.thinkingContent,
+        thinkingComplete: thinkingComplete ?? this.thinkingComplete,
+        modelName: modelName.present ? modelName.value : this.modelName,
       );
   ChatMessagesTableData copyWithCompanion(ChatMessagesTableCompanion data) {
     return ChatMessagesTableData(
@@ -2772,6 +2859,13 @@ class ChatMessagesTableData extends DataClass
           : this.parentMessageId,
       tokenCount:
           data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
+      thinkingContent: data.thinkingContent.present
+          ? data.thinkingContent.value
+          : this.thinkingContent,
+      thinkingComplete: data.thinkingComplete.present
+          ? data.thinkingComplete.value
+          : this.thinkingComplete,
+      modelName: data.modelName.present ? data.modelName.value : this.modelName,
     );
   }
 
@@ -2787,14 +2881,29 @@ class ChatMessagesTableData extends DataClass
           ..write('status: $status, ')
           ..write('metadata: $metadata, ')
           ..write('parentMessageId: $parentMessageId, ')
-          ..write('tokenCount: $tokenCount')
+          ..write('tokenCount: $tokenCount, ')
+          ..write('thinkingContent: $thinkingContent, ')
+          ..write('thinkingComplete: $thinkingComplete, ')
+          ..write('modelName: $modelName')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, content, isFromUser, timestamp,
-      chatSessionId, type, status, metadata, parentMessageId, tokenCount);
+  int get hashCode => Object.hash(
+      id,
+      content,
+      isFromUser,
+      timestamp,
+      chatSessionId,
+      type,
+      status,
+      metadata,
+      parentMessageId,
+      tokenCount,
+      thinkingContent,
+      thinkingComplete,
+      modelName);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2808,7 +2917,10 @@ class ChatMessagesTableData extends DataClass
           other.status == this.status &&
           other.metadata == this.metadata &&
           other.parentMessageId == this.parentMessageId &&
-          other.tokenCount == this.tokenCount);
+          other.tokenCount == this.tokenCount &&
+          other.thinkingContent == this.thinkingContent &&
+          other.thinkingComplete == this.thinkingComplete &&
+          other.modelName == this.modelName);
 }
 
 class ChatMessagesTableCompanion
@@ -2823,6 +2935,9 @@ class ChatMessagesTableCompanion
   final Value<String?> metadata;
   final Value<String?> parentMessageId;
   final Value<int?> tokenCount;
+  final Value<String?> thinkingContent;
+  final Value<bool> thinkingComplete;
+  final Value<String?> modelName;
   final Value<int> rowid;
   const ChatMessagesTableCompanion({
     this.id = const Value.absent(),
@@ -2835,6 +2950,9 @@ class ChatMessagesTableCompanion
     this.metadata = const Value.absent(),
     this.parentMessageId = const Value.absent(),
     this.tokenCount = const Value.absent(),
+    this.thinkingContent = const Value.absent(),
+    this.thinkingComplete = const Value.absent(),
+    this.modelName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatMessagesTableCompanion.insert({
@@ -2848,6 +2966,9 @@ class ChatMessagesTableCompanion
     this.metadata = const Value.absent(),
     this.parentMessageId = const Value.absent(),
     this.tokenCount = const Value.absent(),
+    this.thinkingContent = const Value.absent(),
+    this.thinkingComplete = const Value.absent(),
+    this.modelName = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         content = Value(content),
@@ -2865,6 +2986,9 @@ class ChatMessagesTableCompanion
     Expression<String>? metadata,
     Expression<String>? parentMessageId,
     Expression<int>? tokenCount,
+    Expression<String>? thinkingContent,
+    Expression<bool>? thinkingComplete,
+    Expression<String>? modelName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2878,6 +3002,9 @@ class ChatMessagesTableCompanion
       if (metadata != null) 'metadata': metadata,
       if (parentMessageId != null) 'parent_message_id': parentMessageId,
       if (tokenCount != null) 'token_count': tokenCount,
+      if (thinkingContent != null) 'thinking_content': thinkingContent,
+      if (thinkingComplete != null) 'thinking_complete': thinkingComplete,
+      if (modelName != null) 'model_name': modelName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2893,6 +3020,9 @@ class ChatMessagesTableCompanion
       Value<String?>? metadata,
       Value<String?>? parentMessageId,
       Value<int?>? tokenCount,
+      Value<String?>? thinkingContent,
+      Value<bool>? thinkingComplete,
+      Value<String?>? modelName,
       Value<int>? rowid}) {
     return ChatMessagesTableCompanion(
       id: id ?? this.id,
@@ -2905,6 +3035,9 @@ class ChatMessagesTableCompanion
       metadata: metadata ?? this.metadata,
       parentMessageId: parentMessageId ?? this.parentMessageId,
       tokenCount: tokenCount ?? this.tokenCount,
+      thinkingContent: thinkingContent ?? this.thinkingContent,
+      thinkingComplete: thinkingComplete ?? this.thinkingComplete,
+      modelName: modelName ?? this.modelName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2942,6 +3075,15 @@ class ChatMessagesTableCompanion
     if (tokenCount.present) {
       map['token_count'] = Variable<int>(tokenCount.value);
     }
+    if (thinkingContent.present) {
+      map['thinking_content'] = Variable<String>(thinkingContent.value);
+    }
+    if (thinkingComplete.present) {
+      map['thinking_complete'] = Variable<bool>(thinkingComplete.value);
+    }
+    if (modelName.present) {
+      map['model_name'] = Variable<String>(modelName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2961,6 +3103,9 @@ class ChatMessagesTableCompanion
           ..write('metadata: $metadata, ')
           ..write('parentMessageId: $parentMessageId, ')
           ..write('tokenCount: $tokenCount, ')
+          ..write('thinkingContent: $thinkingContent, ')
+          ..write('thinkingComplete: $thinkingComplete, ')
+          ..write('modelName: $modelName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6249,6 +6394,9 @@ typedef $$ChatMessagesTableTableCreateCompanionBuilder
   Value<String?> metadata,
   Value<String?> parentMessageId,
   Value<int?> tokenCount,
+  Value<String?> thinkingContent,
+  Value<bool> thinkingComplete,
+  Value<String?> modelName,
   Value<int> rowid,
 });
 typedef $$ChatMessagesTableTableUpdateCompanionBuilder
@@ -6263,6 +6411,9 @@ typedef $$ChatMessagesTableTableUpdateCompanionBuilder
   Value<String?> metadata,
   Value<String?> parentMessageId,
   Value<int?> tokenCount,
+  Value<String?> thinkingContent,
+  Value<bool> thinkingComplete,
+  Value<String?> modelName,
   Value<int> rowid,
 });
 
@@ -6305,6 +6456,17 @@ class $$ChatMessagesTableTableFilterComposer
 
   ColumnFilters<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get thinkingContent => $composableBuilder(
+      column: $table.thinkingContent,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get thinkingComplete => $composableBuilder(
+      column: $table.thinkingComplete,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get modelName => $composableBuilder(
+      column: $table.modelName, builder: (column) => ColumnFilters(column));
 }
 
 class $$ChatMessagesTableTableOrderingComposer
@@ -6347,6 +6509,17 @@ class $$ChatMessagesTableTableOrderingComposer
 
   ColumnOrderings<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get thinkingContent => $composableBuilder(
+      column: $table.thinkingContent,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get thinkingComplete => $composableBuilder(
+      column: $table.thinkingComplete,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get modelName => $composableBuilder(
+      column: $table.modelName, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ChatMessagesTableTableAnnotationComposer
@@ -6387,6 +6560,15 @@ class $$ChatMessagesTableTableAnnotationComposer
 
   GeneratedColumn<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => column);
+
+  GeneratedColumn<String> get thinkingContent => $composableBuilder(
+      column: $table.thinkingContent, builder: (column) => column);
+
+  GeneratedColumn<bool> get thinkingComplete => $composableBuilder(
+      column: $table.thinkingComplete, builder: (column) => column);
+
+  GeneratedColumn<String> get modelName =>
+      $composableBuilder(column: $table.modelName, builder: (column) => column);
 }
 
 class $$ChatMessagesTableTableTableManager extends RootTableManager<
@@ -6428,6 +6610,9 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             Value<String?> metadata = const Value.absent(),
             Value<String?> parentMessageId = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
+            Value<String?> thinkingContent = const Value.absent(),
+            Value<bool> thinkingComplete = const Value.absent(),
+            Value<String?> modelName = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatMessagesTableCompanion(
@@ -6441,6 +6626,9 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             metadata: metadata,
             parentMessageId: parentMessageId,
             tokenCount: tokenCount,
+            thinkingContent: thinkingContent,
+            thinkingComplete: thinkingComplete,
+            modelName: modelName,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -6454,6 +6642,9 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             Value<String?> metadata = const Value.absent(),
             Value<String?> parentMessageId = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
+            Value<String?> thinkingContent = const Value.absent(),
+            Value<bool> thinkingComplete = const Value.absent(),
+            Value<String?> modelName = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatMessagesTableCompanion.insert(
@@ -6467,6 +6658,9 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             metadata: metadata,
             parentMessageId: parentMessageId,
             tokenCount: tokenCount,
+            thinkingContent: thinkingContent,
+            thinkingComplete: thinkingComplete,
+            modelName: modelName,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

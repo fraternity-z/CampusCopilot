@@ -6,7 +6,7 @@ part 'llm_provider.freezed.dart';
 part 'llm_provider.g.dart';
 
 /// LLM提供商抽象接口
-/// 
+///
 /// 定义了与AI供应商交互的统一接口，支持：
 /// - 多种AI供应商（OpenAI、Google、Anthropic等）
 /// - 聊天对话生成
@@ -56,40 +56,40 @@ class LlmConfig with _$LlmConfig {
   const factory LlmConfig({
     /// 配置ID
     required String id,
-    
+
     /// 配置名称
     required String name,
-    
+
     /// 提供商类型
     required String provider,
-    
+
     /// API密钥
     required String apiKey,
-    
+
     /// 基础URL（可选，用于代理）
     String? baseUrl,
-    
+
     /// 默认模型
     String? defaultModel,
-    
+
     /// 默认嵌入模型
     String? defaultEmbeddingModel,
-    
+
     /// 组织ID（OpenAI）
     String? organizationId,
-    
+
     /// 项目ID（某些供应商）
     String? projectId,
-    
+
     /// 额外配置参数
     Map<String, dynamic>? extraParams,
-    
+
     /// 创建时间
     required DateTime createdAt,
-    
+
     /// 最后更新时间
     required DateTime updatedAt,
-    
+
     /// 是否启用
     @Default(true) bool isEnabled,
   }) = _LlmConfig;
@@ -104,34 +104,34 @@ class ModelInfo with _$ModelInfo {
   const factory ModelInfo({
     /// 模型ID
     required String id,
-    
+
     /// 模型名称
     required String name,
-    
+
     /// 模型描述
     String? description,
-    
+
     /// 模型类型
     required ModelType type,
-    
+
     /// 上下文窗口大小
     int? contextWindow,
-    
+
     /// 最大输出token数
     int? maxOutputTokens,
-    
+
     /// 是否支持流式响应
     @Default(true) bool supportsStreaming,
-    
+
     /// 是否支持函数调用
     @Default(false) bool supportsFunctionCalling,
-    
+
     /// 是否支持视觉输入
     @Default(false) bool supportsVision,
-    
+
     /// 定价信息
     PricingInfo? pricing,
-    
+
     /// 模型能力标签
     @Default([]) List<String> capabilities,
   }) = _ModelInfo;
@@ -144,16 +144,16 @@ class ModelInfo with _$ModelInfo {
 enum ModelType {
   /// 聊天模型
   chat,
-  
+
   /// 嵌入模型
   embedding,
-  
+
   /// 图像生成模型
   imageGeneration,
-  
+
   /// 语音模型
   speech,
-  
+
   /// 多模态模型
   multimodal,
 }
@@ -164,10 +164,10 @@ class PricingInfo with _$PricingInfo {
   const factory PricingInfo({
     /// 输入token价格（每1K token）
     double? inputPrice,
-    
+
     /// 输出token价格（每1K token）
     double? outputPrice,
-    
+
     /// 货币单位
     @Default('USD') String currency,
   }) = _PricingInfo;
@@ -182,34 +182,41 @@ class ChatOptions with _$ChatOptions {
   const factory ChatOptions({
     /// 使用的模型
     String? model,
-    
+
     /// 温度参数
     double? temperature,
-    
+
     /// 最大生成token数
     int? maxTokens,
-    
+
     /// Top-p参数
     double? topP,
-    
+
     /// 频率惩罚
     double? frequencyPenalty,
-    
+
     /// 存在惩罚
     double? presencePenalty,
-    
+
     /// 停止词
     List<String>? stopSequences,
-    
+
     /// 是否启用流式响应
     bool? stream,
-    
+
     /// 系统提示词
     String? systemPrompt,
-    
+
     /// 工具列表（函数调用）
     List<ToolDefinition>? tools,
-    
+
+    /// 思考努力程度（用于o1/o3等模型）
+    /// 可选值：'low', 'medium', 'high'
+    String? reasoningEffort,
+
+    /// 最大思考token数（用于Gemini等模型）
+    int? maxReasoningTokens,
+
     /// 自定义参数
     Map<String, dynamic>? customParams,
   }) = _ChatOptions;
@@ -224,10 +231,10 @@ class ToolDefinition with _$ToolDefinition {
   const factory ToolDefinition({
     /// 工具名称
     required String name,
-    
+
     /// 工具描述
     required String description,
-    
+
     /// 参数定义
     required Map<String, dynamic> parameters,
   }) = _ToolDefinition;
@@ -242,24 +249,27 @@ class ChatResult with _$ChatResult {
   const factory ChatResult({
     /// 生成的内容
     required String content,
-    
+
     /// 使用的模型
     required String model,
-    
+
     /// token使用情况
     required TokenUsage tokenUsage,
-    
+
     /// 完成原因
     required FinishReason finishReason,
-    
+
     /// 工具调用（如果有）
     List<ToolCall>? toolCalls,
-    
+
     /// 响应时间（毫秒）
     int? responseTimeMs,
-    
+
     /// 额外元数据
     Map<String, dynamic>? metadata,
+
+    /// 思考链内容（AI思考过程）
+    String? thinkingContent,
   }) = _ChatResult;
 
   factory ChatResult.fromJson(Map<String, dynamic> json) =>
@@ -272,24 +282,33 @@ class StreamedChatResult with _$StreamedChatResult {
   const factory StreamedChatResult({
     /// 增量内容
     String? delta,
-    
+
     /// 累积内容
     String? content,
-    
+
     /// 是否完成
     @Default(false) bool isDone,
-    
+
     /// 使用的模型
     String? model,
-    
+
     /// token使用情况（仅在完成时）
     TokenUsage? tokenUsage,
-    
+
     /// 完成原因（仅在完成时）
     FinishReason? finishReason,
-    
+
     /// 工具调用（如果有）
     List<ToolCall>? toolCalls,
+
+    /// 思考链增量内容
+    String? thinkingDelta,
+
+    /// 思考链累积内容
+    String? thinkingContent,
+
+    /// 思考链是否完成
+    @Default(false) bool thinkingComplete,
   }) = _StreamedChatResult;
 
   factory StreamedChatResult.fromJson(Map<String, dynamic> json) =>
@@ -302,10 +321,10 @@ class TokenUsage with _$TokenUsage {
   const factory TokenUsage({
     /// 输入token数
     required int inputTokens,
-    
+
     /// 输出token数
     required int outputTokens,
-    
+
     /// 总token数
     required int totalTokens,
   }) = _TokenUsage;
@@ -318,16 +337,16 @@ class TokenUsage with _$TokenUsage {
 enum FinishReason {
   /// 正常完成
   stop,
-  
+
   /// 达到最大长度
   length,
-  
+
   /// 内容过滤
   contentFilter,
-  
+
   /// 工具调用
   toolCalls,
-  
+
   /// 错误
   error,
 }
@@ -338,10 +357,10 @@ class ToolCall with _$ToolCall {
   const factory ToolCall({
     /// 调用ID
     required String id,
-    
+
     /// 工具名称
     required String name,
-    
+
     /// 调用参数
     required Map<String, dynamic> arguments,
   }) = _ToolCall;
@@ -356,10 +375,10 @@ class EmbeddingResult with _$EmbeddingResult {
   const factory EmbeddingResult({
     /// 嵌入向量列表
     required List<List<double>> embeddings,
-    
+
     /// 使用的模型
     required String model,
-    
+
     /// token使用情况
     required TokenUsage tokenUsage,
   }) = _EmbeddingResult;

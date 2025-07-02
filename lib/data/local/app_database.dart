@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -40,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -63,6 +64,24 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {
             // 若表不存在（或其它 ALTER 失败），直接创建整张表
             await m.createTable(customModelsTable);
+          }
+        }
+
+        if (from < 4) {
+          // 添加思考链相关字段到聊天消息表
+          try {
+            await m.addColumn(
+              chatMessagesTable,
+              chatMessagesTable.thinkingContent,
+            );
+            await m.addColumn(
+              chatMessagesTable,
+              chatMessagesTable.thinkingComplete,
+            );
+            await m.addColumn(chatMessagesTable, chatMessagesTable.modelName);
+          } catch (e) {
+            // 如果添加字段失败，可能是表结构问题，记录错误但继续
+            debugPrint('Failed to add thinking chain columns: $e');
           }
         }
       },
