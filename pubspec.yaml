@@ -117,6 +117,8 @@ dev_dependencies:
 
   # Windows打包
   msix: ^3.16.7
+  # 应用启动图标生成工具
+  flutter_launcher_icons: ^0.14.4
 
 # MSIX配置 (Windows发布)
 msix_config:
@@ -126,6 +128,21 @@ msix_config:
   msix_version: 1.0.0.0
   logo_path: assets/images/logo.png
   capabilities: 'internetClient,microphone,webcam'
+
+# 启动图标生成配置
+flutter_launcher_icons:
+  image_path: "assets/icons/app_icon.png"
+  android: true
+  ios: true
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
+  macos:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
 
 flutter:
   uses-material-design: true
