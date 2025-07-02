@@ -31,6 +31,10 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
           : PrivacySettings.fromJson(
               json['privacySettings'] as Map<String, dynamic>),
       enableAnimations: json['enableAnimations'] as bool? ?? true,
+      thinkingChainSettings: json['thinkingChainSettings'] == null
+          ? const ThinkingChainSettings()
+          : ThinkingChainSettings.fromJson(
+              json['thinkingChainSettings'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
@@ -44,6 +48,7 @@ Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
       'chatSettings': instance.chatSettings,
       'privacySettings': instance.privacySettings,
       'enableAnimations': instance.enableAnimations,
+      'thinkingChainSettings': instance.thinkingChainSettings,
     };
 
 const _$ThemeModeEnumMap = {
@@ -133,4 +138,28 @@ Map<String, dynamic> _$$PrivacySettingsImplToJson(
       'enableCrashReporting': instance.enableCrashReporting,
       'enableUsageStats': instance.enableUsageStats,
       'dataRetentionDays': instance.dataRetentionDays,
+    };
+
+_$ThinkingChainSettingsImpl _$$ThinkingChainSettingsImplFromJson(
+        Map<String, dynamic> json) =>
+    _$ThinkingChainSettingsImpl(
+      showThinkingChain: json['showThinkingChain'] as bool? ?? true,
+      animationSpeed: (json['animationSpeed'] as num?)?.toInt() ?? 50,
+      enableAnimation: json['enableAnimation'] as bool? ?? true,
+      maxDisplayLength: (json['maxDisplayLength'] as num?)?.toInt() ?? 2000,
+      autoCollapseOnLongContent:
+          json['autoCollapseOnLongContent'] as bool? ?? true,
+      enableGeminiSpecialHandling:
+          json['enableGeminiSpecialHandling'] as bool? ?? true,
+    );
+
+Map<String, dynamic> _$$ThinkingChainSettingsImplToJson(
+        _$ThinkingChainSettingsImpl instance) =>
+    <String, dynamic>{
+      'showThinkingChain': instance.showThinkingChain,
+      'animationSpeed': instance.animationSpeed,
+      'enableAnimation': instance.enableAnimation,
+      'maxDisplayLength': instance.maxDisplayLength,
+      'autoCollapseOnLongContent': instance.autoCollapseOnLongContent,
+      'enableGeminiSpecialHandling': instance.enableGeminiSpecialHandling,
     };

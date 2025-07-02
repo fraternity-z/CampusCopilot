@@ -53,6 +53,15 @@ mixin _$ChatMessage {
   /// 图片URL列表（用于多模态消息）
   List<String> get imageUrls => throw _privateConstructorUsedError;
 
+  /// 思考链内容（AI思考过程）
+  String? get thinkingContent => throw _privateConstructorUsedError;
+
+  /// 思考链是否完整
+  bool get thinkingComplete => throw _privateConstructorUsedError;
+
+  /// 使用的模型名称（用于特殊处理）
+  String? get modelName => throw _privateConstructorUsedError;
+
   /// Serializes this ChatMessage to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -80,7 +89,10 @@ abstract class $ChatMessageCopyWith<$Res> {
       Map<String, dynamic>? metadata,
       String? parentMessageId,
       int? tokenCount,
-      List<String> imageUrls});
+      List<String> imageUrls,
+      String? thinkingContent,
+      bool thinkingComplete,
+      String? modelName});
 }
 
 /// @nodoc
@@ -109,6 +121,9 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
     Object? parentMessageId = freezed,
     Object? tokenCount = freezed,
     Object? imageUrls = null,
+    Object? thinkingContent = freezed,
+    Object? thinkingComplete = null,
+    Object? modelName = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -155,6 +170,18 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
           ? _value.imageUrls
           : imageUrls // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingComplete: null == thinkingComplete
+          ? _value.thinkingComplete
+          : thinkingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
+      modelName: freezed == modelName
+          ? _value.modelName
+          : modelName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -178,7 +205,10 @@ abstract class _$$ChatMessageImplCopyWith<$Res>
       Map<String, dynamic>? metadata,
       String? parentMessageId,
       int? tokenCount,
-      List<String> imageUrls});
+      List<String> imageUrls,
+      String? thinkingContent,
+      bool thinkingComplete,
+      String? modelName});
 }
 
 /// @nodoc
@@ -205,6 +235,9 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
     Object? parentMessageId = freezed,
     Object? tokenCount = freezed,
     Object? imageUrls = null,
+    Object? thinkingContent = freezed,
+    Object? thinkingComplete = null,
+    Object? modelName = freezed,
   }) {
     return _then(_$ChatMessageImpl(
       id: null == id
@@ -251,6 +284,18 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
           ? _value._imageUrls
           : imageUrls // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      thinkingContent: freezed == thinkingContent
+          ? _value.thinkingContent
+          : thinkingContent // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thinkingComplete: null == thinkingComplete
+          ? _value.thinkingComplete
+          : thinkingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
+      modelName: freezed == modelName
+          ? _value.modelName
+          : modelName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -269,7 +314,10 @@ class _$ChatMessageImpl implements _ChatMessage {
       final Map<String, dynamic>? metadata,
       this.parentMessageId,
       this.tokenCount,
-      final List<String> imageUrls = const []})
+      final List<String> imageUrls = const [],
+      this.thinkingContent,
+      this.thinkingComplete = false,
+      this.modelName})
       : _metadata = metadata,
         _imageUrls = imageUrls;
 
@@ -339,9 +387,22 @@ class _$ChatMessageImpl implements _ChatMessage {
     return EqualUnmodifiableListView(_imageUrls);
   }
 
+  /// 思考链内容（AI思考过程）
+  @override
+  final String? thinkingContent;
+
+  /// 思考链是否完整
+  @override
+  @JsonKey()
+  final bool thinkingComplete;
+
+  /// 使用的模型名称（用于特殊处理）
+  @override
+  final String? modelName;
+
   @override
   String toString() {
-    return 'ChatMessage(id: $id, content: $content, isFromUser: $isFromUser, timestamp: $timestamp, chatSessionId: $chatSessionId, type: $type, status: $status, metadata: $metadata, parentMessageId: $parentMessageId, tokenCount: $tokenCount, imageUrls: $imageUrls)';
+    return 'ChatMessage(id: $id, content: $content, isFromUser: $isFromUser, timestamp: $timestamp, chatSessionId: $chatSessionId, type: $type, status: $status, metadata: $metadata, parentMessageId: $parentMessageId, tokenCount: $tokenCount, imageUrls: $imageUrls, thinkingContent: $thinkingContent, thinkingComplete: $thinkingComplete, modelName: $modelName)';
   }
 
   @override
@@ -365,7 +426,13 @@ class _$ChatMessageImpl implements _ChatMessage {
             (identical(other.tokenCount, tokenCount) ||
                 other.tokenCount == tokenCount) &&
             const DeepCollectionEquality()
-                .equals(other._imageUrls, _imageUrls));
+                .equals(other._imageUrls, _imageUrls) &&
+            (identical(other.thinkingContent, thinkingContent) ||
+                other.thinkingContent == thinkingContent) &&
+            (identical(other.thinkingComplete, thinkingComplete) ||
+                other.thinkingComplete == thinkingComplete) &&
+            (identical(other.modelName, modelName) ||
+                other.modelName == modelName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -382,7 +449,10 @@ class _$ChatMessageImpl implements _ChatMessage {
       const DeepCollectionEquality().hash(_metadata),
       parentMessageId,
       tokenCount,
-      const DeepCollectionEquality().hash(_imageUrls));
+      const DeepCollectionEquality().hash(_imageUrls),
+      thinkingContent,
+      thinkingComplete,
+      modelName);
 
   /// Create a copy of ChatMessage
   /// with the given fields replaced by the non-null parameter values.
@@ -412,7 +482,10 @@ abstract class _ChatMessage implements ChatMessage {
       final Map<String, dynamic>? metadata,
       final String? parentMessageId,
       final int? tokenCount,
-      final List<String> imageUrls}) = _$ChatMessageImpl;
+      final List<String> imageUrls,
+      final String? thinkingContent,
+      final bool thinkingComplete,
+      final String? modelName}) = _$ChatMessageImpl;
 
   factory _ChatMessage.fromJson(Map<String, dynamic> json) =
       _$ChatMessageImpl.fromJson;
@@ -460,6 +533,18 @@ abstract class _ChatMessage implements ChatMessage {
   /// 图片URL列表（用于多模态消息）
   @override
   List<String> get imageUrls;
+
+  /// 思考链内容（AI思考过程）
+  @override
+  String? get thinkingContent;
+
+  /// 思考链是否完整
+  @override
+  bool get thinkingComplete;
+
+  /// 使用的模型名称（用于特殊处理）
+  @override
+  String? get modelName;
 
   /// Create a copy of ChatMessage
   /// with the given fields replaced by the non-null parameter values.

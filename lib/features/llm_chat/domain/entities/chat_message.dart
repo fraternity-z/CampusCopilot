@@ -42,6 +42,15 @@ class ChatMessage with _$ChatMessage {
 
     /// 图片URL列表（用于多模态消息）
     @Default([]) List<String> imageUrls,
+
+    /// 思考链内容（AI思考过程）
+    String? thinkingContent,
+
+    /// 思考链是否完整
+    @Default(false) bool thinkingComplete,
+
+    /// 使用的模型名称（用于特殊处理）
+    String? modelName,
   }) = _ChatMessage;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) =>

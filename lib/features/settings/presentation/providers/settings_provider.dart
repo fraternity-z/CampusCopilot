@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:drift/drift.dart';
 
 import '../../domain/entities/app_settings.dart';
 import '../../../../core/di/database_providers.dart';
@@ -100,6 +101,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  /// 更新思考链设置
+  Future<void> updateThinkingChainSettings(
+    ThinkingChainSettings thinkingChainSettings,
+  ) async {
+    state = state.copyWith(thinkingChainSettings: thinkingChainSettings);
+    await _saveSettings();
+  }
+
   /// 重置所有设置
   Future<void> resetSettings() async {
     state = const AppSettings();
@@ -192,61 +201,91 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> switchModel(String modelId) async {
     if (_database == null) return;
 
-    // 从数据库查找目标模型
+    // 标记是否已切换
+    var switched = false;
+
+    // 获取所有启用的LLM配置
     final allConfigs = await _database.getEnabledLlmConfigs();
 
     for (final config in allConfigs) {
-      final models = await _database.getCustomModelsByConfig(config.id);
-      final targetModel = models.where((m) => m.modelId == modelId).firstOrNull;
+      // 先按configId查找模型
+      var models = await _database.getCustomModelsByConfig(config.id);
 
-      if (targetModel != null) {
-        final provider = _stringToAIProvider(config.provider);
-        if (provider != null) {
-          // 更新默认提供商
-          await updateDefaultProvider(provider);
-
-          // 根据提供商更新相应的配置
-          switch (provider) {
-            case AIProvider.openai:
-              if (state.openaiConfig != null) {
-                await updateOpenAIConfig(
-                  state.openaiConfig!.copyWith(defaultModel: modelId),
-                );
-              } else {
-                // 如果没有AppSettings配置，创建一个基本配置
-                await updateOpenAIConfig(
-                  OpenAIConfig(apiKey: '', defaultModel: modelId),
-                );
-              }
-              break;
-            case AIProvider.gemini:
-              if (state.geminiConfig != null) {
-                await updateGeminiConfig(
-                  state.geminiConfig!.copyWith(defaultModel: modelId),
-                );
-              } else {
-                await updateGeminiConfig(
-                  GeminiConfig(apiKey: '', defaultModel: modelId),
-                );
-              }
-              break;
-            case AIProvider.claude:
-              if (state.claudeConfig != null) {
-                await updateClaudeConfig(
-                  state.claudeConfig!.copyWith(defaultModel: modelId),
-                );
-              } else {
-                await updateClaudeConfig(
-                  ClaudeConfig(apiKey: '', defaultModel: modelId),
-                );
-              }
-              break;
-          }
-
-          // 不再手动invalidate，让依赖这些设置的provider自动重新计算
-          break;
-        }
+      // 若未找到，再按provider查找（旧数据或未绑定configId）
+      if (models.isEmpty) {
+        models = await _database.getCustomModelsByProvider(config.provider);
       }
+
+      final targetModel = models.where((m) => m.modelId == modelId).firstOrNull;
+      if (targetModel == null) continue;
+
+      final provider = _stringToAIProvider(config.provider);
+      if (provider == null) continue;
+
+      // 更新默认提供商
+      await updateDefaultProvider(provider);
+
+      // 更新数据库中的默认模型
+      final updatedConfig = LlmConfigsTableCompanion(
+        id: Value(config.id),
+        name: Value(config.name),
+        provider: Value(config.provider),
+        apiKey: Value(config.apiKey),
+        baseUrl: Value(config.baseUrl),
+        defaultModel: Value(modelId),
+        defaultEmbeddingModel: Value(config.defaultEmbeddingModel),
+        organizationId: Value(config.organizationId),
+        projectId: Value(config.projectId),
+        extraParams: Value(config.extraParams),
+        createdAt: Value(config.createdAt),
+        updatedAt: Value(DateTime.now()),
+        isEnabled: Value(config.isEnabled),
+      );
+      await _database.upsertLlmConfig(updatedConfig);
+
+      // 同步到AppSettings
+      switch (provider) {
+        case AIProvider.openai:
+          if (state.openaiConfig != null) {
+            await updateOpenAIConfig(
+              state.openaiConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateOpenAIConfig(
+              OpenAIConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.gemini:
+          if (state.geminiConfig != null) {
+            await updateGeminiConfig(
+              state.geminiConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateGeminiConfig(
+              GeminiConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.claude:
+          if (state.claudeConfig != null) {
+            await updateClaudeConfig(
+              state.claudeConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateClaudeConfig(
+              ClaudeConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+      }
+
+      debugPrint('✅ 已切换模型到: $modelId (${config.provider})');
+      switched = true;
+    }
+
+    if (!switched) {
+      debugPrint('⚠️ 未找到模型 $modelId 对应的LLM配置，请检查数据库或配置');
     }
   }
 }

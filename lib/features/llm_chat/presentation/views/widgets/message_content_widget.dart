@@ -8,6 +8,8 @@ import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart' as highlight;
 import 'package:markdown/markdown.dart' as md;
 import '../../../../../app/app_router.dart';
+import 'thinking_chain_widget.dart';
+import '../../../domain/entities/chat_message.dart';
 
 /// 消息内容渲染组件
 ///
@@ -19,14 +21,9 @@ import '../../../../../app/app_router.dart';
 /// - 复制功能
 /// - 多种主题
 class MessageContentWidget extends ConsumerStatefulWidget {
-  final String content;
-  final bool isFromUser;
+  final ChatMessage message;
 
-  const MessageContentWidget({
-    super.key,
-    required this.content,
-    required this.isFromUser,
-  });
+  const MessageContentWidget({super.key, required this.message});
 
   @override
   ConsumerState<MessageContentWidget> createState() =>
@@ -44,31 +41,59 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
 
     // 如果不启用Markdown渲染，直接返回纯文本
     if (!generalSettings.enableMarkdownRendering) {
-      return SelectableText(
-        widget.content,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: widget.isFromUser
-              ? Theme.of(context).colorScheme.onPrimaryContainer
-              : Theme.of(context).colorScheme.onSurface,
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 思考链显示
+          if (widget.message.thinkingContent != null &&
+              !widget.message.isFromUser)
+            ThinkingChainWidget(
+              content: widget.message.thinkingContent!,
+              modelName: widget.message.modelName ?? '',
+              isCompleted: widget.message.thinkingComplete,
+            ),
+          // 主要内容
+          SelectableText(
+            widget.message.content,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: widget.message.isFromUser
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
       );
     }
 
-    return MarkdownBody(
-      data: _preprocessMathContent(widget.content),
-      selectable: true,
-      styleSheet: _getMarkdownStyleSheet(context),
-      builders: {
-        'code': CodeBlockBuilder(
-          codeBlockSettings: codeBlockSettings,
-          isFromUser: widget.isFromUser,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 思考链显示
+        if (widget.message.thinkingContent != null &&
+            !widget.message.isFromUser)
+          ThinkingChainWidget(
+            content: widget.message.thinkingContent!,
+            modelName: widget.message.modelName ?? '',
+            isCompleted: widget.message.thinkingComplete,
+          ),
+        // 主要内容
+        MarkdownBody(
+          data: _preprocessMathContent(widget.message.content),
+          selectable: true,
+          styleSheet: _getMarkdownStyleSheet(context),
+          builders: {
+            'code': CodeBlockBuilder(
+              codeBlockSettings: codeBlockSettings,
+              isFromUser: widget.message.isFromUser,
+            ),
+            'pre': CodeBlockBuilder(
+              codeBlockSettings: codeBlockSettings,
+              isFromUser: widget.message.isFromUser,
+            ),
+          },
+          extensionSet: md.ExtensionSet.gitHubFlavored,
         ),
-        'pre': CodeBlockBuilder(
-          codeBlockSettings: codeBlockSettings,
-          isFromUser: widget.isFromUser,
-        ),
-      },
-      extensionSet: md.ExtensionSet.gitHubFlavored,
+      ],
     );
   }
 
@@ -88,7 +113,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   /// 构建Markdown样式表
   MarkdownStyleSheet _buildMarkdownStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = widget.isFromUser
+    final textColor = widget.message.isFromUser
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface;
 

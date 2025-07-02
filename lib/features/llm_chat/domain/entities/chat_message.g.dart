@@ -24,6 +24,9 @@ _$ChatMessageImpl _$$ChatMessageImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      thinkingContent: json['thinkingContent'] as String?,
+      thinkingComplete: json['thinkingComplete'] as bool? ?? false,
+      modelName: json['modelName'] as String?,
     );
 
 Map<String, dynamic> _$$ChatMessageImplToJson(_$ChatMessageImpl instance) =>
@@ -39,6 +42,9 @@ Map<String, dynamic> _$$ChatMessageImplToJson(_$ChatMessageImpl instance) =>
       'parentMessageId': instance.parentMessageId,
       'tokenCount': instance.tokenCount,
       'imageUrls': instance.imageUrls,
+      'thinkingContent': instance.thinkingContent,
+      'thinkingComplete': instance.thinkingComplete,
+      'modelName': instance.modelName,
     };
 
 const _$MessageTypeEnumMap = {

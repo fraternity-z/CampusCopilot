@@ -47,6 +47,10 @@ mixin _$AppSettings {
   /// 动画设置
   bool get enableAnimations => throw _privateConstructorUsedError;
 
+  /// 思考链设置
+  ThinkingChainSettings get thinkingChainSettings =>
+      throw _privateConstructorUsedError;
+
   /// Serializes this AppSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -72,13 +76,15 @@ abstract class $AppSettingsCopyWith<$Res> {
       AIProvider defaultProvider,
       ChatSettings chatSettings,
       PrivacySettings privacySettings,
-      bool enableAnimations});
+      bool enableAnimations,
+      ThinkingChainSettings thinkingChainSettings});
 
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
   $GeminiConfigCopyWith<$Res>? get geminiConfig;
   $ClaudeConfigCopyWith<$Res>? get claudeConfig;
   $ChatSettingsCopyWith<$Res> get chatSettings;
   $PrivacySettingsCopyWith<$Res> get privacySettings;
+  $ThinkingChainSettingsCopyWith<$Res> get thinkingChainSettings;
 }
 
 /// @nodoc
@@ -105,6 +111,7 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? chatSettings = null,
     Object? privacySettings = null,
     Object? enableAnimations = null,
+    Object? thinkingChainSettings = null,
   }) {
     return _then(_value.copyWith(
       openaiConfig: freezed == openaiConfig
@@ -143,6 +150,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.enableAnimations
           : enableAnimations // ignore: cast_nullable_to_non_nullable
               as bool,
+      thinkingChainSettings: null == thinkingChainSettings
+          ? _value.thinkingChainSettings
+          : thinkingChainSettings // ignore: cast_nullable_to_non_nullable
+              as ThinkingChainSettings,
     ) as $Val);
   }
 
@@ -207,6 +218,17 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
       return _then(_value.copyWith(privacySettings: value) as $Val);
     });
   }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ThinkingChainSettingsCopyWith<$Res> get thinkingChainSettings {
+    return $ThinkingChainSettingsCopyWith<$Res>(_value.thinkingChainSettings,
+        (value) {
+      return _then(_value.copyWith(thinkingChainSettings: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -226,7 +248,8 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
       AIProvider defaultProvider,
       ChatSettings chatSettings,
       PrivacySettings privacySettings,
-      bool enableAnimations});
+      bool enableAnimations,
+      ThinkingChainSettings thinkingChainSettings});
 
   @override
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
@@ -238,6 +261,8 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
   $ChatSettingsCopyWith<$Res> get chatSettings;
   @override
   $PrivacySettingsCopyWith<$Res> get privacySettings;
+  @override
+  $ThinkingChainSettingsCopyWith<$Res> get thinkingChainSettings;
 }
 
 /// @nodoc
@@ -262,6 +287,7 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? chatSettings = null,
     Object? privacySettings = null,
     Object? enableAnimations = null,
+    Object? thinkingChainSettings = null,
   }) {
     return _then(_$AppSettingsImpl(
       openaiConfig: freezed == openaiConfig
@@ -300,6 +326,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.enableAnimations
           : enableAnimations // ignore: cast_nullable_to_non_nullable
               as bool,
+      thinkingChainSettings: null == thinkingChainSettings
+          ? _value.thinkingChainSettings
+          : thinkingChainSettings // ignore: cast_nullable_to_non_nullable
+              as ThinkingChainSettings,
     ));
   }
 }
@@ -316,7 +346,8 @@ class _$AppSettingsImpl implements _AppSettings {
       this.defaultProvider = AIProvider.openai,
       this.chatSettings = const ChatSettings(),
       this.privacySettings = const PrivacySettings(),
-      this.enableAnimations = true});
+      this.enableAnimations = true,
+      this.thinkingChainSettings = const ThinkingChainSettings()});
 
   factory _$AppSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$AppSettingsImplFromJson(json);
@@ -363,9 +394,14 @@ class _$AppSettingsImpl implements _AppSettings {
   @JsonKey()
   final bool enableAnimations;
 
+  /// 思考链设置
+  @override
+  @JsonKey()
+  final ThinkingChainSettings thinkingChainSettings;
+
   @override
   String toString() {
-    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, enableAnimations: $enableAnimations)';
+    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, enableAnimations: $enableAnimations, thinkingChainSettings: $thinkingChainSettings)';
   }
 
   @override
@@ -390,7 +426,9 @@ class _$AppSettingsImpl implements _AppSettings {
             (identical(other.privacySettings, privacySettings) ||
                 other.privacySettings == privacySettings) &&
             (identical(other.enableAnimations, enableAnimations) ||
-                other.enableAnimations == enableAnimations));
+                other.enableAnimations == enableAnimations) &&
+            (identical(other.thinkingChainSettings, thinkingChainSettings) ||
+                other.thinkingChainSettings == thinkingChainSettings));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -405,7 +443,8 @@ class _$AppSettingsImpl implements _AppSettings {
       defaultProvider,
       chatSettings,
       privacySettings,
-      enableAnimations);
+      enableAnimations,
+      thinkingChainSettings);
 
   /// Create a copy of AppSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -433,7 +472,8 @@ abstract class _AppSettings implements AppSettings {
       final AIProvider defaultProvider,
       final ChatSettings chatSettings,
       final PrivacySettings privacySettings,
-      final bool enableAnimations}) = _$AppSettingsImpl;
+      final bool enableAnimations,
+      final ThinkingChainSettings thinkingChainSettings}) = _$AppSettingsImpl;
 
   factory _AppSettings.fromJson(Map<String, dynamic> json) =
       _$AppSettingsImpl.fromJson;
@@ -473,6 +513,10 @@ abstract class _AppSettings implements AppSettings {
   /// 动画设置
   @override
   bool get enableAnimations;
+
+  /// 思考链设置
+  @override
+  ThinkingChainSettings get thinkingChainSettings;
 
   /// Create a copy of AppSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -1591,4 +1635,317 @@ abstract class _PrivacySettings implements PrivacySettings {
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$PrivacySettingsImplCopyWith<_$PrivacySettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
+}
+
+ThinkingChainSettings _$ThinkingChainSettingsFromJson(
+    Map<String, dynamic> json) {
+  return _ThinkingChainSettings.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ThinkingChainSettings {
+  /// 是否显示思考链
+  bool get showThinkingChain => throw _privateConstructorUsedError;
+
+  /// 思考链动画速度（毫秒）
+  int get animationSpeed => throw _privateConstructorUsedError;
+
+  /// 是否启用思考链动画
+  bool get enableAnimation => throw _privateConstructorUsedError;
+
+  /// 思考链最大显示长度
+  int get maxDisplayLength => throw _privateConstructorUsedError;
+
+  /// 是否自动折叠长思考链
+  bool get autoCollapseOnLongContent => throw _privateConstructorUsedError;
+
+  /// 是否为Gemini模型特殊处理
+  bool get enableGeminiSpecialHandling => throw _privateConstructorUsedError;
+
+  /// Serializes this ThinkingChainSettings to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of ThinkingChainSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $ThinkingChainSettingsCopyWith<ThinkingChainSettings> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ThinkingChainSettingsCopyWith<$Res> {
+  factory $ThinkingChainSettingsCopyWith(ThinkingChainSettings value,
+          $Res Function(ThinkingChainSettings) then) =
+      _$ThinkingChainSettingsCopyWithImpl<$Res, ThinkingChainSettings>;
+  @useResult
+  $Res call(
+      {bool showThinkingChain,
+      int animationSpeed,
+      bool enableAnimation,
+      int maxDisplayLength,
+      bool autoCollapseOnLongContent,
+      bool enableGeminiSpecialHandling});
+}
+
+/// @nodoc
+class _$ThinkingChainSettingsCopyWithImpl<$Res,
+        $Val extends ThinkingChainSettings>
+    implements $ThinkingChainSettingsCopyWith<$Res> {
+  _$ThinkingChainSettingsCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of ThinkingChainSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? showThinkingChain = null,
+    Object? animationSpeed = null,
+    Object? enableAnimation = null,
+    Object? maxDisplayLength = null,
+    Object? autoCollapseOnLongContent = null,
+    Object? enableGeminiSpecialHandling = null,
+  }) {
+    return _then(_value.copyWith(
+      showThinkingChain: null == showThinkingChain
+          ? _value.showThinkingChain
+          : showThinkingChain // ignore: cast_nullable_to_non_nullable
+              as bool,
+      animationSpeed: null == animationSpeed
+          ? _value.animationSpeed
+          : animationSpeed // ignore: cast_nullable_to_non_nullable
+              as int,
+      enableAnimation: null == enableAnimation
+          ? _value.enableAnimation
+          : enableAnimation // ignore: cast_nullable_to_non_nullable
+              as bool,
+      maxDisplayLength: null == maxDisplayLength
+          ? _value.maxDisplayLength
+          : maxDisplayLength // ignore: cast_nullable_to_non_nullable
+              as int,
+      autoCollapseOnLongContent: null == autoCollapseOnLongContent
+          ? _value.autoCollapseOnLongContent
+          : autoCollapseOnLongContent // ignore: cast_nullable_to_non_nullable
+              as bool,
+      enableGeminiSpecialHandling: null == enableGeminiSpecialHandling
+          ? _value.enableGeminiSpecialHandling
+          : enableGeminiSpecialHandling // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ThinkingChainSettingsImplCopyWith<$Res>
+    implements $ThinkingChainSettingsCopyWith<$Res> {
+  factory _$$ThinkingChainSettingsImplCopyWith(
+          _$ThinkingChainSettingsImpl value,
+          $Res Function(_$ThinkingChainSettingsImpl) then) =
+      __$$ThinkingChainSettingsImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {bool showThinkingChain,
+      int animationSpeed,
+      bool enableAnimation,
+      int maxDisplayLength,
+      bool autoCollapseOnLongContent,
+      bool enableGeminiSpecialHandling});
+}
+
+/// @nodoc
+class __$$ThinkingChainSettingsImplCopyWithImpl<$Res>
+    extends _$ThinkingChainSettingsCopyWithImpl<$Res,
+        _$ThinkingChainSettingsImpl>
+    implements _$$ThinkingChainSettingsImplCopyWith<$Res> {
+  __$$ThinkingChainSettingsImplCopyWithImpl(_$ThinkingChainSettingsImpl _value,
+      $Res Function(_$ThinkingChainSettingsImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of ThinkingChainSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? showThinkingChain = null,
+    Object? animationSpeed = null,
+    Object? enableAnimation = null,
+    Object? maxDisplayLength = null,
+    Object? autoCollapseOnLongContent = null,
+    Object? enableGeminiSpecialHandling = null,
+  }) {
+    return _then(_$ThinkingChainSettingsImpl(
+      showThinkingChain: null == showThinkingChain
+          ? _value.showThinkingChain
+          : showThinkingChain // ignore: cast_nullable_to_non_nullable
+              as bool,
+      animationSpeed: null == animationSpeed
+          ? _value.animationSpeed
+          : animationSpeed // ignore: cast_nullable_to_non_nullable
+              as int,
+      enableAnimation: null == enableAnimation
+          ? _value.enableAnimation
+          : enableAnimation // ignore: cast_nullable_to_non_nullable
+              as bool,
+      maxDisplayLength: null == maxDisplayLength
+          ? _value.maxDisplayLength
+          : maxDisplayLength // ignore: cast_nullable_to_non_nullable
+              as int,
+      autoCollapseOnLongContent: null == autoCollapseOnLongContent
+          ? _value.autoCollapseOnLongContent
+          : autoCollapseOnLongContent // ignore: cast_nullable_to_non_nullable
+              as bool,
+      enableGeminiSpecialHandling: null == enableGeminiSpecialHandling
+          ? _value.enableGeminiSpecialHandling
+          : enableGeminiSpecialHandling // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ThinkingChainSettingsImpl implements _ThinkingChainSettings {
+  const _$ThinkingChainSettingsImpl(
+      {this.showThinkingChain = true,
+      this.animationSpeed = 50,
+      this.enableAnimation = true,
+      this.maxDisplayLength = 2000,
+      this.autoCollapseOnLongContent = true,
+      this.enableGeminiSpecialHandling = true});
+
+  factory _$ThinkingChainSettingsImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ThinkingChainSettingsImplFromJson(json);
+
+  /// 是否显示思考链
+  @override
+  @JsonKey()
+  final bool showThinkingChain;
+
+  /// 思考链动画速度（毫秒）
+  @override
+  @JsonKey()
+  final int animationSpeed;
+
+  /// 是否启用思考链动画
+  @override
+  @JsonKey()
+  final bool enableAnimation;
+
+  /// 思考链最大显示长度
+  @override
+  @JsonKey()
+  final int maxDisplayLength;
+
+  /// 是否自动折叠长思考链
+  @override
+  @JsonKey()
+  final bool autoCollapseOnLongContent;
+
+  /// 是否为Gemini模型特殊处理
+  @override
+  @JsonKey()
+  final bool enableGeminiSpecialHandling;
+
+  @override
+  String toString() {
+    return 'ThinkingChainSettings(showThinkingChain: $showThinkingChain, animationSpeed: $animationSpeed, enableAnimation: $enableAnimation, maxDisplayLength: $maxDisplayLength, autoCollapseOnLongContent: $autoCollapseOnLongContent, enableGeminiSpecialHandling: $enableGeminiSpecialHandling)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ThinkingChainSettingsImpl &&
+            (identical(other.showThinkingChain, showThinkingChain) ||
+                other.showThinkingChain == showThinkingChain) &&
+            (identical(other.animationSpeed, animationSpeed) ||
+                other.animationSpeed == animationSpeed) &&
+            (identical(other.enableAnimation, enableAnimation) ||
+                other.enableAnimation == enableAnimation) &&
+            (identical(other.maxDisplayLength, maxDisplayLength) ||
+                other.maxDisplayLength == maxDisplayLength) &&
+            (identical(other.autoCollapseOnLongContent,
+                    autoCollapseOnLongContent) ||
+                other.autoCollapseOnLongContent == autoCollapseOnLongContent) &&
+            (identical(other.enableGeminiSpecialHandling,
+                    enableGeminiSpecialHandling) ||
+                other.enableGeminiSpecialHandling ==
+                    enableGeminiSpecialHandling));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      showThinkingChain,
+      animationSpeed,
+      enableAnimation,
+      maxDisplayLength,
+      autoCollapseOnLongContent,
+      enableGeminiSpecialHandling);
+
+  /// Create a copy of ThinkingChainSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ThinkingChainSettingsImplCopyWith<_$ThinkingChainSettingsImpl>
+      get copyWith => __$$ThinkingChainSettingsImplCopyWithImpl<
+          _$ThinkingChainSettingsImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ThinkingChainSettingsImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ThinkingChainSettings implements ThinkingChainSettings {
+  const factory _ThinkingChainSettings(
+      {final bool showThinkingChain,
+      final int animationSpeed,
+      final bool enableAnimation,
+      final int maxDisplayLength,
+      final bool autoCollapseOnLongContent,
+      final bool enableGeminiSpecialHandling}) = _$ThinkingChainSettingsImpl;
+
+  factory _ThinkingChainSettings.fromJson(Map<String, dynamic> json) =
+      _$ThinkingChainSettingsImpl.fromJson;
+
+  /// 是否显示思考链
+  @override
+  bool get showThinkingChain;
+
+  /// 思考链动画速度（毫秒）
+  @override
+  int get animationSpeed;
+
+  /// 是否启用思考链动画
+  @override
+  bool get enableAnimation;
+
+  /// 思考链最大显示长度
+  @override
+  int get maxDisplayLength;
+
+  /// 是否自动折叠长思考链
+  @override
+  bool get autoCollapseOnLongContent;
+
+  /// 是否为Gemini模型特殊处理
+  @override
+  bool get enableGeminiSpecialHandling;
+
+  /// Create a copy of ThinkingChainSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ThinkingChainSettingsImplCopyWith<_$ThinkingChainSettingsImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }

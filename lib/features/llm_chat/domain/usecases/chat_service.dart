@@ -117,6 +117,10 @@ class ChatService {
         maxTokens: session.config?.maxTokens ?? 2048,
       );
 
+      debugPrint(
+        '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
+      );
+
       final result = await provider.generateChat(
         contextMessages,
         options: chatOptions,
@@ -128,7 +132,7 @@ class ChatService {
         chatSessionId: sessionId,
         parentMessageId: userMessage.id,
         tokenCount: result.tokenUsage.totalTokens,
-      );
+      ).copyWith(modelName: llmConfig.defaultModel);
 
       // 使用事务保证所有相关操作的原子性
       await _database.transaction(() async {
@@ -220,6 +224,9 @@ class ChatService {
         stream: true,
       );
 
+      debugPrint(
+        '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
+      );
       debugPrint('⚙️ 开始调用AI API');
       debugPrint(
         '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
@@ -244,7 +251,7 @@ class ChatService {
               chatSessionId: sessionId,
               parentMessageId: userMessage.id,
               tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
-            ).copyWith(id: aiMessageId);
+            ).copyWith(id: aiMessageId, modelName: llmConfig.defaultModel);
 
             // 使用事务保证所有相关操作的原子性
             await _database.transaction(() async {
@@ -291,6 +298,7 @@ class ChatService {
           timestamp: DateTime.now(),
           chatSessionId: sessionId,
           status: MessageStatus.sending,
+          modelName: llmConfig.defaultModel,
         );
       }
     } catch (e) {
