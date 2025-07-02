@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/llm_chat/presentation/views/chat_screen.dart';
-import '../features/persona_management/presentation/views/persona_list_screen.dart';
+import '../features/persona_management/presentation/widgets/persona_edit_dialog.dart';
+import '../features/persona_management/presentation/widgets/preset_persona_selector_dialog.dart';
 import '../features/settings/presentation/views/settings_screen.dart';
 
 import '../features/settings/presentation/views/appearance_settings_screen.dart';
@@ -11,7 +12,7 @@ import '../features/settings/presentation/views/data_management_screen.dart';
 import '../features/settings/presentation/views/about_screen.dart';
 import '../features/settings/presentation/views/model_management_screen.dart';
 import '../features/settings/presentation/views/provider_config_screen.dart';
-import '../features/persona_management/presentation/views/persona_edit_screen.dart';
+
 import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
 import '../features/llm_chat/presentation/providers/chat_provider.dart';
 import '../features/llm_chat/domain/entities/chat_session.dart';
@@ -179,28 +180,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ChatScreen(),
           ),
 
-          // 智能体管理
-          GoRoute(
-            path: '/personas',
-            name: 'personas',
-            builder: (context, state) => const PersonaListScreen(),
-            routes: [
-              GoRoute(
-                path: '/create',
-                name: 'persona-create',
-                builder: (context, state) => const PersonaEditScreen(),
-              ),
-              GoRoute(
-                path: '/edit/:id',
-                name: 'persona-edit',
-                builder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return PersonaEditScreen(personaId: id);
-                },
-              ),
-            ],
-          ),
-
           // 知识库管理
           GoRoute(
             path: '/knowledge',
@@ -267,14 +246,44 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      body: Row(
-        children: [
-          // 侧边导航栏
-          const NavigationSidebar(),
+    final isCollapsed = ref.watch(sidebarCollapsedProvider);
 
-          // 主内容区域
-          Expanded(child: child),
+    return Scaffold(
+      // 添加浮动ActionButton来展开侧边栏
+      floatingActionButton: isCollapsed
+          ? FloatingActionButton(
+              mini: true,
+              onPressed: () {
+                ref.read(sidebarCollapsedProvider.notifier).state = false;
+              },
+              tooltip: '展开侧边栏',
+              child: const Icon(Icons.menu),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+
+      body: Stack(
+        children: [
+          // 主内容区域 - 现在占满整个屏幕
+          child,
+
+          // 侧边栏浮层
+          if (!isCollapsed) ...[
+            // 半透明背景遮罩
+            GestureDetector(
+              onTap: () {
+                ref.read(sidebarCollapsedProvider.notifier).state = true;
+              },
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+
+            // 侧边栏内容
+            const NavigationSidebar(),
+          ],
         ],
       ),
     );
@@ -287,97 +296,95 @@ class NavigationSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCollapsed = ref.watch(sidebarCollapsedProvider);
     final selectedTab = ref.watch(sidebarTabProvider);
-    final width = isCollapsed ? 60.0 : 280.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = screenWidth > 600 ? 320.0 : screenWidth * 0.85;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      width: width,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          right: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
-      ),
-      child: Column(
-        children: [
-          // 应用标题和折叠按钮
-          Container(
-            height: 64,
-            padding: EdgeInsets.symmetric(
-              horizontal: isCollapsed ? 8 : 16,
-              vertical: 8,
+    return Positioned(
+      left: 0,
+      top: 0,
+      bottom: 0,
+      child: GestureDetector(
+        // 添加左滑手势关闭侧边栏
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity != null &&
+              details.primaryVelocity! < -500) {
+            ref.read(sidebarCollapsedProvider.notifier).state = true;
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          width: sidebarWidth,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
             ),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(2, 0),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 应用标题和关闭按钮
+              Container(
+                height: 64,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.smart_toy,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Anywherechat',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // 关闭侧边栏按钮
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 24),
+                      onPressed: () {
+                        ref.read(sidebarCollapsedProvider.notifier).state =
+                            true;
+                      },
+                      tooltip: '关闭侧边栏',
+                    ),
+                  ],
                 ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: isCollapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.smart_toy,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 28,
-                ),
-                if (!isCollapsed) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Anywherechat',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 20),
-                    onPressed: () {
-                      ref.read(sidebarCollapsedProvider.notifier).state = true;
-                    },
-                    tooltip: '折叠侧边栏',
-                  ),
-                ] else ...[
-                  const SizedBox(width: 4),
-                  Tooltip(
-                    message: '展开侧边栏',
-                    child: InkWell(
-                      onTap: () {
-                        ref.read(sidebarCollapsedProvider.notifier).state =
-                            false;
-                      },
-                      borderRadius: BorderRadius.circular(4),
-                      child: const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Icon(Icons.chevron_right, size: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
 
-          // 标签页标题栏
-          if (!isCollapsed) _buildTabBar(context, ref, selectedTab),
+              // 标签页标题栏
+              _buildTabBar(context, ref, selectedTab),
 
-          // 标签页内容区域
-          Expanded(
-            child: isCollapsed
-                ? _buildCollapsedSidebar(context, ref)
-                : _buildTabContent(context, ref, selectedTab),
+              // 标签页内容区域
+              Expanded(child: _buildTabContent(context, ref, selectedTab)),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -468,83 +475,6 @@ class NavigationSidebar extends ConsumerWidget {
     }
   }
 
-  /// 构建折叠状态的侧边栏
-  Widget _buildCollapsedSidebar(BuildContext context, WidgetRef ref) {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-
-        // 助手 图标
-        _buildCollapsedSectionIcon(
-          context,
-          icon: Icons.person,
-          tooltip: '助手',
-          onTap: () {
-            ref.read(sidebarCollapsedProvider.notifier).state = false;
-            ref.read(sidebarTabProvider.notifier).state = SidebarTab.assistants;
-          },
-        ),
-
-        const SizedBox(height: 16),
-
-        // 聊天记录 图标
-        _buildCollapsedSectionIcon(
-          context,
-          icon: Icons.topic,
-          tooltip: '聊天记录',
-          onTap: () {
-            ref.read(sidebarCollapsedProvider.notifier).state = false;
-            ref.read(sidebarTabProvider.notifier).state = SidebarTab.topics;
-          },
-        ),
-
-        const Spacer(),
-
-        // 参数设置 图标
-        _buildCollapsedSectionIcon(
-          context,
-          icon: Icons.settings,
-          tooltip: '参数设置',
-          onTap: () {
-            ref.read(sidebarCollapsedProvider.notifier).state = false;
-            ref.read(sidebarTabProvider.notifier).state = SidebarTab.settings;
-          },
-        ),
-
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  /// 构建折叠状态的分区图标
-  Widget _buildCollapsedSectionIcon(
-    BuildContext context, {
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 构建标签页内容
   Widget _buildTabContent(
     BuildContext context,
@@ -594,7 +524,7 @@ class NavigationSidebar extends ConsumerWidget {
           icon: Icons.smart_toy,
           label: '智能体管理',
           badge: null,
-          onTap: () => context.go('/personas'),
+          onTap: () => _showCreatePersonaOptions(context, ref),
         ),
 
         const SizedBox(height: 12),
@@ -616,7 +546,7 @@ class NavigationSidebar extends ConsumerWidget {
                 context,
                 icon: Icons.add,
                 label: '助手',
-                onTap: () => context.go('/personas/create'),
+                onTap: () => _showCreatePersonaOptions(context, ref),
               ),
             ),
           ],
@@ -848,8 +778,10 @@ class NavigationSidebar extends ConsumerWidget {
   ) {
     switch (action) {
       case 'edit':
-        // 跳转到编辑页面
-        context.go('/personas/edit/${persona.id}');
+        showDialog(
+          context: context,
+          builder: (context) => PersonaEditDialog(personaId: persona.id),
+        );
         break;
       case 'delete':
         _showDeletePersonaDialog(context, ref, persona);
@@ -1047,6 +979,30 @@ class NavigationSidebar extends ConsumerWidget {
     );
   }
 
+  /// 显示创建智能体选项
+  Future<void> _showCreatePersonaOptions(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final selectedPersona = await showDialog<Persona>(
+      context: context,
+      builder: (context) => const PresetPersonaSelectorDialog(),
+    );
+    if (!context.mounted) return;
+    if (selectedPersona != null) {
+      showDialog(
+        context: context,
+        builder: (context) => PersonaEditDialog(presetPersona: selectedPersona),
+      );
+    } else {
+      // 自定义创建
+      showDialog(
+        context: context,
+        builder: (context) => const PersonaEditDialog(),
+      );
+    }
+  }
+
   /// 创建分组对话框
   void _showCreateGroupDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
@@ -1173,6 +1129,8 @@ class NavigationSidebar extends ConsumerWidget {
                     isSelected: isSelected,
                     onTap: () {
                       ref.read(chatProvider.notifier).selectSession(session.id);
+                      // 关闭侧边栏
+                      ref.read(sidebarCollapsedProvider.notifier).state = true;
                       // 跳转到聊天页面
                       context.go('/chat');
                     },
