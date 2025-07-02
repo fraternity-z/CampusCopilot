@@ -245,8 +245,11 @@ class ChatService {
         '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
       );
 
-      String accumulatedContent = '';
-      String accumulatedThinking = '';
+      String accumulatedRawContent = ''; // 完整原始内容
+      String accumulatedThinking = ''; // 思考链内容
+      String accumulatedActualContent = ''; // 正文内容
+      bool isInThinkingMode = false; // 当前是否在思考模式
+      String partialTag = ''; // 处理跨块的标签
       String? aiMessageId;
 
       await for (final chunk in provider.generateChatStream(
@@ -254,7 +257,7 @@ class ChatService {
         options: chatOptions,
       )) {
         debugPrint(
-          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}, thinking长度=${chunk.thinkingDelta?.length ?? 0}',
+          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}',
         );
 
         if (chunk.isDone) {
@@ -262,7 +265,7 @@ class ChatService {
           if (aiMessageId != null) {
             final finalMessage =
                 ChatMessageFactory.createAIMessage(
-                  content: accumulatedContent,
+                  content: accumulatedRawContent, // 保存完整原始内容
                   chatSessionId: sessionId,
                   parentMessageId: userMessage.id,
                   tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
@@ -280,7 +283,7 @@ class ChatService {
               // 保存AI消息
               await _database.insertMessage(_messageToCompanion(finalMessage));
               debugPrint(
-                '✅ AI消息已保存到数据库 (包含思考链: ${accumulatedThinking.isNotEmpty})',
+                '✅ AI消息已保存到数据库 (原始: $accumulatedRawContent.length, 思考: $accumulatedThinking.length, 正文: $accumulatedActualContent.length)',
               );
 
               // 更新会话统计
@@ -300,21 +303,66 @@ class ChatService {
           break;
         }
 
-        // 累积思考链内容
-        if (chunk.thinkingDelta != null && chunk.thinkingDelta!.isNotEmpty) {
-          accumulatedThinking += chunk.thinkingDelta!;
-          debugPrint('🧠 思考链增量: ${chunk.thinkingDelta!.length} 字符');
-        }
-
-        // 累积主要内容
+        // 处理内容增量
         if (chunk.delta != null && chunk.delta!.isNotEmpty) {
-          accumulatedContent += chunk.delta!;
+          String deltaText = chunk.delta!;
+          accumulatedRawContent += deltaText;
+
+          // 调试：输出原始增量内容
+          debugPrint('🔍 原始增量 ($deltaText.length字符): "$deltaText"');
+          debugPrint('🔄 当前思考模式: $isInThinkingMode, 部分标签: "$partialTag"');
+
+          // 检查是否包含任何可能的思考链标签
+          if (deltaText.contains('<') ||
+              deltaText.contains('>') ||
+              deltaText.contains('think')) {
+            debugPrint('⚠️ 发现可能的标签内容: $deltaText');
+          }
+
+          // 检查是否包含其他可能的思考标记
+          if (deltaText.contains('思考') ||
+              deltaText.contains('thinking') ||
+              deltaText.contains('reason')) {
+            debugPrint('🧠 发现思考相关关键词: $deltaText');
+          }
+
+          // 处理可能跨块的标签
+          deltaText = partialTag + deltaText;
+          partialTag = '';
+
+          // 处理思考链状态切换
+          final processed = _processThinkingTags(deltaText, isInThinkingMode);
+
+          isInThinkingMode = processed['isInThinkingMode'] as bool;
+          final thinkingDelta = processed['thinkingDelta'] as String?;
+          final contentDelta = processed['contentDelta'] as String?;
+          partialTag = processed['partialTag'] as String;
+
+          debugPrint(
+            '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 正文增量=${contentDelta?.length ?? 0}, 部分标签="$partialTag"',
+          );
+
+          // 累积思考链内容
+          if (thinkingDelta != null && thinkingDelta.isNotEmpty) {
+            accumulatedThinking += thinkingDelta;
+            debugPrint(
+              '🧠 思考链增量: $thinkingDelta.length 字符, 总长度: $accumulatedThinking.length',
+            );
+          }
+
+          // 累积正文内容
+          if (contentDelta != null && contentDelta.isNotEmpty) {
+            accumulatedActualContent += contentDelta;
+            debugPrint(
+              '📝 正文增量: $contentDelta.length 字符, 总长度: $accumulatedActualContent.length',
+            );
+          }
         }
 
         // 创建或更新AI消息
         if (aiMessageId == null) {
           aiMessageId = ChatMessageFactory.createAIMessage(
-            content: accumulatedContent,
+            content: accumulatedRawContent,
             chatSessionId: sessionId,
             parentMessageId: userMessage.id,
           ).id;
@@ -323,7 +371,7 @@ class ChatService {
 
         yield ChatMessage(
           id: aiMessageId,
-          content: accumulatedContent,
+          content: accumulatedRawContent, // 保存完整原始内容
           isFromUser: false,
           timestamp: DateTime.now(),
           chatSessionId: sessionId,
@@ -332,7 +380,7 @@ class ChatService {
           thinkingContent: accumulatedThinking.isNotEmpty
               ? accumulatedThinking
               : null,
-          thinkingComplete: chunk.thinkingComplete,
+          thinkingComplete: false, // 流式过程中始终为false
         );
       }
     } catch (e) {
@@ -543,6 +591,70 @@ class ChatService {
     }
 
     return params.isNotEmpty ? params : null;
+  }
+
+  /// 处理思考链标签，实现流式状态管理
+  Map<String, dynamic> _processThinkingTags(
+    String text,
+    bool currentThinkingMode,
+  ) {
+    bool isInThinkingMode = currentThinkingMode;
+    String thinkingDelta = '';
+    String contentDelta = '';
+    String partialTag = '';
+
+    debugPrint('🔧 处理文本 (${text.length}字符): "$text"');
+    debugPrint('🔧 初始思考模式: $currentThinkingMode');
+
+    // 先简单处理：如果发现完整的标签，就分离内容
+    if (text.contains('<think>') && text.contains('</think>')) {
+      debugPrint('🎯 发现完整的思考链标签对');
+      final thinkStart = text.indexOf('<think>');
+      final thinkEnd = text.indexOf('</think>');
+
+      if (thinkStart != -1 && thinkEnd != -1 && thinkEnd > thinkStart) {
+        // 分离三部分：开始前、思考链、结束后
+        final beforeThink = text.substring(0, thinkStart);
+        final thinkingContent = text.substring(thinkStart + 7, thinkEnd);
+        final afterThink = text.substring(thinkEnd + 8);
+
+        debugPrint('📝 开始前内容: "$beforeThink"');
+        debugPrint('🧠 思考链内容: "$thinkingContent"');
+        debugPrint('📝 结束后内容: "$afterThink"');
+
+        contentDelta = beforeThink + afterThink;
+        thinkingDelta = thinkingContent;
+        isInThinkingMode = false; // 完整标签处理后回到正文模式
+      }
+    } else {
+      // 如果没有完整标签，就全部当作当前模式的内容
+      if (isInThinkingMode) {
+        thinkingDelta = text;
+      } else {
+        contentDelta = text;
+      }
+
+      // 检查状态切换
+      if (text.contains('<think>')) {
+        debugPrint('🟢 发现开始标签');
+        isInThinkingMode = true;
+      }
+      if (text.contains('</think>')) {
+        debugPrint('🔴 发现结束标签');
+        isInThinkingMode = false;
+      }
+    }
+
+    debugPrint(
+      '🔧 处理完成: 思考=${thinkingDelta.length}, 正文=${contentDelta.length}, 模式=$isInThinkingMode',
+    );
+
+    return {
+      'isInThinkingMode': isInThinkingMode,
+      'thinkingDelta': thinkingDelta.isNotEmpty ? thinkingDelta : null,
+      'contentDelta': contentDelta.isNotEmpty ? contentDelta : null,
+      'partialTag': partialTag,
+    };
   }
 }
 

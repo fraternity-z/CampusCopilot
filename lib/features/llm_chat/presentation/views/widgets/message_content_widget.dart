@@ -39,22 +39,26 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final generalSettings = ref.watch(generalSettingsProvider);
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
 
+    // 分离思考链和正文内容
+    final separated = _separateThinkingAndContent(widget.message.content);
+    final thinkingContent = separated['thinking'];
+    final actualContent = separated['content'] ?? widget.message.content;
+
     // 如果不启用Markdown渲染，直接返回纯文本
     if (!generalSettings.enableMarkdownRendering) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 思考链显示
-          if (widget.message.thinkingContent != null &&
-              !widget.message.isFromUser)
+          if (thinkingContent != null && !widget.message.isFromUser)
             ThinkingChainWidget(
-              content: widget.message.thinkingContent!,
+              content: thinkingContent,
               modelName: widget.message.modelName ?? '',
-              isCompleted: widget.message.thinkingComplete,
+              isCompleted: true, // UI层面分离时总是完整的
             ),
           // 主要内容
           SelectableText(
-            widget.message.content,
+            actualContent,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: widget.message.isFromUser
                   ? Theme.of(context).colorScheme.onPrimaryContainer
@@ -69,16 +73,15 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 思考链显示
-        if (widget.message.thinkingContent != null &&
-            !widget.message.isFromUser)
+        if (thinkingContent != null && !widget.message.isFromUser)
           ThinkingChainWidget(
-            content: widget.message.thinkingContent!,
+            content: thinkingContent,
             modelName: widget.message.modelName ?? '',
-            isCompleted: widget.message.thinkingComplete,
+            isCompleted: true, // UI层面分离时总是完整的
           ),
         // 主要内容
         MarkdownBody(
-          data: _preprocessMathContent(widget.message.content),
+          data: _preprocessMathContent(actualContent),
           selectable: true,
           styleSheet: _getMarkdownStyleSheet(context),
           builders: {
@@ -151,6 +154,30 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     // 暂时移除复杂的数学公式处理，避免解析错误
     // 后续可以添加更安全的数学公式渲染方案
     return content;
+  }
+
+  /// 从内容中分离思考链和正文
+  Map<String, String?> _separateThinkingAndContent(String content) {
+    String? thinkingContent;
+    String actualContent = content;
+
+    // 检查是否包含think标签
+    if (content.contains('<think>') && content.contains('</think>')) {
+      final thinkStart = content.indexOf('<think>');
+      final thinkEnd = content.indexOf('</think>');
+
+      if (thinkStart != -1 && thinkEnd != -1 && thinkEnd > thinkStart) {
+        // 提取思考链内容（去除标签）
+        thinkingContent = content.substring(thinkStart + 7, thinkEnd).trim();
+
+        // 提取正文内容（去除思考链部分）
+        final beforeThink = content.substring(0, thinkStart).trim();
+        final afterThink = content.substring(thinkEnd + 8).trim();
+        actualContent = '$beforeThink $afterThink'.trim();
+      }
+    }
+
+    return {'thinking': thinkingContent, 'content': actualContent};
   }
 }
 

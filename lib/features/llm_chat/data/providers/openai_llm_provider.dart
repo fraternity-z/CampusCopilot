@@ -104,11 +104,13 @@ class OpenAiLlmProvider extends LlmProvider {
       final choice = chatCompletion.choices.first;
       final usage = chatCompletion.usage;
 
-      // 提取思考链内容
-      String? thinkingContent = _extractThinkingContent(chatCompletion, model);
+      // 保存完整的原始内容
+      final originalContent = choice.message.content?.first.text ?? '';
+
+      debugPrint('🧠 接收完整响应内容: 长度=${originalContent.length}');
 
       return ChatResult(
-        content: choice.message.content?.first.text ?? '',
+        content: originalContent, // 保存完整内容，UI层面分离显示
         model: model,
         tokenUsage: TokenUsage(
           inputTokens: usage.promptTokens,
@@ -116,7 +118,6 @@ class OpenAiLlmProvider extends LlmProvider {
           totalTokens: usage.totalTokens,
         ),
         finishReason: _convertFinishReason(choice.finishReason),
-        thinkingContent: thinkingContent,
         // 暂时移除工具调用功能
         // toolCalls: choice.message.toolCalls?.map(_convertToolCall).toList(),
       );
@@ -150,27 +151,13 @@ class OpenAiLlmProvider extends LlmProvider {
         // tools: options?.tools?.map(_convertToOpenAITool).toList(),
       );
 
-      String accumulatedContent = '';
-      String accumulatedThinking = '';
+      String accumulatedContent = ''; // 累积完整原始内容
 
       await for (final chunk in stream) {
         final choice = chunk.choices.first;
         final delta = choice.delta;
 
-        // 处理思考链增量内容
-        String? thinkingDelta = _extractThinkingDelta(chunk, model);
-        if (thinkingDelta != null && thinkingDelta.isNotEmpty) {
-          accumulatedThinking += thinkingDelta;
-
-          yield StreamedChatResult(
-            thinkingDelta: thinkingDelta,
-            thinkingContent: accumulatedThinking,
-            isDone: false,
-            model: model,
-          );
-        }
-
-        // 处理主要内容
+        // 处理内容增量
         if (delta.content != null && delta.content!.isNotEmpty) {
           final OpenAIChatCompletionChoiceMessageContentItemModel?
           firstContent = delta.content!.first;
@@ -180,10 +167,7 @@ class OpenAiLlmProvider extends LlmProvider {
 
             yield StreamedChatResult(
               delta: deltaText,
-              content: accumulatedContent,
-              thinkingContent: accumulatedThinking.isNotEmpty
-                  ? accumulatedThinking
-                  : null,
+              content: accumulatedContent, // 保存完整内容
               isDone: false,
               model: model,
             );
@@ -191,13 +175,10 @@ class OpenAiLlmProvider extends LlmProvider {
         }
 
         if (choice.finishReason != null) {
-          // OpenAI流式响应中usage信息可能不可用，使用默认值
+          debugPrint('🧠 流式响应完成: 内容长度=${accumulatedContent.length}');
+
           yield StreamedChatResult(
-            content: accumulatedContent,
-            thinkingContent: accumulatedThinking.isNotEmpty
-                ? accumulatedThinking
-                : null,
-            thinkingComplete: true,
+            content: accumulatedContent, // 保存完整内容，UI层面分离显示
             isDone: true,
             model: model,
             tokenUsage: TokenUsage(
@@ -206,8 +187,6 @@ class OpenAiLlmProvider extends LlmProvider {
               totalTokens: accumulatedContent.split(' ').length,
             ),
             finishReason: _convertFinishReason(choice.finishReason),
-            // 暂时移除工具调用功能
-            // toolCalls: delta.toolCalls?.map(_convertToolCall).toList(),
           );
         }
       }
@@ -320,100 +299,6 @@ class OpenAiLlmProvider extends LlmProvider {
   }
 
   // 辅助方法已移除，因为现在使用预定义的模型列表
-
-  /// 提取思考链内容
-  String? _extractThinkingContent(dynamic completion, String model) {
-    // 不同模型的思考链提取逻辑
-    if (_isThinkingModel(model)) {
-      try {
-        // 尝试从响应中提取思考链内容
-        if (completion is Map<String, dynamic>) {
-          // DeepSeek R1格式：reasoning_content
-          if (completion.containsKey('reasoning_content')) {
-            return completion['reasoning_content'] as String?;
-          }
-
-          // 检查choices中的reasoning内容
-          final choices = completion['choices'] as List?;
-          if (choices != null && choices.isNotEmpty) {
-            final firstChoice = choices.first as Map<String, dynamic>;
-
-            // DeepSeek格式
-            if (firstChoice.containsKey('reasoning_content')) {
-              return firstChoice['reasoning_content'] as String?;
-            }
-
-            // 检查message中的reasoning
-            final message = firstChoice['message'] as Map<String, dynamic>?;
-            if (message != null) {
-              if (message.containsKey('reasoning_content')) {
-                return message['reasoning_content'] as String?;
-              }
-              if (message.containsKey('reasoning')) {
-                return message['reasoning'] as String?;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('提取思考链内容时出错: $e');
-      }
-    }
-
-    return null;
-  }
-
-  /// 提取思考链增量内容（用于流式响应）
-  String? _extractThinkingDelta(dynamic chunk, String model) {
-    if (!_isThinkingModel(model)) return null;
-
-    try {
-      // 尝试从流式响应中提取思考链增量
-      if (chunk is Map<String, dynamic>) {
-        final choices = chunk['choices'] as List?;
-        if (choices != null && choices.isNotEmpty) {
-          final firstChoice = choices.first as Map<String, dynamic>;
-
-          // 检查delta中的reasoning内容
-          final delta = firstChoice['delta'] as Map<String, dynamic>?;
-          if (delta != null) {
-            // DeepSeek R1格式
-            if (delta.containsKey('reasoning_content')) {
-              return delta['reasoning_content'] as String?;
-            }
-            if (delta.containsKey('reasoning')) {
-              return delta['reasoning'] as String?;
-            }
-          }
-
-          // 某些API可能直接在choice层级返回reasoning
-          if (firstChoice.containsKey('reasoning_content')) {
-            return firstChoice['reasoning_content'] as String?;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('提取思考链增量内容时出错: $e');
-    }
-
-    return null;
-  }
-
-  /// 判断是否为思考模型
-  bool _isThinkingModel(String model) {
-    final thinkingModels = {
-      // OpenAI o系列
-      'o1', 'o1-preview', 'o1-mini', 'o3', 'o3-mini',
-      // DeepSeek思考模型
-      'deepseek-reasoner', 'deepseek-r1',
-      // Gemini思考模型
-      'gemini-2.0-flash-thinking', 'gemini-2.5-flash:thinking',
-    };
-
-    return thinkingModels.any(
-      (thinking) => model.toLowerCase().contains(thinking.toLowerCase()),
-    );
-  }
 
   /// 处理OpenAI错误
   AppException _handleOpenAIError(dynamic error) {
