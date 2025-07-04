@@ -27,11 +27,24 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _inputFocusNode = FocusNode();
+  bool _isInputFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _inputFocusNode.addListener(() {
+      setState(() {
+        _isInputFocused = _inputFocusNode.hasFocus;
+      });
+    });
+  }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _inputFocusNode.dispose();
     super.dispose();
   }
 
@@ -624,52 +637,199 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (attachedFiles.isNotEmpty)
               _buildAttachedFiles(context, ref, attachedFiles),
 
-            // 输入框和按钮
+            // 新的双层输入容器
             Container(
+              height: 96,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
+                border: _isInputFocused
+                    ? Border.all(color: const Color(0xFF2684FF), width: 1)
+                    : null,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => _pickFiles(ref),
-                      icon: const Icon(Icons.add_circle_outline),
-                      tooltip: '附件',
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: '输入消息...',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                children: [
+                  // 上层：输入区域 (56px)
+                  Container(
+                    height: 56,
+                    decoration: const BoxDecoration(color: Colors.transparent),
+                    child: Row(
+                      children: [
+                        // 左侧留白区 (16px)
+                        const SizedBox(width: 16),
+                        // 中间文本输入区域
+                        Expanded(
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                            child: TextField(
+                              controller: _messageController,
+                              focusNode: _inputFocusNode,
+                              decoration: const InputDecoration(
+                                hintText: '输入消息...',
+                                hintStyle: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF999999),
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF333333),
+                                height: 1.5,
+                              ),
+                              maxLines: 1,
+                              keyboardType: TextInputType.text,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _sendMessage(ref),
+                            ),
+                          ),
                         ),
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _sendMessage(ref),
-                      ),
+                        // 右侧留白区 (16px)
+                        const SizedBox(width: 16),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () => _sendMessage(ref),
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(12),
-                      ),
-                      child: const Icon(Icons.send),
+                  ),
+
+                  // 间隙 (4px)
+                  const SizedBox(height: 4),
+
+                  // 下层：工具区域 (40px)
+                  Container(
+                    height: 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        // 左侧工具图标
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _showAttachmentOptionsMenu(context, ref),
+                            child: Tooltip(
+                              message: '添加附件',
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(
+                                  Icons.add,
+                                  color: Color(0xFF999999),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () => _showSettings(),
+                            child: Tooltip(
+                              message: '设置',
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(
+                                  Icons.tune,
+                                  color: Color(0xFF999999),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        // 右侧语音和发送按钮组合
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 语音按钮
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  // TODO: 添加语音输入功能
+                                },
+                                child: Tooltip(
+                                  message: '语音输入',
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      Icons.mic_outlined,
+                                      color: Color(0xFF666666),
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // 发送按钮 - 改进样式
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () => _sendMessage(ref),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF2684FF),
+                                        Color(0xFF0052CC),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF2684FF,
+                                        ).withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.send_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -758,6 +918,150 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// 显示设置
   void _showSettings() {
     context.go('/settings');
+  }
+
+  /// 显示附件选择菜单
+  void _showAttachmentOptionsMenu(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 顶部指示条
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // 选项列表
+              _buildAttachmentOption(
+                context,
+                icon: Icons.image_outlined,
+                iconColor: const Color(0xFF2684FF),
+                title: '从相册选择图片',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromGallery(ref);
+                },
+              ),
+
+              _buildAttachmentOption(
+                context,
+                icon: Icons.camera_alt_outlined,
+                iconColor: const Color(0xFFE91E63),
+                title: '拍摄照片',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromCamera(ref);
+                },
+              ),
+
+              _buildAttachmentOption(
+                context,
+                icon: Icons.description_outlined,
+                iconColor: const Color(0xFF4CAF50),
+                title: '上传文件',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFiles(ref);
+                },
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建附件选择选项
+  Widget _buildAttachmentOption(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 从相册选择图片
+  Future<void> _pickImageFromGallery(WidgetRef ref) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+      );
+      if (result != null) {
+        ref.read(chatProvider.notifier).attachFiles(result.files);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('选择图片失败: $e')));
+      }
+    }
+  }
+
+  /// 拍摄照片
+  Future<void> _pickImageFromCamera(WidgetRef ref) async {
+    try {
+      // 这里先用FilePicker模拟，后续可以集成image_picker包
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      if (result != null) {
+        ref.read(chatProvider.notifier).attachFiles(result.files);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('拍摄照片失败: $e')));
+      }
+    }
   }
 
   /// 格式化时间戳

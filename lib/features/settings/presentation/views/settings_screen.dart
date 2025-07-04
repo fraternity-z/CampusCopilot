@@ -20,41 +20,50 @@ class SettingsScreen extends ConsumerWidget {
           tooltip: '返回聊天',
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSettingsModule(
-            context,
-            icon: Icons.model_training,
-            title: '模型设置',
-            subtitle: '管理AI模型配置、自定义模型和API设置',
-            onTap: () => context.push('/settings/models'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
           ),
-          const SizedBox(height: 12),
-          _buildSettingsModule(
-            context,
-            icon: Icons.palette,
-            title: '外观设置',
-            subtitle: '主题、语言等界面设置',
-            onTap: () => context.push('/settings/appearance'),
-          ),
-          const SizedBox(height: 12),
-          _buildSettingsModule(
-            context,
-            icon: Icons.storage,
-            title: '数据管理',
-            subtitle: '备份、恢复、清空数据',
-            onTap: () => context.push('/settings/data'),
-          ),
-          const SizedBox(height: 12),
-          _buildSettingsModule(
-            context,
-            icon: Icons.info,
-            title: '关于',
-            subtitle: '版本信息、帮助文档',
-            onTap: () => context.push('/settings/about'),
-          ),
-        ],
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildSettingsModule(
+              context,
+              icon: Icons.model_training,
+              title: '模型设置',
+              subtitle: '管理AI模型配置、自定义模型和API设置',
+              onTap: () => context.push('/settings/models'),
+            ),
+            const SizedBox(height: 12),
+            _buildSettingsModule(
+              context,
+              icon: Icons.palette,
+              title: '外观设置',
+              subtitle: '主题、语言等界面设置',
+              onTap: () => context.push('/settings/appearance'),
+            ),
+            const SizedBox(height: 12),
+            _buildSettingsModule(
+              context,
+              icon: Icons.storage,
+              title: '数据管理',
+              subtitle: '备份、恢复、清空数据',
+              onTap: () => context.push('/settings/data'),
+            ),
+            const SizedBox(height: 12),
+            _buildSettingsModule(
+              context,
+              icon: Icons.info,
+              title: '关于',
+              subtitle: '版本信息、帮助文档',
+              onTap: () => context.push('/settings/about'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -67,29 +76,82 @@ class SettingsScreen extends ConsumerWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Card(
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
-            size: 24,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF666666),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.6),
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
-        title: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
       ),
     );
   }

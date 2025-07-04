@@ -92,6 +92,29 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  /// 清除所有会话
+  Future<void> clearAllSessions() async {
+    try {
+      // 删除所有会话
+      for (final session in state.sessions) {
+        await _chatService.deleteChatSession(session.id);
+      }
+
+      // 清空状态
+      state = state.copyWith(
+        sessions: [],
+        currentSession: null,
+        messages: [],
+        error: null,
+      );
+
+      // 自动创建一个新的会话
+      await createNewSession();
+    } catch (e) {
+      state = state.copyWith(error: '清除所有会话失败: $e');
+    }
+  }
+
   /// 创建新的聊天会话（公共方法）
   Future<void> createNewSession() async {
     try {
@@ -168,17 +191,30 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 发送消息
   Future<void> sendMessage(String text) async {
-    final currentSession = state.currentSession;
+    // 检查是否有当前会话，如果没有则创建新会话
+    ChatSession? currentSession = state.currentSession;
     if (currentSession == null) {
-      await createNewSession();
-      // 等待新会话创建后再次发送
-      if (state.currentSession != null) {
-        await sendMessage(text);
+      try {
+        await createNewSession();
+        // 确保新会话已创建
+        currentSession = state.currentSession;
+        if (currentSession == null) {
+          state = state.copyWith(error: '无法创建新的对话会话');
+          return;
+        }
+      } catch (e) {
+        state = state.copyWith(error: '创建新会话失败: $e');
+        return;
       }
-      return;
     }
 
     if (text.isEmpty && state.attachedFiles.isEmpty) return;
+
+    // 最终确保currentSession不为null
+    if (currentSession == null) {
+      state = state.copyWith(error: '当前没有可用的对话会话');
+      return;
+    }
 
     state = state.copyWith(isLoading: true, error: null);
 

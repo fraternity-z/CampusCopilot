@@ -248,9 +248,13 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isCollapsed = ref.watch(sidebarCollapsedProvider);
 
+    // 检查当前路由是否是设置页面，避免遮挡返回键
+    final currentRoute = GoRouterState.of(context).uri.path;
+    final isSettingsPage = currentRoute.startsWith('/settings');
+
     return Scaffold(
-      // 添加浮动ActionButton来展开侧边栏
-      floatingActionButton: isCollapsed
+      // 添加浮动ActionButton来展开侧边栏 - 但在设置页面时不显示
+      floatingActionButton: (isCollapsed && !isSettingsPage)
           ? FloatingActionButton(
               mini: true,
               onPressed: () {
@@ -1051,6 +1055,15 @@ class NavigationSidebar extends ConsumerWidget {
                   ),
                 ),
               ),
+              // 清除所有对话按钮
+              IconButton(
+                icon: const Icon(Icons.delete_sweep, size: 20),
+                onPressed: () {
+                  _showClearAllSessionsDialog(context, ref);
+                },
+                tooltip: '清除所有对话',
+              ),
+              // 新建对话按钮
               IconButton(
                 icon: const Icon(Icons.add, size: 20),
                 onPressed: () {
@@ -1917,6 +1930,40 @@ class NavigationSidebar extends ConsumerWidget {
     } else {
       return '${time.month}/${time.day}';
     }
+  }
+
+  /// 显示清除所有会话确认对话框
+  void _showClearAllSessionsDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清除所有对话'),
+        content: const Text('确定要清除所有聊天记录吗？此操作不可撤销，所有对话历史将永久删除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(chatProvider.notifier).clearAllSessions();
+              // 显示操作成功提示
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('所有对话已清除'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('清除所有'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 显示删除会话确认对话框
