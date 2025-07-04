@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -6,16 +7,20 @@ import '../../domain/entities/chat_session.dart';
 import '../../domain/usecases/chat_service.dart';
 import '../../../persona_management/presentation/providers/persona_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../../core/services/speech_service.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
   final ChatService _chatService;
   final Ref _ref;
   final _uuid = const Uuid();
+  StreamSubscription? _currentStreamSubscription;
+  final SpeechService _speechService = SpeechService();
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
     // 延迟加载会话列表，避免构造函数中的异步操作
     _initialize();
+    _initializeSpeechService();
   }
 
   /// 初始化方法
@@ -210,12 +215,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     if (text.isEmpty && state.attachedFiles.isEmpty) return;
 
-    // 最终确保currentSession不为null
-    if (currentSession == null) {
-      state = state.copyWith(error: '当前没有可用的对话会话');
-      return;
-    }
-
     state = state.copyWith(isLoading: true, error: null);
 
     // 将附件信息合并到消息内容中
@@ -264,30 +263,52 @@ class ChatNotifier extends StateNotifier<ChatState> {
       String fullResponse = '';
       bool isFirstUserMessage = true;
 
-      await for (final messageChunk in stream) {
-        if (messageChunk.isFromUser && isFirstUserMessage) {
-          // 跳过第一个用户消息，因为我们已经在UI中显示了
-          isFirstUserMessage = false;
-          continue;
-        }
+      // 取消之前的流订阅
+      await _currentStreamSubscription?.cancel();
 
-        if (!messageChunk.isFromUser) {
-          fullResponse = messageChunk.content;
-          final updatedMessages = state.messages.map((m) {
-            return m.id == aiMessageId
-                ? m.copyWith(content: fullResponse, status: messageChunk.status)
-                : m;
-          }).toList();
-          state = state.copyWith(
-            messages: updatedMessages,
-            isLoading: messageChunk.status != MessageStatus.sent,
-          );
-        }
-      }
+      // 创建新的流订阅
+      _currentStreamSubscription = stream.listen(
+        (messageChunk) {
+          if (messageChunk.isFromUser && isFirstUserMessage) {
+            // 跳过第一个用户消息，因为我们已经在UI中显示了
+            isFirstUserMessage = false;
+            return;
+          }
+
+          if (!messageChunk.isFromUser) {
+            fullResponse = messageChunk.content;
+            final updatedMessages = state.messages.map((m) {
+              return m.id == aiMessageId
+                  ? m.copyWith(
+                      content: fullResponse,
+                      status: messageChunk.status,
+                    )
+                  : m;
+            }).toList();
+            state = state.copyWith(
+              messages: updatedMessages,
+              isLoading: messageChunk.status != MessageStatus.sent,
+            );
+          }
+        },
+        onError: (error) {
+          throw error;
+        },
+        onDone: () {
+          _currentStreamSubscription = null;
+        },
+      );
+
+      // 等待流完成
+      await _currentStreamSubscription?.asFuture();
 
       // 消息发送完成后，重新加载会话信息以更新计数
       await _loadChatSessions();
     } catch (e) {
+      // 取消当前流订阅
+      await _currentStreamSubscription?.cancel();
+      _currentStreamSubscription = null;
+
       // 如果发生错误，移除占位符并显示错误消息
       final errorMessage = ChatMessage(
         id: _uuid.v4(),
@@ -313,6 +334,88 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(isLoading: false);
     }
   }
+
+  /// 停止AI响应
+  Future<void> stopResponse() async {
+    if (_currentStreamSubscription != null) {
+      await _currentStreamSubscription?.cancel();
+      _currentStreamSubscription = null;
+
+      // 更新最后一条AI消息的状态为已发送（即使被中断）
+      final updatedMessages = state.messages.map((m) {
+        if (!m.isFromUser && m.status == MessageStatus.sending) {
+          return m.copyWith(status: MessageStatus.sent);
+        }
+        return m;
+      }).toList();
+
+      state = state.copyWith(messages: updatedMessages, isLoading: false);
+    }
+  }
+
+  /// 初始化语音识别服务
+  void _initializeSpeechService() {
+    _speechService.setOnResult((text) {
+      state = state.copyWith(speechText: text);
+    });
+
+    _speechService.setOnError((error) {
+      state = state.copyWith(error: error, isListening: false, speechText: '');
+    });
+
+    _speechService.setOnListeningStatusChanged((isListening) {
+      state = state.copyWith(isListening: isListening);
+    });
+  }
+
+  /// 开始语音识别
+  Future<void> startSpeechRecognition() async {
+    if (state.isListening) return;
+
+    state = state.copyWith(speechText: '', error: null);
+
+    final success = await _speechService.startListening();
+    if (!success) {
+      state = state.copyWith(error: '无法开始语音识别，请检查麦克风权限', isListening: false);
+    }
+  }
+
+  /// 停止语音识别
+  Future<void> stopSpeechRecognition() async {
+    if (!state.isListening) return;
+    await _speechService.stopListening();
+  }
+
+  /// 取消语音识别
+  Future<void> cancelSpeechRecognition() async {
+    if (!state.isListening) return;
+    await _speechService.cancel();
+    state = state.copyWith(isListening: false, speechText: '');
+  }
+
+  /// 确认语音识别结果
+  void confirmSpeechText() {
+    if (state.speechText.isNotEmpty) {
+      // 将语音识别的文本发送为消息
+      sendMessage(state.speechText);
+      // 清空语音文本
+      state = state.copyWith(speechText: '');
+    }
+  }
+
+  /// 清空语音文本
+  void clearSpeechText() {
+    state = state.copyWith(speechText: '');
+  }
+
+  /// 获取语音服务是否可用
+  bool get isSpeechAvailable => _speechService.isAvailable;
+
+  @override
+  void dispose() {
+    _speechService.dispose();
+    super.dispose();
+  }
 }
 
 /// 聊天状态
@@ -323,6 +426,8 @@ class ChatState {
   final String? error;
   final List<ChatSession> sessions;
   final List<PlatformFile> attachedFiles;
+  final bool isListening;
+  final String speechText;
 
   const ChatState({
     this.messages = const [],
@@ -331,6 +436,8 @@ class ChatState {
     this.error,
     this.sessions = const [],
     this.attachedFiles = const [],
+    this.isListening = false,
+    this.speechText = '',
   });
 
   ChatState copyWith({
@@ -340,6 +447,8 @@ class ChatState {
     String? error,
     List<ChatSession>? sessions,
     List<PlatformFile>? attachedFiles,
+    bool? isListening,
+    String? speechText,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -348,12 +457,14 @@ class ChatState {
       error: error,
       sessions: sessions ?? this.sessions,
       attachedFiles: attachedFiles ?? this.attachedFiles,
+      isListening: isListening ?? this.isListening,
+      speechText: speechText ?? this.speechText,
     );
   }
 
   @override
   String toString() {
-    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, error: $error, sessions: ${sessions.length})';
+    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, error: $error, sessions: ${sessions.length}, isListening: $isListening, speechText: "$speechText")';
   }
 }
 
