@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'dart:async';
 import '../../../../settings/presentation/providers/settings_provider.dart';
 
 /// 思考链显示组件
@@ -10,6 +11,8 @@ import '../../../../settings/presentation/providers/settings_provider.dart';
 /// - 折叠/展开功能
 /// - Gemini模型特殊处理
 /// - 可配置动画速度
+/// - 渐变背景和阴影效果
+/// - 性能优化
 class ThinkingChainWidget extends ConsumerStatefulWidget {
   final String content;
   final String modelName;
@@ -40,6 +43,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
   bool _isExpanded = false;
   bool _isAnimating = false;
   int _currentIndex = 0;
+  Timer? _typingTimer;
 
   @override
   void initState() {
@@ -83,6 +87,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
 
     if (widget.isCompleted && !oldWidget.isCompleted) {
       _pulsateController.stop();
+      _typingTimer?.cancel();
       _displayedContent = widget.content;
       setState(() {});
     }
@@ -98,29 +103,30 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
 
     _isAnimating = true;
     _currentIndex = 0;
+    _typingTimer?.cancel();
 
-    void typeNextCharacter() {
-      if (_currentIndex < widget.content.length && mounted) {
-        setState(() {
-          _displayedContent = widget.content.substring(0, _currentIndex + 1);
-          _currentIndex++;
-        });
-
-        Future.delayed(Duration(milliseconds: settings.animationSpeed), () {
-          if (mounted) typeNextCharacter();
-        });
-      } else {
-        _isAnimating = false;
-      }
-    }
-
-    typeNextCharacter();
+    // 使用 Timer 替代 Future.delayed，减少内存分配
+    _typingTimer = Timer.periodic(
+      Duration(milliseconds: settings.animationSpeed),
+      (timer) {
+        if (_currentIndex < widget.content.length && mounted) {
+          setState(() {
+            _displayedContent = widget.content.substring(0, _currentIndex + 1);
+            _currentIndex++;
+          });
+        } else {
+          timer.cancel();
+          _isAnimating = false;
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _pulsateController.dispose();
+    _typingTimer?.cancel();
     super.dispose();
   }
 
@@ -132,18 +138,20 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
       return const SizedBox.shrink();
     }
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, settings),
-            if (_isExpanded ||
-                settings.maxDisplayLength > _displayedContent.length)
-              _buildContent(context, settings),
-          ],
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context, settings),
+              if (_isExpanded ||
+                  settings.maxDisplayLength > _displayedContent.length)
+                _buildContent(context, settings),
+            ],
+          ),
         ),
       ),
     );
@@ -165,65 +173,91 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           widget.onToggleExpanded?.call();
         }
       },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+      child: AnimatedScale(
+        scale: _isExpanded ? 1.0 : 0.98,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.surfaceContainerLow,
+                Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(
+                  context,
+                ).colorScheme.shadow.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          children: [
-            AnimatedBuilder(
-              animation: _pulsateAnimation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: widget.isCompleted ? 1.0 : _pulsateAnimation.value,
-                  child: Icon(
-                    headerIcon,
-                    size: 16,
-                    color: isGemini && settings.enableGeminiSpecialHandling
-                        ? Colors.blue.shade600
-                        : Theme.of(context).colorScheme.primary,
+          child: Row(
+            children: [
+              AnimatedBuilder(
+                animation: _pulsateAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: widget.isCompleted
+                        ? 1.0
+                        : (0.9 + _pulsateAnimation.value * 0.1),
+                    child: Icon(
+                      headerIcon,
+                      size: 16,
+                      color: isGemini && settings.enableGeminiSpecialHandling
+                          ? Colors.blue.shade600
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isGemini && settings.enableGeminiSpecialHandling
+                      ? 'Gemini 正在思考...'
+                      : 'AI 正在思考...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
                   ),
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                isGemini && settings.enableGeminiSpecialHandling
-                    ? 'Gemini 正在思考...'
-                    : 'AI 正在思考...',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                ),
+              ),
+              if (_displayedContent.length > settings.maxDisplayLength)
+                Icon(
+                  _isExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 16,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
                 ),
-              ),
-            ),
-            if (_displayedContent.length > settings.maxDisplayLength)
-              Icon(
-                _isExpanded ? Icons.expand_less : Icons.expand_more,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            if (!widget.isCompleted)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                child: SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: isGemini && settings.enableGeminiSpecialHandling
-                        ? Colors.blue.shade600
-                        : Theme.of(context).colorScheme.primary,
+              if (!widget.isCompleted)
+                Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  child: SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: isGemini && settings.enableGeminiSpecialHandling
+                          ? Colors.blue.shade600
+                          : Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -239,6 +273,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic, // 更平滑的曲线
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -250,44 +285,49 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          MarkdownBody(
-            data: displayContent,
-            styleSheet: MarkdownStyleSheet(
-              p: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-              code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      child: AnimatedOpacity(
+        opacity: _isExpanded ? 1.0 : 0.9,
+        duration: const Duration(milliseconds: 200),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            MarkdownBody(
+              data: displayContent,
+              styleSheet: MarkdownStyleSheet(
+                p: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+                code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainer,
+                ),
               ),
             ),
-          ),
-          if (_isAnimating && !widget.isCompleted)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              child: AnimatedBuilder(
-                animation: _pulsateController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _pulsateAnimation.value,
-                    child: Container(
-                      width: 8,
-                      height: 12,
+            if (_isAnimating && !widget.isCompleted)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                child: AnimatedBuilder(
+                  animation: _pulsateController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 2,
+                      height: 16,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.primary.withValues(
+                          alpha: _pulsateAnimation.value,
+                        ),
                         borderRadius: BorderRadius.circular(1),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
