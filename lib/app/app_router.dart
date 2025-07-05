@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 import '../features/llm_chat/presentation/views/chat_screen.dart';
 import '../features/persona_management/presentation/widgets/persona_edit_dialog.dart';
@@ -37,12 +38,14 @@ class ModelParameters {
   final double maxTokens;
   final double topP;
   final double contextLength;
+  final bool enableMaxTokens;
 
   const ModelParameters({
     this.temperature = 0.7,
     this.maxTokens = 2048,
     this.topP = 0.9,
     this.contextLength = 10,
+    this.enableMaxTokens = true,
   });
 
   ModelParameters copyWith({
@@ -50,12 +53,14 @@ class ModelParameters {
     double? maxTokens,
     double? topP,
     double? contextLength,
+    bool? enableMaxTokens,
   }) {
     return ModelParameters(
       temperature: temperature ?? this.temperature,
       maxTokens: maxTokens ?? this.maxTokens,
       topP: topP ?? this.topP,
       contextLength: contextLength ?? this.contextLength,
+      enableMaxTokens: enableMaxTokens ?? this.enableMaxTokens,
     );
   }
 }
@@ -1162,6 +1167,7 @@ class NavigationSidebar extends ConsumerWidget {
 
   /// 构建参数设置内容
   Widget _buildSettingsContent(BuildContext context, WidgetRef ref) {
+    final _ = ref.watch(modelParametersProvider); // 保证Provider依赖，避免未使用警告
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1443,6 +1449,7 @@ class NavigationSidebar extends ConsumerWidget {
     required double max,
     required int divisions,
     required Function(double) onChanged,
+    bool editable = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1456,13 +1463,57 @@ class NavigationSidebar extends ConsumerWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
-            Text(
-              value.toStringAsFixed(label.contains('Token') ? 0 : 1),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            editable
+                ? SizedBox(
+                    width: 80,
+                    child: Builder(
+                      builder: (context) {
+                        final controller = TextEditingController(
+                          text: value.toStringAsFixed(
+                            label.contains('Token') ? 0 : 1,
+                          ),
+                        );
+                        return TextField(
+                          controller: controller,
+                          textAlign: TextAlign.right,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                          onSubmitted: (txt) {
+                            final parsed = double.tryParse(txt);
+                            if (parsed != null) {
+                              final clamped = parsed.clamp(min, max);
+                              onChanged(clamped);
+                            }
+                          },
+                          onChanged: (txt) {
+                            final parsed = double.tryParse(txt);
+                            if (parsed != null) {
+                              final clamped = parsed.clamp(min, max);
+                              onChanged(clamped);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  )
+                : Text(
+                    value.toStringAsFixed(label.contains('Token') ? 0 : 1),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ],
         ),
         const SizedBox(height: 8),
@@ -1560,50 +1611,66 @@ class NavigationSidebar extends ConsumerWidget {
 
   /// 构建模型参数内容
   Widget _buildModelParametersContent(BuildContext context, WidgetRef ref) {
+    final params = ref.watch(modelParametersProvider);
     return Column(
       children: [
         // 温度设置
         _buildParameterSlider(
           context,
           label: '温度 (Temperature)',
-          value: ref.watch(modelParametersProvider).temperature,
+          value: params.temperature,
           min: 0.0,
           max: 2.0,
-          divisions: 20,
+          divisions: 40,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(temperature: value);
+            ref.read(modelParametersProvider.notifier).state = params.copyWith(
+              temperature: value,
+            );
           },
         ),
         const SizedBox(height: 16),
-        // 最大 Token 设置
-        _buildParameterSlider(
+        // 最大 Token 开关
+        _buildSettingSwitch(
           context,
-          label: '最大 Token 数',
-          value: ref.watch(modelParametersProvider).maxTokens,
-          min: 256,
-          max: 4096,
-          divisions: 15,
+          title: '启用最大 Token 限制',
+          subtitle: '关闭后，请求将不包含 max_tokens 参数',
+          value: params.enableMaxTokens,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(maxTokens: value);
+            ref.read(modelParametersProvider.notifier).state = params.copyWith(
+              enableMaxTokens: value,
+            );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        // 最大 Token 设置（仅在启用时显示）
+        if (params.enableMaxTokens) ...[
+          _buildParameterSlider(
+            context,
+            label: '最大 Token 数',
+            value: params.maxTokens,
+            min: 256,
+            max: 128000,
+            divisions: 100,
+            onChanged: (value) {
+              ref.read(modelParametersProvider.notifier).state = params
+                  .copyWith(maxTokens: value);
+            },
+            editable: true,
+          ),
+          const SizedBox(height: 16),
+        ],
         // Top P 设置
         _buildParameterSlider(
           context,
           label: 'Top P',
-          value: ref.watch(modelParametersProvider).topP,
+          value: params.topP,
           min: 0.0,
           max: 1.0,
-          divisions: 10,
+          divisions: 100,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(topP: value);
+            ref.read(modelParametersProvider.notifier).state = params.copyWith(
+              topP: value,
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -1611,14 +1678,15 @@ class NavigationSidebar extends ConsumerWidget {
         _buildParameterSlider(
           context,
           label: '上下文长度',
-          value: ref.watch(modelParametersProvider).contextLength,
+          value: params.contextLength,
           min: 1,
           max: 20,
           divisions: 19,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = ref
-                .read(modelParametersProvider)
-                .copyWith(contextLength: value);
+            final intVal = value.round().toDouble();
+            ref.read(modelParametersProvider.notifier).state = params.copyWith(
+              contextLength: intVal,
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -1772,7 +1840,7 @@ class NavigationSidebar extends ConsumerWidget {
           value: settings.fontSize,
           min: 10.0,
           max: 20.0,
-          divisions: 10,
+          divisions: 100,
           onChanged: (value) {
             ref.read(generalSettingsProvider.notifier).state = settings
                 .copyWith(fontSize: value);

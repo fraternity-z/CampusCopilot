@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
+import '../../../../app/app_router.dart';
 
 import '../entities/chat_message.dart';
 import '../entities/chat_session.dart';
@@ -20,8 +21,9 @@ import '../../../persona_management/domain/entities/persona.dart';
 /// 管理聊天会话、消息发送和AI响应生成的核心业务逻辑
 class ChatService {
   final AppDatabase _database;
+  final Ref _ref;
 
-  ChatService(this._database);
+  ChatService(this._database, this._ref);
 
   /// 创建新的聊天会话
   Future<ChatSession> createChatSession({
@@ -110,11 +112,12 @@ class ChatService {
       );
 
       // 6. 生成AI响应
+      final params = _ref.read(modelParametersProvider);
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: persona.systemPrompt,
-        temperature: session.config?.temperature ?? 0.7,
-        maxTokens: session.config?.maxTokens ?? 2048,
+        temperature: session.config?.temperature ?? params.temperature,
+        maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
         // 思考链相关参数暂时使用默认设置
         reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
         maxReasoningTokens: 2000,
@@ -225,11 +228,12 @@ class ChatService {
       debugPrint('💬 上下文消息数量: ${contextMessages.length}');
 
       // 6. 构建聊天选项 - 使用会话配置和智能体提示词
+      final params = _ref.read(modelParametersProvider);
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: persona.systemPrompt, // 使用智能体的提示词
-        temperature: session.config?.temperature ?? 0.7,
-        maxTokens: session.config?.maxTokens ?? 2048,
+        temperature: session.config?.temperature ?? params.temperature,
+        maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
         stream: true,
         // 思考链相关参数
         reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
@@ -661,7 +665,7 @@ class ChatService {
 /// 聊天服务Provider
 final chatServiceProvider = Provider<ChatService>((ref) {
   final database = ref.read(appDatabaseProvider);
-  return ChatService(database);
+  return ChatService(database, ref);
 });
 
 // 扩展方法，用于数据转换
