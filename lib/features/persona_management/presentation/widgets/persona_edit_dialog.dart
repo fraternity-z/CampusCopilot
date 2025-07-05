@@ -21,6 +21,8 @@ class _PersonaEditDialogState extends ConsumerState<PersonaEditDialog>
   late TabController _tabController;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _promptController = TextEditingController();
+  // 基本信息页滚动控制器
+  final ScrollController _basicInfoScrollController = ScrollController();
 
   bool _isLoading = false;
   Persona? _currentPersona;
@@ -37,6 +39,7 @@ class _PersonaEditDialogState extends ConsumerState<PersonaEditDialog>
     _tabController.dispose();
     _nameController.dispose();
     _promptController.dispose();
+    _basicInfoScrollController.dispose();
     super.dispose();
   }
 
@@ -240,82 +243,90 @@ class _PersonaEditDialogState extends ConsumerState<PersonaEditDialog>
   Widget _buildBasicInfoTab(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 名称输入
-          Text(
-            '名称',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              hintText: '输入助手名称...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            ),
-            onChanged: (value) {
-              setState(() {}); // 更新头像显示
-            },
-          ),
-
-          const SizedBox(height: 24),
-
-          // 提示词输入
-          Text(
-            '提示词',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: TextField(
-              controller: _promptController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: InputDecoration(
-                hintText: '输入助手的提示词...\n\n例如：你是一个专业的网页分析助手...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Theme.of(
+      child: Scrollbar(
+        controller: _basicInfoScrollController,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _basicInfoScrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 名称输入
+              Text(
+                '名称',
+                style: Theme.of(
                   context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                contentPadding: const EdgeInsets.all(16),
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
-            ),
-          ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: '输入助手名称...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                ),
+                onChanged: (value) {
+                  setState(() {}); // 更新头像显示
+                },
+              ),
 
-          const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-          // 选择预设提示词按钮
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _showPresetPromptsDialog(context),
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('选择预设提示词'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              // 提示词输入
+              Text(
+                '提示词',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 160),
+                child: TextField(
+                  controller: _promptController,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  decoration: InputDecoration(
+                    hintText: '输入助手的提示词...\n\n例如：你是一个专业的网页分析助手...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.3),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
                 ),
               ),
-            ),
+
+              const SizedBox(height: 16),
+
+              // 选择预设提示词按钮
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showPresetPromptsDialog(context),
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('选择预设提示词'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
