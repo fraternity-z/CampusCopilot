@@ -5,38 +5,49 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 import '../../domain/entities/knowledge_document.dart';
+import '../../domain/services/vector_search_service.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
+import 'document_processing_provider.dart';
+import 'knowledge_base_config_provider.dart';
 
 /// 知识库状态
 class KnowledgeBaseState {
   final List<KnowledgeDocument> documents;
   final List<KnowledgeDocument> searchResults;
+  final List<SearchResultItem> vectorSearchResults;
   final bool isLoading;
   final String? error;
   final String searchQuery;
+  final double? searchTime;
 
   const KnowledgeBaseState({
     this.documents = const [],
     this.searchResults = const [],
+    this.vectorSearchResults = const [],
     this.isLoading = false,
     this.error,
     this.searchQuery = '',
+    this.searchTime,
   });
 
   KnowledgeBaseState copyWith({
     List<KnowledgeDocument>? documents,
     List<KnowledgeDocument>? searchResults,
+    List<SearchResultItem>? vectorSearchResults,
     bool? isLoading,
     String? error,
     String? searchQuery,
+    double? searchTime,
   }) {
     return KnowledgeBaseState(
       documents: documents ?? this.documents,
       searchResults: searchResults ?? this.searchResults,
+      vectorSearchResults: vectorSearchResults ?? this.vectorSearchResults,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       searchQuery: searchQuery ?? this.searchQuery,
+      searchTime: searchTime ?? this.searchTime,
     );
   }
 }
@@ -44,8 +55,10 @@ class KnowledgeBaseState {
 /// 知识库状态管理
 class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
   final AppDatabase _database;
+  final Ref _ref;
 
-  KnowledgeBaseNotifier(this._database) : super(const KnowledgeBaseState()) {
+  KnowledgeBaseNotifier(this._database, this._ref)
+    : super(const KnowledgeBaseState()) {
     _loadDocuments();
   }
 
@@ -94,8 +107,9 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      final documentId = DateTime.now().millisecondsSinceEpoch.toString();
       final document = KnowledgeDocument(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: documentId,
         title: title,
         content: content,
         filePath: filePath,
@@ -103,7 +117,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
         fileSize: fileSize,
         uploadedAt: DateTime.now(),
         lastModified: DateTime.now(),
-        status: 'processing',
+        status: 'pending', // 设置为待处理状态
         tags: [],
         metadata: {},
       );
@@ -123,6 +137,17 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       );
 
       // 重新加载文档列表
+      await _loadDocuments();
+
+      // 启动文档处理
+      final processingNotifier = _ref.read(documentProcessingProvider.notifier);
+      await processingNotifier.processDocument(
+        documentId: documentId,
+        filePath: filePath,
+        fileType: fileType,
+      );
+
+      // 处理完成后重新加载文档列表
       await _loadDocuments();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -147,25 +172,75 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       state = state.copyWith(isLoading: true, error: null, searchQuery: query);
 
       if (query.isEmpty) {
-        state = state.copyWith(searchResults: [], isLoading: false);
+        state = state.copyWith(
+          searchResults: [],
+          vectorSearchResults: [],
+          isLoading: false,
+          searchTime: null,
+        );
         return;
       }
 
-      // 简单的文本搜索
-      final results = state.documents.where((doc) {
-        return doc.title.toLowerCase().contains(query.toLowerCase()) ||
-            doc.content.toLowerCase().contains(query.toLowerCase());
-      }).toList();
+      // 获取知识库配置
+      final config = _ref.read(knowledgeBaseConfigProvider).currentConfig;
 
-      state = state.copyWith(searchResults: results, isLoading: false);
+      if (config != null) {
+        // 使用向量搜索
+        final vectorSearchService = VectorSearchService(
+          _database,
+          _ref.read(embeddingServiceProvider),
+        );
+
+        final searchResult = await vectorSearchService.hybridSearch(
+          query: query,
+          config: config,
+          similarityThreshold: config.similarityThreshold,
+          maxResults: config.maxRetrievedChunks,
+        );
+
+        if (searchResult.isSuccess) {
+          state = state.copyWith(
+            vectorSearchResults: searchResult.items,
+            searchResults: [], // 清空旧的文档搜索结果
+            isLoading: false,
+            searchTime: searchResult.searchTime,
+          );
+        } else {
+          // 向量搜索失败，回退到简单文本搜索
+          await _fallbackTextSearch(query);
+        }
+      } else {
+        // 没有配置，使用简单文本搜索
+        await _fallbackTextSearch(query);
+      }
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
+  /// 回退到简单文本搜索
+  Future<void> _fallbackTextSearch(String query) async {
+    final results = state.documents.where((doc) {
+      return doc.title.toLowerCase().contains(query.toLowerCase()) ||
+          doc.content.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+
+    state = state.copyWith(
+      searchResults: results,
+      vectorSearchResults: [],
+      isLoading: false,
+      searchTime: null,
+    );
+  }
+
   /// 清空搜索
   void clearSearch() {
-    state = state.copyWith(searchResults: [], searchQuery: '');
+    state = state.copyWith(
+      searchResults: [],
+      vectorSearchResults: [],
+      searchQuery: '',
+      searchTime: null,
+    );
   }
 
   /// 重新索引所有文档
@@ -232,30 +307,23 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       // 获取所有文档
       final dbDocuments = await _database.getAllKnowledgeDocuments();
 
-      // 模拟索引处理
+      // 清除所有现有的文本块
       for (final doc in dbDocuments) {
-        // 更新文档状态为处理中
-        await _database.upsertKnowledgeDocument(
-          KnowledgeDocumentsTableCompanion(
-            id: Value(doc.id),
-            status: const Value('processing'),
-            processedAt: Value(DateTime.now()),
-          ),
-        );
+        await _database.deleteChunksByDocument(doc.id);
+      }
 
-        // 模拟处理时间
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // 更新文档状态为已完成
-        await _database.upsertKnowledgeDocument(
-          KnowledgeDocumentsTableCompanion(
-            id: Value(doc.id),
-            status: const Value('completed'),
-            processedAt: Value(DateTime.now()),
-            indexProgress: const Value(1.0),
-          ),
+      // 重新处理所有文档
+      final processingNotifier = _ref.read(documentProcessingProvider.notifier);
+      for (final doc in dbDocuments) {
+        await processingNotifier.processDocument(
+          documentId: doc.id,
+          filePath: doc.filePath,
+          fileType: doc.type,
         );
       }
+
+      // 重新加载文档列表
+      await _loadDocuments();
     } catch (e) {
       // 处理错误，将文档状态设置为失败
       final dbDocuments = await _database.getAllKnowledgeDocuments();
@@ -277,7 +345,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
 final knowledgeBaseProvider =
     StateNotifierProvider<KnowledgeBaseNotifier, KnowledgeBaseState>((ref) {
       final database = ref.read(appDatabaseProvider);
-      return KnowledgeBaseNotifier(database);
+      return KnowledgeBaseNotifier(database, ref);
     });
 
 /// 文档列表Provider
@@ -288,4 +356,14 @@ final documentsProvider = Provider<List<KnowledgeDocument>>((ref) {
 /// 搜索结果Provider
 final searchResultsProvider = Provider<List<KnowledgeDocument>>((ref) {
   return ref.watch(knowledgeBaseProvider).searchResults;
+});
+
+/// 向量搜索结果Provider
+final vectorSearchResultsProvider = Provider<List<SearchResultItem>>((ref) {
+  return ref.watch(knowledgeBaseProvider).vectorSearchResults;
+});
+
+/// 搜索时间Provider
+final searchTimeProvider = Provider<double?>((ref) {
+  return ref.watch(knowledgeBaseProvider).searchTime;
 });

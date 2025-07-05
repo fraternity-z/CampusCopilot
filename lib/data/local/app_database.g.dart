@@ -4246,6 +4246,660 @@ class KnowledgeChunksTableCompanion
   }
 }
 
+class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
+    with
+        TableInfo<$KnowledgeBaseConfigsTableTable,
+            KnowledgeBaseConfigsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KnowledgeBaseConfigsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _embeddingModelIdMeta =
+      const VerificationMeta('embeddingModelId');
+  @override
+  late final GeneratedColumn<String> embeddingModelId = GeneratedColumn<String>(
+      'embedding_model_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _embeddingModelNameMeta =
+      const VerificationMeta('embeddingModelName');
+  @override
+  late final GeneratedColumn<String> embeddingModelName =
+      GeneratedColumn<String>('embedding_model_name', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _embeddingModelProviderMeta =
+      const VerificationMeta('embeddingModelProvider');
+  @override
+  late final GeneratedColumn<String> embeddingModelProvider =
+      GeneratedColumn<String>('embedding_model_provider', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _chunkSizeMeta =
+      const VerificationMeta('chunkSize');
+  @override
+  late final GeneratedColumn<int> chunkSize = GeneratedColumn<int>(
+      'chunk_size', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1000));
+  static const VerificationMeta _chunkOverlapMeta =
+      const VerificationMeta('chunkOverlap');
+  @override
+  late final GeneratedColumn<int> chunkOverlap = GeneratedColumn<int>(
+      'chunk_overlap', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(200));
+  static const VerificationMeta _maxRetrievedChunksMeta =
+      const VerificationMeta('maxRetrievedChunks');
+  @override
+  late final GeneratedColumn<int> maxRetrievedChunks = GeneratedColumn<int>(
+      'max_retrieved_chunks', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(5));
+  static const VerificationMeta _similarityThresholdMeta =
+      const VerificationMeta('similarityThreshold');
+  @override
+  late final GeneratedColumn<double> similarityThreshold =
+      GeneratedColumn<double>('similarity_threshold', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0.7));
+  static const VerificationMeta _isDefaultMeta =
+      const VerificationMeta('isDefault');
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+      'is_default', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_default" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        embeddingModelId,
+        embeddingModelName,
+        embeddingModelProvider,
+        chunkSize,
+        chunkOverlap,
+        maxRetrievedChunks,
+        similarityThreshold,
+        isDefault,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'knowledge_base_configs_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<KnowledgeBaseConfigsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('embedding_model_id')) {
+      context.handle(
+          _embeddingModelIdMeta,
+          embeddingModelId.isAcceptableOrUnknown(
+              data['embedding_model_id']!, _embeddingModelIdMeta));
+    } else if (isInserting) {
+      context.missing(_embeddingModelIdMeta);
+    }
+    if (data.containsKey('embedding_model_name')) {
+      context.handle(
+          _embeddingModelNameMeta,
+          embeddingModelName.isAcceptableOrUnknown(
+              data['embedding_model_name']!, _embeddingModelNameMeta));
+    } else if (isInserting) {
+      context.missing(_embeddingModelNameMeta);
+    }
+    if (data.containsKey('embedding_model_provider')) {
+      context.handle(
+          _embeddingModelProviderMeta,
+          embeddingModelProvider.isAcceptableOrUnknown(
+              data['embedding_model_provider']!, _embeddingModelProviderMeta));
+    } else if (isInserting) {
+      context.missing(_embeddingModelProviderMeta);
+    }
+    if (data.containsKey('chunk_size')) {
+      context.handle(_chunkSizeMeta,
+          chunkSize.isAcceptableOrUnknown(data['chunk_size']!, _chunkSizeMeta));
+    }
+    if (data.containsKey('chunk_overlap')) {
+      context.handle(
+          _chunkOverlapMeta,
+          chunkOverlap.isAcceptableOrUnknown(
+              data['chunk_overlap']!, _chunkOverlapMeta));
+    }
+    if (data.containsKey('max_retrieved_chunks')) {
+      context.handle(
+          _maxRetrievedChunksMeta,
+          maxRetrievedChunks.isAcceptableOrUnknown(
+              data['max_retrieved_chunks']!, _maxRetrievedChunksMeta));
+    }
+    if (data.containsKey('similarity_threshold')) {
+      context.handle(
+          _similarityThresholdMeta,
+          similarityThreshold.isAcceptableOrUnknown(
+              data['similarity_threshold']!, _similarityThresholdMeta));
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(_isDefaultMeta,
+          isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KnowledgeBaseConfigsTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KnowledgeBaseConfigsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      embeddingModelId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}embedding_model_id'])!,
+      embeddingModelName: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}embedding_model_name'])!,
+      embeddingModelProvider: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}embedding_model_provider'])!,
+      chunkSize: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chunk_size'])!,
+      chunkOverlap: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chunk_overlap'])!,
+      maxRetrievedChunks: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}max_retrieved_chunks'])!,
+      similarityThreshold: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}similarity_threshold'])!,
+      isDefault: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $KnowledgeBaseConfigsTableTable createAlias(String alias) {
+    return $KnowledgeBaseConfigsTableTable(attachedDatabase, alias);
+  }
+}
+
+class KnowledgeBaseConfigsTableData extends DataClass
+    implements Insertable<KnowledgeBaseConfigsTableData> {
+  /// 配置唯一标识符
+  final String id;
+
+  /// 配置名称
+  final String name;
+
+  /// 嵌入模型ID
+  final String embeddingModelId;
+
+  /// 嵌入模型名称
+  final String embeddingModelName;
+
+  /// 嵌入模型提供商
+  final String embeddingModelProvider;
+
+  /// 分块大小
+  final int chunkSize;
+
+  /// 分块重叠
+  final int chunkOverlap;
+
+  /// 最大检索结果数
+  final int maxRetrievedChunks;
+
+  /// 相似度阈值
+  final double similarityThreshold;
+
+  /// 是否为默认配置
+  final bool isDefault;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+  const KnowledgeBaseConfigsTableData(
+      {required this.id,
+      required this.name,
+      required this.embeddingModelId,
+      required this.embeddingModelName,
+      required this.embeddingModelProvider,
+      required this.chunkSize,
+      required this.chunkOverlap,
+      required this.maxRetrievedChunks,
+      required this.similarityThreshold,
+      required this.isDefault,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['embedding_model_id'] = Variable<String>(embeddingModelId);
+    map['embedding_model_name'] = Variable<String>(embeddingModelName);
+    map['embedding_model_provider'] = Variable<String>(embeddingModelProvider);
+    map['chunk_size'] = Variable<int>(chunkSize);
+    map['chunk_overlap'] = Variable<int>(chunkOverlap);
+    map['max_retrieved_chunks'] = Variable<int>(maxRetrievedChunks);
+    map['similarity_threshold'] = Variable<double>(similarityThreshold);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  KnowledgeBaseConfigsTableCompanion toCompanion(bool nullToAbsent) {
+    return KnowledgeBaseConfigsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      embeddingModelId: Value(embeddingModelId),
+      embeddingModelName: Value(embeddingModelName),
+      embeddingModelProvider: Value(embeddingModelProvider),
+      chunkSize: Value(chunkSize),
+      chunkOverlap: Value(chunkOverlap),
+      maxRetrievedChunks: Value(maxRetrievedChunks),
+      similarityThreshold: Value(similarityThreshold),
+      isDefault: Value(isDefault),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory KnowledgeBaseConfigsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KnowledgeBaseConfigsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      embeddingModelId: serializer.fromJson<String>(json['embeddingModelId']),
+      embeddingModelName:
+          serializer.fromJson<String>(json['embeddingModelName']),
+      embeddingModelProvider:
+          serializer.fromJson<String>(json['embeddingModelProvider']),
+      chunkSize: serializer.fromJson<int>(json['chunkSize']),
+      chunkOverlap: serializer.fromJson<int>(json['chunkOverlap']),
+      maxRetrievedChunks: serializer.fromJson<int>(json['maxRetrievedChunks']),
+      similarityThreshold:
+          serializer.fromJson<double>(json['similarityThreshold']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'embeddingModelId': serializer.toJson<String>(embeddingModelId),
+      'embeddingModelName': serializer.toJson<String>(embeddingModelName),
+      'embeddingModelProvider':
+          serializer.toJson<String>(embeddingModelProvider),
+      'chunkSize': serializer.toJson<int>(chunkSize),
+      'chunkOverlap': serializer.toJson<int>(chunkOverlap),
+      'maxRetrievedChunks': serializer.toJson<int>(maxRetrievedChunks),
+      'similarityThreshold': serializer.toJson<double>(similarityThreshold),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  KnowledgeBaseConfigsTableData copyWith(
+          {String? id,
+          String? name,
+          String? embeddingModelId,
+          String? embeddingModelName,
+          String? embeddingModelProvider,
+          int? chunkSize,
+          int? chunkOverlap,
+          int? maxRetrievedChunks,
+          double? similarityThreshold,
+          bool? isDefault,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      KnowledgeBaseConfigsTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        embeddingModelId: embeddingModelId ?? this.embeddingModelId,
+        embeddingModelName: embeddingModelName ?? this.embeddingModelName,
+        embeddingModelProvider:
+            embeddingModelProvider ?? this.embeddingModelProvider,
+        chunkSize: chunkSize ?? this.chunkSize,
+        chunkOverlap: chunkOverlap ?? this.chunkOverlap,
+        maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
+        similarityThreshold: similarityThreshold ?? this.similarityThreshold,
+        isDefault: isDefault ?? this.isDefault,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  KnowledgeBaseConfigsTableData copyWithCompanion(
+      KnowledgeBaseConfigsTableCompanion data) {
+    return KnowledgeBaseConfigsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      embeddingModelId: data.embeddingModelId.present
+          ? data.embeddingModelId.value
+          : this.embeddingModelId,
+      embeddingModelName: data.embeddingModelName.present
+          ? data.embeddingModelName.value
+          : this.embeddingModelName,
+      embeddingModelProvider: data.embeddingModelProvider.present
+          ? data.embeddingModelProvider.value
+          : this.embeddingModelProvider,
+      chunkSize: data.chunkSize.present ? data.chunkSize.value : this.chunkSize,
+      chunkOverlap: data.chunkOverlap.present
+          ? data.chunkOverlap.value
+          : this.chunkOverlap,
+      maxRetrievedChunks: data.maxRetrievedChunks.present
+          ? data.maxRetrievedChunks.value
+          : this.maxRetrievedChunks,
+      similarityThreshold: data.similarityThreshold.present
+          ? data.similarityThreshold.value
+          : this.similarityThreshold,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeBaseConfigsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('embeddingModelId: $embeddingModelId, ')
+          ..write('embeddingModelName: $embeddingModelName, ')
+          ..write('embeddingModelProvider: $embeddingModelProvider, ')
+          ..write('chunkSize: $chunkSize, ')
+          ..write('chunkOverlap: $chunkOverlap, ')
+          ..write('maxRetrievedChunks: $maxRetrievedChunks, ')
+          ..write('similarityThreshold: $similarityThreshold, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      embeddingModelId,
+      embeddingModelName,
+      embeddingModelProvider,
+      chunkSize,
+      chunkOverlap,
+      maxRetrievedChunks,
+      similarityThreshold,
+      isDefault,
+      createdAt,
+      updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KnowledgeBaseConfigsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.embeddingModelId == this.embeddingModelId &&
+          other.embeddingModelName == this.embeddingModelName &&
+          other.embeddingModelProvider == this.embeddingModelProvider &&
+          other.chunkSize == this.chunkSize &&
+          other.chunkOverlap == this.chunkOverlap &&
+          other.maxRetrievedChunks == this.maxRetrievedChunks &&
+          other.similarityThreshold == this.similarityThreshold &&
+          other.isDefault == this.isDefault &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class KnowledgeBaseConfigsTableCompanion
+    extends UpdateCompanion<KnowledgeBaseConfigsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> embeddingModelId;
+  final Value<String> embeddingModelName;
+  final Value<String> embeddingModelProvider;
+  final Value<int> chunkSize;
+  final Value<int> chunkOverlap;
+  final Value<int> maxRetrievedChunks;
+  final Value<double> similarityThreshold;
+  final Value<bool> isDefault;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const KnowledgeBaseConfigsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.embeddingModelId = const Value.absent(),
+    this.embeddingModelName = const Value.absent(),
+    this.embeddingModelProvider = const Value.absent(),
+    this.chunkSize = const Value.absent(),
+    this.chunkOverlap = const Value.absent(),
+    this.maxRetrievedChunks = const Value.absent(),
+    this.similarityThreshold = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  KnowledgeBaseConfigsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String embeddingModelId,
+    required String embeddingModelName,
+    required String embeddingModelProvider,
+    this.chunkSize = const Value.absent(),
+    this.chunkOverlap = const Value.absent(),
+    this.maxRetrievedChunks = const Value.absent(),
+    this.similarityThreshold = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        embeddingModelId = Value(embeddingModelId),
+        embeddingModelName = Value(embeddingModelName),
+        embeddingModelProvider = Value(embeddingModelProvider),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<KnowledgeBaseConfigsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? embeddingModelId,
+    Expression<String>? embeddingModelName,
+    Expression<String>? embeddingModelProvider,
+    Expression<int>? chunkSize,
+    Expression<int>? chunkOverlap,
+    Expression<int>? maxRetrievedChunks,
+    Expression<double>? similarityThreshold,
+    Expression<bool>? isDefault,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (embeddingModelId != null) 'embedding_model_id': embeddingModelId,
+      if (embeddingModelName != null)
+        'embedding_model_name': embeddingModelName,
+      if (embeddingModelProvider != null)
+        'embedding_model_provider': embeddingModelProvider,
+      if (chunkSize != null) 'chunk_size': chunkSize,
+      if (chunkOverlap != null) 'chunk_overlap': chunkOverlap,
+      if (maxRetrievedChunks != null)
+        'max_retrieved_chunks': maxRetrievedChunks,
+      if (similarityThreshold != null)
+        'similarity_threshold': similarityThreshold,
+      if (isDefault != null) 'is_default': isDefault,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  KnowledgeBaseConfigsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? embeddingModelId,
+      Value<String>? embeddingModelName,
+      Value<String>? embeddingModelProvider,
+      Value<int>? chunkSize,
+      Value<int>? chunkOverlap,
+      Value<int>? maxRetrievedChunks,
+      Value<double>? similarityThreshold,
+      Value<bool>? isDefault,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return KnowledgeBaseConfigsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      embeddingModelId: embeddingModelId ?? this.embeddingModelId,
+      embeddingModelName: embeddingModelName ?? this.embeddingModelName,
+      embeddingModelProvider:
+          embeddingModelProvider ?? this.embeddingModelProvider,
+      chunkSize: chunkSize ?? this.chunkSize,
+      chunkOverlap: chunkOverlap ?? this.chunkOverlap,
+      maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
+      similarityThreshold: similarityThreshold ?? this.similarityThreshold,
+      isDefault: isDefault ?? this.isDefault,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (embeddingModelId.present) {
+      map['embedding_model_id'] = Variable<String>(embeddingModelId.value);
+    }
+    if (embeddingModelName.present) {
+      map['embedding_model_name'] = Variable<String>(embeddingModelName.value);
+    }
+    if (embeddingModelProvider.present) {
+      map['embedding_model_provider'] =
+          Variable<String>(embeddingModelProvider.value);
+    }
+    if (chunkSize.present) {
+      map['chunk_size'] = Variable<int>(chunkSize.value);
+    }
+    if (chunkOverlap.present) {
+      map['chunk_overlap'] = Variable<int>(chunkOverlap.value);
+    }
+    if (maxRetrievedChunks.present) {
+      map['max_retrieved_chunks'] = Variable<int>(maxRetrievedChunks.value);
+    }
+    if (similarityThreshold.present) {
+      map['similarity_threshold'] = Variable<double>(similarityThreshold.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeBaseConfigsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('embeddingModelId: $embeddingModelId, ')
+          ..write('embeddingModelName: $embeddingModelName, ')
+          ..write('embeddingModelProvider: $embeddingModelProvider, ')
+          ..write('chunkSize: $chunkSize, ')
+          ..write('chunkOverlap: $chunkOverlap, ')
+          ..write('maxRetrievedChunks: $maxRetrievedChunks, ')
+          ..write('similarityThreshold: $similarityThreshold, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $CustomModelsTableTable extends CustomModelsTable
     with TableInfo<$CustomModelsTableTable, CustomModelsTableData> {
   @override
@@ -5265,6 +5919,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $KnowledgeDocumentsTableTable(this);
   late final $KnowledgeChunksTableTable knowledgeChunksTable =
       $KnowledgeChunksTableTable(this);
+  late final $KnowledgeBaseConfigsTableTable knowledgeBaseConfigsTable =
+      $KnowledgeBaseConfigsTableTable(this);
   late final $CustomModelsTableTable customModelsTable =
       $CustomModelsTableTable(this);
   @override
@@ -5279,6 +5935,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         chatMessagesTable,
         knowledgeDocumentsTable,
         knowledgeChunksTable,
+        knowledgeBaseConfigsTable,
         customModelsTable
       ];
 }
@@ -7214,6 +7871,302 @@ typedef $$KnowledgeChunksTableTableProcessedTableManager
         ),
         KnowledgeChunksTableData,
         PrefetchHooks Function()>;
+typedef $$KnowledgeBaseConfigsTableTableCreateCompanionBuilder
+    = KnowledgeBaseConfigsTableCompanion Function({
+  required String id,
+  required String name,
+  required String embeddingModelId,
+  required String embeddingModelName,
+  required String embeddingModelProvider,
+  Value<int> chunkSize,
+  Value<int> chunkOverlap,
+  Value<int> maxRetrievedChunks,
+  Value<double> similarityThreshold,
+  Value<bool> isDefault,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$KnowledgeBaseConfigsTableTableUpdateCompanionBuilder
+    = KnowledgeBaseConfigsTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> embeddingModelId,
+  Value<String> embeddingModelName,
+  Value<String> embeddingModelProvider,
+  Value<int> chunkSize,
+  Value<int> chunkOverlap,
+  Value<int> maxRetrievedChunks,
+  Value<double> similarityThreshold,
+  Value<bool> isDefault,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$KnowledgeBaseConfigsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $KnowledgeBaseConfigsTableTable> {
+  $$KnowledgeBaseConfigsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get embeddingModelId => $composableBuilder(
+      column: $table.embeddingModelId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get embeddingModelName => $composableBuilder(
+      column: $table.embeddingModelName,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get embeddingModelProvider => $composableBuilder(
+      column: $table.embeddingModelProvider,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chunkSize => $composableBuilder(
+      column: $table.chunkSize, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chunkOverlap => $composableBuilder(
+      column: $table.chunkOverlap, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get maxRetrievedChunks => $composableBuilder(
+      column: $table.maxRetrievedChunks,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get similarityThreshold => $composableBuilder(
+      column: $table.similarityThreshold,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$KnowledgeBaseConfigsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $KnowledgeBaseConfigsTableTable> {
+  $$KnowledgeBaseConfigsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get embeddingModelId => $composableBuilder(
+      column: $table.embeddingModelId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get embeddingModelName => $composableBuilder(
+      column: $table.embeddingModelName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get embeddingModelProvider => $composableBuilder(
+      column: $table.embeddingModelProvider,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chunkSize => $composableBuilder(
+      column: $table.chunkSize, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chunkOverlap => $composableBuilder(
+      column: $table.chunkOverlap,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get maxRetrievedChunks => $composableBuilder(
+      column: $table.maxRetrievedChunks,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get similarityThreshold => $composableBuilder(
+      column: $table.similarityThreshold,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$KnowledgeBaseConfigsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KnowledgeBaseConfigsTableTable> {
+  $$KnowledgeBaseConfigsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get embeddingModelId => $composableBuilder(
+      column: $table.embeddingModelId, builder: (column) => column);
+
+  GeneratedColumn<String> get embeddingModelName => $composableBuilder(
+      column: $table.embeddingModelName, builder: (column) => column);
+
+  GeneratedColumn<String> get embeddingModelProvider => $composableBuilder(
+      column: $table.embeddingModelProvider, builder: (column) => column);
+
+  GeneratedColumn<int> get chunkSize =>
+      $composableBuilder(column: $table.chunkSize, builder: (column) => column);
+
+  GeneratedColumn<int> get chunkOverlap => $composableBuilder(
+      column: $table.chunkOverlap, builder: (column) => column);
+
+  GeneratedColumn<int> get maxRetrievedChunks => $composableBuilder(
+      column: $table.maxRetrievedChunks, builder: (column) => column);
+
+  GeneratedColumn<double> get similarityThreshold => $composableBuilder(
+      column: $table.similarityThreshold, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$KnowledgeBaseConfigsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $KnowledgeBaseConfigsTableTable,
+    KnowledgeBaseConfigsTableData,
+    $$KnowledgeBaseConfigsTableTableFilterComposer,
+    $$KnowledgeBaseConfigsTableTableOrderingComposer,
+    $$KnowledgeBaseConfigsTableTableAnnotationComposer,
+    $$KnowledgeBaseConfigsTableTableCreateCompanionBuilder,
+    $$KnowledgeBaseConfigsTableTableUpdateCompanionBuilder,
+    (
+      KnowledgeBaseConfigsTableData,
+      BaseReferences<_$AppDatabase, $KnowledgeBaseConfigsTableTable,
+          KnowledgeBaseConfigsTableData>
+    ),
+    KnowledgeBaseConfigsTableData,
+    PrefetchHooks Function()> {
+  $$KnowledgeBaseConfigsTableTableTableManager(
+      _$AppDatabase db, $KnowledgeBaseConfigsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KnowledgeBaseConfigsTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KnowledgeBaseConfigsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KnowledgeBaseConfigsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> embeddingModelId = const Value.absent(),
+            Value<String> embeddingModelName = const Value.absent(),
+            Value<String> embeddingModelProvider = const Value.absent(),
+            Value<int> chunkSize = const Value.absent(),
+            Value<int> chunkOverlap = const Value.absent(),
+            Value<int> maxRetrievedChunks = const Value.absent(),
+            Value<double> similarityThreshold = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeBaseConfigsTableCompanion(
+            id: id,
+            name: name,
+            embeddingModelId: embeddingModelId,
+            embeddingModelName: embeddingModelName,
+            embeddingModelProvider: embeddingModelProvider,
+            chunkSize: chunkSize,
+            chunkOverlap: chunkOverlap,
+            maxRetrievedChunks: maxRetrievedChunks,
+            similarityThreshold: similarityThreshold,
+            isDefault: isDefault,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String embeddingModelId,
+            required String embeddingModelName,
+            required String embeddingModelProvider,
+            Value<int> chunkSize = const Value.absent(),
+            Value<int> chunkOverlap = const Value.absent(),
+            Value<int> maxRetrievedChunks = const Value.absent(),
+            Value<double> similarityThreshold = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeBaseConfigsTableCompanion.insert(
+            id: id,
+            name: name,
+            embeddingModelId: embeddingModelId,
+            embeddingModelName: embeddingModelName,
+            embeddingModelProvider: embeddingModelProvider,
+            chunkSize: chunkSize,
+            chunkOverlap: chunkOverlap,
+            maxRetrievedChunks: maxRetrievedChunks,
+            similarityThreshold: similarityThreshold,
+            isDefault: isDefault,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$KnowledgeBaseConfigsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $KnowledgeBaseConfigsTableTable,
+        KnowledgeBaseConfigsTableData,
+        $$KnowledgeBaseConfigsTableTableFilterComposer,
+        $$KnowledgeBaseConfigsTableTableOrderingComposer,
+        $$KnowledgeBaseConfigsTableTableAnnotationComposer,
+        $$KnowledgeBaseConfigsTableTableCreateCompanionBuilder,
+        $$KnowledgeBaseConfigsTableTableUpdateCompanionBuilder,
+        (
+          KnowledgeBaseConfigsTableData,
+          BaseReferences<_$AppDatabase, $KnowledgeBaseConfigsTableTable,
+              KnowledgeBaseConfigsTableData>
+        ),
+        KnowledgeBaseConfigsTableData,
+        PrefetchHooks Function()>;
 typedef $$CustomModelsTableTableCreateCompanionBuilder
     = CustomModelsTableCompanion Function({
   required String id,
@@ -7645,6 +8598,9 @@ class $AppDatabaseManager {
           _db, _db.knowledgeDocumentsTable);
   $$KnowledgeChunksTableTableTableManager get knowledgeChunksTable =>
       $$KnowledgeChunksTableTableTableManager(_db, _db.knowledgeChunksTable);
+  $$KnowledgeBaseConfigsTableTableTableManager get knowledgeBaseConfigsTable =>
+      $$KnowledgeBaseConfigsTableTableTableManager(
+          _db, _db.knowledgeBaseConfigsTable);
   $$CustomModelsTableTableTableManager get customModelsTable =>
       $$CustomModelsTableTableTableManager(_db, _db.customModelsTable);
 }

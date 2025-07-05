@@ -15,6 +15,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../data/local/app_database.dart';
 import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
+import '../../../knowledge_base/presentation/providers/rag_provider.dart';
+import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
 
 /// 聊天服务
 ///
@@ -105,13 +107,41 @@ class ChatService {
         llmConfig.toLlmConfig(),
       );
 
-      // 5. 构建上下文消息
+      // 5. 检查是否需要RAG增强
+      String enhancedPrompt = content;
+      final ragService = _ref.read(ragServiceProvider);
+      final knowledgeConfig = _ref
+          .read(knowledgeBaseConfigProvider)
+          .currentConfig;
+
+      if (knowledgeConfig != null && ragService.shouldUseRag(content)) {
+        try {
+          debugPrint('🔍 使用RAG增强用户查询');
+          final ragResult = await ragService.enhancePrompt(
+            userQuery: content,
+            config: knowledgeConfig,
+            systemPrompt: persona.systemPrompt,
+          );
+
+          if (ragResult.usedContexts.isNotEmpty) {
+            enhancedPrompt = ragResult.enhancedPrompt;
+            debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+          } else {
+            debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+          }
+        } catch (e) {
+          debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+        }
+      }
+
+      // 6. 构建上下文消息
       final contextMessages = await _buildContextMessages(
         sessionId,
         session.config,
+        enhancedUserMessage: enhancedPrompt != content ? enhancedPrompt : null,
       );
 
-      // 6. 生成AI响应
+      // 7. 生成AI响应
       final params = _ref.read(modelParametersProvider);
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
@@ -210,24 +240,43 @@ class ChatService {
       );
       debugPrint('🤖 AI Provider已创建');
 
-      // 5. 构建上下文消息（最近10条消息作为上下文）
-      final recentMessages = await _database.getMessagesBySession(sessionId);
-      final contextMessages = recentMessages
-          .take(10) // 最近10条消息作为上下文
-          .map(
-            (msg) => ChatMessage(
-              id: msg.id,
-              content: msg.content,
-              isFromUser: msg.isFromUser,
-              timestamp: msg.timestamp,
-              chatSessionId: msg.chatSessionId,
-            ),
-          )
-          .toList();
+      // 5. 检查是否需要RAG增强
+      String enhancedPrompt = content;
+      final ragService = _ref.read(ragServiceProvider);
+      final knowledgeConfig = _ref
+          .read(knowledgeBaseConfigProvider)
+          .currentConfig;
+
+      if (knowledgeConfig != null && ragService.shouldUseRag(content)) {
+        try {
+          debugPrint('🔍 使用RAG增强用户查询');
+          final ragResult = await ragService.enhancePrompt(
+            userQuery: content,
+            config: knowledgeConfig,
+            systemPrompt: persona.systemPrompt,
+          );
+
+          if (ragResult.usedContexts.isNotEmpty) {
+            enhancedPrompt = ragResult.enhancedPrompt;
+            debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+          } else {
+            debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+          }
+        } catch (e) {
+          debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+        }
+      }
+
+      // 6. 构建上下文消息
+      final contextMessages = await _buildContextMessages(
+        sessionId,
+        session.config,
+        enhancedUserMessage: enhancedPrompt != content ? enhancedPrompt : null,
+      );
 
       debugPrint('💬 上下文消息数量: ${contextMessages.length}');
 
-      // 6. 构建聊天选项 - 使用会话配置和智能体提示词
+      // 7. 构建聊天选项 - 使用会话配置和智能体提示词
       final params = _ref.read(modelParametersProvider);
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
@@ -425,8 +474,9 @@ class ChatService {
   /// 构建上下文消息
   Future<List<ChatMessage>> _buildContextMessages(
     String sessionId,
-    ChatSessionConfig? config,
-  ) async {
+    ChatSessionConfig? config, {
+    String? enhancedUserMessage,
+  }) async {
     final contextWindowSize =
         config?.contextWindowSize ?? AppConstants.defaultContextWindowSize;
 
@@ -439,7 +489,21 @@ class ChatService {
     // 按时间顺序排序
     recentMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    return recentMessages.map((data) => data.toChatMessage()).toList();
+    final contextMessages = recentMessages
+        .map((data) => data.toChatMessage())
+        .toList();
+
+    // 如果有RAG增强的消息，替换最后一条用户消息
+    if (enhancedUserMessage != null && contextMessages.isNotEmpty) {
+      final lastMessage = contextMessages.last;
+      if (lastMessage.isFromUser) {
+        contextMessages[contextMessages.length - 1] = lastMessage.copyWith(
+          content: enhancedUserMessage,
+        );
+      }
+    }
+
+    return contextMessages;
   }
 
   /// 更新会话统计

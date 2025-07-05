@@ -5,6 +5,11 @@ import 'dart:io';
 
 import '../../domain/entities/knowledge_document.dart';
 import '../providers/knowledge_base_provider.dart';
+import '../providers/knowledge_base_config_provider.dart';
+import '../providers/document_processing_provider.dart';
+import '../providers/rag_provider.dart';
+import '../../domain/services/vector_search_service.dart';
+import '../../../llm_chat/domain/providers/llm_provider.dart';
 
 /// 知识库管理界面
 ///
@@ -159,101 +164,171 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 构建文档卡片
   Widget _buildDocumentCard(KnowledgeDocument document) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Consumer(
+      builder: (context, ref, child) {
+        final processingProgress = ref.watch(
+          documentProgressProvider(document.id),
+        );
+        final processingError = ref.watch(documentErrorProvider(document.id));
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  document.fileTypeIcon,
-                  color: _getDocumentColor(document.fileType),
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        document.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${document.formattedFileSize} • ${document.formattedStatus}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) => _handleDocumentAction(value, document),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'reindex',
-                      child: ListTile(
-                        leading: Icon(Icons.refresh),
-                        title: Text('重新索引'),
-                        contentPadding: EdgeInsets.zero,
+                Row(
+                  children: [
+                    Icon(
+                      document.fileTypeIcon,
+                      color: _getDocumentColor(document.fileType),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            document.title,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${document.formattedFileSize} • ${document.formattedStatus}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+
+                          // 显示处理进度
+                          if (processingProgress != null) ...[
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: processingProgress,
+                              backgroundColor: Colors.grey[300],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '处理中... ${(processingProgress * 100).toInt()}%',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                            ),
+                          ],
+
+                          // 显示处理错误
+                          if (processingError != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.red[200]!),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error,
+                                    size: 16,
+                                    color: Colors.red[700],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '处理失败: $processingError',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.red[700],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text('删除', style: TextStyle(color: Colors.red)),
-                        contentPadding: EdgeInsets.zero,
+                    PopupMenuButton<String>(
+                      onSelected: (value) =>
+                          _handleDocumentAction(value, document),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'reindex',
+                          child: ListTile(
+                            leading: Icon(Icons.refresh),
+                            title: Text('重新索引'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: Icon(Icons.delete, color: Colors.red),
+                            title: Text(
+                              '删除',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 显示状态标签
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(document.status),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    document.formattedStatus,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      document.status,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _getStatusColor(document.status),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '上传于 ${_formatDate(document.uploadedAt)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            // 显示状态标签
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(document.status),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                document.formattedStatus,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  document.status,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _getStatusColor(document.status),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '上传于 ${_formatDate(document.uploadedAt)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -293,7 +368,9 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       builder: (context, ref, child) {
         final knowledgeState = ref.watch(knowledgeBaseProvider);
         final searchResults = knowledgeState.searchResults;
+        final vectorSearchResults = knowledgeState.vectorSearchResults;
         final searchQuery = knowledgeState.searchQuery;
+        final searchTime = knowledgeState.searchTime;
 
         if (searchQuery.isEmpty) {
           return const Center(
@@ -312,26 +389,65 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (searchResults.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text('未找到包含 "$searchQuery" 的文档'),
-              ],
-            ),
+        // 优先显示向量搜索结果
+        if (vectorSearchResults.isNotEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 搜索统计信息
+              _buildSearchStats(vectorSearchResults.length, searchTime),
+              const SizedBox(height: 16),
+
+              // 向量搜索结果
+              Expanded(
+                child: ListView.builder(
+                  itemCount: vectorSearchResults.length,
+                  itemBuilder: (context, index) {
+                    final result = vectorSearchResults[index];
+                    return _buildVectorSearchResultCard(result, searchQuery);
+                  },
+                ),
+              ),
+            ],
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: searchResults.length,
-          itemBuilder: (context, index) {
-            final document = searchResults[index];
-            return _buildSearchResultCard(document, searchQuery);
-          },
+        // 回退到文档搜索结果
+        if (searchResults.isNotEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSearchStats(searchResults.length, null),
+              const SizedBox(height: 16),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: searchResults.length,
+                  itemBuilder: (context, index) {
+                    final document = searchResults[index];
+                    return _buildSearchResultCard(document, searchQuery);
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+
+        // 无结果
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text('未找到包含 "$searchQuery" 的内容'),
+              const SizedBox(height: 8),
+              Text(
+                '尝试使用不同的关键词或检查拼写',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -420,9 +536,14 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 构建设置标签页
   Widget _buildSettingsTab() {
+    final configState = ref.watch(knowledgeBaseConfigProvider);
+    final currentConfig = configState.currentConfig;
+    final embeddingModels = configState.availableEmbeddingModels;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // 嵌入模型配置
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -430,7 +551,7 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '索引设置',
+                  '嵌入模型配置',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -438,27 +559,84 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                 const SizedBox(height: 16),
 
                 ListTile(
-                  title: const Text('文本块大小'),
+                  leading: const Icon(Icons.model_training),
+                  title: const Text('嵌入模型'),
+                  subtitle: Text(
+                    currentConfig?.embeddingModelName ?? '未选择',
+                    style: TextStyle(
+                      color: currentConfig == null
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _showEmbeddingModelSelector(embeddingModels),
+                ),
+
+                if (currentConfig != null) ...[
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('模型信息'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('提供商: ${currentConfig.embeddingModelProvider}'),
+                        Text('模型ID: ${currentConfig.embeddingModelId}'),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // 分块设置
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '文档分块设置',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                ListTile(
+                  title: const Text('分块大小'),
                   subtitle: const Text('每个文本块的最大字符数'),
                   trailing: SizedBox(
                     width: 80,
                     child: TextFormField(
-                      initialValue: '1000',
+                      initialValue:
+                          currentConfig?.chunkSize.toString() ?? '1000',
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
+                      onChanged: (value) =>
+                          _updateChunkSize(int.tryParse(value)),
                     ),
                   ),
                 ),
 
                 ListTile(
-                  title: const Text('重叠大小'),
-                  subtitle: const Text('相邻文本块的重叠字符数'),
+                  title: const Text('分块重叠'),
+                  subtitle: const Text('相邻文本块之间的重叠字符数'),
                   trailing: SizedBox(
                     width: 80,
                     child: TextFormField(
-                      initialValue: '200',
+                      initialValue:
+                          currentConfig?.chunkOverlap.toString() ?? '200',
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
+                      onChanged: (value) =>
+                          _updateChunkOverlap(int.tryParse(value)),
                     ),
                   ),
                 ),
@@ -469,6 +647,40 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
         const SizedBox(height: 16),
 
+        // 知识库统计
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '知识库统计',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final statsAsync = ref.watch(knowledgeBaseStatsProvider);
+
+                    return statsAsync.when(
+                      data: (stats) => _buildStatsGrid(stats),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => Text('加载统计信息失败: $error'),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // 搜索设置
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -489,9 +701,12 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                   trailing: SizedBox(
                     width: 80,
                     child: TextFormField(
-                      initialValue: '5',
+                      initialValue:
+                          currentConfig?.maxRetrievedChunks.toString() ?? '5',
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
+                      onChanged: (value) =>
+                          _updateMaxRetrievedChunks(int.tryParse(value)),
                     ),
                   ),
                 ),
@@ -502,9 +717,13 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                   trailing: SizedBox(
                     width: 80,
                     child: TextFormField(
-                      initialValue: '0.7',
+                      initialValue:
+                          currentConfig?.similarityThreshold.toString() ??
+                          '0.7',
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
+                      onChanged: (value) =>
+                          _updateSimilarityThreshold(double.tryParse(value)),
                     ),
                   ),
                 ),
@@ -571,7 +790,9 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
               final fileContent = await File(file.path!).readAsString();
 
               // 上传文档
-              await ref.read(knowledgeBaseProvider.notifier).uploadDocument(
+              await ref
+                  .read(knowledgeBaseProvider.notifier)
+                  .uploadDocument(
                     title: file.name,
                     content: fileContent,
                     filePath: file.path!,
@@ -581,19 +802,20 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
               if (!mounted) continue;
               scaffoldMessenger.showSnackBar(
-                  SnackBar(content: Text('文档 ${file.name} 上传成功')));
+                SnackBar(content: Text('文档 ${file.name} 上传成功')),
+              );
             } catch (e) {
               if (!mounted) continue;
-              scaffoldMessenger
-                  .showSnackBar(SnackBar(content: Text('上传失败: $e')));
+              scaffoldMessenger.showSnackBar(
+                SnackBar(content: Text('上传失败: $e')),
+              );
             }
           }
         }
       }
     } catch (e) {
       if (!mounted) return;
-      scaffoldMessenger
-          .showSnackBar(const SnackBar(content: Text('文档上传失败')));
+      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('文档上传失败')));
     }
   }
 
@@ -616,11 +838,11 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       await ref.read(knowledgeBaseProvider.notifier).reindexDocuments();
       if (!mounted) return;
       scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('文档 ${document.title} 重新索引完成')));
+        SnackBar(content: Text('文档 ${document.title} 重新索引完成')),
+      );
     } catch (e) {
       if (!mounted) return;
-      scaffoldMessenger
-          .showSnackBar(SnackBar(content: Text('重新索引失败: $e')));
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('重新索引失败: $e')));
     }
   }
 
@@ -652,8 +874,9 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
               } catch (e) {
                 if (!mounted) return;
                 navigator.pop();
-                scaffoldMessenger
-                    .showSnackBar(SnackBar(content: Text('删除失败: $e')));
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('删除失败: $e')),
+                );
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -698,13 +921,15 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                     .reindexDocuments();
                 if (!mounted) return;
                 navigator.pop();
-                scaffoldMessenger
-                    .showSnackBar(const SnackBar(content: Text('索引重建完成')));
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('索引重建完成')),
+                );
               } catch (e) {
                 if (!mounted) return;
                 navigator.pop();
-                scaffoldMessenger
-                    .showSnackBar(SnackBar(content: Text('重建索引失败: $e')));
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('重建索引失败: $e')),
+                );
               }
             },
             child: const Text('确定'),
@@ -736,13 +961,15 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                     .clearAllDocuments();
                 if (!mounted) return;
                 navigator.pop();
-                scaffoldMessenger
-                    .showSnackBar(const SnackBar(content: Text('知识库已清空')));
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('知识库已清空')),
+                );
               } catch (e) {
                 if (!mounted) return;
                 navigator.pop();
-                scaffoldMessenger
-                    .showSnackBar(SnackBar(content: Text('清空失败: $e')));
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('清空失败: $e')),
+                );
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -796,5 +1023,456 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
     } else {
       return '${date.month}/${date.day}';
     }
+  }
+
+  /// 显示嵌入模型选择器
+  void _showEmbeddingModelSelector(List<ModelInfo> embeddingModels) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择嵌入模型'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: embeddingModels.isEmpty
+              ? const Text('没有可用的嵌入模型，请先在模型设置中配置嵌入模型。')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: embeddingModels.length,
+                  itemBuilder: (context, index) {
+                    final model = embeddingModels[index];
+                    return ListTile(
+                      title: Text(model.name),
+                      subtitle: Text(
+                        '${model.id} (${_getProviderName(model.id)})',
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _selectEmbeddingModel(model);
+                      },
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 选择嵌入模型
+  void _selectEmbeddingModel(ModelInfo model) async {
+    try {
+      final configNotifier = ref.read(knowledgeBaseConfigProvider.notifier);
+      final currentConfig = ref.read(knowledgeBaseConfigProvider).currentConfig;
+
+      if (currentConfig != null) {
+        // 更新现有配置
+        final updatedConfig = currentConfig.copyWith(
+          embeddingModelId: model.id,
+          embeddingModelName: model.name,
+          embeddingModelProvider: _getProviderName(model.id),
+          updatedAt: DateTime.now(),
+        );
+        await configNotifier.updateConfig(updatedConfig);
+      } else {
+        // 创建新配置
+        await configNotifier.createConfig(
+          name: '默认配置',
+          embeddingModelId: model.id,
+          embeddingModelName: model.name,
+          embeddingModelProvider: _getProviderName(model.id),
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('已选择嵌入模型: ${model.name}')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('选择模型失败: $e')));
+      }
+    }
+  }
+
+  /// 获取提供商名称
+  String _getProviderName(String modelId) {
+    if (modelId.contains('openai') ||
+        modelId.contains('gpt') ||
+        modelId.contains('text-embedding')) {
+      return 'OpenAI';
+    } else if (modelId.contains('google') ||
+        modelId.contains('gemini') ||
+        modelId.contains('embedding-001')) {
+      return 'Google';
+    } else if (modelId.contains('anthropic') || modelId.contains('claude')) {
+      return 'Anthropic';
+    } else {
+      return '未知';
+    }
+  }
+
+  /// 更新分块大小
+  void _updateChunkSize(int? value) {
+    if (value != null && value > 0) {
+      _updateCurrentConfig((config) => config.copyWith(chunkSize: value));
+    }
+  }
+
+  /// 更新分块重叠
+  void _updateChunkOverlap(int? value) {
+    if (value != null && value >= 0) {
+      _updateCurrentConfig((config) => config.copyWith(chunkOverlap: value));
+    }
+  }
+
+  /// 更新最大检索结果数
+  void _updateMaxRetrievedChunks(int? value) {
+    if (value != null && value > 0) {
+      _updateCurrentConfig(
+        (config) => config.copyWith(maxRetrievedChunks: value),
+      );
+    }
+  }
+
+  /// 更新相似度阈值
+  void _updateSimilarityThreshold(double? value) {
+    if (value != null && value >= 0.0 && value <= 1.0) {
+      _updateCurrentConfig(
+        (config) => config.copyWith(similarityThreshold: value),
+      );
+    }
+  }
+
+  /// 更新当前配置的通用方法
+  void _updateCurrentConfig(
+    KnowledgeBaseConfig Function(KnowledgeBaseConfig) updater,
+  ) {
+    final currentConfig = ref.read(knowledgeBaseConfigProvider).currentConfig;
+    if (currentConfig != null) {
+      final updatedConfig = updater(
+        currentConfig,
+      ).copyWith(updatedAt: DateTime.now());
+      ref
+          .read(knowledgeBaseConfigProvider.notifier)
+          .updateConfig(updatedConfig);
+    }
+  }
+
+  /// 构建搜索统计信息
+  Widget _buildSearchStats(int resultCount, double? searchTime) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '找到 $resultCount 个相关结果',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (searchTime != null) ...[
+            const SizedBox(width: 16),
+            Text(
+              '耗时 ${searchTime.toStringAsFixed(0)}ms',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建向量搜索结果卡片
+  Widget _buildVectorSearchResultCard(SearchResultItem result, String query) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 相似度和元数据
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getSimilarityColor(result.similarity).withAlpha(26),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _getSimilarityColor(result.similarity),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '相似度 ${(result.similarity * 100).toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _getSimilarityColor(result.similarity),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (result.metadata['searchType'] != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondary.withAlpha(26),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getSearchTypeLabel(
+                        result.metadata['searchType'] as String,
+                      ),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                Text(
+                  '第${result.chunkIndex + 1}段',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // 内容预览
+            Text(
+              _highlightSearchTerms(result.content, query),
+              style: Theme.of(context).textTheme.bodyMedium,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 12),
+
+            // 操作按钮
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => _showChunkDetail(result),
+                  icon: const Icon(Icons.visibility, size: 16),
+                  label: const Text('查看详情'),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => _copyChunkContent(result.content),
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('复制'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 获取相似度颜色
+  Color _getSimilarityColor(double similarity) {
+    if (similarity >= 0.9) return Colors.green;
+    if (similarity >= 0.8) return Colors.lightGreen;
+    if (similarity >= 0.7) return Colors.orange;
+    return Colors.red;
+  }
+
+  /// 获取搜索类型标签
+  String _getSearchTypeLabel(String searchType) {
+    switch (searchType) {
+      case 'vector':
+        return '向量搜索';
+      case 'keyword':
+        return '关键词搜索';
+      case 'hybrid':
+        return '混合搜索';
+      default:
+        return '未知';
+    }
+  }
+
+  /// 高亮搜索词
+  String _highlightSearchTerms(String content, String query) {
+    // 简单实现，实际应该使用RichText来高亮显示
+    return content;
+  }
+
+  /// 显示文本块详情
+  void _showChunkDetail(SearchResultItem result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('文本块详情 (第${result.chunkIndex + 1}段)'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '相似度: ${(result.similarity * 100).toStringAsFixed(2)}%',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '字符数: ${result.metadata['characterCount'] ?? 'N/A'}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              const Text('内容:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(result.content),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+          TextButton(
+            onPressed: () {
+              _copyChunkContent(result.content);
+              Navigator.of(context).pop();
+            },
+            child: const Text('复制'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 复制文本块内容
+  void _copyChunkContent(String content) {
+    // TODO: 实现复制到剪贴板功能
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('内容已复制到剪贴板')));
+  }
+
+  /// 构建统计信息网格
+  Widget _buildStatsGrid(Map<String, dynamic> stats) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 2.5,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      children: [
+        _buildStatCard(
+          '总文档数',
+          '${stats['totalDocuments'] ?? 0}',
+          Icons.description,
+          Colors.blue,
+        ),
+        _buildStatCard(
+          '已完成',
+          '${stats['completedDocuments'] ?? 0}',
+          Icons.check_circle,
+          Colors.green,
+        ),
+        _buildStatCard(
+          '文本块数',
+          '${stats['totalChunks'] ?? 0}',
+          Icons.view_module,
+          Colors.orange,
+        ),
+        _buildStatCard(
+          '向量化',
+          '${stats['chunksWithEmbeddings'] ?? 0}',
+          Icons.scatter_plot,
+          Colors.purple,
+        ),
+      ],
+    );
+  }
+
+  /// 构建统计卡片
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withAlpha(26),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(77)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

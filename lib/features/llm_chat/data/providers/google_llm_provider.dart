@@ -7,26 +7,15 @@ import '../../domain/providers/llm_provider.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
 class GoogleLlmProvider extends LlmProvider {
-  late final google_ai.GenerativeModel _model;
-  late final google_ai.GenerativeModel _visionModel;
-  late final google_ai.GenerativeModel _embeddingModel;
+  // 使用惰性初始化，避免在未使用时提前创建模型实例
+  google_ai.GenerativeModel? _model;
+  google_ai.GenerativeModel? _visionModel;
+  google_ai.GenerativeModel? _embeddingModel;
 
   GoogleLlmProvider(super.config) {
     if (config.apiKey.isEmpty) {
       throw ApiException('Google API key is not configured.');
     }
-    _model = google_ai.GenerativeModel(
-      model: config.defaultModel ?? 'gemini-pro',
-      apiKey: config.apiKey,
-    );
-    _visionModel = google_ai.GenerativeModel(
-      model: 'gemini-pro-vision',
-      apiKey: config.apiKey,
-    );
-    _embeddingModel = google_ai.GenerativeModel(
-      model: config.defaultEmbeddingModel ?? 'embedding-001',
-      apiKey: config.apiKey,
-    );
   }
 
   @override
@@ -119,8 +108,9 @@ class GoogleLlmProvider extends LlmProvider {
           content: response.text,
           isDone: response.candidates.isNotEmpty,
           model: modelName,
-          finishReason:
-              _mapFinishReason(response.candidates.first.finishReason),
+          finishReason: _mapFinishReason(
+            response.candidates.first.finishReason,
+          ),
           tokenUsage: TokenUsage(
             inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
             outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
@@ -137,15 +127,20 @@ class GoogleLlmProvider extends LlmProvider {
   Future<EmbeddingResult> generateEmbeddings(List<String> texts) async {
     try {
       final requests = texts
-          .map((text) =>
-              google_ai.EmbedContentRequest(google_ai.Content.text(text)))
+          .map(
+            (text) =>
+                google_ai.EmbedContentRequest(google_ai.Content.text(text)),
+          )
           .toList();
-      final response = await _embeddingModel.batchEmbedContents(requests);
+      final response = await _getEmbeddingModel().batchEmbedContents(requests);
       return EmbeddingResult(
         embeddings: response.embeddings.map((e) => e.values).toList(),
         model: config.defaultEmbeddingModel ?? 'embedding-001',
         tokenUsage: const TokenUsage(
-            inputTokens: 0, outputTokens: 0, totalTokens: 0), // Not provided by API
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+        ), // Not provided by API
       );
     } catch (e) {
       throw _handleException(e);
@@ -175,10 +170,31 @@ class GoogleLlmProvider extends LlmProvider {
     // No resources to dispose
   }
 
+  // ========= 惰性获取各类型模型 =========
+  google_ai.GenerativeModel _getChatModel() =>
+      _model ??= google_ai.GenerativeModel(
+        model: config.defaultModel ?? 'gemini-pro',
+        apiKey: config.apiKey,
+      );
+
+  google_ai.GenerativeModel _getVisionModel() =>
+      _visionModel ??= google_ai.GenerativeModel(
+        model: 'gemini-pro-vision',
+        apiKey: config.apiKey,
+      );
+
+  google_ai.GenerativeModel _getEmbeddingModel() =>
+      _embeddingModel ??= google_ai.GenerativeModel(
+        model: config.defaultEmbeddingModel ?? 'embedding-001',
+        apiKey: config.apiKey,
+      );
+
   (google_ai.GenerativeModel, List<google_ai.Content>, String) _prepareRequest(
-      List<ChatMessage> messages, ChatOptions? options) {
+    List<ChatMessage> messages,
+    ChatOptions? options,
+  ) {
     var hasImages = messages.any((m) => m.imageUrls.isNotEmpty);
-    final model = hasImages ? _visionModel : _model;
+    final model = hasImages ? _getVisionModel() : _getChatModel();
     final modelName = hasImages
         ? 'gemini-pro-vision'
         : (options?.model ?? config.defaultModel ?? 'gemini-pro');
@@ -186,8 +202,12 @@ class GoogleLlmProvider extends LlmProvider {
     final content = messages.map((m) {
       if (m.imageUrls.isNotEmpty) {
         final List<google_ai.Part> parts = m.imageUrls
-            .map((url) => google_ai.DataPart(
-                'image/jpeg', Uri.parse(url).data!.contentAsBytes()))
+            .map(
+              (url) => google_ai.DataPart(
+                'image/jpeg',
+                Uri.parse(url).data!.contentAsBytes(),
+              ),
+            )
             .toList();
         parts.add(google_ai.TextPart(m.content));
         return google_ai.Content.multi(parts);

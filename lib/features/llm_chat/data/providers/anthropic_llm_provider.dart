@@ -8,6 +8,7 @@ import '../../domain/providers/llm_provider.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
 class AnthropicLlmProvider implements LlmProvider {
+  static final Map<String, http.Client> _clientPool = {};
   @override
   final LlmConfig config;
   late final http.Client _httpClient;
@@ -18,7 +19,7 @@ class AnthropicLlmProvider implements LlmProvider {
     if (config.apiKey.isEmpty) {
       throw ApiException('Anthropic API key is not configured.');
     }
-    _httpClient = http.Client();
+    _httpClient = _clientPool.putIfAbsent(config.apiKey, () => http.Client());
   }
 
   @override
@@ -111,7 +112,15 @@ class AnthropicLlmProvider implements LlmProvider {
 
   @override
   void dispose() {
-    _httpClient.close();
+    // 使用连接池，不在此处关闭客户端
+  }
+
+  /// 关闭并清理所有共享的 http.Client
+  static void disposeAllClients() {
+    for (final client in _clientPool.values) {
+      client.close();
+    }
+    _clientPool.clear();
   }
 
   Map<String, dynamic> _prepareRequest(

@@ -14,6 +14,7 @@ import 'tables/chat_sessions_table.dart';
 import 'tables/chat_messages_table.dart';
 import 'tables/knowledge_documents_table.dart';
 import 'tables/knowledge_chunks_table.dart';
+import 'tables/knowledge_base_configs_table.dart';
 import 'tables/custom_models_table.dart';
 
 part 'app_database.g.dart';
@@ -34,14 +35,36 @@ part 'app_database.g.dart';
     ChatMessagesTable,
     KnowledgeDocumentsTable,
     KnowledgeChunksTable,
+    KnowledgeBaseConfigsTable,
     CustomModelsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(_openConnection()) {
+    // 预编译常用查询，减少运行期生成对象的开销
+    _enabledPersonasQuery = (select(personasTable)
+      ..where((t) => t.isEnabled.equals(true))
+      ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]));
+
+    _activeSessionsQuery = (select(chatSessionsTable)
+      ..where((t) => t.isArchived.equals(false))
+      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]));
+  }
+
+  // ---------- 内存缓存 ----------
+  final Map<String, PersonasTableData> _personaCache = {};
+
+  // ---------- 预编译查询 ----------
+  late final SimpleSelectStatement<$PersonasTableTable, PersonasTableData>
+  _enabledPersonasQuery;
+  late final SimpleSelectStatement<
+    $ChatSessionsTableTable,
+    ChatSessionsTableData
+  >
+  _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -51,43 +74,46 @@ class AppDatabase extends _$AppDatabase {
         await _insertDefaultData();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        if (from < 2) {
-          // 旧版本缺失自定义模型表与分组表，一并创建
-          await m.createTable(personaGroupsTable);
-          await m.createTable(customModelsTable);
-        }
-
-        if (from < 3) {
-          // 先确保表存在（早期版本可能遗漏该表）
-          try {
-            await m.addColumn(customModelsTable, customModelsTable.configId);
-          } catch (_) {
-            // 若表不存在（或其它 ALTER 失败），直接创建整张表
+        // 使用事务包裹所有迁移，防止中途失败导致部分状态
+        await transaction(() async {
+          if (from < 2) {
+            await m.createTable(personaGroupsTable);
             await m.createTable(customModelsTable);
           }
-        }
-
-        if (from < 4) {
-          // 添加思考链相关字段到聊天消息表
-          try {
-            await m.addColumn(
-              chatMessagesTable,
-              chatMessagesTable.thinkingContent,
-            );
-            await m.addColumn(
-              chatMessagesTable,
-              chatMessagesTable.thinkingComplete,
-            );
-            await m.addColumn(chatMessagesTable, chatMessagesTable.modelName);
-          } catch (e) {
-            // 如果添加字段失败，可能是表结构问题，记录错误但继续
-            debugPrint('Failed to add thinking chain columns: $e');
+          if (from < 3) {
+            try {
+              await m.addColumn(customModelsTable, customModelsTable.configId);
+            } catch (_) {
+              await m.createTable(customModelsTable);
+            }
           }
-        }
+          if (from < 4) {
+            try {
+              await m.addColumn(
+                chatMessagesTable,
+                chatMessagesTable.thinkingContent,
+              );
+              await m.addColumn(
+                chatMessagesTable,
+                chatMessagesTable.thinkingComplete,
+              );
+              await m.addColumn(chatMessagesTable, chatMessagesTable.modelName);
+            } catch (e) {
+              debugPrint('Failed to add thinking chain columns: $e');
+            }
+          }
+          if (from < 5) {
+            try {
+              await m.createTable(knowledgeBaseConfigsTable);
+            } catch (e) {
+              debugPrint('Failed to create knowledge base configs table: $e');
+            }
+          }
+        });
       },
       beforeOpen: (details) async {
-        // 启用外键约束
         await customStatement('PRAGMA foreign_keys = ON');
+        await customStatement('PRAGMA optimize');
       },
     );
   }
@@ -170,12 +196,9 @@ class AppDatabase extends _$AppDatabase {
     )..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)])).get();
   }
 
-  /// 获取启用的智能体
+  /// 获取启用的智能体（使用预编译查询）
   Future<List<PersonasTableData>> getEnabledPersonas() {
-    return (select(personasTable)
-          ..where((t) => t.isEnabled.equals(true))
-          ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]))
-        .get();
+    return _enabledPersonasQuery.get();
   }
 
   /// 根据ID获取智能体
@@ -205,8 +228,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// 插入或更新智能体
-  Future<void> upsertPersona(PersonasTableCompanion persona) {
-    return into(personasTable).insertOnConflictUpdate(persona);
+  Future<void> upsertPersona(PersonasTableCompanion persona) async {
+    await into(personasTable).insertOnConflictUpdate(persona);
+    if (persona.id.present) _clearPersonaCache(persona.id.value);
   }
 
   /// 删除智能体
@@ -288,12 +312,9 @@ class AppDatabase extends _$AppDatabase {
     )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).get();
   }
 
-  /// 获取活跃的聊天会话
+  /// 获取活跃的聊天会话（使用预编译查询）
   Future<List<ChatSessionsTableData>> getActiveChatSessions() {
-    return (select(chatSessionsTable)
-          ..where((t) => t.isArchived.equals(false))
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-        .get();
+    return _activeSessionsQuery.get();
   }
 
   /// 根据智能体ID获取聊天会话
@@ -452,6 +473,256 @@ class AppDatabase extends _$AppDatabase {
       customModelsTable,
     )..where((t) => t.configId.equals(configId))).get();
   }
+
+  // ==================== 知识库配置相关查询 ====================
+
+  /// 获取所有知识库配置
+  Future<List<KnowledgeBaseConfigsTableData>> getAllKnowledgeBaseConfigs() {
+    return (select(
+      knowledgeBaseConfigsTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).get();
+  }
+
+  /// 获取默认知识库配置
+  Future<KnowledgeBaseConfigsTableData?> getDefaultKnowledgeBaseConfig() {
+    return (select(
+      knowledgeBaseConfigsTable,
+    )..where((t) => t.isDefault.equals(true))).getSingleOrNull();
+  }
+
+  /// 根据ID获取知识库配置
+  Future<KnowledgeBaseConfigsTableData?> getKnowledgeBaseConfigById(String id) {
+    return (select(
+      knowledgeBaseConfigsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  /// 插入或更新知识库配置
+  Future<void> upsertKnowledgeBaseConfig(
+    KnowledgeBaseConfigsTableCompanion config,
+  ) {
+    return into(knowledgeBaseConfigsTable).insertOnConflictUpdate(config);
+  }
+
+  /// 删除知识库配置
+  Future<int> deleteKnowledgeBaseConfig(String id) {
+    return (delete(
+      knowledgeBaseConfigsTable,
+    )..where((t) => t.id.equals(id))).go();
+  }
+
+  /// 设置默认知识库配置
+  Future<void> setDefaultKnowledgeBaseConfig(String configId) async {
+    // 先取消所有默认配置
+    await (update(knowledgeBaseConfigsTable)).write(
+      const KnowledgeBaseConfigsTableCompanion(
+        isDefault: Value(false),
+        updatedAt: Value.absent(),
+      ),
+    );
+
+    // 设置新的默认配置
+    await (update(
+      knowledgeBaseConfigsTable,
+    )..where((t) => t.id.equals(configId))).write(
+      KnowledgeBaseConfigsTableCompanion(
+        isDefault: const Value(true),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // ==================== 知识库文本块相关查询 ====================
+
+  /// 获取文档的所有文本块
+  Future<List<KnowledgeChunksTableData>> getChunksByDocument(
+    String documentId,
+  ) {
+    return (select(knowledgeChunksTable)
+          ..where((t) => t.documentId.equals(documentId))
+          ..orderBy([(t) => OrderingTerm.asc(t.chunkIndex)]))
+        .get();
+  }
+
+  /// 插入文本块
+  Future<void> insertKnowledgeChunk(KnowledgeChunksTableCompanion chunk) {
+    return into(knowledgeChunksTable).insert(chunk);
+  }
+
+  /// 批量插入文本块
+  Future<void> insertKnowledgeChunks(
+    List<KnowledgeChunksTableCompanion> chunks,
+  ) {
+    return batch((batch) {
+      batch.insertAll(knowledgeChunksTable, chunks);
+    });
+  }
+
+  /// 删除文档的所有文本块
+  Future<int> deleteChunksByDocument(String documentId) {
+    return (delete(
+      knowledgeChunksTable,
+    )..where((t) => t.documentId.equals(documentId))).go();
+  }
+
+  /// 更新文本块的嵌入向量
+  Future<void> updateChunkEmbedding(String chunkId, String embedding) {
+    return (update(knowledgeChunksTable)..where((t) => t.id.equals(chunkId)))
+        .write(KnowledgeChunksTableCompanion(embedding: Value(embedding)));
+  }
+
+  /// 获取所有有嵌入向量的文本块
+  Future<List<KnowledgeChunksTableData>> getChunksWithEmbeddings() {
+    return (select(
+      knowledgeChunksTable,
+    )..where((t) => t.embedding.isNotNull())).get();
+  }
+
+  /// 搜索相似文本块（基于内容的简单搜索，后续会被向量搜索替换）
+  Future<List<KnowledgeChunksTableData>> searchChunks(String query) {
+    final lowerQuery = query.toLowerCase();
+    return (select(
+      knowledgeChunksTable,
+    )..where((t) => t.content.lower().contains(lowerQuery))).get();
+  }
+
+  // ---------- 新增分页、计数优化 ----------
+  /// 分页获取会话消息
+  Future<List<ChatMessagesTableData>> getMessagesBySessionPaged(
+    String sessionId, {
+    int offset = 0,
+    int limit = 50,
+  }) {
+    return (select(chatMessagesTable)
+          ..where((t) => t.chatSessionId.equals(sessionId))
+          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)])
+          ..limit(limit, offset: offset))
+        .get();
+  }
+
+  /// 获取会话消息数量（仅返回计数）
+  Future<int> getMessageCountBySession(String sessionId) async {
+    final countExp = chatMessagesTable.id.count();
+    final query = selectOnly(chatMessagesTable)
+      ..addColumns([countExp])
+      ..where(chatMessagesTable.chatSessionId.equals(sessionId));
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
+  }
+
+  // ---------- 批量操作 ----------
+  /// 批量更新多条消息状态
+  Future<void> updateMultipleMessageStatus(
+    List<String> messageIds,
+    String status,
+  ) async {
+    await batch((batch) {
+      for (final id in messageIds) {
+        batch.update(
+          chatMessagesTable,
+          ChatMessagesTableCompanion(status: Value(status)),
+          where: (t) => t.id.equals(id),
+        );
+      }
+    });
+  }
+
+  /// 批量删除会话及其消息
+  Future<void> deleteChatSessionBatch(List<String> sessionIds) async {
+    await transaction(() async {
+      // 先删除消息
+      for (final sId in sessionIds) {
+        await (delete(
+          chatMessagesTable,
+        )..where((t) => t.chatSessionId.equals(sId))).go();
+      }
+      // 再删除会话
+      await batch((b) {
+        for (final sId in sessionIds) {
+          b.deleteWhere(chatSessionsTable, (t) => t.id.equals(sId));
+        }
+      });
+    });
+  }
+
+  /// 分批插入知识库文本块，避免一次性事务过大
+  Future<void> insertKnowledgeChunksBatch(
+    List<KnowledgeChunksTableCompanion> chunks, {
+    int batchSize = 100,
+  }) async {
+    for (var i = 0; i < chunks.length; i += batchSize) {
+      final sub = chunks.skip(i).take(batchSize).toList();
+      await batch((b) {
+        b.insertAll(knowledgeChunksTable, sub);
+      });
+    }
+  }
+
+  // ---------- 缓存辅助 ----------
+  Future<PersonasTableData?> getPersonaByIdCached(String id) async {
+    if (_personaCache.containsKey(id)) return _personaCache[id];
+    final persona = await getPersonaById(id);
+    if (persona != null) _personaCache[id] = persona;
+    return persona;
+  }
+
+  void _clearPersonaCache([String? id]) {
+    if (id != null) {
+      _personaCache.remove(id);
+    } else {
+      _personaCache.clear();
+    }
+  }
+
+  // ---------- 流式查询 ----------
+  Stream<List<ChatMessagesTableData>> watchMessagesBySession(String sessionId) {
+    return (select(chatMessagesTable)
+          ..where((t) => t.chatSessionId.equals(sessionId))
+          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
+        .watch();
+  }
+
+  // ---------- 优化搜索 ----------
+  Future<List<PersonasTableData>> searchPersonasOptimized(String query) {
+    if (query.length < 2) return Future.value([]);
+    final lower = query.toLowerCase();
+    return (select(personasTable)
+          ..where(
+            (t) =>
+                t.name.lower().contains(lower) |
+                t.description.lower().contains(lower),
+          )
+          ..limit(20))
+        .get();
+  }
+
+  Future<List<KnowledgeChunksTableData>> searchChunksOptimized(
+    String query, {
+    int limit = 10,
+  }) {
+    if (query.length < 3) return Future.value([]);
+    final lower = query.toLowerCase();
+    return (select(knowledgeChunksTable)
+          ..where((t) => t.content.lower().contains(lower))
+          ..limit(limit))
+        .get();
+  }
+
+  // ---------- 仪表盘统计 ----------
+  Future<Map<String, int>> getDashboardStatsBatch() async {
+    final results = await Future.wait([
+      getChatSessionCount(),
+      getMessageCount(),
+      getPersonaCount(),
+      getKnowledgeDocumentCount(),
+    ]);
+    return {
+      'sessions': results[0],
+      'messages': results[1],
+      'personas': results[2],
+      'documents': results[3],
+    };
+  }
 }
 
 /// 打开数据库连接
@@ -459,6 +730,15 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, AppConstants.databaseName));
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase.createInBackground(
+      file,
+      setup: (db) {
+        db.execute('PRAGMA journal_mode=WAL');
+        db.execute('PRAGMA synchronous=NORMAL');
+        db.execute('PRAGMA cache_size=10000');
+        db.execute('PRAGMA temp_store=MEMORY');
+        db.execute('PRAGMA mmap_size=134217728'); // 128MB
+      },
+    );
   });
 }

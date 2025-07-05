@@ -31,8 +31,21 @@ class OpenAiLlmProvider extends LlmProvider {
     }
   }
 
+  // ===== 缓存模型列表，减少频繁的网络请求 =====
+  List<ModelInfo>? _cachedModels;
+  DateTime? _cacheTime;
+  static const Duration _cacheExpiry = Duration(hours: 1);
+
   @override
   Future<List<ModelInfo>> listModels() async {
+    // 如果缓存仍然有效，直接返回缓存数据
+    final now = DateTime.now();
+    if (_cachedModels != null &&
+        _cacheTime != null &&
+        now.difference(_cacheTime!) < _cacheExpiry) {
+      return _cachedModels!;
+    }
+
     try {
       // 调用 OpenAI 列出模型 API
       final models = await OpenAI.instance.model.list();
@@ -50,29 +63,35 @@ class OpenAiLlmProvider extends LlmProvider {
       // 若 API 返回空，降级到静态列表
       if (result.isEmpty) throw Exception('empty');
 
+      // 写入缓存
+      _cachedModels = result;
+      _cacheTime = now;
       return result;
     } catch (_) {
-      // 返回预定义的少量静态模型作为兜底
-      return [
-        const ModelInfo(
+      // 返回静态列表作为兜底，并写入缓存，避免连续失败导致重复请求
+      const fallback = <ModelInfo>[
+        ModelInfo(
           id: 'gpt-3.5-turbo',
           name: 'gpt-3.5-turbo',
           type: ModelType.chat,
           supportsStreaming: true,
         ),
-        const ModelInfo(
+        ModelInfo(
           id: 'gpt-4o',
           name: 'gpt-4o',
           type: ModelType.chat,
           supportsStreaming: true,
         ),
-        const ModelInfo(
+        ModelInfo(
           id: 'text-embedding-3-small',
           name: 'text-embedding-3-small',
           type: ModelType.embedding,
           supportsStreaming: false,
         ),
       ];
+      _cachedModels = fallback;
+      _cacheTime = now;
+      return fallback;
     }
   }
 

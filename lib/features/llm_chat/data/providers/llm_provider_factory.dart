@@ -10,19 +10,34 @@ import '../../../settings/domain/entities/app_settings.dart';
 ///
 /// 负责根据配置创建相应的LLM Provider实例
 class LlmProviderFactory {
+  // Provider 缓存，避免重复创建实例
+  static final Map<String, LlmProvider> _providerCache = {};
+
   /// 创建LLM Provider实例
   static LlmProvider createProvider(LlmConfig config) {
+    final cacheKey = '${config.provider}_${config.apiKey.hashCode}';
+
+    // 优先返回缓存实例
+    final cached = _providerCache[cacheKey];
+    if (cached != null) return cached;
+
+    late final LlmProvider provider;
     switch (config.provider.toLowerCase()) {
       case 'openai':
-        return OpenAiLlmProvider(config);
+        provider = OpenAiLlmProvider(config);
+        break;
       case 'google':
-        return GoogleLlmProvider(config);
+        provider = GoogleLlmProvider(config);
+        break;
       case 'anthropic':
-        return AnthropicLlmProvider(config);
-
+        provider = AnthropicLlmProvider(config);
+        break;
       default:
         throw ApiException('不支持的AI供应商: ${config.provider}');
     }
+
+    _providerCache[cacheKey] = provider;
+    return provider;
   }
 
   /// 从AppSettings创建LLM Provider实例
@@ -194,6 +209,14 @@ class LlmProviderFactory {
     }
 
     return true;
+  }
+
+  /// 释放并清理所有缓存的 Provider
+  static void clearCache() {
+    for (final provider in _providerCache.values) {
+      provider.dispose();
+    }
+    _providerCache.clear();
   }
 }
 

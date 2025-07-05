@@ -1,5 +1,120 @@
 import 'package:flutter/material.dart';
 
+/// 知识库配置实体
+class KnowledgeBaseConfig {
+  /// 配置ID
+  final String id;
+
+  /// 配置名称
+  final String name;
+
+  /// 嵌入模型ID
+  final String embeddingModelId;
+
+  /// 嵌入模型名称
+  final String embeddingModelName;
+
+  /// 嵌入模型提供商
+  final String embeddingModelProvider;
+
+  /// 分块大小
+  final int chunkSize;
+
+  /// 分块重叠
+  final int chunkOverlap;
+
+  /// 最大检索结果数
+  final int maxRetrievedChunks;
+
+  /// 相似度阈值
+  final double similarityThreshold;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+
+  const KnowledgeBaseConfig({
+    required this.id,
+    required this.name,
+    required this.embeddingModelId,
+    required this.embeddingModelName,
+    required this.embeddingModelProvider,
+    this.chunkSize = 1000,
+    this.chunkOverlap = 200,
+    this.maxRetrievedChunks = 5,
+    this.similarityThreshold = 0.7,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  /// 复制并修改
+  KnowledgeBaseConfig copyWith({
+    String? id,
+    String? name,
+    String? embeddingModelId,
+    String? embeddingModelName,
+    String? embeddingModelProvider,
+    int? chunkSize,
+    int? chunkOverlap,
+    int? maxRetrievedChunks,
+    double? similarityThreshold,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return KnowledgeBaseConfig(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      embeddingModelId: embeddingModelId ?? this.embeddingModelId,
+      embeddingModelName: embeddingModelName ?? this.embeddingModelName,
+      embeddingModelProvider:
+          embeddingModelProvider ?? this.embeddingModelProvider,
+      chunkSize: chunkSize ?? this.chunkSize,
+      chunkOverlap: chunkOverlap ?? this.chunkOverlap,
+      maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
+      similarityThreshold: similarityThreshold ?? this.similarityThreshold,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  /// 转换为JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'embeddingModelId': embeddingModelId,
+      'embeddingModelName': embeddingModelName,
+      'embeddingModelProvider': embeddingModelProvider,
+      'chunkSize': chunkSize,
+      'chunkOverlap': chunkOverlap,
+      'maxRetrievedChunks': maxRetrievedChunks,
+      'similarityThreshold': similarityThreshold,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  /// 从JSON创建
+  factory KnowledgeBaseConfig.fromJson(Map<String, dynamic> json) {
+    return KnowledgeBaseConfig(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      embeddingModelId: json['embeddingModelId'] as String,
+      embeddingModelName: json['embeddingModelName'] as String,
+      embeddingModelProvider: json['embeddingModelProvider'] as String,
+      chunkSize: json['chunkSize'] as int? ?? 1000,
+      chunkOverlap: json['chunkOverlap'] as int? ?? 200,
+      maxRetrievedChunks: json['maxRetrievedChunks'] as int? ?? 5,
+      similarityThreshold:
+          (json['similarityThreshold'] as num?)?.toDouble() ?? 0.7,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
+}
+
 /// 知识库文档实体
 class KnowledgeDocument {
   /// 文档唯一标识符
