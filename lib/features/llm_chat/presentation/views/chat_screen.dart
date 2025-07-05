@@ -9,6 +9,7 @@ import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'widgets/message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
+import 'widgets/message_options_button.dart';
 
 /// 聊天界面
 ///
@@ -568,38 +569,52 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(width: 10),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? colorScheme.primaryContainer
-                    : colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16).copyWith(
-                  bottomLeft: isUser
-                      ? const Radius.circular(16)
-                      : const Radius.circular(4),
-                  bottomRight: isUser
-                      ? const Radius.circular(4)
-                      : const Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MessageContentWidget(message: message),
-                  const SizedBox(height: 6),
-                  Text(
-                    _formatTimestamp(message.timestamp),
-                    style: textTheme.bodySmall?.copyWith(
-                      color:
-                          (isUser
-                                  ? colorScheme.onPrimaryContainer
-                                  : colorScheme.onSurface)
-                              .withAlpha(153),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 40, // 预留按钮空间
+                    top: 20, // 顶部留白避免重叠
+                    bottom: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isUser
+                        ? colorScheme.primaryContainer
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16).copyWith(
+                      bottomLeft: isUser
+                          ? const Radius.circular(16)
+                          : const Radius.circular(4),
+                      bottomRight: isUser
+                          ? const Radius.circular(4)
+                          : const Radius.circular(16),
                     ),
                   ),
-                ],
-              ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MessageContentWidget(message: message),
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatTimestamp(message.timestamp),
+                        style: textTheme.bodySmall?.copyWith(
+                          color:
+                              (isUser
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSurface)
+                                  .withAlpha(153),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 4,
+                  child: MessageOptionsButton(message: message),
+                ),
+              ],
             ),
           ),
           if (isUser) ...[
