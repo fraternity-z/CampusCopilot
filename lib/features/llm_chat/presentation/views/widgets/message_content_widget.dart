@@ -7,9 +7,11 @@ import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart' as highlight;
 import 'package:markdown/markdown.dart' as md;
+import 'package:markdown/markdown.dart' show InlineSyntax;
 import '../../../../../app/app_router.dart';
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 /// 消息内容渲染组件
 ///
@@ -31,6 +33,9 @@ class MessageContentWidget extends ConsumerStatefulWidget {
 }
 
 class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
+  // 缓存分离后的内容，减少重复计算
+  Map<String, String?>? _cachedSeparatedContent;
+  String? _lastProcessedContent;
   MarkdownStyleSheet? _cachedStyleSheet;
   ThemeData? _lastTheme;
 
@@ -39,8 +44,15 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final generalSettings = ref.watch(generalSettingsProvider);
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
 
-    // 分离思考链和正文内容
-    final separated = _separateThinkingAndContent(widget.message.content);
+    // 仅在内容变化时重新分离思考链与正文
+    if (_lastProcessedContent != widget.message.content) {
+      _cachedSeparatedContent = _separateThinkingAndContent(
+        widget.message.content,
+      );
+      _lastProcessedContent = widget.message.content;
+    }
+
+    final separated = _cachedSeparatedContent!;
     final thinkingContent = separated['thinking'];
     final actualContent = separated['content'] ?? widget.message.content;
 
@@ -80,21 +92,11 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             isCompleted: true, // UI层面分离时总是完整的
           ),
         // 主要内容
-        MarkdownBody(
-          data: _preprocessMathContent(actualContent),
-          selectable: true,
+        _buildContentWithMath(
+          context: context,
+          content: actualContent,
           styleSheet: _getMarkdownStyleSheet(context),
-          builders: {
-            'code': CodeBlockBuilder(
-              codeBlockSettings: codeBlockSettings,
-              isFromUser: widget.message.isFromUser,
-            ),
-            'pre': CodeBlockBuilder(
-              codeBlockSettings: codeBlockSettings,
-              isFromUser: widget.message.isFromUser,
-            ),
-          },
-          extensionSet: md.ExtensionSet.gitHubFlavored,
+          codeBlockSettings: codeBlockSettings,
         ),
       ],
     );
@@ -149,13 +151,6 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
   }
 
-  /// 预处理数学内容，检测LaTeX命令并替换为占位符
-  String _preprocessMathContent(String content) {
-    // 暂时移除复杂的数学公式处理，避免解析错误
-    // 后续可以添加更安全的数学公式渲染方案
-    return content;
-  }
-
   /// 从内容中分离思考链和正文
   Map<String, String?> _separateThinkingAndContent(String content) {
     String? thinkingContent;
@@ -178,6 +173,108 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     }
 
     return {'thinking': thinkingContent, 'content': actualContent};
+  }
+
+  /// 渲染带块级数学公式的内容。
+  /// 规则：使用正则表达式按 $$$$ 分割，公式部分使用 [Math.tex] 渲染，其他部分使用 MarkdownBody。
+  Widget _buildContentWithMath({
+    required BuildContext context,
+    required String content,
+    required MarkdownStyleSheet styleSheet,
+    required CodeBlockSettings codeBlockSettings,
+  }) {
+    // 先将 \\[..\\] 格式的公式统一转换为 $$..$$，便于后续统一处理
+    final normalizedContent = content.replaceAllMapped(
+      RegExp(r'\\\[(.*?)\\\]', dotAll: true),
+      (match) => '\$\$${match.group(1)}\$\$',
+    );
+
+    final regex = RegExp(r'\$\$(.*?)\$\$', dotAll: true);
+    final segments = <Widget>[];
+
+    int lastEnd = 0;
+    for (final match in regex.allMatches(normalizedContent)) {
+      // Markdown 片段
+      if (match.start > lastEnd) {
+        final markdownText = normalizedContent.substring(lastEnd, match.start);
+        if (markdownText.trim().isNotEmpty) {
+          segments.add(
+            MarkdownBody(
+              data: markdownText,
+              selectable: true,
+              styleSheet: styleSheet,
+              inlineSyntaxes: [InlineLatexSyntax()],
+              builders: {
+                'code': CodeBlockBuilder(
+                  codeBlockSettings: codeBlockSettings,
+                  isFromUser: widget.message.isFromUser,
+                ),
+                'pre': CodeBlockBuilder(
+                  codeBlockSettings: codeBlockSettings,
+                  isFromUser: widget.message.isFromUser,
+                ),
+                'inline_math': InlineLatexBuilder(),
+              },
+              extensionSet: md.ExtensionSet.gitHubFlavored,
+            ),
+          );
+        }
+      }
+
+      // 数学公式片段
+      final mathContent = match.group(1) ?? '';
+      if (mathContent.trim().isNotEmpty) {
+        segments.add(
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Math.tex(
+              mathContent,
+              mathStyle: MathStyle.display,
+              textStyle: Theme.of(context).textTheme.bodyMedium,
+              onErrorFallback: (FlutterMathException e) {
+                // 出现解析错误时，降级为普通文本显示
+                // ignore: unnecessary_brace_in_string_interps
+                return Text('\$\$${mathContent}\$\$');
+              },
+            ),
+          ),
+        );
+      }
+
+      lastEnd = match.end;
+    }
+
+    // 处理最后的 Markdown 片段
+    if (lastEnd < normalizedContent.length) {
+      final markdownText = normalizedContent.substring(lastEnd);
+      if (markdownText.trim().isNotEmpty) {
+        segments.add(
+          MarkdownBody(
+            data: markdownText,
+            selectable: true,
+            styleSheet: styleSheet,
+            inlineSyntaxes: [InlineLatexSyntax()],
+            builders: {
+              'code': CodeBlockBuilder(
+                codeBlockSettings: codeBlockSettings,
+                isFromUser: widget.message.isFromUser,
+              ),
+              'pre': CodeBlockBuilder(
+                codeBlockSettings: codeBlockSettings,
+                isFromUser: widget.message.isFromUser,
+              ),
+              'inline_math': InlineLatexBuilder(),
+            },
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: segments,
+    );
   }
 }
 
@@ -590,5 +687,30 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   String _getLanguageDisplayName(String language) {
     return _languageInfoMap[language.toLowerCase()]?.displayName ??
         language.toUpperCase();
+  }
+}
+
+/// 行内数学公式语法，例如 $a^2 + b^2=c^2$
+class InlineLatexSyntax extends InlineSyntax {
+  InlineLatexSyntax() : super(r'\$(?!\$)(.+?)(?<!\$)\$');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final mathContent = match.group(1)!;
+    parser.addNode(md.Element.text('inline_math', mathContent));
+    return true;
+  }
+}
+
+/// 行内数学公式Builder，将 Element 渲染为 Math.tex
+class InlineLatexBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    return Math.tex(
+      element.textContent,
+      mathStyle: MathStyle.text,
+      textStyle: preferredStyle,
+      onErrorFallback: (e) => Text(element.textContent),
+    );
   }
 }
