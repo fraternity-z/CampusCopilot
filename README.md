@@ -284,7 +284,7 @@ flutter test --coverage
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+本项目采用Apache License 2.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
 ## 🙏 致谢
 
@@ -297,21 +297,10 @@ flutter test --coverage
 - [Google AI](https://ai.google/) - Gemini模型服务
 - [Anthropic](https://anthropic.com/) - Claude模型服务
 
-## 📞 联系我们
-
-- 🌐 项目主页: [GitHub Repository](https://github.com/your-repo/anywherechat)
-- 🐛 问题反馈: [Issues](https://github.com/your-repo/anywherechat/issues)
-- 💬 讨论交流: [Discussions](https://github.com/your-repo/anywherechat/discussions)
-- 📧 邮件联系: [your-email@example.com](mailto:your-email@example.com)
-
 ---
 
 <div align="center">
 
 **AnywhereChat** - 让AI助手无处不在 🚀
-
-Made with ❤️ by the AnywhereChat Team
-
-[⭐ Star](https://github.com/your-repo/anywherechat) | [🍴 Fork](https://github.com/your-repo/anywherechat/fork) | [📖 Docs](docs/) | [🐛 Issues](https://github.com/your-repo/anywherechat/issues)
 
 </div>

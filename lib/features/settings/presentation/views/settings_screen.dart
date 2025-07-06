@@ -57,6 +57,14 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             _buildSettingsModule(
               context,
+              icon: Icons.folder,
+              title: '知识库',
+              subtitle: '管理文档、索引与向量搜索',
+              onTap: () => context.push('/knowledge'),
+            ),
+            const SizedBox(height: 12),
+            _buildSettingsModule(
+              context,
               icon: Icons.info,
               title: '关于',
               subtitle: '版本信息、帮助文档',

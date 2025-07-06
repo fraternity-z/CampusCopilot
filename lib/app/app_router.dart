@@ -255,11 +255,11 @@ class MainShell extends ConsumerWidget {
 
     // 检查当前路由是否是设置页面，避免遮挡返回键
     final currentRoute = GoRouterState.of(context).uri.path;
-    final isSettingsPage = currentRoute.startsWith('/settings');
+    final isChatPage = currentRoute.startsWith('/chat');
 
     return Scaffold(
       // 添加浮动ActionButton来展开侧边栏 - 但在设置页面时不显示
-      floatingActionButton: (isCollapsed && !isSettingsPage)
+      floatingActionButton: (isCollapsed && isChatPage)
           ? FloatingActionButton(
               mini: true,
               onPressed: () {

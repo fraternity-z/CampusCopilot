@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_router.dart';
-import 'theme/app_theme.dart';
+import '../shared/theme/app_theme.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/settings/domain/entities/app_settings.dart' as app_settings;
 
