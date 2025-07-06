@@ -873,41 +873,111 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               },
                             ),
                             const SizedBox(width: 8),
-                            // 发送按钮 - 改进样式
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTap: () => _sendMessage(ref),
-                                child: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF2684FF),
-                                        Color(0xFF0052CC),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(18),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFF2684FF,
-                                        ).withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
+                            // 发送/停止按钮 - 改进样式和状态管理
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _messageController,
+                              builder: (context, textValue, child) {
+                                return Consumer(
+                                  builder: (context, ref, child) {
+                                    final isLoading = ref.watch(
+                                      chatLoadingProvider,
+                                    );
+                                    final attachedFiles = ref.watch(
+                                      chatProvider.select(
+                                        (s) => s.attachedFiles,
                                       ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.send_rounded,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                              ),
+                                    );
+
+                                    // 计算按钮是否可用
+                                    final hasText = textValue.text
+                                        .trim()
+                                        .isNotEmpty;
+                                    final canSend =
+                                        !isLoading &&
+                                        (hasText || attachedFiles.isNotEmpty);
+                                    final isStopButton = isLoading;
+
+                                    return MouseRegion(
+                                      cursor: canSend || isStopButton
+                                          ? SystemMouseCursors.click
+                                          : SystemMouseCursors.basic,
+                                      child: GestureDetector(
+                                        onTap: canSend || isStopButton
+                                            ? () => isStopButton
+                                                  ? _stopResponse(ref)
+                                                  : _sendMessage(ref)
+                                            : null,
+                                        child: Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            gradient: canSend || isStopButton
+                                                ? LinearGradient(
+                                                    colors: isStopButton
+                                                        ? [
+                                                            const Color(
+                                                              0xFFFF6B6B,
+                                                            ),
+                                                            const Color(
+                                                              0xFFE53E3E,
+                                                            ),
+                                                          ]
+                                                        : [
+                                                            const Color(
+                                                              0xFF2684FF,
+                                                            ),
+                                                            const Color(
+                                                              0xFF0052CC,
+                                                            ),
+                                                          ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  )
+                                                : null,
+                                            color: canSend || isStopButton
+                                                ? null
+                                                : const Color(0xFFE2E8F0),
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                            boxShadow: canSend || isStopButton
+                                                ? [
+                                                    BoxShadow(
+                                                      color:
+                                                          (isStopButton
+                                                                  ? const Color(
+                                                                      0xFFFF6B6B,
+                                                                    )
+                                                                  : const Color(
+                                                                      0xFF2684FF,
+                                                                    ))
+                                                              .withValues(
+                                                                alpha: 0.3,
+                                                              ),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          child: Icon(
+                                            isStopButton
+                                                ? Icons.stop_rounded
+                                                : Icons.send_rounded,
+                                            color: canSend || isStopButton
+                                                ? Colors.white
+                                                : const Color(0xFF94A3B8),
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -1009,13 +1079,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// 发送消息
   void _sendMessage(WidgetRef ref) {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    final attachedFiles = ref.read(chatProvider).attachedFiles;
+
+    // 检查是否有内容可发送
+    if (text.isEmpty && attachedFiles.isEmpty) return;
 
     ref.read(chatProvider.notifier).sendMessage(text);
     _messageController.clear();
 
     // 发送消息后立即滚动到底部
     _scrollToBottom();
+  }
+
+  /// 停止AI响应
+  void _stopResponse(WidgetRef ref) {
+    ref.read(chatProvider.notifier).stopResponse();
   }
 
   /// 显示设置

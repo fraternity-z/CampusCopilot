@@ -170,8 +170,83 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       state = state.copyWith(messages: messagesWithoutLastAI);
 
-      // 重新发送
-      await sendMessage(lastUserMessage.content);
+      // 重新生成AI回复，不重复添加用户消息
+      await _regenerateAIResponse(lastUserMessage.content);
+    }
+  }
+
+  /// 重新生成AI回复（不添加新的用户消息）
+  Future<void> _regenerateAIResponse(String userContent) async {
+    // 检查是否有当前会话
+    ChatSession? currentSession = state.currentSession;
+    if (currentSession == null) {
+      state = state.copyWith(error: '无法找到当前对话会话');
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 创建AI消息占位符
+      final aiMessageId = _uuid.v4();
+      final aiPlaceholder = ChatMessage(
+        id: aiMessageId,
+        chatSessionId: currentSession.id,
+        content: '...',
+        isFromUser: false,
+        timestamp: DateTime.now(),
+        status: MessageStatus.sending,
+      );
+
+      // 添加AI占位符到UI
+      state = state.copyWith(messages: [...state.messages, aiPlaceholder]);
+
+      // 开始流式响应（使用原始用户内容）
+      final stream = _chatService.sendMessageStream(
+        sessionId: currentSession.id,
+        content: userContent,
+      );
+
+      String fullResponse = '';
+      bool isFirstUserMessage = true;
+
+      // 取消之前的流订阅
+      await _currentStreamSubscription?.cancel();
+
+      // 创建新的流订阅
+      _currentStreamSubscription = stream.listen(
+        (messageChunk) {
+          if (messageChunk.isFromUser && isFirstUserMessage) {
+            // 跳过第一个用户消息，因为我们不需要重复添加
+            isFirstUserMessage = false;
+            return;
+          }
+
+          if (!messageChunk.isFromUser) {
+            fullResponse = messageChunk.content;
+            final updatedMessages = state.messages.map((m) {
+              return m.id == aiMessageId
+                  ? m.copyWith(
+                      content: fullResponse,
+                      status: messageChunk.status,
+                    )
+                  : m;
+            }).toList();
+            state = state.copyWith(
+              messages: updatedMessages,
+              isLoading: messageChunk.status != MessageStatus.sent,
+            );
+          }
+        },
+        onError: (error) {
+          throw error;
+        },
+        onDone: () {
+          _currentStreamSubscription = null;
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: '重新生成回复时出现错误: $e');
     }
   }
 
