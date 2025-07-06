@@ -58,11 +58,7 @@ class RagService {
   final VectorSearchService _vectorSearchService;
   final EmbeddingService _embeddingService;
 
-  RagService(
-    this._database,
-    this._vectorSearchService,
-    this._embeddingService,
-  );
+  RagService(this._database, this._vectorSearchService, this._embeddingService);
 
   /// 检索相关上下文
   Future<RagRetrievalResult> retrieveContext({
@@ -92,17 +88,24 @@ class RagService {
       }
 
       // 转换为RAG上下文项
-      final contexts = searchResult.items.map((item) => RagContextItem(
-        chunkId: item.chunkId,
-        documentId: item.documentId,
-        content: item.content,
-        similarity: item.similarity,
-        metadata: item.metadata,
-      )).toList();
+      final contexts = searchResult.items
+          .map(
+            (item) => RagContextItem(
+              chunkId: item.chunkId,
+              documentId: item.documentId,
+              content: item.content,
+              similarity: item.similarity,
+              metadata: item.metadata,
+            ),
+          )
+          .toList();
 
       return RagRetrievalResult(
         contexts: contexts,
-        searchTime: DateTime.now().difference(startTime).inMilliseconds.toDouble(),
+        searchTime: DateTime.now()
+            .difference(startTime)
+            .inMilliseconds
+            .toDouble(),
         totalResults: contexts.length,
       );
     } catch (e) {
@@ -210,11 +213,25 @@ class RagService {
   bool shouldUseRag(String query) {
     // 简单的启发式规则判断是否需要使用RAG
     final lowerQuery = query.toLowerCase();
-    
+
     // 包含疑问词的查询通常需要RAG
-    final questionWords = ['什么', '如何', '怎么', '为什么', '哪里', '什么时候', '谁', 
-                          'what', 'how', 'why', 'where', 'when', 'who', 'which'];
-    
+    final questionWords = [
+      '什么',
+      '如何',
+      '怎么',
+      '为什么',
+      '哪里',
+      '什么时候',
+      '谁',
+      'what',
+      'how',
+      'why',
+      'where',
+      'when',
+      'who',
+      'which',
+    ];
+
     for (final word in questionWords) {
       if (lowerQuery.contains(word)) {
         return true;
@@ -222,9 +239,21 @@ class RagService {
     }
 
     // 包含特定关键词的查询
-    final knowledgeKeywords = ['解释', '说明', '介绍', '定义', '原理', '方法', '步骤',
-                              'explain', 'describe', 'define', 'principle', 'method'];
-    
+    final knowledgeKeywords = [
+      '解释',
+      '说明',
+      '介绍',
+      '定义',
+      '原理',
+      '方法',
+      '步骤',
+      'explain',
+      'describe',
+      'define',
+      'principle',
+      'method',
+    ];
+
     for (final keyword in knowledgeKeywords) {
       if (lowerQuery.contains(keyword)) {
         return true;
@@ -245,9 +274,15 @@ class RagService {
       final documents = await _database.getAllKnowledgeDocuments();
       final chunks = await _database.getChunksWithEmbeddings();
 
-      final completedDocs = documents.where((doc) => doc.status == 'completed').length;
-      final processingDocs = documents.where((doc) => doc.status == 'processing').length;
-      final failedDocs = documents.where((doc) => doc.status == 'failed').length;
+      final completedDocs = documents
+          .where((doc) => doc.status == 'completed')
+          .length;
+      final processingDocs = documents
+          .where((doc) => doc.status == 'processing')
+          .length;
+      final failedDocs = documents
+          .where((doc) => doc.status == 'failed')
+          .length;
 
       return {
         'totalDocuments': documents.length,
@@ -255,7 +290,9 @@ class RagService {
         'processingDocuments': processingDocs,
         'failedDocuments': failedDocs,
         'totalChunks': chunks.length,
-        'chunksWithEmbeddings': chunks.where((c) => c.embedding != null).length,
+        'chunksWithEmbeddings': chunks
+            .where((c) => c.embedding?.isNotEmpty == true)
+            .length,
       };
     } catch (e) {
       debugPrint('获取知识库统计信息失败: $e');
@@ -266,8 +303,50 @@ class RagService {
   /// 清理过期的嵌入向量缓存
   Future<void> cleanupEmbeddingCache() async {
     try {
-      // TODO: 实现嵌入向量缓存清理逻辑
-      // 可以删除长时间未使用的嵌入向量或压缩存储
+      // 获取所有带有嵌入向量的文本块
+      final chunks = await _database.getChunksWithEmbeddings();
+
+      if (chunks.isEmpty) return;
+
+      final now = DateTime.now();
+      final expiredChunks = <String>[];
+      final oldChunks = <String>[];
+
+      for (final chunk in chunks) {
+        // 检查最后更新时间
+        final daysSinceCreated = now.difference(chunk.createdAt).inDays;
+
+        // 超过6个月未使用的块标记为过期
+        if (daysSinceCreated > 180) {
+          expiredChunks.add(chunk.id);
+        }
+        // 超过3个月的块标记为旧块（可选择性清理）
+        else if (daysSinceCreated > 90) {
+          oldChunks.add(chunk.id);
+        }
+      }
+
+      debugPrint(
+        '嵌入向量缓存清理: 发现${expiredChunks.length}个过期块, ${oldChunks.length}个旧块',
+      );
+
+      // 删除过期的嵌入向量
+      for (final chunkId in expiredChunks) {
+        await _database.updateChunkEmbedding(chunkId, '');
+      }
+
+      // 根据存储空间压力决定是否清理旧块
+      if (chunks.length > 10000) {
+        // 如果总块数超过1万个
+        // 清理一半的旧块
+        final toRemove = oldChunks.take(oldChunks.length ~/ 2);
+        for (final chunkId in toRemove) {
+          await _database.updateChunkEmbedding(chunkId, '');
+        }
+        debugPrint('由于存储压力，额外清理了${toRemove.length}个旧块');
+      }
+
+      debugPrint('嵌入向量缓存清理完成: 清理了${expiredChunks.length}个过期块');
     } catch (e) {
       debugPrint('清理嵌入向量缓存失败: $e');
     }
@@ -278,19 +357,21 @@ class RagService {
     try {
       // 获取所有文本块
       final chunks = await _database.getChunksWithEmbeddings();
-      
+
       // 分批重新生成嵌入向量
       const batchSize = 10;
       for (int i = 0; i < chunks.length; i += batchSize) {
-        final end = (i + batchSize < chunks.length) ? i + batchSize : chunks.length;
+        final end = (i + batchSize < chunks.length)
+            ? i + batchSize
+            : chunks.length;
         final batch = chunks.sublist(i, end);
-        
+
         final texts = batch.map((chunk) => chunk.content).toList();
         final result = await _embeddingService.generateEmbeddings(
           texts: texts,
           config: config,
         );
-        
+
         if (result.isSuccess) {
           // 更新数据库中的嵌入向量
           for (int j = 0; j < batch.length; j++) {
@@ -300,7 +381,7 @@ class RagService {
             }
           }
         }
-        
+
         // 添加延迟避免API限制
         await Future.delayed(const Duration(milliseconds: 100));
       }

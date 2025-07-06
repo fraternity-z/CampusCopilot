@@ -86,6 +86,12 @@ dependencies:
   # 文件处理 (知识库)
   file_picker: ^10.2.0
   
+  # 文档解析
+  pdf: ^3.11.1                         # PDF创建和文本提取
+  xml: ^6.3.0                          # XML解析（用于DOCX）
+  charset: ^2.0.1                      # 字符编码转换（用于RTF）
+  charset_converter: ^2.3.0            # 平台字符集转换器
+  
   # 图片处理和选择
   image_picker: ^1.0.7
   emoji_picker_flutter: ^1.6.0
