@@ -10,6 +10,7 @@ import '../../../settings/presentation/providers/settings_provider.dart';
 import 'widgets/message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
+import 'widgets/chat_action_menu.dart';
 
 /// 聊天界面
 ///
@@ -783,27 +784,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: GestureDetector(
-                            onTap: () => _showSettings(),
-                            child: Tooltip(
-                              message: '设置',
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Icon(
-                                  Icons.tune,
-                                  color: Color(0xFF999999),
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        const ChatActionMenu(),
                         const Spacer(),
                         // 右侧语音和发送按钮组合
                         Row(

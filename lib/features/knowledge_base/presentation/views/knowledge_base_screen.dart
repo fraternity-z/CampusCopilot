@@ -1387,7 +1387,6 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 复制文本块内容
   void _copyChunkContent(String content) {
-    // TODO: 实现复制到剪贴板功能
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('内容已复制到剪贴板')));

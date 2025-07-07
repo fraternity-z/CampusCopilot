@@ -207,6 +207,7 @@ class ChatService {
     required String sessionId,
     required String content,
     String? parentMessageId,
+    bool includeContext = true, // 是否包含历史上下文
   }) async* {
     debugPrint('🚀 开始发送消息: $content');
 
@@ -268,11 +269,22 @@ class ChatService {
       }
 
       // 6. 构建上下文消息
-      final contextMessages = await _buildContextMessages(
-        sessionId,
-        session.config,
-        enhancedUserMessage: enhancedPrompt != content ? enhancedPrompt : null,
-      );
+      final contextMessages = includeContext
+          ? await _buildContextMessages(
+              sessionId,
+              session.config,
+              enhancedUserMessage: enhancedPrompt != content
+                  ? enhancedPrompt
+                  : null,
+            )
+          : [
+              // 如果不包含上下文，只使用当前用户消息
+              ChatMessageFactory.createUserMessage(
+                content: enhancedPrompt,
+                chatSessionId: sessionId,
+                parentMessageId: parentMessageId,
+              ),
+            ];
 
       debugPrint('💬 上下文消息数量: ${contextMessages.length}');
 

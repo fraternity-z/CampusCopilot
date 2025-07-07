@@ -149,6 +149,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(messages: [], error: null);
   }
 
+  /// 清除上下文（标记下次对话不包含历史）
+  void clearContext() {
+    state = state.copyWith(contextCleared: true, error: null);
+  }
+
   /// 清除错误
   void clearError() {
     state = state.copyWith(error: null);
@@ -205,6 +210,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final stream = _chatService.sendMessageStream(
         sessionId: currentSession.id,
         content: userContent,
+        includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
       );
 
       String fullResponse = '';
@@ -333,6 +339,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final stream = _chatService.sendMessageStream(
         sessionId: currentSession.id,
         content: messageContent,
+        includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
       );
 
       String fullResponse = '';
@@ -377,7 +384,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 等待流完成
       await _currentStreamSubscription?.asFuture();
 
-      // 消息发送完成后，重新加载会话信息以更新计数
+      // 消息发送完成后，重置上下文清除状态并重新加载会话信息
+      state = state.copyWith(contextCleared: false);
       await _loadChatSessions();
     } catch (e) {
       // 取消当前流订阅
@@ -503,6 +511,7 @@ class ChatState {
   final List<PlatformFile> attachedFiles;
   final bool isListening;
   final String speechText;
+  final bool contextCleared; // 标记是否已清除上下文
 
   const ChatState({
     this.messages = const [],
@@ -513,6 +522,7 @@ class ChatState {
     this.attachedFiles = const [],
     this.isListening = false,
     this.speechText = '',
+    this.contextCleared = false,
   });
 
   ChatState copyWith({
@@ -524,6 +534,7 @@ class ChatState {
     List<PlatformFile>? attachedFiles,
     bool? isListening,
     String? speechText,
+    bool? contextCleared,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -534,6 +545,7 @@ class ChatState {
       attachedFiles: attachedFiles ?? this.attachedFiles,
       isListening: isListening ?? this.isListening,
       speechText: speechText ?? this.speechText,
+      contextCleared: contextCleared ?? this.contextCleared,
     );
   }
 
