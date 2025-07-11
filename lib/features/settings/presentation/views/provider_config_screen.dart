@@ -9,6 +9,7 @@ import '../../../llm_chat/domain/services/model_management_service.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
 import '../widgets/select_model_dialog.dart';
+import '../providers/custom_provider_notifier.dart';
 
 /// AI提供商配置页面
 class ProviderConfigScreen extends ConsumerStatefulWidget {
@@ -56,6 +57,14 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       appBar: AppBar(
         title: Text('${providerInfo.displayName} 配置'),
         actions: [
+          // 如果是自定义提供商，显示删除按钮
+          if (_existingConfig?.isCustomProvider == true) ...[
+            IconButton(
+              onPressed: _isLoading ? null : _showDeleteConfirmDialog,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '删除提供商',
+            ),
+          ],
           TextButton(
             onPressed: _isLoading ? null : _saveConfig,
             child: const Text('保存'),
@@ -380,7 +389,9 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       final configs = await database.getAllLlmConfigs();
 
       _existingConfig = configs.cast<LlmConfigsTableData?>().firstWhere(
-        (config) => config?.provider == widget.providerId,
+        (config) =>
+            config?.provider == widget.providerId ||
+            config?.id == widget.providerId,
         orElse: () => null,
       );
 
@@ -437,6 +448,36 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // 先验证配置
+      final tempConfig = LlmConfig(
+        id: 'temp-validation',
+        name: _nameController.text,
+        provider: widget.providerId,
+        apiKey: _apiKeyController.text,
+        baseUrl: _baseUrlController.text.isEmpty
+            ? null
+            : _baseUrlController.text,
+        organizationId: _organizationIdController.text.isEmpty
+            ? null
+            : _organizationIdController.text,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isCustomProvider: false,
+        apiCompatibilityType: LlmProviderFactory.getProviderCompatibilityType(
+          widget.providerId,
+        ),
+      );
+
+      // 验证配置有效性
+      if (!LlmProviderFactory.validateProviderConfig(tempConfig)) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('配置验证失败，请检查输入信息')));
+        }
+        return;
+      }
+
       final database = ref.read(appDatabaseProvider);
       final now = DateTime.now();
       final configId =
@@ -459,6 +500,10 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
         createdAt: _existingConfig?.createdAt ?? now,
         updatedAt: now,
         isEnabled: drift.Value(_isEnabled),
+        isCustomProvider: const drift.Value(false), // 内置提供商
+        apiCompatibilityType: drift.Value(
+          LlmProviderFactory.getProviderCompatibilityType(widget.providerId),
+        ),
       );
 
       await database.upsertLlmConfig(config);
@@ -693,6 +738,69 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       }
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  /// 显示删除确认对话框
+  void _showDeleteConfirmDialog() {
+    if (_existingConfig == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除提供商'),
+        content: Text(
+          '确定要删除 "${_existingConfig!.customProviderName ?? _existingConfig!.name}" 吗？\n\n此操作无法撤销。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteProvider();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 删除提供商
+  Future<void> _deleteProvider() async {
+    if (_existingConfig == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final database = ref.read(appDatabaseProvider);
+      await database.deleteLlmConfig(_existingConfig!.id);
+
+      // 刷新自定义提供商列表
+      ref.read(customProviderNotifierProvider.notifier).loadProviders();
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('提供商已删除')));
+        context.pop(); // 返回上一页
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 }

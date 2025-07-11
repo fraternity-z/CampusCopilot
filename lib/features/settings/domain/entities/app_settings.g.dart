@@ -61,6 +61,10 @@ const _$AIProviderEnumMap = {
   AIProvider.openai: 'openai',
   AIProvider.gemini: 'gemini',
   AIProvider.claude: 'claude',
+  AIProvider.deepseek: 'deepseek',
+  AIProvider.qwen: 'qwen',
+  AIProvider.openrouter: 'openrouter',
+  AIProvider.ollama: 'ollama',
 };
 
 _$OpenAIConfigImpl _$$OpenAIConfigImplFromJson(Map<String, dynamic> json) =>

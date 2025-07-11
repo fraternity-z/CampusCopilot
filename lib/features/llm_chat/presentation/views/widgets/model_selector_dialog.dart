@@ -16,6 +16,14 @@ extension AIProviderUIHelpers on AIProvider {
         return Icons.auto_awesome;
       case AIProvider.claude:
         return Icons.smart_toy;
+      case AIProvider.deepseek:
+        return Icons.psychology_alt;
+      case AIProvider.qwen:
+        return Icons.translate;
+      case AIProvider.openrouter:
+        return Icons.hub;
+      case AIProvider.ollama:
+        return Icons.computer;
     }
   }
 
@@ -28,6 +36,14 @@ extension AIProviderUIHelpers on AIProvider {
         return const Color(0xFF4285F4);
       case AIProvider.claude:
         return const Color(0xFFFF6B35);
+      case AIProvider.deepseek:
+        return const Color(0xFF9C27B0);
+      case AIProvider.qwen:
+        return const Color(0xFFF44336);
+      case AIProvider.openrouter:
+        return const Color(0xFF009688);
+      case AIProvider.ollama:
+        return const Color(0xFF3F51B5);
     }
   }
 
@@ -40,6 +56,14 @@ extension AIProviderUIHelpers on AIProvider {
         return 'Google Gemini';
       case AIProvider.claude:
         return 'Anthropic Claude';
+      case AIProvider.deepseek:
+        return 'DeepSeek';
+      case AIProvider.qwen:
+        return '阿里云通义千问';
+      case AIProvider.openrouter:
+        return 'OpenRouter';
+      case AIProvider.ollama:
+        return 'Ollama';
     }
   }
 }

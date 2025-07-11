@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/app_settings.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
+import 'custom_provider_notifier.dart';
 
 /// 设置状态管理
 class SettingsNotifier extends StateNotifier<AppSettings> {
@@ -219,6 +220,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         createdAt: Value(config.createdAt),
         updatedAt: Value(DateTime.now()),
         isEnabled: Value(config.isEnabled),
+        isCustomProvider: Value(config.isCustomProvider),
+        apiCompatibilityType: Value(config.apiCompatibilityType),
+        customProviderName: Value(config.customProviderName),
+        customProviderDescription: Value(config.customProviderDescription),
+        customProviderIcon: Value(config.customProviderIcon),
       );
       await _database.upsertLlmConfig(updatedConfig);
 
@@ -316,6 +322,9 @@ final databaseAvailableProvidersProvider = FutureProvider<List<AIProvider>>((
 
   final providers = <AIProvider>[];
   for (final config in configs) {
+    // 跳过自定义提供商，它们有单独的管理
+    if (config.isCustomProvider) continue;
+
     switch (config.provider) {
       case 'openai':
         if (!providers.contains(AIProvider.openai)) {
@@ -323,14 +332,55 @@ final databaseAvailableProvidersProvider = FutureProvider<List<AIProvider>>((
         }
         break;
       case 'claude':
+      case 'anthropic':
         if (!providers.contains(AIProvider.claude)) {
           providers.add(AIProvider.claude);
+        }
+        break;
+      case 'google':
+        if (!providers.contains(AIProvider.gemini)) {
+          providers.add(AIProvider.gemini);
+        }
+        break;
+      case 'deepseek':
+        if (!providers.contains(AIProvider.deepseek)) {
+          providers.add(AIProvider.deepseek);
+        }
+        break;
+      case 'qwen':
+        if (!providers.contains(AIProvider.qwen)) {
+          providers.add(AIProvider.qwen);
+        }
+        break;
+      case 'openrouter':
+        if (!providers.contains(AIProvider.openrouter)) {
+          providers.add(AIProvider.openrouter);
+        }
+        break;
+      case 'ollama':
+        if (!providers.contains(AIProvider.ollama)) {
+          providers.add(AIProvider.ollama);
         }
         break;
     }
   }
 
   return providers;
+});
+
+/// 所有可用提供商（包括内置和自定义）Provider
+final allAvailableProvidersProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
+  // 获取内置提供商
+  final builtinProviders = await ref.watch(
+    databaseAvailableProvidersProvider.future,
+  );
+
+  // 获取自定义提供商
+  final customProviders = ref.watch(enabledCustomProvidersProvider);
+
+  return {'builtin': builtinProviders, 'custom': customProviders};
 });
 
 /// 从数据库检查所有可用模型Provider
@@ -382,6 +432,16 @@ AIProvider? _stringToAIProvider(String provider) {
     case 'claude':
     case 'anthropic':
       return AIProvider.claude;
+    case 'google':
+      return AIProvider.gemini;
+    case 'deepseek':
+      return AIProvider.deepseek;
+    case 'qwen':
+      return AIProvider.qwen;
+    case 'openrouter':
+      return AIProvider.openrouter;
+    case 'ollama':
+      return AIProvider.ollama;
     default:
       return null;
   }
@@ -419,8 +479,16 @@ class ModelInfoWithProvider {
         return 'OpenAI';
       case AIProvider.claude:
         return 'Anthropic';
-      default:
-        return 'Unknown Provider';
+      case AIProvider.gemini:
+        return 'Google Gemini';
+      case AIProvider.deepseek:
+        return 'DeepSeek';
+      case AIProvider.qwen:
+        return '阿里云通义千问';
+      case AIProvider.openrouter:
+        return 'OpenRouter';
+      case AIProvider.ollama:
+        return 'Ollama';
     }
   }
 }

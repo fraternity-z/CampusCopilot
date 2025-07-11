@@ -64,7 +64,7 @@ class AppDatabase extends _$AppDatabase {
   _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -107,6 +107,33 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(knowledgeBaseConfigsTable);
             } catch (e) {
               debugPrint('Failed to create knowledge base configs table: $e');
+            }
+          }
+          if (from < 6) {
+            try {
+              // 添加自定义提供商支持字段
+              await m.addColumn(
+                llmConfigsTable,
+                llmConfigsTable.isCustomProvider,
+              );
+              await m.addColumn(
+                llmConfigsTable,
+                llmConfigsTable.apiCompatibilityType,
+              );
+              await m.addColumn(
+                llmConfigsTable,
+                llmConfigsTable.customProviderName,
+              );
+              await m.addColumn(
+                llmConfigsTable,
+                llmConfigsTable.customProviderDescription,
+              );
+              await m.addColumn(
+                llmConfigsTable,
+                llmConfigsTable.customProviderIcon,
+              );
+            } catch (e) {
+              debugPrint('Failed to add custom provider columns: $e');
             }
           }
         });
@@ -180,6 +207,27 @@ class AppDatabase extends _$AppDatabase {
   /// 删除LLM配置
   Future<int> deleteLlmConfig(String id) {
     return (delete(llmConfigsTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// 获取内置提供商配置
+  Future<List<LlmConfigsTableData>> getBuiltinProviderConfigs() {
+    return (select(
+      llmConfigsTable,
+    )..where((t) => t.isCustomProvider.equals(false))).get();
+  }
+
+  /// 获取自定义提供商配置
+  Future<List<LlmConfigsTableData>> getCustomProviderConfigs() {
+    return (select(
+      llmConfigsTable,
+    )..where((t) => t.isCustomProvider.equals(true))).get();
+  }
+
+  /// 根据提供商类型获取配置
+  Future<List<LlmConfigsTableData>> getLlmConfigsByProvider(String provider) {
+    return (select(
+      llmConfigsTable,
+    )..where((t) => t.provider.equals(provider))).get();
   }
 
   /// 获取第一个（任意）LLM配置，作为备用选项

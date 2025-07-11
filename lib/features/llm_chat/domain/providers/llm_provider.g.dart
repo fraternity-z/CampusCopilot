@@ -21,6 +21,11 @@ _$LlmConfigImpl _$$LlmConfigImplFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       isEnabled: json['isEnabled'] as bool? ?? true,
+      isCustomProvider: json['isCustomProvider'] as bool? ?? false,
+      apiCompatibilityType: json['apiCompatibilityType'] as String? ?? 'openai',
+      customProviderName: json['customProviderName'] as String?,
+      customProviderDescription: json['customProviderDescription'] as String?,
+      customProviderIcon: json['customProviderIcon'] as String?,
     );
 
 Map<String, dynamic> _$$LlmConfigImplToJson(_$LlmConfigImpl instance) =>
@@ -38,6 +43,11 @@ Map<String, dynamic> _$$LlmConfigImplToJson(_$LlmConfigImpl instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'isEnabled': instance.isEnabled,
+      'isCustomProvider': instance.isCustomProvider,
+      'apiCompatibilityType': instance.apiCompatibilityType,
+      'customProviderName': instance.customProviderName,
+      'customProviderDescription': instance.customProviderDescription,
+      'customProviderIcon': instance.customProviderIcon,
     };
 
 _$ModelInfoImpl _$$ModelInfoImplFromJson(Map<String, dynamic> json) =>

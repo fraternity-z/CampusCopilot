@@ -92,6 +92,21 @@ class LlmConfig with _$LlmConfig {
 
     /// 是否启用
     @Default(true) bool isEnabled,
+
+    /// 是否为自定义提供商
+    @Default(false) bool isCustomProvider,
+
+    /// API兼容性类型 (openai, gemini, anthropic, custom)
+    @Default('openai') String apiCompatibilityType,
+
+    /// 自定义提供商显示名称
+    String? customProviderName,
+
+    /// 自定义提供商描述
+    String? customProviderDescription,
+
+    /// 自定义提供商图标（可选）
+    String? customProviderIcon,
   }) = _LlmConfig;
 
   factory LlmConfig.fromJson(Map<String, dynamic> json) =>

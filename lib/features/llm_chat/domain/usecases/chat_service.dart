@@ -879,6 +879,11 @@ extension LlmConfigDataExtension on LlmConfigsTableData {
       createdAt: createdAt,
       updatedAt: updatedAt,
       isEnabled: isEnabled,
+      isCustomProvider: isCustomProvider,
+      apiCompatibilityType: apiCompatibilityType,
+      customProviderName: customProviderName,
+      customProviderDescription: customProviderDescription,
+      customProviderIcon: customProviderIcon,
     );
   }
 }

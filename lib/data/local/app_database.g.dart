@@ -88,6 +88,42 @@ class $LlmConfigsTableTable extends LlmConfigsTable
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_enabled" IN (0, 1))'),
       defaultValue: const Constant(true));
+  static const VerificationMeta _isCustomProviderMeta =
+      const VerificationMeta('isCustomProvider');
+  @override
+  late final GeneratedColumn<bool> isCustomProvider = GeneratedColumn<bool>(
+      'is_custom_provider', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_custom_provider" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _apiCompatibilityTypeMeta =
+      const VerificationMeta('apiCompatibilityType');
+  @override
+  late final GeneratedColumn<String> apiCompatibilityType =
+      GeneratedColumn<String>('api_compatibility_type', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('openai'));
+  static const VerificationMeta _customProviderNameMeta =
+      const VerificationMeta('customProviderName');
+  @override
+  late final GeneratedColumn<String> customProviderName =
+      GeneratedColumn<String>('custom_provider_name', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _customProviderDescriptionMeta =
+      const VerificationMeta('customProviderDescription');
+  @override
+  late final GeneratedColumn<String> customProviderDescription =
+      GeneratedColumn<String>('custom_provider_description', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _customProviderIconMeta =
+      const VerificationMeta('customProviderIcon');
+  @override
+  late final GeneratedColumn<String> customProviderIcon =
+      GeneratedColumn<String>('custom_provider_icon', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -102,7 +138,12 @@ class $LlmConfigsTableTable extends LlmConfigsTable
         extraParams,
         createdAt,
         updatedAt,
-        isEnabled
+        isEnabled,
+        isCustomProvider,
+        apiCompatibilityType,
+        customProviderName,
+        customProviderDescription,
+        customProviderIcon
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -186,6 +227,37 @@ class $LlmConfigsTableTable extends LlmConfigsTable
       context.handle(_isEnabledMeta,
           isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta));
     }
+    if (data.containsKey('is_custom_provider')) {
+      context.handle(
+          _isCustomProviderMeta,
+          isCustomProvider.isAcceptableOrUnknown(
+              data['is_custom_provider']!, _isCustomProviderMeta));
+    }
+    if (data.containsKey('api_compatibility_type')) {
+      context.handle(
+          _apiCompatibilityTypeMeta,
+          apiCompatibilityType.isAcceptableOrUnknown(
+              data['api_compatibility_type']!, _apiCompatibilityTypeMeta));
+    }
+    if (data.containsKey('custom_provider_name')) {
+      context.handle(
+          _customProviderNameMeta,
+          customProviderName.isAcceptableOrUnknown(
+              data['custom_provider_name']!, _customProviderNameMeta));
+    }
+    if (data.containsKey('custom_provider_description')) {
+      context.handle(
+          _customProviderDescriptionMeta,
+          customProviderDescription.isAcceptableOrUnknown(
+              data['custom_provider_description']!,
+              _customProviderDescriptionMeta));
+    }
+    if (data.containsKey('custom_provider_icon')) {
+      context.handle(
+          _customProviderIconMeta,
+          customProviderIcon.isAcceptableOrUnknown(
+              data['custom_provider_icon']!, _customProviderIconMeta));
+    }
     return context;
   }
 
@@ -222,6 +294,18 @@ class $LlmConfigsTableTable extends LlmConfigsTable
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
       isEnabled: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_enabled'])!,
+      isCustomProvider: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}is_custom_provider'])!,
+      apiCompatibilityType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}api_compatibility_type'])!,
+      customProviderName: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}custom_provider_name']),
+      customProviderDescription: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}custom_provider_description']),
+      customProviderIcon: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}custom_provider_icon']),
     );
   }
 
@@ -271,6 +355,21 @@ class LlmConfigsTableData extends DataClass
 
   /// 是否启用
   final bool isEnabled;
+
+  /// 是否为自定义提供商
+  final bool isCustomProvider;
+
+  /// API兼容性类型 (openai, gemini, anthropic, custom)
+  final String apiCompatibilityType;
+
+  /// 自定义提供商显示名称
+  final String? customProviderName;
+
+  /// 自定义提供商描述
+  final String? customProviderDescription;
+
+  /// 自定义提供商图标（可选）
+  final String? customProviderIcon;
   const LlmConfigsTableData(
       {required this.id,
       required this.name,
@@ -284,7 +383,12 @@ class LlmConfigsTableData extends DataClass
       this.extraParams,
       required this.createdAt,
       required this.updatedAt,
-      required this.isEnabled});
+      required this.isEnabled,
+      required this.isCustomProvider,
+      required this.apiCompatibilityType,
+      this.customProviderName,
+      this.customProviderDescription,
+      this.customProviderIcon});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -313,6 +417,18 @@ class LlmConfigsTableData extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_enabled'] = Variable<bool>(isEnabled);
+    map['is_custom_provider'] = Variable<bool>(isCustomProvider);
+    map['api_compatibility_type'] = Variable<String>(apiCompatibilityType);
+    if (!nullToAbsent || customProviderName != null) {
+      map['custom_provider_name'] = Variable<String>(customProviderName);
+    }
+    if (!nullToAbsent || customProviderDescription != null) {
+      map['custom_provider_description'] =
+          Variable<String>(customProviderDescription);
+    }
+    if (!nullToAbsent || customProviderIcon != null) {
+      map['custom_provider_icon'] = Variable<String>(customProviderIcon);
+    }
     return map;
   }
 
@@ -343,6 +459,18 @@ class LlmConfigsTableData extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       isEnabled: Value(isEnabled),
+      isCustomProvider: Value(isCustomProvider),
+      apiCompatibilityType: Value(apiCompatibilityType),
+      customProviderName: customProviderName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customProviderName),
+      customProviderDescription:
+          customProviderDescription == null && nullToAbsent
+              ? const Value.absent()
+              : Value(customProviderDescription),
+      customProviderIcon: customProviderIcon == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customProviderIcon),
     );
   }
 
@@ -364,6 +492,15 @@ class LlmConfigsTableData extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      isCustomProvider: serializer.fromJson<bool>(json['isCustomProvider']),
+      apiCompatibilityType:
+          serializer.fromJson<String>(json['apiCompatibilityType']),
+      customProviderName:
+          serializer.fromJson<String?>(json['customProviderName']),
+      customProviderDescription:
+          serializer.fromJson<String?>(json['customProviderDescription']),
+      customProviderIcon:
+          serializer.fromJson<String?>(json['customProviderIcon']),
     );
   }
   @override
@@ -384,6 +521,12 @@ class LlmConfigsTableData extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isEnabled': serializer.toJson<bool>(isEnabled),
+      'isCustomProvider': serializer.toJson<bool>(isCustomProvider),
+      'apiCompatibilityType': serializer.toJson<String>(apiCompatibilityType),
+      'customProviderName': serializer.toJson<String?>(customProviderName),
+      'customProviderDescription':
+          serializer.toJson<String?>(customProviderDescription),
+      'customProviderIcon': serializer.toJson<String?>(customProviderIcon),
     };
   }
 
@@ -400,7 +543,12 @@ class LlmConfigsTableData extends DataClass
           Value<String?> extraParams = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt,
-          bool? isEnabled}) =>
+          bool? isEnabled,
+          bool? isCustomProvider,
+          String? apiCompatibilityType,
+          Value<String?> customProviderName = const Value.absent(),
+          Value<String?> customProviderDescription = const Value.absent(),
+          Value<String?> customProviderIcon = const Value.absent()}) =>
       LlmConfigsTableData(
         id: id ?? this.id,
         name: name ?? this.name,
@@ -419,6 +567,17 @@ class LlmConfigsTableData extends DataClass
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         isEnabled: isEnabled ?? this.isEnabled,
+        isCustomProvider: isCustomProvider ?? this.isCustomProvider,
+        apiCompatibilityType: apiCompatibilityType ?? this.apiCompatibilityType,
+        customProviderName: customProviderName.present
+            ? customProviderName.value
+            : this.customProviderName,
+        customProviderDescription: customProviderDescription.present
+            ? customProviderDescription.value
+            : this.customProviderDescription,
+        customProviderIcon: customProviderIcon.present
+            ? customProviderIcon.value
+            : this.customProviderIcon,
       );
   LlmConfigsTableData copyWithCompanion(LlmConfigsTableCompanion data) {
     return LlmConfigsTableData(
@@ -442,6 +601,21 @@ class LlmConfigsTableData extends DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      isCustomProvider: data.isCustomProvider.present
+          ? data.isCustomProvider.value
+          : this.isCustomProvider,
+      apiCompatibilityType: data.apiCompatibilityType.present
+          ? data.apiCompatibilityType.value
+          : this.apiCompatibilityType,
+      customProviderName: data.customProviderName.present
+          ? data.customProviderName.value
+          : this.customProviderName,
+      customProviderDescription: data.customProviderDescription.present
+          ? data.customProviderDescription.value
+          : this.customProviderDescription,
+      customProviderIcon: data.customProviderIcon.present
+          ? data.customProviderIcon.value
+          : this.customProviderIcon,
     );
   }
 
@@ -460,7 +634,12 @@ class LlmConfigsTableData extends DataClass
           ..write('extraParams: $extraParams, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('isEnabled: $isEnabled')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('isCustomProvider: $isCustomProvider, ')
+          ..write('apiCompatibilityType: $apiCompatibilityType, ')
+          ..write('customProviderName: $customProviderName, ')
+          ..write('customProviderDescription: $customProviderDescription, ')
+          ..write('customProviderIcon: $customProviderIcon')
           ..write(')'))
         .toString();
   }
@@ -479,7 +658,12 @@ class LlmConfigsTableData extends DataClass
       extraParams,
       createdAt,
       updatedAt,
-      isEnabled);
+      isEnabled,
+      isCustomProvider,
+      apiCompatibilityType,
+      customProviderName,
+      customProviderDescription,
+      customProviderIcon);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -496,7 +680,12 @@ class LlmConfigsTableData extends DataClass
           other.extraParams == this.extraParams &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.isEnabled == this.isEnabled);
+          other.isEnabled == this.isEnabled &&
+          other.isCustomProvider == this.isCustomProvider &&
+          other.apiCompatibilityType == this.apiCompatibilityType &&
+          other.customProviderName == this.customProviderName &&
+          other.customProviderDescription == this.customProviderDescription &&
+          other.customProviderIcon == this.customProviderIcon);
 }
 
 class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
@@ -513,6 +702,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool> isEnabled;
+  final Value<bool> isCustomProvider;
+  final Value<String> apiCompatibilityType;
+  final Value<String?> customProviderName;
+  final Value<String?> customProviderDescription;
+  final Value<String?> customProviderIcon;
   final Value<int> rowid;
   const LlmConfigsTableCompanion({
     this.id = const Value.absent(),
@@ -528,6 +722,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isEnabled = const Value.absent(),
+    this.isCustomProvider = const Value.absent(),
+    this.apiCompatibilityType = const Value.absent(),
+    this.customProviderName = const Value.absent(),
+    this.customProviderDescription = const Value.absent(),
+    this.customProviderIcon = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LlmConfigsTableCompanion.insert({
@@ -544,6 +743,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.isEnabled = const Value.absent(),
+    this.isCustomProvider = const Value.absent(),
+    this.apiCompatibilityType = const Value.absent(),
+    this.customProviderName = const Value.absent(),
+    this.customProviderDescription = const Value.absent(),
+    this.customProviderIcon = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         name = Value(name),
@@ -565,6 +769,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isEnabled,
+    Expression<bool>? isCustomProvider,
+    Expression<String>? apiCompatibilityType,
+    Expression<String>? customProviderName,
+    Expression<String>? customProviderDescription,
+    Expression<String>? customProviderIcon,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -582,6 +791,15 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isEnabled != null) 'is_enabled': isEnabled,
+      if (isCustomProvider != null) 'is_custom_provider': isCustomProvider,
+      if (apiCompatibilityType != null)
+        'api_compatibility_type': apiCompatibilityType,
+      if (customProviderName != null)
+        'custom_provider_name': customProviderName,
+      if (customProviderDescription != null)
+        'custom_provider_description': customProviderDescription,
+      if (customProviderIcon != null)
+        'custom_provider_icon': customProviderIcon,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -600,6 +818,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<bool>? isEnabled,
+      Value<bool>? isCustomProvider,
+      Value<String>? apiCompatibilityType,
+      Value<String?>? customProviderName,
+      Value<String?>? customProviderDescription,
+      Value<String?>? customProviderIcon,
       Value<int>? rowid}) {
     return LlmConfigsTableCompanion(
       id: id ?? this.id,
@@ -616,6 +839,12 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isEnabled: isEnabled ?? this.isEnabled,
+      isCustomProvider: isCustomProvider ?? this.isCustomProvider,
+      apiCompatibilityType: apiCompatibilityType ?? this.apiCompatibilityType,
+      customProviderName: customProviderName ?? this.customProviderName,
+      customProviderDescription:
+          customProviderDescription ?? this.customProviderDescription,
+      customProviderIcon: customProviderIcon ?? this.customProviderIcon,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -663,6 +892,23 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
+    if (isCustomProvider.present) {
+      map['is_custom_provider'] = Variable<bool>(isCustomProvider.value);
+    }
+    if (apiCompatibilityType.present) {
+      map['api_compatibility_type'] =
+          Variable<String>(apiCompatibilityType.value);
+    }
+    if (customProviderName.present) {
+      map['custom_provider_name'] = Variable<String>(customProviderName.value);
+    }
+    if (customProviderDescription.present) {
+      map['custom_provider_description'] =
+          Variable<String>(customProviderDescription.value);
+    }
+    if (customProviderIcon.present) {
+      map['custom_provider_icon'] = Variable<String>(customProviderIcon.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -685,6 +931,11 @@ class LlmConfigsTableCompanion extends UpdateCompanion<LlmConfigsTableData> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isEnabled: $isEnabled, ')
+          ..write('isCustomProvider: $isCustomProvider, ')
+          ..write('apiCompatibilityType: $apiCompatibilityType, ')
+          ..write('customProviderName: $customProviderName, ')
+          ..write('customProviderDescription: $customProviderDescription, ')
+          ..write('customProviderIcon: $customProviderIcon, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5955,6 +6206,11 @@ typedef $$LlmConfigsTableTableCreateCompanionBuilder = LlmConfigsTableCompanion
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<bool> isEnabled,
+  Value<bool> isCustomProvider,
+  Value<String> apiCompatibilityType,
+  Value<String?> customProviderName,
+  Value<String?> customProviderDescription,
+  Value<String?> customProviderIcon,
   Value<int> rowid,
 });
 typedef $$LlmConfigsTableTableUpdateCompanionBuilder = LlmConfigsTableCompanion
@@ -5972,6 +6228,11 @@ typedef $$LlmConfigsTableTableUpdateCompanionBuilder = LlmConfigsTableCompanion
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<bool> isEnabled,
+  Value<bool> isCustomProvider,
+  Value<String> apiCompatibilityType,
+  Value<String?> customProviderName,
+  Value<String?> customProviderDescription,
+  Value<String?> customProviderIcon,
   Value<int> rowid,
 });
 
@@ -6024,6 +6285,26 @@ class $$LlmConfigsTableTableFilterComposer
 
   ColumnFilters<bool> get isEnabled => $composableBuilder(
       column: $table.isEnabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isCustomProvider => $composableBuilder(
+      column: $table.isCustomProvider,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get apiCompatibilityType => $composableBuilder(
+      column: $table.apiCompatibilityType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get customProviderName => $composableBuilder(
+      column: $table.customProviderName,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get customProviderDescription => $composableBuilder(
+      column: $table.customProviderDescription,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get customProviderIcon => $composableBuilder(
+      column: $table.customProviderIcon,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$LlmConfigsTableTableOrderingComposer
@@ -6076,6 +6357,26 @@ class $$LlmConfigsTableTableOrderingComposer
 
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
       column: $table.isEnabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isCustomProvider => $composableBuilder(
+      column: $table.isCustomProvider,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get apiCompatibilityType => $composableBuilder(
+      column: $table.apiCompatibilityType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get customProviderName => $composableBuilder(
+      column: $table.customProviderName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get customProviderDescription => $composableBuilder(
+      column: $table.customProviderDescription,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get customProviderIcon => $composableBuilder(
+      column: $table.customProviderIcon,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$LlmConfigsTableTableAnnotationComposer
@@ -6125,6 +6426,21 @@ class $$LlmConfigsTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCustomProvider => $composableBuilder(
+      column: $table.isCustomProvider, builder: (column) => column);
+
+  GeneratedColumn<String> get apiCompatibilityType => $composableBuilder(
+      column: $table.apiCompatibilityType, builder: (column) => column);
+
+  GeneratedColumn<String> get customProviderName => $composableBuilder(
+      column: $table.customProviderName, builder: (column) => column);
+
+  GeneratedColumn<String> get customProviderDescription => $composableBuilder(
+      column: $table.customProviderDescription, builder: (column) => column);
+
+  GeneratedColumn<String> get customProviderIcon => $composableBuilder(
+      column: $table.customProviderIcon, builder: (column) => column);
 }
 
 class $$LlmConfigsTableTableTableManager extends RootTableManager<
@@ -6167,6 +6483,11 @@ class $$LlmConfigsTableTableTableManager extends RootTableManager<
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<bool> isEnabled = const Value.absent(),
+            Value<bool> isCustomProvider = const Value.absent(),
+            Value<String> apiCompatibilityType = const Value.absent(),
+            Value<String?> customProviderName = const Value.absent(),
+            Value<String?> customProviderDescription = const Value.absent(),
+            Value<String?> customProviderIcon = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               LlmConfigsTableCompanion(
@@ -6183,6 +6504,11 @@ class $$LlmConfigsTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
             updatedAt: updatedAt,
             isEnabled: isEnabled,
+            isCustomProvider: isCustomProvider,
+            apiCompatibilityType: apiCompatibilityType,
+            customProviderName: customProviderName,
+            customProviderDescription: customProviderDescription,
+            customProviderIcon: customProviderIcon,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -6199,6 +6525,11 @@ class $$LlmConfigsTableTableTableManager extends RootTableManager<
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<bool> isEnabled = const Value.absent(),
+            Value<bool> isCustomProvider = const Value.absent(),
+            Value<String> apiCompatibilityType = const Value.absent(),
+            Value<String?> customProviderName = const Value.absent(),
+            Value<String?> customProviderDescription = const Value.absent(),
+            Value<String?> customProviderIcon = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               LlmConfigsTableCompanion.insert(
@@ -6215,6 +6546,11 @@ class $$LlmConfigsTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
             updatedAt: updatedAt,
             isEnabled: isEnabled,
+            isCustomProvider: isCustomProvider,
+            apiCompatibilityType: apiCompatibilityType,
+            customProviderName: customProviderName,
+            customProviderDescription: customProviderDescription,
+            customProviderIcon: customProviderIcon,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

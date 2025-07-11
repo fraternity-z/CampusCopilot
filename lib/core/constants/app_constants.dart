@@ -97,6 +97,10 @@ class AppConstants {
     'openai': 'OpenAI',
     'google': 'Google Gemini',
     'anthropic': 'Anthropic Claude',
+    'deepseek': 'DeepSeek',
+    'qwen': '阿里云通义千问',
+    'openrouter': 'OpenRouter',
+    'ollama': 'Ollama',
   };
 
   /// 默认模型配置
@@ -104,12 +108,48 @@ class AppConstants {
     'openai': 'gpt-3.5-turbo',
     'google': 'gemini-pro',
     'anthropic': 'claude-3-sonnet-20240229',
+    'deepseek': 'deepseek-chat',
+    'qwen': 'qwen-turbo',
+    'openrouter': 'meta-llama/llama-3.1-8b-instruct:free',
+    'ollama': 'llama3.2',
   };
 
   /// 嵌入模型配置
   static const Map<String, String> embeddingModels = {
     'openai': 'text-embedding-3-small',
     'google': 'embedding-001',
+    'deepseek': 'deepseek-embedding',
+    'qwen': 'text-embedding-v1',
+  };
+
+  /// API兼容性类型
+  static const Map<String, String> apiCompatibilityTypes = {
+    'openai': 'OpenAI API',
+    'gemini': 'Gemini API',
+    'anthropic': 'Anthropic API',
+    'custom': '自定义API',
+  };
+
+  /// 提供商API兼容性映射
+  static const Map<String, String> providerCompatibility = {
+    'openai': 'openai',
+    'google': 'gemini',
+    'anthropic': 'anthropic',
+    'deepseek': 'openai',
+    'qwen': 'openai',
+    'openrouter': 'openai',
+    'ollama': 'openai',
+  };
+
+  /// 提供商默认端点
+  static const Map<String, String> providerDefaultEndpoints = {
+    'openai': 'https://api.openai.com/v1',
+    'google': 'https://generativelanguage.googleapis.com/v1beta',
+    'anthropic': 'https://api.anthropic.com',
+    'deepseek': 'https://api.deepseek.com',
+    'qwen': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    'openrouter': 'https://openrouter.ai/api/v1',
+    'ollama': 'http://localhost:11434/v1',
   };
 }
 

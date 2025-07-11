@@ -59,6 +59,21 @@ mixin _$LlmConfig {
   /// 是否启用
   bool get isEnabled => throw _privateConstructorUsedError;
 
+  /// 是否为自定义提供商
+  bool get isCustomProvider => throw _privateConstructorUsedError;
+
+  /// API兼容性类型 (openai, gemini, anthropic, custom)
+  String get apiCompatibilityType => throw _privateConstructorUsedError;
+
+  /// 自定义提供商显示名称
+  String? get customProviderName => throw _privateConstructorUsedError;
+
+  /// 自定义提供商描述
+  String? get customProviderDescription => throw _privateConstructorUsedError;
+
+  /// 自定义提供商图标（可选）
+  String? get customProviderIcon => throw _privateConstructorUsedError;
+
   /// Serializes this LlmConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -87,7 +102,12 @@ abstract class $LlmConfigCopyWith<$Res> {
       Map<String, dynamic>? extraParams,
       DateTime createdAt,
       DateTime updatedAt,
-      bool isEnabled});
+      bool isEnabled,
+      bool isCustomProvider,
+      String apiCompatibilityType,
+      String? customProviderName,
+      String? customProviderDescription,
+      String? customProviderIcon});
 }
 
 /// @nodoc
@@ -118,6 +138,11 @@ class _$LlmConfigCopyWithImpl<$Res, $Val extends LlmConfig>
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? isEnabled = null,
+    Object? isCustomProvider = null,
+    Object? apiCompatibilityType = null,
+    Object? customProviderName = freezed,
+    Object? customProviderDescription = freezed,
+    Object? customProviderIcon = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -172,6 +197,26 @@ class _$LlmConfigCopyWithImpl<$Res, $Val extends LlmConfig>
           ? _value.isEnabled
           : isEnabled // ignore: cast_nullable_to_non_nullable
               as bool,
+      isCustomProvider: null == isCustomProvider
+          ? _value.isCustomProvider
+          : isCustomProvider // ignore: cast_nullable_to_non_nullable
+              as bool,
+      apiCompatibilityType: null == apiCompatibilityType
+          ? _value.apiCompatibilityType
+          : apiCompatibilityType // ignore: cast_nullable_to_non_nullable
+              as String,
+      customProviderName: freezed == customProviderName
+          ? _value.customProviderName
+          : customProviderName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      customProviderDescription: freezed == customProviderDescription
+          ? _value.customProviderDescription
+          : customProviderDescription // ignore: cast_nullable_to_non_nullable
+              as String?,
+      customProviderIcon: freezed == customProviderIcon
+          ? _value.customProviderIcon
+          : customProviderIcon // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -197,7 +242,12 @@ abstract class _$$LlmConfigImplCopyWith<$Res>
       Map<String, dynamic>? extraParams,
       DateTime createdAt,
       DateTime updatedAt,
-      bool isEnabled});
+      bool isEnabled,
+      bool isCustomProvider,
+      String apiCompatibilityType,
+      String? customProviderName,
+      String? customProviderDescription,
+      String? customProviderIcon});
 }
 
 /// @nodoc
@@ -226,6 +276,11 @@ class __$$LlmConfigImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? isEnabled = null,
+    Object? isCustomProvider = null,
+    Object? apiCompatibilityType = null,
+    Object? customProviderName = freezed,
+    Object? customProviderDescription = freezed,
+    Object? customProviderIcon = freezed,
   }) {
     return _then(_$LlmConfigImpl(
       id: null == id
@@ -280,6 +335,26 @@ class __$$LlmConfigImplCopyWithImpl<$Res>
           ? _value.isEnabled
           : isEnabled // ignore: cast_nullable_to_non_nullable
               as bool,
+      isCustomProvider: null == isCustomProvider
+          ? _value.isCustomProvider
+          : isCustomProvider // ignore: cast_nullable_to_non_nullable
+              as bool,
+      apiCompatibilityType: null == apiCompatibilityType
+          ? _value.apiCompatibilityType
+          : apiCompatibilityType // ignore: cast_nullable_to_non_nullable
+              as String,
+      customProviderName: freezed == customProviderName
+          ? _value.customProviderName
+          : customProviderName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      customProviderDescription: freezed == customProviderDescription
+          ? _value.customProviderDescription
+          : customProviderDescription // ignore: cast_nullable_to_non_nullable
+              as String?,
+      customProviderIcon: freezed == customProviderIcon
+          ? _value.customProviderIcon
+          : customProviderIcon // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -300,7 +375,12 @@ class _$LlmConfigImpl implements _LlmConfig {
       final Map<String, dynamic>? extraParams,
       required this.createdAt,
       required this.updatedAt,
-      this.isEnabled = true})
+      this.isEnabled = true,
+      this.isCustomProvider = false,
+      this.apiCompatibilityType = 'openai',
+      this.customProviderName,
+      this.customProviderDescription,
+      this.customProviderIcon})
       : _extraParams = extraParams;
 
   factory _$LlmConfigImpl.fromJson(Map<String, dynamic> json) =>
@@ -368,9 +448,31 @@ class _$LlmConfigImpl implements _LlmConfig {
   @JsonKey()
   final bool isEnabled;
 
+  /// 是否为自定义提供商
+  @override
+  @JsonKey()
+  final bool isCustomProvider;
+
+  /// API兼容性类型 (openai, gemini, anthropic, custom)
+  @override
+  @JsonKey()
+  final String apiCompatibilityType;
+
+  /// 自定义提供商显示名称
+  @override
+  final String? customProviderName;
+
+  /// 自定义提供商描述
+  @override
+  final String? customProviderDescription;
+
+  /// 自定义提供商图标（可选）
+  @override
+  final String? customProviderIcon;
+
   @override
   String toString() {
-    return 'LlmConfig(id: $id, name: $name, provider: $provider, apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel, defaultEmbeddingModel: $defaultEmbeddingModel, organizationId: $organizationId, projectId: $projectId, extraParams: $extraParams, createdAt: $createdAt, updatedAt: $updatedAt, isEnabled: $isEnabled)';
+    return 'LlmConfig(id: $id, name: $name, provider: $provider, apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel, defaultEmbeddingModel: $defaultEmbeddingModel, organizationId: $organizationId, projectId: $projectId, extraParams: $extraParams, createdAt: $createdAt, updatedAt: $updatedAt, isEnabled: $isEnabled, isCustomProvider: $isCustomProvider, apiCompatibilityType: $apiCompatibilityType, customProviderName: $customProviderName, customProviderDescription: $customProviderDescription, customProviderIcon: $customProviderIcon)';
   }
 
   @override
@@ -399,7 +501,18 @@ class _$LlmConfigImpl implements _LlmConfig {
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
             (identical(other.isEnabled, isEnabled) ||
-                other.isEnabled == isEnabled));
+                other.isEnabled == isEnabled) &&
+            (identical(other.isCustomProvider, isCustomProvider) ||
+                other.isCustomProvider == isCustomProvider) &&
+            (identical(other.apiCompatibilityType, apiCompatibilityType) ||
+                other.apiCompatibilityType == apiCompatibilityType) &&
+            (identical(other.customProviderName, customProviderName) ||
+                other.customProviderName == customProviderName) &&
+            (identical(other.customProviderDescription,
+                    customProviderDescription) ||
+                other.customProviderDescription == customProviderDescription) &&
+            (identical(other.customProviderIcon, customProviderIcon) ||
+                other.customProviderIcon == customProviderIcon));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -418,7 +531,12 @@ class _$LlmConfigImpl implements _LlmConfig {
       const DeepCollectionEquality().hash(_extraParams),
       createdAt,
       updatedAt,
-      isEnabled);
+      isEnabled,
+      isCustomProvider,
+      apiCompatibilityType,
+      customProviderName,
+      customProviderDescription,
+      customProviderIcon);
 
   /// Create a copy of LlmConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -450,7 +568,12 @@ abstract class _LlmConfig implements LlmConfig {
       final Map<String, dynamic>? extraParams,
       required final DateTime createdAt,
       required final DateTime updatedAt,
-      final bool isEnabled}) = _$LlmConfigImpl;
+      final bool isEnabled,
+      final bool isCustomProvider,
+      final String apiCompatibilityType,
+      final String? customProviderName,
+      final String? customProviderDescription,
+      final String? customProviderIcon}) = _$LlmConfigImpl;
 
   factory _LlmConfig.fromJson(Map<String, dynamic> json) =
       _$LlmConfigImpl.fromJson;
@@ -506,6 +629,26 @@ abstract class _LlmConfig implements LlmConfig {
   /// 是否启用
   @override
   bool get isEnabled;
+
+  /// 是否为自定义提供商
+  @override
+  bool get isCustomProvider;
+
+  /// API兼容性类型 (openai, gemini, anthropic, custom)
+  @override
+  String get apiCompatibilityType;
+
+  /// 自定义提供商显示名称
+  @override
+  String? get customProviderName;
+
+  /// 自定义提供商描述
+  @override
+  String? get customProviderDescription;
+
+  /// 自定义提供商图标（可选）
+  @override
+  String? get customProviderIcon;
 
   /// Create a copy of LlmConfig
   /// with the given fields replaced by the non-null parameter values.

@@ -97,7 +97,7 @@ class ClaudeConfig with _$ClaudeConfig {
 }
 
 /// AI提供商枚举
-enum AIProvider { openai, gemini, claude }
+enum AIProvider { openai, gemini, claude, deepseek, qwen, openrouter, ollama }
 
 /// 主题模式枚举
 enum ThemeMode { system, light, dark }
