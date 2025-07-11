@@ -17,8 +17,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
         children: [
           _buildThemeSection(context, ref),
           const SizedBox(height: 16),
-          _buildLanguageSection(context, ref),
-          const SizedBox(height: 16),
           _buildAnimationSection(context, ref),
           const SizedBox(height: 16),
           _buildDisplaySection(context, ref),
@@ -141,56 +139,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
     );
   }
 
-  /// 语言设置区域
-  Widget _buildLanguageSection(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.language,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '语言设置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            ListTile(
-              title: const Text('界面语言'),
-              subtitle: Text(
-                _getLanguageName(ref.watch(settingsProvider).language),
-              ),
-              trailing: DropdownButton<String>(
-                value: ref.watch(settingsProvider).language,
-                items: const [
-                  DropdownMenuItem(value: 'zh', child: Text('中文')),
-                  DropdownMenuItem(value: 'en', child: Text('English')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(settingsProvider.notifier).updateLanguage(value);
-                  }
-                },
-              ),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 显示设置区域
   Widget _buildDisplaySection(BuildContext context, WidgetRef ref) {
     return Card(
@@ -216,23 +164,7 @@ class AppearanceSettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            ListTile(
-              title: const Text('字体大小'),
-              subtitle: const Text('调整界面字体大小'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showFontSizeSettings(context),
-              contentPadding: EdgeInsets.zero,
-            ),
-
-            const Divider(),
-
-            ListTile(
-              title: const Text('界面密度'),
-              subtitle: const Text('调整界面元素间距'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showDensitySettings(context),
-              contentPadding: EdgeInsets.zero,
-            ),
+            // Remove ListTile for '字体大小'
           ],
         ),
       ),
@@ -326,22 +258,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
               const Divider(),
 
               SwitchListTile(
-                title: const Text('Gemini特殊处理'),
-                subtitle: const Text('为Gemini 2.5 Pro等模型提供特殊的思考链显示'),
-                value: thinkingChainSettings.enableGeminiSpecialHandling,
-                onChanged: (value) {
-                  notifier.updateThinkingChainSettings(
-                    thinkingChainSettings.copyWith(
-                      enableGeminiSpecialHandling: value,
-                    ),
-                  );
-                },
-                contentPadding: EdgeInsets.zero,
-              ),
-
-              const Divider(),
-
-              SwitchListTile(
                 title: const Text('自动折叠长内容'),
                 subtitle: const Text('长思考链内容将自动折叠，可点击展开'),
                 value: thinkingChainSettings.autoCollapseOnLongContent,
@@ -405,40 +321,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
     );
   }
 
-  /// 显示字体大小设置
-  void _showFontSizeSettings(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('字体大小'),
-        content: const Text('字体大小设置功能开发中...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 显示界面密度设置
-  void _showDensitySettings(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('界面密度'),
-        content: const Text('界面密度设置功能开发中...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 将ThemeMode转换为字符串
   String _getThemeModeString(app_settings.ThemeMode themeMode) {
     switch (themeMode) {
@@ -461,17 +343,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
       case '跟随系统':
       default:
         return app_settings.ThemeMode.system;
-    }
-  }
-
-  String _getLanguageName(String code) {
-    switch (code) {
-      case 'zh':
-        return '中文';
-      case 'en':
-        return 'English';
-      default:
-        return '未知';
     }
   }
 }

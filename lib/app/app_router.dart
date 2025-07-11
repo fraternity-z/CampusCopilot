@@ -117,7 +117,6 @@ class GeneralSettings {
   final bool enableMarkdownRendering;
   final bool enableAutoSave;
   final bool enableNotifications;
-  final double fontSize;
   final String language;
   final String mathEngine; // 新增：数学引擎选择
 
@@ -125,7 +124,6 @@ class GeneralSettings {
     this.enableMarkdownRendering = true,
     this.enableAutoSave = true,
     this.enableNotifications = true,
-    this.fontSize = 14.0,
     this.language = 'zh-CN',
     this.mathEngine = 'katex', // 默认使用KaTeX
   });
@@ -134,7 +132,6 @@ class GeneralSettings {
     bool? enableMarkdownRendering,
     bool? enableAutoSave,
     bool? enableNotifications,
-    double? fontSize,
     String? language,
     String? mathEngine,
   }) {
@@ -143,7 +140,6 @@ class GeneralSettings {
           enableMarkdownRendering ?? this.enableMarkdownRendering,
       enableAutoSave: enableAutoSave ?? this.enableAutoSave,
       enableNotifications: enableNotifications ?? this.enableNotifications,
-      fontSize: fontSize ?? this.fontSize,
       language: language ?? this.language,
       mathEngine: mathEngine ?? this.mathEngine,
     );
@@ -1830,34 +1826,6 @@ class NavigationSidebar extends ConsumerWidget {
           onChanged: (value) {
             ref.read(generalSettingsProvider.notifier).state = settings
                 .copyWith(enableNotifications: value);
-          },
-        ),
-        const SizedBox(height: 16),
-        // 字体大小设置
-        _buildParameterSlider(
-          context,
-          label: '字体大小',
-          value: settings.fontSize,
-          min: 10.0,
-          max: 20.0,
-          divisions: 100,
-          onChanged: (value) {
-            ref.read(generalSettingsProvider.notifier).state = settings
-                .copyWith(fontSize: value);
-          },
-        ),
-        const SizedBox(height: 16),
-        // 语言选择
-        _buildDropdownField(
-          context,
-          title: '语言',
-          value: settings.language,
-          items: const ['zh-CN', 'en-US'],
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(generalSettingsProvider.notifier).state = settings
-                  .copyWith(language: value);
-            }
           },
         ),
         const SizedBox(height: 16),

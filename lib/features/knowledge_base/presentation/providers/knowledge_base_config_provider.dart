@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
@@ -5,7 +6,6 @@ import '../../domain/entities/knowledge_document.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
-import '../../../llm_chat/domain/services/model_management_service.dart';
 
 /// 知识库配置状态
 class KnowledgeBaseConfigState {
@@ -33,7 +33,8 @@ class KnowledgeBaseConfigState {
     return KnowledgeBaseConfigState(
       configs: configs ?? this.configs,
       currentConfig: currentConfig ?? this.currentConfig,
-      availableEmbeddingModels: availableEmbeddingModels ?? this.availableEmbeddingModels,
+      availableEmbeddingModels:
+          availableEmbeddingModels ?? this.availableEmbeddingModels,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -41,12 +42,12 @@ class KnowledgeBaseConfigState {
 }
 
 /// 知识库配置管理器
-class KnowledgeBaseConfigNotifier extends StateNotifier<KnowledgeBaseConfigState> {
+class KnowledgeBaseConfigNotifier
+    extends StateNotifier<KnowledgeBaseConfigState> {
   final AppDatabase _database;
-  final ModelManagementService _modelService;
 
-  KnowledgeBaseConfigNotifier(this._database, this._modelService)
-      : super(const KnowledgeBaseConfigState()) {
+  KnowledgeBaseConfigNotifier(this._database)
+    : super(const KnowledgeBaseConfigState()) {
     _loadConfigs();
     _loadEmbeddingModels();
   }
@@ -60,7 +61,8 @@ class KnowledgeBaseConfigNotifier extends StateNotifier<KnowledgeBaseConfigState
       final configs = dbConfigs.map(_convertToConfig).toList();
 
       // 获取默认配置
-      final defaultConfig = configs.where((c) => c.id == 'default').firstOrNull ??
+      final defaultConfig =
+          configs.where((c) => c.id == 'default').firstOrNull ??
           configs.firstOrNull;
 
       state = state.copyWith(
@@ -74,16 +76,46 @@ class KnowledgeBaseConfigNotifier extends StateNotifier<KnowledgeBaseConfigState
   }
 
   /// 加载可用的嵌入模型
+  /// 获取所有用户配置的启用模型，不依赖内置模型或特定类型
   Future<void> _loadEmbeddingModels() async {
     try {
-      final allModels = await _modelService.getEnabledModels();
-      final embeddingModels = allModels
-          .where((model) => model.type == ModelType.embedding)
-          .toList();
+      final allModels = <ModelInfo>[];
 
-      state = state.copyWith(availableEmbeddingModels: embeddingModels);
+      // 获取所有启用的LLM配置
+      final allConfigs = await _database.getEnabledLlmConfigs();
+
+      // 获取每个配置下的模型
+      for (final config in allConfigs) {
+        final configModels = await _database.getCustomModelsByConfig(config.id);
+
+        for (final modelData in configModels) {
+          if (modelData.isEnabled) {
+            final modelInfo = ModelInfo(
+              id: modelData.modelId,
+              name: modelData.name,
+              description: modelData.description,
+              type: ModelType.values.firstWhere(
+                (type) => type.name == modelData.type,
+                orElse: () => ModelType.chat,
+              ),
+              contextWindow: modelData.contextWindow,
+              maxOutputTokens: modelData.maxOutputTokens,
+              supportsStreaming: modelData.supportsStreaming,
+              supportsFunctionCalling: modelData.supportsFunctionCalling,
+              supportsVision: modelData.supportsVision,
+            );
+            allModels.add(modelInfo);
+          }
+        }
+      }
+
+      // 返回所有启用的模型，让用户选择任何模型作为嵌入模型
+      // 不再限制只能选择embedding类型的模型
+      state = state.copyWith(availableEmbeddingModels: allModels);
     } catch (e) {
+      debugPrint('加载嵌入模型列表失败: $e');
       // 忽略错误，使用空列表
+      state = state.copyWith(availableEmbeddingModels: []);
     }
   }
 
@@ -203,14 +235,18 @@ class KnowledgeBaseConfigNotifier extends StateNotifier<KnowledgeBaseConfigState
 
 /// 知识库配置Provider
 final knowledgeBaseConfigProvider =
-    StateNotifierProvider<KnowledgeBaseConfigNotifier, KnowledgeBaseConfigState>((ref) {
-  final database = ref.read(appDatabaseProvider);
-  final modelService = ref.read(modelManagementServiceProvider);
-  return KnowledgeBaseConfigNotifier(database, modelService);
-});
+    StateNotifierProvider<
+      KnowledgeBaseConfigNotifier,
+      KnowledgeBaseConfigState
+    >((ref) {
+      final database = ref.read(appDatabaseProvider);
+      return KnowledgeBaseConfigNotifier(database);
+    });
 
 /// 当前知识库配置Provider
-final currentKnowledgeBaseConfigProvider = Provider<KnowledgeBaseConfig?>((ref) {
+final currentKnowledgeBaseConfigProvider = Provider<KnowledgeBaseConfig?>((
+  ref,
+) {
   return ref.watch(knowledgeBaseConfigProvider).currentConfig;
 });
 

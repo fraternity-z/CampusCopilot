@@ -46,6 +46,7 @@ dependencies:
   flutter_slidable: ^3.1.1             # 滑动操作
   card_swiper: ^3.0.1                  # 卡片轮播
   flutter_animate: ^4.5.0              # 强大的动画库
+  flutter_html: ^3.0.0-beta.2         # HTML渲染组件
 
   # 状态管理与依赖注入
   flutter_riverpod: ^2.5.1

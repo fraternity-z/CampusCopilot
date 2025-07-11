@@ -1034,16 +1034,29 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
         content: SizedBox(
           width: double.maxFinite,
           child: embeddingModels.isEmpty
-              ? const Text('没有可用的嵌入模型，请先在模型设置中配置嵌入模型。')
+              ? const Text('没有可用的模型，请先在模型设置中配置并启用模型。')
               : ListView.builder(
                   shrinkWrap: true,
                   itemCount: embeddingModels.length,
                   itemBuilder: (context, index) {
                     final model = embeddingModels[index];
                     return ListTile(
+                      leading: _getModelTypeIcon(model.type),
                       title: Text(model.name),
-                      subtitle: Text(
-                        '${model.id} (${_getProviderName(model.id)})',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${model.id} (${_getProviderName(model.id)})'),
+                          Text(
+                            '类型: ${_getModelTypeName(model.type)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                       onTap: () {
                         Navigator.of(context).pop();
@@ -1116,6 +1129,38 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       return 'Anthropic';
     } else {
       return '未知';
+    }
+  }
+
+  /// 获取模型类型图标
+  Widget _getModelTypeIcon(ModelType type) {
+    switch (type) {
+      case ModelType.chat:
+        return const Icon(Icons.chat, color: Colors.blue, size: 20);
+      case ModelType.embedding:
+        return const Icon(Icons.text_fields, color: Colors.green, size: 20);
+      case ModelType.multimodal:
+        return const Icon(Icons.image, color: Colors.purple, size: 20);
+      case ModelType.imageGeneration:
+        return const Icon(Icons.image, color: Colors.orange, size: 20);
+      case ModelType.speech:
+        return const Icon(Icons.mic, color: Colors.red, size: 20);
+    }
+  }
+
+  /// 获取模型类型名称
+  String _getModelTypeName(ModelType type) {
+    switch (type) {
+      case ModelType.chat:
+        return '聊天模型';
+      case ModelType.embedding:
+        return '嵌入模型';
+      case ModelType.multimodal:
+        return '多模态模型';
+      case ModelType.imageGeneration:
+        return '图像生成模型';
+      case ModelType.speech:
+        return '语音模型';
     }
   }
 

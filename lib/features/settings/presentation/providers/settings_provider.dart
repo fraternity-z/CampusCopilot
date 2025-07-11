@@ -53,12 +53,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
-  /// 更新Gemini配置
-  Future<void> updateGeminiConfig(GeminiConfig config) async {
-    state = state.copyWith(geminiConfig: config);
-    await _saveSettings();
-  }
-
   /// 更新Claude配置
   Future<void> updateClaudeConfig(ClaudeConfig config) async {
     state = state.copyWith(claudeConfig: config);
@@ -68,12 +62,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   /// 更新主题模式
   Future<void> updateThemeMode(ThemeMode themeMode) async {
     state = state.copyWith(themeMode: themeMode);
-    await _saveSettings();
-  }
-
-  /// 更新语言
-  Future<void> updateLanguage(String language) async {
-    state = state.copyWith(language: language);
     await _saveSettings();
   }
 
@@ -145,12 +133,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     return config != null && config.apiKey.isNotEmpty;
   }
 
-  /// 验证Gemini配置
-  bool validateGeminiConfig() {
-    final config = state.geminiConfig;
-    return config != null && config.apiKey.isNotEmpty;
-  }
-
   /// 验证Claude配置
   bool validateClaudeConfig() {
     final config = state.claudeConfig;
@@ -163,9 +145,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
     if (validateOpenAIConfig()) {
       providers.add(AIProvider.openai);
-    }
-    if (validateGeminiConfig()) {
-      providers.add(AIProvider.gemini);
     }
     if (validateClaudeConfig()) {
       providers.add(AIProvider.claude);
@@ -256,17 +235,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
             );
           }
           break;
-        case AIProvider.gemini:
-          if (state.geminiConfig != null) {
-            await updateGeminiConfig(
-              state.geminiConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateGeminiConfig(
-              GeminiConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
-          break;
         case AIProvider.claude:
           if (state.claudeConfig != null) {
             await updateClaudeConfig(
@@ -277,6 +245,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
               ClaudeConfig(apiKey: '', defaultModel: modelId),
             );
           }
+          break;
+        default:
           break;
       }
 
@@ -331,12 +301,6 @@ final openaiConfigValidProvider = Provider<bool>((ref) {
   return notifier.validateOpenAIConfig();
 });
 
-/// Gemini配置有效性Provider
-final geminiConfigValidProvider = Provider<bool>((ref) {
-  final notifier = ref.read(settingsProvider.notifier);
-  return notifier.validateGeminiConfig();
-});
-
 /// Claude配置有效性Provider
 final claudeConfigValidProvider = Provider<bool>((ref) {
   final notifier = ref.read(settingsProvider.notifier);
@@ -356,11 +320,6 @@ final databaseAvailableProvidersProvider = FutureProvider<List<AIProvider>>((
       case 'openai':
         if (!providers.contains(AIProvider.openai)) {
           providers.add(AIProvider.openai);
-        }
-        break;
-      case 'gemini':
-        if (!providers.contains(AIProvider.gemini)) {
-          providers.add(AIProvider.gemini);
         }
         break;
       case 'claude':
@@ -420,9 +379,6 @@ AIProvider? _stringToAIProvider(String provider) {
   switch (provider.toLowerCase()) {
     case 'openai':
       return AIProvider.openai;
-    case 'gemini':
-    case 'google':
-      return AIProvider.gemini;
     case 'claude':
     case 'anthropic':
       return AIProvider.claude;
@@ -461,10 +417,10 @@ class ModelInfoWithProvider {
     switch (provider) {
       case AIProvider.openai:
         return 'OpenAI';
-      case AIProvider.gemini:
-        return 'Google';
       case AIProvider.claude:
         return 'Anthropic';
+      default:
+        return 'Unknown Provider';
     }
   }
 }
@@ -503,12 +459,11 @@ final databaseCurrentModelProvider = FutureProvider<ModelInfoWithProvider?>((
     case AIProvider.openai:
       defaultModel = settings.openaiConfig?.defaultModel;
       break;
-    case AIProvider.gemini:
-      defaultModel = settings.geminiConfig?.defaultModel;
-      break;
     case AIProvider.claude:
       defaultModel = settings.claudeConfig?.defaultModel;
       break;
+    default:
+      defaultModel = 'unknown';
   }
 
   if (defaultModel != null) {
