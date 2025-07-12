@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../features/llm_chat/presentation/views/widgets/animated_title_widget.dart';
 import 'package:flutter/services.dart';
 
 import '../features/llm_chat/presentation/views/chat_screen.dart';
@@ -8,6 +10,7 @@ import '../features/persona_management/presentation/widgets/persona_edit_dialog.
 import '../features/persona_management/presentation/widgets/preset_persona_selector_dialog.dart';
 import '../features/settings/presentation/views/settings_screen.dart';
 
+import '../features/settings/presentation/views/general_settings_screen.dart';
 import '../features/settings/presentation/views/appearance_settings_screen.dart';
 import '../features/settings/presentation/views/data_management_screen.dart';
 import '../features/settings/presentation/views/about_screen.dart';
@@ -20,10 +23,8 @@ import '../features/llm_chat/domain/entities/chat_session.dart';
 import '../../features/persona_management/presentation/providers/persona_group_provider.dart';
 import '../features/persona_management/presentation/providers/persona_provider.dart';
 import '../features/persona_management/domain/entities/persona.dart';
+import '../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../data/local/app_database.dart';
-
-/// 侧边栏折叠状态管理
-final sidebarCollapsedProvider = StateProvider<bool>((ref) => false);
 
 /// 侧边栏标签页状态管理
 enum SidebarTab { assistants, topics, settings }
@@ -194,6 +195,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: 'settings',
             builder: (context, state) => const SettingsScreen(),
             routes: [
+              // 常规设置
+              GoRoute(
+                path: 'general',
+                name: 'general-settings',
+                builder: (context, state) => const GeneralSettingsScreen(),
+              ),
               // 模型管理
               GoRoute(
                 path: 'models',
@@ -259,7 +266,9 @@ class MainShell extends ConsumerWidget {
           ? FloatingActionButton(
               mini: true,
               onPressed: () {
-                ref.read(sidebarCollapsedProvider.notifier).state = false;
+                ref
+                    .read(uiSettingsProvider.notifier)
+                    .setSidebarCollapsed(false);
               },
               tooltip: '展开侧边栏',
               child: const Icon(Icons.menu),
@@ -277,7 +286,7 @@ class MainShell extends ConsumerWidget {
             // 半透明背景遮罩
             GestureDetector(
               onTap: () {
-                ref.read(sidebarCollapsedProvider.notifier).state = true;
+                ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(true);
               },
               child: Container(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -314,7 +323,7 @@ class NavigationSidebar extends ConsumerWidget {
         onHorizontalDragEnd: (details) {
           if (details.primaryVelocity != null &&
               details.primaryVelocity! < -500) {
-            ref.read(sidebarCollapsedProvider.notifier).state = true;
+            ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(true);
           }
         },
         child: AnimatedContainer(
@@ -373,8 +382,9 @@ class NavigationSidebar extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.close, size: 24),
                       onPressed: () {
-                        ref.read(sidebarCollapsedProvider.notifier).state =
-                            true;
+                        ref
+                            .read(uiSettingsProvider.notifier)
+                            .setSidebarCollapsed(true);
                       },
                       tooltip: '关闭侧边栏',
                     ),
@@ -1137,14 +1147,16 @@ class NavigationSidebar extends ConsumerWidget {
 
                   return _buildChatSessionTile(
                     context,
-                    title: session.title,
+                    session: session,
                     subtitle: _formatSessionTime(session.updatedAt),
                     time: '',
                     isSelected: isSelected,
                     onTap: () {
                       ref.read(chatProvider.notifier).selectSession(session.id);
                       // 关闭侧边栏
-                      ref.read(sidebarCollapsedProvider.notifier).state = true;
+                      ref
+                          .read(uiSettingsProvider.notifier)
+                          .setSidebarCollapsed(true);
                       // 跳转到聊天页面
                       context.go('/chat');
                     },
@@ -1294,7 +1306,7 @@ class NavigationSidebar extends ConsumerWidget {
   /// 构建聊天会话条目
   Widget _buildChatSessionTile(
     BuildContext context, {
-    required String title,
+    required dynamic session, // 使用dynamic暂时避免导入问题
     required String subtitle,
     required String time,
     required bool isSelected,
@@ -1324,16 +1336,14 @@ class NavigationSidebar extends ConsumerWidget {
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        title: Text(
-          title,
+        title: AnimatedTitleWidget(
+          title: session.title,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             color: isSelected
                 ? Theme.of(context).colorScheme.onPrimaryContainer
                 : null,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           subtitle,

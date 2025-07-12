@@ -16,6 +16,7 @@ import 'tables/knowledge_documents_table.dart';
 import 'tables/knowledge_chunks_table.dart';
 import 'tables/knowledge_base_configs_table.dart';
 import 'tables/custom_models_table.dart';
+import 'tables/general_settings_table.dart';
 
 part 'app_database.g.dart';
 
@@ -37,6 +38,7 @@ part 'app_database.g.dart';
     KnowledgeChunksTable,
     KnowledgeBaseConfigsTable,
     CustomModelsTable,
+    GeneralSettingsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -64,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -134,6 +136,14 @@ class AppDatabase extends _$AppDatabase {
               );
             } catch (e) {
               debugPrint('Failed to add custom provider columns: $e');
+            }
+          }
+          if (from < 7) {
+            try {
+              // 添加常规设置表
+              await m.createTable(generalSettingsTable);
+            } catch (e) {
+              debugPrint('Failed to create general settings table: $e');
             }
           }
         });
@@ -770,6 +780,38 @@ class AppDatabase extends _$AppDatabase {
       'personas': results[2],
       'documents': results[3],
     };
+  }
+
+  // ---------- 常规设置管理 ----------
+
+  /// 获取设置值
+  Future<String?> getSetting(String key) async {
+    final result = await (select(
+      generalSettingsTable,
+    )..where((t) => t.key.equals(key))).getSingleOrNull();
+    return result?.value;
+  }
+
+  /// 设置值
+  Future<void> setSetting(String key, String value) async {
+    await into(generalSettingsTable).insertOnConflictUpdate(
+      GeneralSettingsTableCompanion.insert(
+        key: key,
+        value: value,
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// 删除设置
+  Future<void> deleteSetting(String key) async {
+    await (delete(generalSettingsTable)..where((t) => t.key.equals(key))).go();
+  }
+
+  /// 获取所有设置
+  Future<Map<String, String>> getAllSettings() async {
+    final results = await select(generalSettingsTable).get();
+    return {for (final result in results) result.key: result.value};
   }
 }
 

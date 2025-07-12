@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'widgets/animated_title_widget.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../domain/entities/chat_message.dart';
@@ -128,7 +130,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       title: Consumer(
         builder: (context, ref, child) {
           final session = ref.watch(currentChatSessionProvider);
-          return Text(session?.title ?? 'AI 助手');
+          return AnimatedTitleWidget(
+            title: session?.title ?? 'AI 助手',
+            style: Theme.of(context).appBarTheme.titleTextStyle,
+          );
         },
       ),
       actions: [

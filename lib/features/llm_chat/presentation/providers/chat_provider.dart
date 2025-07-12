@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -21,6 +22,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 延迟加载会话列表，避免构造函数中的异步操作
     _initialize();
     _initializeSpeechService();
+
+    // 设置会话标题更新回调
+    _chatService.onSessionTitleUpdated = _onSessionTitleUpdated;
+    debugPrint('🔗 ChatNotifier: 已设置会话标题更新回调');
   }
 
   /// 初始化方法
@@ -47,6 +52,40 @@ class ChatNotifier extends StateNotifier<ChatState> {
         sessions: <ChatSession>[], // 明确指定类型
       );
     }
+  }
+
+  /// 处理会话标题更新（自动命名回调）
+  void _onSessionTitleUpdated(String sessionId, String newTitle) {
+    debugPrint('🔄 收到会话标题更新回调: sessionId=$sessionId, newTitle=$newTitle');
+    debugPrint('🔄 当前会话ID: ${state.currentSession?.id}');
+    debugPrint('🔄 会话列表数量: ${state.sessions.length}');
+
+    // 更新会话列表中的对应会话
+    final updatedSessions = state.sessions.map((session) {
+      if (session.id == sessionId) {
+        debugPrint('🔄 找到匹配的会话，更新标题: ${session.title} → $newTitle');
+        return session.updateTitle(newTitle);
+      }
+      return session;
+    }).toList();
+
+    // 更新当前会话（如果是当前会话）
+    ChatSession? updatedCurrentSession = state.currentSession;
+    if (state.currentSession?.id == sessionId) {
+      debugPrint('🔄 更新当前会话标题: ${state.currentSession?.title} → $newTitle');
+      updatedCurrentSession = state.currentSession!.updateTitle(newTitle);
+    }
+
+    // 更新状态
+    final oldState = state;
+    state = state.copyWith(
+      sessions: updatedSessions,
+      currentSession: updatedCurrentSession,
+    );
+
+    debugPrint('🔄 UI状态已更新完成');
+    debugPrint('🔄 更新前当前会话标题: ${oldState.currentSession?.title}');
+    debugPrint('🔄 更新后当前会话标题: ${state.currentSession?.title}');
   }
 
   /// 选择会话
@@ -557,8 +596,15 @@ class ChatState {
 
 /// 聊天Provider
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  final chatService = ref.read(chatServiceProvider);
-  return ChatNotifier(chatService, ref);
+  final chatService = ref.watch(chatServiceProvider);
+  final notifier = ChatNotifier(chatService, ref);
+
+  // 确保回调在Provider重建时重新设置
+  ref.onDispose(() {
+    chatService.onSessionTitleUpdated = null;
+  });
+
+  return notifier;
 });
 
 /// 当前聊天会话Provider

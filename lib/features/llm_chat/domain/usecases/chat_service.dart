@@ -17,6 +17,7 @@ import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
 import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
+import '../../../../data/local/tables/general_settings_table.dart';
 
 /// 聊天服务
 ///
@@ -24,8 +25,15 @@ import '../../../knowledge_base/presentation/providers/knowledge_base_config_pro
 class ChatService {
   final AppDatabase _database;
   final Ref _ref;
+  final String _instanceId;
 
-  ChatService(this._database, this._ref);
+  /// 会话标题更新回调
+  Function(String sessionId, String newTitle)? onSessionTitleUpdated;
+
+  ChatService(this._database, this._ref)
+    : _instanceId = DateTime.now().millisecondsSinceEpoch.toString() {
+    debugPrint('🏗️ ChatService实例创建: $_instanceId');
+  }
 
   /// 创建新的聊天会话
   Future<ChatSession> createChatSession({
@@ -187,6 +195,9 @@ class ChatService {
         // 10. 更新智能体使用统计
         await _database.updatePersonaUsage(persona.id);
       });
+
+      // 11. 检查是否需要自动命名话题
+      _tryAutoNameTopic(sessionId, userMessage.content, aiMessage.content);
 
       return aiMessage;
     } catch (e) {
@@ -362,6 +373,13 @@ class ChatService {
             });
 
             debugPrint('✅ AI消息、会话和智能体统计已在事务中原子性保存');
+
+            // 检查是否需要自动命名话题
+            _tryAutoNameTopic(
+              sessionId,
+              userMessage.content,
+              finalMessage.content,
+            );
 
             yield finalMessage.copyWith(status: MessageStatus.sent);
           }
@@ -736,12 +754,182 @@ class ChatService {
       'partialTag': partialTag,
     };
   }
+
+  /// 尝试自动命名话题
+  void _tryAutoNameTopic(
+    String sessionId,
+    String userContent,
+    String aiContent,
+  ) {
+    // 在后台异步执行，不阻塞主流程
+    Future.microtask(() async {
+      try {
+        debugPrint('🏷️ 开始检查自动命名话题条件...');
+
+        // 检查是否启用了自动命名功能
+        final autoNamingEnabled = await _database.getSetting(
+          GeneralSettingsKeys.autoTopicNamingEnabled,
+        );
+        debugPrint('🏷️ 自动命名功能启用状态: $autoNamingEnabled');
+        if (autoNamingEnabled != 'true') {
+          debugPrint('🏷️ 自动命名功能未启用，跳过');
+          return;
+        }
+
+        // 获取命名模型ID
+        final modelId = await _database.getSetting(
+          GeneralSettingsKeys.autoTopicNamingModelId,
+        );
+        debugPrint('🏷️ 配置的命名模型ID: $modelId');
+        if (modelId == null || modelId.isEmpty) {
+          debugPrint('🏷️ 未配置命名模型，跳过');
+          return;
+        }
+
+        // 检查会话是否已经被命名过
+        final session = await _getSessionById(sessionId);
+        debugPrint('🏷️ 当前会话标题: ${session.title}');
+        if (session.title != '新对话') {
+          debugPrint('🏷️ 会话已被命名，跳过');
+          return;
+        }
+
+        // 检查是否是第一次对话（只有一条用户消息和一条AI回复）
+        final messages = await getSessionMessages(sessionId);
+        debugPrint('🏷️ 会话消息数量: ${messages.length}');
+        if (messages.length != 2) {
+          debugPrint('🏷️ 不是第一次对话，跳过');
+          return;
+        }
+
+        // 获取命名模型信息
+        final customModel = await _database.getCustomModelById(modelId);
+        debugPrint('🏷️ 找到的自定义模型: ${customModel?.name}');
+        if (customModel == null || !customModel.isEnabled) {
+          debugPrint('🏷️ 自定义模型不存在或未启用，跳过');
+          return;
+        }
+
+        // 获取对应的LLM配置
+        final configId = customModel.configId ?? '';
+        debugPrint('🏷️ 模型关联的配置ID: $configId');
+        final modelConfig = await _database.getLlmConfigById(configId);
+        debugPrint('🏷️ 找到的LLM配置: ${modelConfig?.name}');
+        if (modelConfig == null || !modelConfig.isEnabled) {
+          debugPrint('🏷️ LLM配置不存在或未启用，跳过');
+          return;
+        }
+
+        // 创建命名提示词
+        final namingPrompt = _buildTopicNamingPrompt(userContent, aiContent);
+        debugPrint('🏷️ 生成的命名提示词长度: ${namingPrompt.length}');
+
+        // 创建LLM Provider
+        debugPrint('🏷️ 创建LLM Provider，使用模型: ${customModel.modelId}');
+        final provider = LlmProviderFactory.createProvider(
+          modelConfig.toLlmConfig(),
+        );
+
+        // 生成话题名称
+        debugPrint('🏷️ 开始调用AI生成话题名称...');
+        final result = await provider.generateChat(
+          [
+            ChatMessage(
+              id: 'naming-prompt',
+              content: namingPrompt,
+              isFromUser: true,
+              timestamp: DateTime.now(),
+              chatSessionId: sessionId,
+            ),
+          ],
+          options: ChatOptions(
+            model: customModel.modelId, // 使用自定义模型的modelId
+            systemPrompt: '你是一个专业的话题命名助手。请根据对话内容生成简洁、准确的话题标题。',
+            temperature: 0.3, // 使用较低的温度以获得更稳定的结果
+            maxTokens: 50, // 限制输出长度
+          ),
+        );
+
+        // 清理生成的标题
+        String topicTitle = result.content.trim();
+        debugPrint('🏷️ AI生成的原始标题: "$topicTitle"');
+        topicTitle = _cleanTopicTitle(topicTitle);
+        debugPrint('🏷️ 清理后的标题: "$topicTitle"');
+
+        // 更新会话标题
+        if (topicTitle.isNotEmpty && topicTitle != '新对话') {
+          // 使用update语句只更新标题和更新时间
+          await (_database.update(
+            _database.chatSessionsTable,
+          )..where((t) => t.id.equals(sessionId))).write(
+            ChatSessionsTableCompanion(
+              title: Value(topicTitle),
+              updatedAt: Value(DateTime.now()),
+            ),
+          );
+          debugPrint('✅ 自动命名话题成功: $topicTitle');
+
+          // 通知状态管理器更新UI
+          debugPrint('🔗 ChatService($_instanceId): 调用标题更新回调');
+          onSessionTitleUpdated?.call(sessionId, topicTitle);
+        } else {
+          debugPrint('⚠️ 生成的标题为空或无效，跳过更新');
+        }
+      } catch (e) {
+        // 静默处理错误，不影响正常对话流程
+        debugPrint('⚠️ 自动命名话题失败: $e');
+      }
+    });
+  }
+
+  /// 构建话题命名提示词
+  String _buildTopicNamingPrompt(String userContent, String aiContent) {
+    return '''请根据以下对话内容，生成一个简洁的话题标题（10字以内）：
+
+用户：$userContent
+
+助手：$aiContent
+
+要求：
+1. 标题要简洁明了，能概括对话主题
+2. 不要包含引号、冒号等标点符号
+3. 直接输出标题，不要其他内容''';
+  }
+
+  /// 清理话题标题
+  String _cleanTopicTitle(String title) {
+    // 移除常见的引号和标点
+    title = title.replaceAll(
+      RegExp(
+        r'["""'
+        '「」『』【】《》〈〉（）()[]{}]',
+      ),
+      '',
+    );
+    title = title.replaceAll(RegExp(r'^[：:\-\s]+'), '');
+    title = title.replaceAll(RegExp(r'[：:\-\s]+$'), '');
+
+    // 限制长度
+    if (title.length > 20) {
+      title = title.substring(0, 20);
+    }
+
+    return title.trim();
+  }
 }
 
-/// 聊天服务Provider
+/// 聊天服务Provider（单例）
 final chatServiceProvider = Provider<ChatService>((ref) {
   final database = ref.read(appDatabaseProvider);
-  return ChatService(database, ref);
+  final service = ChatService(database, ref);
+
+  // 确保服务实例在Provider生命周期内保持一致
+  ref.onDispose(() {
+    // 清理回调
+    service.onSessionTitleUpdated = null;
+  });
+
+  return service;
 });
 
 // 扩展方法，用于数据转换
