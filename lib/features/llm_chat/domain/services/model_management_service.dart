@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 import '../../data/providers/llm_provider_factory.dart';
@@ -6,14 +7,16 @@ import '../providers/llm_provider.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/di/database_providers.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// 模型管理服务
 ///
 /// 负责管理自定义模型和内置模型的CRUD操作
 class ModelManagementService {
   final AppDatabase _database;
+  final Ref? _ref;
 
-  ModelManagementService(this._database);
+  ModelManagementService(this._database, [this._ref]);
 
   /// 获取所有模型（内置 + 自定义）
   Future<List<ModelInfo>> getAllModels() async {
@@ -81,6 +84,9 @@ class ModelManagementService {
     );
 
     await _database.upsertCustomModel(model);
+
+    // 触发模型列表刷新
+    _triggerModelListRefresh();
   }
 
   /// 更新自定义模型
@@ -102,13 +108,23 @@ class ModelManagementService {
     bool? isEnabled,
     String? configId,
   }) async {
-    final existingModel = await _database.getCustomModelById(id);
+    // 首先尝试通过数据库主键ID查找
+    CustomModelsTableData? existingModel = await _database.getCustomModelById(
+      id,
+    );
+
+    // 如果没找到，尝试通过modelId查找（兼容性处理）
+    if (existingModel == null) {
+      final allModels = await _database.getAllCustomModels();
+      existingModel = allModels.where((m) => m.modelId == id).firstOrNull;
+    }
+
     if (existingModel == null) {
       throw DatabaseException('模型不存在: $id');
     }
 
     final model = CustomModelsTableCompanion(
-      id: Value(id),
+      id: Value(existingModel.id), // 使用找到的模型的数据库主键ID
       name: name != null ? Value(name) : const Value.absent(),
       modelId: modelId != null ? Value(modelId) : const Value.absent(),
       description: description != null
@@ -144,20 +160,41 @@ class ModelManagementService {
     );
 
     await _database.upsertCustomModel(model);
+
+    // 触发模型列表刷新
+    _triggerModelListRefresh();
   }
 
   /// 删除自定义模型
-  Future<void> deleteCustomModel(String id) async {
-    final existingModel = await _database.getCustomModelById(id);
+  Future<void> deleteCustomModel(String modelId) async {
+    debugPrint('🗑️ 尝试删除模型: $modelId');
+
+    // 通过modelId查找数据库记录
+    final allModels = await _database.getAllCustomModels();
+    debugPrint('🗑️ 数据库中共有 ${allModels.length} 个模型');
+
+    final existingModel = allModels
+        .where((m) => m.modelId == modelId)
+        .firstOrNull;
+
     if (existingModel == null) {
-      throw DatabaseException('模型不存在: $id');
+      debugPrint('🗑️ 未找到模型: $modelId');
+      debugPrint('🗑️ 可用的模型ID: ${allModels.map((m) => m.modelId).join(', ')}');
+      throw DatabaseException('模型不存在: $modelId');
     }
+
+    debugPrint('🗑️ 找到模型: ${existingModel.name} (数据库ID: ${existingModel.id})');
 
     if (existingModel.isBuiltIn) {
       throw Exception('不能删除内置模型');
     }
 
-    await _database.deleteCustomModel(id);
+    // 使用数据库主键ID删除
+    await _database.deleteCustomModel(existingModel.id);
+    debugPrint('🗑️ 模型删除成功: ${existingModel.name}');
+
+    // 触发模型列表刷新
+    _triggerModelListRefresh();
   }
 
   /// 从API获取模型列表
@@ -395,7 +432,7 @@ class ModelManagementService {
     }
 
     return ModelInfo(
-      id: data.modelId,
+      id: data.modelId, // 恢复使用modelId以保持兼容性
       name: data.name,
       description: data.description,
       type: ModelType.values.firstWhere(
@@ -417,12 +454,25 @@ class ModelManagementService {
     final customModels = await _database.getCustomModelsByConfig(configId);
     return customModels.map(_convertToModelInfo).toList();
   }
+
+  /// 触发模型列表刷新
+  void _triggerModelListRefresh() {
+    if (_ref != null) {
+      try {
+        // 增加刷新计数器来触发 FutureProvider 重新获取数据
+        final currentCount = _ref.read(modelListRefreshProvider);
+        _ref.read(modelListRefreshProvider.notifier).state = currentCount + 1;
+      } catch (e) {
+        // 忽略错误，可能是在测试环境中
+      }
+    }
+  }
 }
 
 /// 模型管理服务Provider
 final modelManagementServiceProvider = Provider<ModelManagementService>((ref) {
   final database = ref.read(appDatabaseProvider);
-  return ModelManagementService(database);
+  return ModelManagementService(database, ref);
 });
 
 /// 所有模型Provider

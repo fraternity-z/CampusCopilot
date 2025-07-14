@@ -17,6 +17,7 @@ import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
 import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../../data/local/tables/general_settings_table.dart';
 
 /// 聊天服务
@@ -122,7 +123,13 @@ class ChatService {
           .read(knowledgeBaseConfigProvider)
           .currentConfig;
 
-      if (knowledgeConfig != null && ragService.shouldUseRag(content)) {
+      // 检查RAG开关是否启用
+      final settingsState = _ref.read(settingsProvider);
+      final ragEnabled = settingsState.chatSettings.enableRag;
+
+      if (ragEnabled &&
+          knowledgeConfig != null &&
+          ragService.shouldUseRag(content)) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
           final ragResult = await ragService.enhancePrompt(
@@ -140,6 +147,8 @@ class ChatService {
         } catch (e) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
         }
+      } else if (!ragEnabled) {
+        debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
       }
 
       // 6. 构建上下文消息
@@ -219,16 +228,28 @@ class ChatService {
     required String content,
     String? parentMessageId,
     bool includeContext = true, // 是否包含历史上下文
+    List<String> imageUrls = const [], // 图片URL列表
   }) async* {
     debugPrint('🚀 开始发送消息: $content');
 
     final String? pId = parentMessageId;
     // 1. 创建用户消息
-    final userMessage = ChatMessageFactory.createUserMessage(
-      content: content,
-      chatSessionId: sessionId,
-      parentMessageId: pId,
-    );
+    final userMessage = imageUrls.isNotEmpty
+        ? ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            content: content,
+            isFromUser: true,
+            timestamp: DateTime.now(),
+            chatSessionId: sessionId,
+            type: MessageType.image,
+            imageUrls: imageUrls,
+            parentMessageId: pId,
+          )
+        : ChatMessageFactory.createUserMessage(
+            content: content,
+            chatSessionId: sessionId,
+            parentMessageId: pId,
+          );
 
     // 2. 保存用户消息到数据库
     await _database.insertMessage(_messageToCompanion(userMessage));
@@ -259,7 +280,13 @@ class ChatService {
           .read(knowledgeBaseConfigProvider)
           .currentConfig;
 
-      if (knowledgeConfig != null && ragService.shouldUseRag(content)) {
+      // 检查RAG开关是否启用
+      final settingsState = _ref.read(settingsProvider);
+      final ragEnabled = settingsState.chatSettings.enableRag;
+
+      if (ragEnabled &&
+          knowledgeConfig != null &&
+          ragService.shouldUseRag(content)) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
           final ragResult = await ragService.enhancePrompt(
@@ -277,6 +304,8 @@ class ChatService {
         } catch (e) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
         }
+      } else if (!ragEnabled) {
+        debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
       }
 
       // 6. 构建上下文消息
@@ -501,6 +530,11 @@ class ChatService {
     await _database.upsertChatSession(_sessionToCompanion(updatedSession));
   }
 
+  /// 保存消息到数据库
+  Future<void> insertMessage(ChatMessage message) async {
+    await _database.insertMessage(_messageToCompanion(message));
+  }
+
   /// 构建上下文消息
   Future<List<ChatMessage>> _buildContextMessages(
     String sessionId,
@@ -637,6 +671,7 @@ class ChatService {
       modelName: message.modelName != null
           ? Value(message.modelName!)
           : const Value.absent(),
+      imageUrls: Value(jsonEncode(message.imageUrls)),
     );
   }
 
@@ -1025,6 +1060,19 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
 
 extension ChatMessageDataExtension on ChatMessagesTableData {
   ChatMessage toChatMessage() {
+    // 解析图片URL列表
+    List<String> parsedImageUrls = [];
+    try {
+      if (imageUrls.isNotEmpty) {
+        final decoded = jsonDecode(imageUrls);
+        if (decoded is List) {
+          parsedImageUrls = decoded.cast<String>();
+        }
+      }
+    } catch (e) {
+      debugPrint('解析图片URL失败: $e');
+    }
+
     return ChatMessage(
       id: id,
       content: content,
@@ -1042,6 +1090,7 @@ extension ChatMessageDataExtension on ChatMessagesTableData {
       metadata: metadata?.isNotEmpty == true ? jsonDecode(metadata!) : null,
       parentMessageId: parentMessageId,
       tokenCount: tokenCount,
+      imageUrls: parsedImageUrls,
       thinkingContent: thinkingContent,
       thinkingComplete: thinkingComplete,
       modelName: modelName,

@@ -103,6 +103,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     required String filePath,
     required String fileType,
     required int fileSize,
+    String? knowledgeBaseId,
   }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
@@ -122,10 +123,14 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
         metadata: {},
       );
 
+      // 使用指定的知识库ID或默认知识库
+      final targetKnowledgeBaseId = knowledgeBaseId ?? 'default_kb';
+
       // 保存到数据库
       await _database.upsertKnowledgeDocument(
         KnowledgeDocumentsTableCompanion.insert(
           id: document.id,
+          knowledgeBaseId: targetKnowledgeBaseId,
           name: document.title,
           type: document.fileType,
           size: document.fileSize,
@@ -145,6 +150,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
         documentId: documentId,
         filePath: filePath,
         fileType: fileType,
+        knowledgeBaseId: targetKnowledgeBaseId,
       );
 
       // 处理完成后重新加载文档列表
@@ -319,6 +325,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
           documentId: doc.id,
           filePath: doc.filePath,
           fileType: doc.type,
+          knowledgeBaseId: doc.knowledgeBaseId,
         );
       }
 
@@ -328,9 +335,10 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       // 处理错误，将文档状态设置为失败
       final dbDocuments = await _database.getAllKnowledgeDocuments();
       for (final doc in dbDocuments) {
-        await _database.upsertKnowledgeDocument(
+        await (_database.update(
+          _database.knowledgeDocumentsTable,
+        )..where((t) => t.id.equals(doc.id))).write(
           KnowledgeDocumentsTableCompanion(
-            id: Value(doc.id),
             status: const Value('failed'),
             errorMessage: Value(e.toString()),
           ),

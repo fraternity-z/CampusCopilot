@@ -8,6 +8,9 @@ class KnowledgeChunksTable extends Table {
   /// 文本块唯一标识符
   TextColumn get id => text()();
 
+  /// 所属知识库ID（引用knowledge_bases_table.id）
+  TextColumn get knowledgeBaseId => text()();
+
   /// 所属文档ID
   TextColumn get documentId => text()();
 

@@ -29,6 +29,9 @@ class KnowledgeBaseConfig {
   /// 相似度阈值
   final double similarityThreshold;
 
+  /// 是否为默认配置
+  final bool isDefault;
+
   /// 创建时间
   final DateTime createdAt;
 
@@ -45,6 +48,7 @@ class KnowledgeBaseConfig {
     this.chunkOverlap = 200,
     this.maxRetrievedChunks = 5,
     this.similarityThreshold = 0.7,
+    this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -60,6 +64,7 @@ class KnowledgeBaseConfig {
     int? chunkOverlap,
     int? maxRetrievedChunks,
     double? similarityThreshold,
+    bool? isDefault,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -74,6 +79,7 @@ class KnowledgeBaseConfig {
       chunkOverlap: chunkOverlap ?? this.chunkOverlap,
       maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
       similarityThreshold: similarityThreshold ?? this.similarityThreshold,
+      isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

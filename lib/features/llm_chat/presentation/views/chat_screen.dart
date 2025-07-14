@@ -13,6 +13,7 @@ import 'widgets/message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
+import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 
 /// 聊天界面
 ///
@@ -33,6 +34,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
   bool _isInputFocused = false;
+  bool _ragEnabled = false;
 
   @override
   void initState() {
@@ -40,6 +42,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _inputFocusNode.addListener(() {
       setState(() {
         _isInputFocused = _inputFocusNode.hasFocus;
+      });
+    });
+
+    // 初始化RAG状态，从设置中读取
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final settings = ref.read(settingsProvider);
+      setState(() {
+        _ragEnabled = settings.chatSettings.enableRag;
       });
     });
   }
@@ -163,7 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildModelSelector() {
     return Consumer(
       builder: (context, ref, child) {
-        final allModelsAsync = ref.watch(databaseAvailableModelsProvider);
+        final allModelsAsync = ref.watch(databaseChatModelsProvider);
         final currentModelAsync = ref.watch(databaseCurrentModelProvider);
 
         return allModelsAsync.when(
@@ -645,6 +655,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final attachedFiles = ref.watch(
       chatProvider.select((s) => s.attachedFiles),
     );
+    final attachedImages = ref.watch(
+      chatProvider.select((s) => s.attachedImages),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -654,6 +667,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 显示已附加的图片
+            if (attachedImages.isNotEmpty)
+              _buildAttachedImages(context, ref, attachedImages),
+
             // 显示已附加的文件
             if (attachedFiles.isNotEmpty)
               _buildAttachedFiles(context, ref, attachedFiles),
@@ -764,6 +781,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     height: 32,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // 左侧工具图标
                         MouseRegion(
@@ -790,6 +808,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                         const SizedBox(width: 16),
                         const ChatActionMenu(),
+                        const SizedBox(width: 16),
+                        // RAG控制
+                        _buildCompactRagControl(),
                         const Spacer(),
                         // 右侧语音和发送按钮组合
                         Row(
@@ -1036,6 +1057,102 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  /// 构建已附加图片列表
+  Widget _buildAttachedImages(
+    BuildContext context,
+    WidgetRef ref,
+    List<dynamic> images, // 使用 dynamic 以支持 ImageResult
+  ) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 8),
+      height: 100, // 稍微高一点以显示图片缩略图
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        itemBuilder: (context, index) {
+          final image = images[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            width: 80,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Stack(
+              children: [
+                // 图片缩略图
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.memory(
+                      image.thumbnailBytes,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: Icon(
+                            Icons.broken_image,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onErrorContainer,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                // 删除按钮
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref.read(chatProvider.notifier).removeImage(image);
+                    },
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                // 文件大小标签
+                Positioned(
+                  bottom: 4,
+                  left: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      image.sizeDescription,
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   /// 选择文件
   Future<void> _pickFiles(WidgetRef ref) async {
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
@@ -1195,13 +1312,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// 从相册选择图片
   Future<void> _pickImageFromGallery(WidgetRef ref) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-      );
-      if (result != null) {
-        ref.read(chatProvider.notifier).attachFiles(result.files);
-      }
+      await ref.read(chatProvider.notifier).pickImagesFromGallery();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -1214,14 +1325,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// 拍摄照片
   Future<void> _pickImageFromCamera(WidgetRef ref) async {
     try {
-      // 这里先用FilePicker模拟，后续可以集成image_picker包
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-      );
-      if (result != null) {
-        ref.read(chatProvider.notifier).attachFiles(result.files);
-      }
+      await ref.read(chatProvider.notifier).capturePhoto();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -1245,5 +1349,204 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } else {
       return '${timestamp.month}/${timestamp.day} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}';
     }
+  }
+
+  /// 构建紧凑的RAG控制
+  Widget _buildCompactRagControl() {
+    return Consumer(
+      builder: (context, ref, child) {
+        // 监听设置变化，同步RAG状态
+        final settings = ref.watch(settingsProvider);
+        final settingsRagEnabled = settings.chatSettings.enableRag;
+        if (_ragEnabled != settingsRagEnabled) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _ragEnabled = settingsRagEnabled;
+            });
+          });
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // RAG控制图标
+            GestureDetector(
+              onTap: () => _showRagControlMenu(context, ref),
+              child: Tooltip(
+                message: 'RAG知识库控制',
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: _ragEnabled
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome,
+                    size: 16,
+                    color: _ragEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : const Color(0xFF999999),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 显示RAG控制菜单
+  void _showRagControlMenu(BuildContext context, WidgetRef ref) {
+    final multiKbState = ref.read(multiKnowledgeBaseProvider);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'RAG知识库控制',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // RAG总开关
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _ragEnabled ? Icons.toggle_on : Icons.toggle_off,
+                    color: _ragEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'RAG增强功能',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        Text(
+                          _ragEnabled ? '已启用知识库检索' : '已禁用知识库检索',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _ragEnabled,
+                    onChanged: (value) async {
+                      setState(() {
+                        _ragEnabled = value;
+                      });
+                      await ref
+                          .read(settingsProvider.notifier)
+                          .updateRagEnabled(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            if (_ragEnabled && multiKbState.knowledgeBases.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                '选择知识库',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+
+              // 知识库列表
+              ...multiKbState.knowledgeBases.map((kb) {
+                final isSelected =
+                    multiKbState.currentKnowledgeBase?.id == kb.id;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(
+                              context,
+                            ).colorScheme.outline.withValues(alpha: 0.3),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    leading: Icon(kb.getIcon(), color: kb.getColor(), size: 24),
+                    title: Text(
+                      kb.name,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(kb.getStatusDescription()),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () {
+                      ref
+                          .read(multiKnowledgeBaseProvider.notifier)
+                          .selectKnowledgeBase(kb.id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                );
+              }),
+            ],
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 }

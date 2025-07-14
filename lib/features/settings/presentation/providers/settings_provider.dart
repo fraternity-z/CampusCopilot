@@ -98,6 +98,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  /// 更新RAG设置
+  Future<void> updateRagEnabled(bool enabled) async {
+    final updatedChatSettings = state.chatSettings.copyWith(enableRag: enabled);
+    state = state.copyWith(chatSettings: updatedChatSettings);
+    await _saveSettings();
+  }
+
   /// 重置所有设置
   Future<void> resetSettings() async {
     state = const AppSettings();
@@ -383,10 +390,15 @@ final allAvailableProvidersProvider = FutureProvider<Map<String, dynamic>>((
   return {'builtin': builtinProviders, 'custom': customProviders};
 });
 
+/// 模型列表刷新触发器
+final modelListRefreshProvider = StateProvider<int>((ref) => 0);
+
 /// 从数据库检查所有可用模型Provider
 final databaseAvailableModelsProvider =
     FutureProvider<List<ModelInfoWithProvider>>((ref) async {
       final database = ref.watch(appDatabaseProvider);
+      // 监听刷新触发器，当触发器变化时重新获取数据
+      ref.watch(modelListRefreshProvider);
 
       // 获取所有启用的LLM配置
       final configs = await database.getEnabledLlmConfigs();
@@ -423,6 +435,35 @@ final databaseAvailableModelsProvider =
 
       return models;
     });
+
+/// 从数据库检查聊天可用模型Provider（过滤掉嵌入模型）
+final databaseChatModelsProvider = FutureProvider<List<ModelInfoWithProvider>>((
+  ref,
+) async {
+  final allModels = await ref.watch(databaseAvailableModelsProvider.future);
+
+  // 过滤出适合聊天的模型
+  return allModels.where((model) {
+    // 排除嵌入模型类型
+    if (model.type.toLowerCase() == 'embedding') {
+      return false;
+    }
+
+    // 排除名称或ID中包含 "embedding" 的模型（不区分大小写）
+    final nameContainsEmbedding = model.name.toLowerCase().contains(
+      'embedding',
+    );
+    final idContainsEmbedding = model.id.toLowerCase().contains('embedding');
+
+    if (nameContainsEmbedding || idContainsEmbedding) {
+      return false;
+    }
+
+    // 只保留聊天相关的模型类型
+    final chatTypes = ['chat', 'multimodal', 'text', 'completion'];
+    return chatTypes.contains(model.type.toLowerCase());
+  }).toList();
+});
 
 /// 辅助函数：字符串转AIProvider
 AIProvider? _stringToAIProvider(String provider) {
@@ -518,7 +559,7 @@ final databaseCurrentModelProvider = FutureProvider<ModelInfoWithProvider?>((
   );
   if (currentProvider == null) return null;
 
-  final allModels = await ref.watch(databaseAvailableModelsProvider.future);
+  final allModels = await ref.watch(databaseChatModelsProvider.future);
   final settings = ref.watch(settingsProvider);
 
   // 先尝试找到当前配置的默认模型

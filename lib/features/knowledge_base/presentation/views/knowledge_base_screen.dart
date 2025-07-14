@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
 import '../../domain/entities/knowledge_document.dart';
 import '../providers/knowledge_base_provider.dart';
 import '../providers/knowledge_base_config_provider.dart';
 import '../providers/document_processing_provider.dart';
+import 'knowledge_base_management_screen.dart';
 import '../providers/rag_provider.dart';
 import '../../domain/services/vector_search_service.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
+import '../../../../core/di/database_providers.dart';
 
 /// 知识库管理界面
 ///
@@ -58,6 +59,17 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_books),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const KnowledgeBaseManagementScreen(),
+                ),
+              );
+            },
+            tooltip: '知识库管理',
+          ),
           IconButton(
             icon: const Icon(Icons.upload_file),
             onPressed: _uploadDocument,
@@ -540,6 +552,21 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
     final currentConfig = configState.currentConfig;
     final embeddingModels = configState.availableEmbeddingModels;
 
+    // 调试信息
+    debugPrint('🔧 知识库设置页面状态:');
+    debugPrint('  - 当前配置: ${currentConfig?.name ?? '无'}');
+    debugPrint('  - 当前嵌入模型: ${currentConfig?.embeddingModelName ?? '无'}');
+    debugPrint('  - 可用嵌入模型数量: ${embeddingModels.length}');
+    debugPrint('  - 配置加载状态: ${configState.isLoading ? '加载中' : '已完成'}');
+    debugPrint('  - 配置错误: ${configState.error ?? '无'}');
+    if (embeddingModels.isNotEmpty) {
+      debugPrint(
+        '  - 可用模型: ${embeddingModels.map((m) => '${m.name}(${m.type})').join(', ')}',
+      );
+    } else {
+      debugPrint('  - ⚠️ 没有可用的嵌入模型！');
+    }
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -562,18 +589,48 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                   leading: const Icon(Icons.model_training),
                   title: const Text('嵌入模型'),
                   subtitle: Text(
-                    currentConfig?.embeddingModelName ?? '未选择',
+                    embeddingModels.isEmpty
+                        ? '请先在模型设置中配置并启用模型'
+                        : (currentConfig != null &&
+                              currentConfig.embeddingModelName.isNotEmpty)
+                        ? '${currentConfig.embeddingModelName} (点击更改)'
+                        : '请选择嵌入模型',
                     style: TextStyle(
-                      color: currentConfig == null
+                      color: embeddingModels.isEmpty
                           ? Theme.of(context).colorScheme.error
+                          : (currentConfig != null &&
+                                currentConfig.embeddingModelName.isNotEmpty)
+                          ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () => _showEmbeddingModelSelector(embeddingModels),
+                  trailing: Icon(
+                    embeddingModels.isEmpty
+                        ? Icons.error_outline
+                        : Icons.arrow_forward_ios,
+                    size: 16,
+                    color: embeddingModels.isEmpty
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                  onTap: () {
+                    debugPrint('🖱️ 点击嵌入模型选择器');
+                    debugPrint(
+                      '  - embeddingModels.isEmpty: ${embeddingModels.isEmpty}',
+                    );
+                    debugPrint(
+                      '  - embeddingModels.length: ${embeddingModels.length}',
+                    );
+
+                    if (embeddingModels.isEmpty) {
+                      _showNoModelsDialog();
+                    } else {
+                      _showEmbeddingModelSelector(embeddingModels);
+                    }
+                  },
                 ),
 
-                if (currentConfig != null) ...[
+                if (currentConfig != null && embeddingModels.isNotEmpty) ...[
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.info_outline),
@@ -587,6 +644,19 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                     ),
                   ),
                 ],
+
+                // 添加清理按钮
+                const Divider(),
+                ListTile(
+                  leading: const Icon(
+                    Icons.cleaning_services,
+                    color: Colors.orange,
+                  ),
+                  title: const Text('强制清理所有配置'),
+                  subtitle: const Text('删除所有知识库配置并重新开始'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: _forceCleanupAllConfigs,
+                ),
               ],
             ),
           ),
@@ -786,15 +856,23 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
         for (final file in result.files) {
           if (file.path != null) {
             try {
-              // 读取文件内容
-              final fileContent = await File(file.path!).readAsString();
+              // 使用文档处理服务来提取文本内容，而不是直接读取
+              final documentProcessingService = ref.read(
+                documentProcessingServiceProvider,
+              );
+              final extractionResult = await documentProcessingService
+                  .extractTextFromFile(file.path!, file.extension ?? 'unknown');
+
+              if (extractionResult.error != null) {
+                throw Exception(extractionResult.error);
+              }
 
               // 上传文档
               await ref
                   .read(knowledgeBaseProvider.notifier)
                   .uploadDocument(
                     title: file.name,
-                    content: fileContent,
+                    content: extractionResult.text,
                     filePath: file.path!,
                     fileType: file.extension ?? 'unknown',
                     fileSize: file.size,
@@ -1025,8 +1103,35 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
     }
   }
 
+  /// 显示无模型对话框
+  void _showNoModelsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('无可用模型'),
+        content: const Text('当前没有可用的嵌入模型。请先在设置页面的模型管理中配置并启用至少一个模型。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('确定'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 导航到模型设置页面
+              Navigator.of(context).pushNamed('/settings');
+            },
+            child: const Text('去设置'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 显示嵌入模型选择器
-  void _showEmbeddingModelSelector(List<ModelInfo> embeddingModels) {
+  void _showEmbeddingModelSelector(
+    List<ModelInfoWithProvider> embeddingModels,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1077,36 +1182,59 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
   }
 
   /// 选择嵌入模型
-  void _selectEmbeddingModel(ModelInfo model) async {
+  void _selectEmbeddingModel(ModelInfoWithProvider model) async {
     try {
       final configNotifier = ref.read(knowledgeBaseConfigProvider.notifier);
       final currentConfig = ref.read(knowledgeBaseConfigProvider).currentConfig;
+
+      // 获取模型的实际提供商信息
+      final providerName = await _getActualProviderName(model.id);
+
+      debugPrint('🔧 选择嵌入模型: ${model.name} (${model.id})');
+      debugPrint('🏢 提供商: $providerName');
 
       if (currentConfig != null) {
         // 更新现有配置
         final updatedConfig = currentConfig.copyWith(
           embeddingModelId: model.id,
           embeddingModelName: model.name,
-          embeddingModelProvider: _getProviderName(model.id),
+          embeddingModelProvider: providerName,
           updatedAt: DateTime.now(),
         );
+        debugPrint('🔄 准备更新配置:');
+        debugPrint('  - 原配置: ${currentConfig.embeddingModelName}');
+        debugPrint('  - 新配置: ${updatedConfig.embeddingModelName}');
+
         await configNotifier.updateConfig(updatedConfig);
+        debugPrint('✅ 已更新现有配置');
+
+        // 验证更新是否成功
+        final newCurrentConfig = ref
+            .read(knowledgeBaseConfigProvider)
+            .currentConfig;
+        debugPrint('🔍 更新后验证:');
+        debugPrint('  - 当前配置: ${newCurrentConfig?.embeddingModelName ?? '无'}');
+        debugPrint(
+          '  - 是否匹配: ${newCurrentConfig?.embeddingModelName == model.name}',
+        );
       } else {
         // 创建新配置
         await configNotifier.createConfig(
           name: '默认配置',
           embeddingModelId: model.id,
           embeddingModelName: model.name,
-          embeddingModelProvider: _getProviderName(model.id),
+          embeddingModelProvider: providerName,
         );
+        debugPrint('✅ 已创建新配置');
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('已选择嵌入模型: ${model.name}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已选择嵌入模型: ${model.name} ($providerName)')),
+        );
       }
     } catch (e) {
+      debugPrint('❌ 选择模型失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -1115,20 +1243,103 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
     }
   }
 
-  /// 获取提供商名称
-  String _getProviderName(String modelId) {
+  /// 获取模型的实际提供商名称（从数据库配置中查找）
+  Future<String> _getActualProviderName(String modelId) async {
+    try {
+      final database = ref.read(appDatabaseProvider);
+
+      // 获取所有启用的LLM配置
+      final allConfigs = await database.getEnabledLlmConfigs();
+
+      // 查找包含该模型的配置
+      for (final config in allConfigs) {
+        final models = await database.getCustomModelsByConfig(config.id);
+        for (final model in models) {
+          if (model.modelId == modelId && model.isEnabled) {
+            debugPrint('🔍 找到模型 $modelId 属于提供商: ${config.provider}');
+            return config.provider;
+          }
+        }
+      }
+
+      // 如果没找到，使用推断方式作为后备
+      debugPrint('⚠️ 未在配置中找到模型 $modelId，使用推断方式');
+      return _getProviderNameByInference(modelId);
+    } catch (e) {
+      debugPrint('❌ 获取提供商名称失败: $e');
+      return _getProviderNameByInference(modelId);
+    }
+  }
+
+  /// 通过模型ID推断提供商名称（后备方法）
+  String _getProviderNameByInference(String modelId) {
     if (modelId.contains('openai') ||
         modelId.contains('gpt') ||
         modelId.contains('text-embedding')) {
-      return 'OpenAI';
+      return 'openai';
     } else if (modelId.contains('google') ||
         modelId.contains('gemini') ||
         modelId.contains('embedding-001')) {
-      return 'Google';
+      return 'google';
     } else if (modelId.contains('anthropic') || modelId.contains('claude')) {
-      return 'Anthropic';
+      return 'anthropic';
     } else {
-      return '未知';
+      return 'unknown';
+    }
+  }
+
+  /// 获取提供商名称（保持向后兼容）
+  String _getProviderName(String modelId) {
+    return _getProviderNameByInference(modelId);
+  }
+
+  /// 强制清理所有配置
+  void _forceCleanupAllConfigs() async {
+    try {
+      final configNotifier = ref.read(knowledgeBaseConfigProvider.notifier);
+
+      // 显示确认对话框
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('强制清理所有配置'),
+          content: const Text(
+            '这将删除所有知识库配置，包括有效的配置。\n\n这是为了解决顽固的配置问题。\n\n确定要继续吗？',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('强制清理'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        // 调用强制清理方法
+        await configNotifier.forceCleanupAllConfigs();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('所有配置已清理完成，请重新配置嵌入模型'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 强制清理失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('强制清理失败: $e')));
+      }
     }
   }
 

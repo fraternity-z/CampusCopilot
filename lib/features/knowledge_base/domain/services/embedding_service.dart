@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
 import '../../../llm_chat/data/providers/llm_provider_factory.dart';
 import '../../domain/entities/knowledge_document.dart';
+import '../../../../data/local/app_database.dart';
 
 /// 嵌入结果
 class EmbeddingGenerationResult {
@@ -156,33 +157,55 @@ class EmbeddingService {
   Future<LlmConfig?> _getLlmConfigForEmbedding(
     KnowledgeBaseConfig config,
   ) async {
-    // 这里需要根据嵌入模型的提供商创建对应的LLM配置
-    // 实际实现中应该从数据库或配置中获取
+    try {
+      // 从数据库获取实际的LLM配置
+      final database = AppDatabase();
 
-    // 临时实现：根据提供商类型创建基本配置
-    switch (config.embeddingModelProvider.toLowerCase()) {
-      case 'openai':
-        return LlmConfig(
-          id: 'embedding-openai',
-          name: 'OpenAI Embedding',
-          provider: 'openai',
-          apiKey: '', // 需要从实际配置中获取
-          defaultEmbeddingModel: config.embeddingModelId,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-      case 'google':
-        return LlmConfig(
-          id: 'embedding-google',
-          name: 'Google Embedding',
-          provider: 'google',
-          apiKey: '', // 需要从实际配置中获取
-          defaultEmbeddingModel: config.embeddingModelId,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-      default:
+      debugPrint('🔍 查找嵌入模型配置: ${config.embeddingModelProvider}');
+
+      // 根据提供商查找对应的LLM配置
+      final allConfigs = await database.getEnabledLlmConfigs();
+
+      // 查找匹配的提供商配置
+      LlmConfigsTableData? matchingConfig;
+      for (final llmConfig in allConfigs) {
+        if (llmConfig.provider.toLowerCase() ==
+            config.embeddingModelProvider.toLowerCase()) {
+          matchingConfig = llmConfig;
+          break;
+        }
+      }
+
+      if (matchingConfig == null) {
+        debugPrint('❌ 未找到匹配的LLM配置: ${config.embeddingModelProvider}');
         return null;
+      }
+
+      debugPrint('✅ 找到匹配的LLM配置: ${matchingConfig.name}');
+
+      // 转换为LlmConfig对象
+      return LlmConfig(
+        id: matchingConfig.id,
+        name: matchingConfig.name,
+        provider: matchingConfig.provider,
+        apiKey: matchingConfig.apiKey,
+        baseUrl: matchingConfig.baseUrl,
+        defaultModel: matchingConfig.defaultModel,
+        defaultEmbeddingModel: config.embeddingModelId, // 使用知识库配置中指定的嵌入模型
+        organizationId: matchingConfig.organizationId,
+        projectId: matchingConfig.projectId,
+        createdAt: matchingConfig.createdAt,
+        updatedAt: matchingConfig.updatedAt,
+        isEnabled: matchingConfig.isEnabled,
+        isCustomProvider: matchingConfig.isCustomProvider,
+        apiCompatibilityType: matchingConfig.apiCompatibilityType,
+        customProviderName: matchingConfig.customProviderName,
+        customProviderDescription: matchingConfig.customProviderDescription,
+        customProviderIcon: matchingConfig.customProviderIcon,
+      );
+    } catch (e) {
+      debugPrint('💥 获取嵌入模型配置失败: $e');
+      return null;
     }
   }
 

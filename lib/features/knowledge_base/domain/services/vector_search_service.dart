@@ -52,6 +52,7 @@ class VectorSearchService {
   Future<VectorSearchResult> search({
     required String query,
     required KnowledgeBaseConfig config,
+    String? knowledgeBaseId,
     double similarityThreshold = 0.7,
     int maxResults = 5,
   }) async {
@@ -59,10 +60,8 @@ class VectorSearchService {
 
     try {
       // 1. 为查询生成嵌入向量
-      final queryEmbeddingResult = await _embeddingService.generateSingleEmbedding(
-        text: query,
-        config: config,
-      );
+      final queryEmbeddingResult = await _embeddingService
+          .generateSingleEmbedding(text: query, config: config);
 
       if (!queryEmbeddingResult.isSuccess) {
         return VectorSearchResult(
@@ -75,8 +74,10 @@ class VectorSearchService {
 
       final queryEmbedding = queryEmbeddingResult.embeddings.first;
 
-      // 2. 获取所有有嵌入向量的文本块
-      final chunks = await _database.getChunksWithEmbeddings();
+      // 2. 获取指定知识库的有嵌入向量的文本块
+      final chunks = knowledgeBaseId != null
+          ? await _database.getEmbeddedChunksByKnowledgeBase(knowledgeBaseId)
+          : await _database.getChunksWithEmbeddings();
 
       // 3. 计算相似度并筛选结果
       final results = <SearchResultItem>[];
@@ -86,7 +87,9 @@ class VectorSearchService {
           try {
             // 解析嵌入向量
             final embeddingList = jsonDecode(chunk.embedding!) as List;
-            final chunkEmbedding = embeddingList.map((e) => (e as num).toDouble()).toList();
+            final chunkEmbedding = embeddingList
+                .map((e) => (e as num).toDouble())
+                .toList();
 
             // 计算相似度
             final similarity = _embeddingService.calculateCosineSimilarity(
@@ -96,18 +99,20 @@ class VectorSearchService {
 
             // 如果相似度超过阈值，添加到结果中
             if (similarity >= similarityThreshold) {
-              results.add(SearchResultItem(
-                chunkId: chunk.id,
-                documentId: chunk.documentId,
-                content: chunk.content,
-                similarity: similarity,
-                chunkIndex: chunk.chunkIndex,
-                metadata: {
-                  'characterCount': chunk.characterCount,
-                  'tokenCount': chunk.tokenCount,
-                  'createdAt': chunk.createdAt.toIso8601String(),
-                },
-              ));
+              results.add(
+                SearchResultItem(
+                  chunkId: chunk.id,
+                  documentId: chunk.documentId,
+                  content: chunk.content,
+                  similarity: similarity,
+                  chunkIndex: chunk.chunkIndex,
+                  metadata: {
+                    'characterCount': chunk.characterCount,
+                    'tokenCount': chunk.tokenCount,
+                    'createdAt': chunk.createdAt.toIso8601String(),
+                  },
+                ),
+              );
             }
           } catch (e) {
             debugPrint('解析文本块 ${chunk.id} 的嵌入向量失败: $e');
@@ -142,6 +147,7 @@ class VectorSearchService {
   Future<VectorSearchResult> hybridSearch({
     required String query,
     required KnowledgeBaseConfig config,
+    String? knowledgeBaseId,
     double similarityThreshold = 0.7,
     int maxResults = 5,
     double vectorWeight = 0.7, // 向量搜索权重
@@ -154,6 +160,7 @@ class VectorSearchService {
       final vectorResult = await search(
         query: query,
         config: config,
+        knowledgeBaseId: knowledgeBaseId,
         similarityThreshold: similarityThreshold,
         maxResults: maxResults * 2, // 获取更多结果用于混合
       );
@@ -163,7 +170,11 @@ class VectorSearchService {
       }
 
       // 2. 执行关键词搜索
-      final keywordResults = await _keywordSearch(query, maxResults * 2);
+      final keywordResults = await _keywordSearch(
+        query,
+        maxResults * 2,
+        knowledgeBaseId,
+      );
 
       // 3. 合并和重新排序结果
       final combinedResults = _combineResults(
@@ -193,23 +204,34 @@ class VectorSearchService {
   }
 
   /// 关键词搜索
-  Future<List<SearchResultItem>> _keywordSearch(String query, int maxResults) async {
+  Future<List<SearchResultItem>> _keywordSearch(
+    String query,
+    int maxResults,
+    String? knowledgeBaseId,
+  ) async {
     try {
-      final chunks = await _database.searchChunks(query);
-      
-      return chunks.map((chunk) => SearchResultItem(
-        chunkId: chunk.id,
-        documentId: chunk.documentId,
-        content: chunk.content,
-        similarity: _calculateKeywordSimilarity(query, chunk.content),
-        chunkIndex: chunk.chunkIndex,
-        metadata: {
-          'characterCount': chunk.characterCount,
-          'tokenCount': chunk.tokenCount,
-          'createdAt': chunk.createdAt.toIso8601String(),
-          'searchType': 'keyword',
-        },
-      )).take(maxResults).toList();
+      final chunks = knowledgeBaseId != null
+          ? await _database.searchChunksByKnowledgeBase(query, knowledgeBaseId)
+          : await _database.searchChunks(query);
+
+      return chunks
+          .map(
+            (chunk) => SearchResultItem(
+              chunkId: chunk.id,
+              documentId: chunk.documentId,
+              content: chunk.content,
+              similarity: _calculateKeywordSimilarity(query, chunk.content),
+              chunkIndex: chunk.chunkIndex,
+              metadata: {
+                'characterCount': chunk.characterCount,
+                'tokenCount': chunk.tokenCount,
+                'createdAt': chunk.createdAt.toIso8601String(),
+                'searchType': 'keyword',
+              },
+            ),
+          )
+          .take(maxResults)
+          .toList();
     } catch (e) {
       debugPrint('关键词搜索失败: $e');
       return [];
@@ -220,14 +242,14 @@ class VectorSearchService {
   double _calculateKeywordSimilarity(String query, String content) {
     final queryWords = query.toLowerCase().split(RegExp(r'\s+'));
     final contentWords = content.toLowerCase().split(RegExp(r'\s+'));
-    
+
     int matchCount = 0;
     for (final word in queryWords) {
       if (contentWords.contains(word)) {
         matchCount++;
       }
     }
-    
+
     return queryWords.isEmpty ? 0.0 : matchCount / queryWords.length;
   }
 
@@ -281,7 +303,7 @@ class VectorSearchService {
     // 转换为列表并排序
     final results = combinedMap.values.toList();
     results.sort((a, b) => b.similarity.compareTo(a.similarity));
-    
+
     return results;
   }
 

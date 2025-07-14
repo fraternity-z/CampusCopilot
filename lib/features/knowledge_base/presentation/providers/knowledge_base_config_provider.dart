@@ -7,11 +7,38 @@ import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
 
+/// 带提供商信息的模型信息
+class ModelInfoWithProvider {
+  final String id;
+  final String name;
+  final String provider;
+  final String? description;
+  final ModelType type;
+  final int? contextWindow;
+  final int? maxOutputTokens;
+  final bool supportsStreaming;
+  final bool supportsFunctionCalling;
+  final bool supportsVision;
+
+  const ModelInfoWithProvider({
+    required this.id,
+    required this.name,
+    required this.provider,
+    this.description,
+    required this.type,
+    this.contextWindow,
+    this.maxOutputTokens,
+    required this.supportsStreaming,
+    required this.supportsFunctionCalling,
+    required this.supportsVision,
+  });
+}
+
 /// 知识库配置状态
 class KnowledgeBaseConfigState {
   final List<KnowledgeBaseConfig> configs;
   final KnowledgeBaseConfig? currentConfig;
-  final List<ModelInfo> availableEmbeddingModels;
+  final List<ModelInfoWithProvider> availableEmbeddingModels;
   final bool isLoading;
   final String? error;
 
@@ -26,7 +53,7 @@ class KnowledgeBaseConfigState {
   KnowledgeBaseConfigState copyWith({
     List<KnowledgeBaseConfig>? configs,
     KnowledgeBaseConfig? currentConfig,
-    List<ModelInfo>? availableEmbeddingModels,
+    List<ModelInfoWithProvider>? availableEmbeddingModels,
     bool? isLoading,
     String? error,
   }) {
@@ -48,8 +75,36 @@ class KnowledgeBaseConfigNotifier
 
   KnowledgeBaseConfigNotifier(this._database)
     : super(const KnowledgeBaseConfigState()) {
-    _loadConfigs();
-    _loadEmbeddingModels();
+    _initializeConfigs();
+  }
+
+  /// 初始化配置
+  Future<void> _initializeConfigs() async {
+    await _loadConfigs();
+    await _loadEmbeddingModels();
+    // 只在有配置但都无效时才清理
+    if (state.configs.isEmpty) {
+      await forceCleanupAllConfigs();
+      await _loadConfigs();
+    }
+  }
+
+  /// 强制清理所有知识库配置（用于解决顽固的配置问题）
+  Future<void> forceCleanupAllConfigs() async {
+    try {
+      debugPrint('🧹 强制清理所有知识库配置...');
+
+      // 删除所有知识库配置
+      final allConfigs = await _database.getAllKnowledgeBaseConfigs();
+      for (final config in allConfigs) {
+        debugPrint('🗑️ 删除配置: ${config.name}');
+        await _database.deleteKnowledgeBaseConfig(config.id);
+      }
+
+      debugPrint('✅ 强制清理完成，删除了 ${allConfigs.length} 个配置');
+    } catch (e) {
+      debugPrint('❌ 强制清理失败: $e');
+    }
   }
 
   /// 加载配置列表
@@ -60,17 +115,41 @@ class KnowledgeBaseConfigNotifier
       final dbConfigs = await _database.getAllKnowledgeBaseConfigs();
       final configs = dbConfigs.map(_convertToConfig).toList();
 
-      // 获取默认配置
-      final defaultConfig =
-          configs.where((c) => c.id == 'default').firstOrNull ??
-          configs.firstOrNull;
+      // 过滤掉无效的配置（没有嵌入模型ID的配置）
+      final validConfigs = configs
+          .where((c) => c.embeddingModelId.isNotEmpty)
+          .toList();
+
+      // 获取当前配置（保持现有的当前配置，如果不存在则选择默认配置）
+      KnowledgeBaseConfig? currentConfig = state.currentConfig;
+      if (currentConfig != null) {
+        // 尝试在新加载的配置中找到当前配置的更新版本
+        currentConfig = validConfigs
+            .where((c) => c.id == currentConfig!.id)
+            .firstOrNull;
+      }
+
+      // 如果没有找到当前配置，则选择默认配置
+      currentConfig ??=
+          validConfigs.where((c) => c.isDefault).firstOrNull ??
+          validConfigs.firstOrNull;
+
+      debugPrint('📋 加载知识库配置: ${validConfigs.length}个有效配置');
+      if (currentConfig != null) {
+        debugPrint(
+          '✅ 当前配置: ${currentConfig.name} - ${currentConfig.embeddingModelName} (${currentConfig.embeddingModelProvider})',
+        );
+      } else {
+        debugPrint('⚠️ 未找到有效的知识库配置');
+      }
 
       state = state.copyWith(
-        configs: configs,
-        currentConfig: defaultConfig,
+        configs: validConfigs,
+        currentConfig: currentConfig,
         isLoading: false,
       );
     } catch (e) {
+      debugPrint('❌ 加载知识库配置失败: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
@@ -79,20 +158,28 @@ class KnowledgeBaseConfigNotifier
   /// 获取所有用户配置的启用模型，不依赖内置模型或特定类型
   Future<void> _loadEmbeddingModels() async {
     try {
-      final allModels = <ModelInfo>[];
+      debugPrint('🔍 开始加载嵌入模型...');
+      final allModels = <ModelInfoWithProvider>[];
 
       // 获取所有启用的LLM配置
       final allConfigs = await _database.getEnabledLlmConfigs();
+      debugPrint('📋 找到 ${allConfigs.length} 个启用的LLM配置');
 
       // 获取每个配置下的模型
       for (final config in allConfigs) {
+        debugPrint('🔧 检查配置: ${config.name} (${config.provider})');
         final configModels = await _database.getCustomModelsByConfig(config.id);
+        debugPrint('📝 配置 ${config.name} 有 ${configModels.length} 个模型');
 
         for (final modelData in configModels) {
           if (modelData.isEnabled) {
-            final modelInfo = ModelInfo(
+            debugPrint('✅ 启用的模型: ${modelData.name} (${modelData.modelId})');
+            debugPrint('   - 数据库中的类型: ${modelData.type}');
+
+            final modelInfo = ModelInfoWithProvider(
               id: modelData.modelId,
               name: modelData.name,
+              provider: config.provider,
               description: modelData.description,
               type: ModelType.values.firstWhere(
                 (type) => type.name == modelData.type,
@@ -105,15 +192,19 @@ class KnowledgeBaseConfigNotifier
               supportsVision: modelData.supportsVision,
             );
             allModels.add(modelInfo);
+          } else {
+            debugPrint('❌ 禁用的模型: ${modelData.name} (${modelData.modelId})');
           }
         }
       }
+
+      debugPrint('🎯 总共加载了 ${allModels.length} 个可用模型');
 
       // 返回所有启用的模型，让用户选择任何模型作为嵌入模型
       // 不再限制只能选择embedding类型的模型
       state = state.copyWith(availableEmbeddingModels: allModels);
     } catch (e) {
-      debugPrint('加载嵌入模型列表失败: $e');
+      debugPrint('❌ 加载嵌入模型列表失败: $e');
       // 忽略错误，使用空列表
       state = state.copyWith(availableEmbeddingModels: []);
     }
@@ -173,6 +264,7 @@ class KnowledgeBaseConfigNotifier
         chunkOverlap: Value(config.chunkOverlap),
         maxRetrievedChunks: Value(config.maxRetrievedChunks),
         similarityThreshold: Value(config.similarityThreshold),
+        createdAt: Value(config.createdAt), // 添加缺失的 createdAt 字段
         updatedAt: Value(DateTime.now()),
       );
 
@@ -192,6 +284,47 @@ class KnowledgeBaseConfigNotifier
       await _loadConfigs();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  /// 重新加载嵌入模型（公开方法，用于调试）
+  Future<void> reloadEmbeddingModels() async {
+    debugPrint('🔄 手动重新加载嵌入模型');
+    await _loadEmbeddingModels();
+  }
+
+  /// 清理无效配置（没有对应LLM配置的知识库配置）
+  Future<void> cleanupInvalidConfigs() async {
+    try {
+      debugPrint('🧹 开始清理无效的知识库配置...');
+
+      final allKbConfigs = await _database.getAllKnowledgeBaseConfigs();
+      final allLlmConfigs = await _database.getEnabledLlmConfigs();
+
+      int deletedCount = 0;
+
+      for (final kbConfig in allKbConfigs) {
+        // 检查是否有对应的LLM配置
+        final hasMatchingLlmConfig = allLlmConfigs.any(
+          (llmConfig) =>
+              llmConfig.provider.toLowerCase() ==
+              kbConfig.embeddingModelProvider.toLowerCase(),
+        );
+
+        // 如果没有对应的LLM配置，或者嵌入模型ID为空，删除这个知识库配置
+        if (!hasMatchingLlmConfig || kbConfig.embeddingModelId.isEmpty) {
+          debugPrint(
+            '🗑️ 删除无效配置: ${kbConfig.name} (${kbConfig.embeddingModelProvider})',
+          );
+          await _database.deleteKnowledgeBaseConfig(kbConfig.id);
+          deletedCount++;
+        }
+      }
+
+      debugPrint('✅ 清理完成，删除了 $deletedCount 个无效配置');
+      await _loadConfigs();
+    } catch (e) {
+      debugPrint('❌ 清理无效配置失败: $e');
     }
   }
 
@@ -227,6 +360,7 @@ class KnowledgeBaseConfigNotifier
       chunkOverlap: data.chunkOverlap,
       maxRetrievedChunks: data.maxRetrievedChunks,
       similarityThreshold: data.similarityThreshold,
+      isDefault: data.isDefault,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     );
@@ -251,6 +385,8 @@ final currentKnowledgeBaseConfigProvider = Provider<KnowledgeBaseConfig?>((
 });
 
 /// 可用嵌入模型Provider
-final availableEmbeddingModelsProvider = Provider<List<ModelInfo>>((ref) {
+final availableEmbeddingModelsProvider = Provider<List<ModelInfoWithProvider>>((
+  ref,
+) {
   return ref.watch(knowledgeBaseConfigProvider).availableEmbeddingModels;
 });

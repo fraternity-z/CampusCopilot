@@ -91,7 +91,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
   @override
   void initState() {
     super.initState();
-    _filteredModels = widget.allModels;
+    _filteredModels = _filterChatModels(widget.allModels);
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -101,13 +101,40 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
     super.dispose();
   }
 
+  /// 过滤出适合聊天的模型
+  List<ModelInfoWithProvider> _filterChatModels(
+    List<ModelInfoWithProvider> models,
+  ) {
+    return models.where((model) {
+      // 排除嵌入模型类型
+      if (model.type.toLowerCase() == 'embedding') {
+        return false;
+      }
+
+      // 排除名称或ID中包含 "embedding" 的模型（不区分大小写）
+      final nameContainsEmbedding = model.name.toLowerCase().contains(
+        'embedding',
+      );
+      final idContainsEmbedding = model.id.toLowerCase().contains('embedding');
+
+      if (nameContainsEmbedding || idContainsEmbedding) {
+        return false;
+      }
+
+      // 只保留聊天相关的模型类型
+      final chatTypes = ['chat', 'multimodal', 'text', 'completion'];
+      return chatTypes.contains(model.type.toLowerCase());
+    }).toList();
+  }
+
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
+      final chatModels = _filterChatModels(widget.allModels);
       if (query.isEmpty) {
-        _filteredModels = widget.allModels;
+        _filteredModels = chatModels;
       } else {
-        _filteredModels = widget.allModels.where((model) {
+        _filteredModels = chatModels.where((model) {
           return model.name.toLowerCase().contains(query) ||
               model.id.toLowerCase().contains(query) ||
               model.providerName.toLowerCase().contains(query);

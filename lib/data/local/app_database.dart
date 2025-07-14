@@ -15,6 +15,7 @@ import 'tables/chat_messages_table.dart';
 import 'tables/knowledge_documents_table.dart';
 import 'tables/knowledge_chunks_table.dart';
 import 'tables/knowledge_base_configs_table.dart';
+import 'tables/knowledge_bases_table.dart';
 import 'tables/custom_models_table.dart';
 import 'tables/general_settings_table.dart';
 
@@ -34,6 +35,7 @@ part 'app_database.g.dart';
     PersonaGroupsTable,
     ChatSessionsTable,
     ChatMessagesTable,
+    KnowledgeBasesTable,
     KnowledgeDocumentsTable,
     KnowledgeChunksTable,
     KnowledgeBaseConfigsTable,
@@ -66,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -107,8 +109,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             try {
               await m.createTable(knowledgeBaseConfigsTable);
+              await m.createTable(knowledgeDocumentsTable);
+              await m.createTable(knowledgeChunksTable);
             } catch (e) {
-              debugPrint('Failed to create knowledge base configs table: $e');
+              debugPrint('Failed to create knowledge base tables: $e');
             }
           }
           if (from < 6) {
@@ -146,6 +150,291 @@ class AppDatabase extends _$AppDatabase {
               debugPrint('Failed to create general settings table: $e');
             }
           }
+          if (from < 8) {
+            try {
+              // 确保知识库表存在（为早期版本用户补充创建）
+              await m.createTable(knowledgeDocumentsTable);
+              await m.createTable(knowledgeChunksTable);
+              await m.createTable(knowledgeBaseConfigsTable);
+            } catch (e) {
+              debugPrint('Failed to ensure knowledge base tables exist: $e');
+            }
+          }
+          if (from < 9) {
+            try {
+              // 创建知识库表
+              await m.createTable(knowledgeBasesTable);
+
+              // 为现有表添加知识库ID字段
+              await m.addColumn(
+                knowledgeDocumentsTable,
+                knowledgeDocumentsTable.knowledgeBaseId,
+              );
+              await m.addColumn(
+                knowledgeChunksTable,
+                knowledgeChunksTable.knowledgeBaseId,
+              );
+
+              // 创建默认知识库
+              // 首先检查是否有知识库配置
+              final configResult = await customSelect(
+                'SELECT id FROM knowledge_base_configs_table LIMIT 1',
+              ).getSingleOrNull();
+
+              final defaultConfigId =
+                  configResult?.data['id'] ?? 'default_config';
+
+              // 如果没有配置，先创建一个默认配置
+              if (configResult == null) {
+                await customStatement('''
+                  INSERT INTO knowledge_base_configs_table (
+                    id, name, embedding_model_id, embedding_model_name,
+                    embedding_model_provider, chunk_size, chunk_overlap,
+                    created_at, updated_at
+                  ) VALUES (
+                    'default_config', '默认配置', 'text-embedding-3-small',
+                    'Text Embedding 3 Small', 'openai', 1000, 200,
+                    datetime('now'), datetime('now')
+                  )
+                ''');
+              }
+
+              await customStatement('''
+                INSERT OR IGNORE INTO knowledge_bases_table (
+                  id, name, description, icon, color, config_id, document_count, chunk_count,
+                  is_default, is_enabled, created_at, updated_at
+                ) VALUES (
+                  'default_kb', '默认知识库', '系统默认知识库', 'folder', '#2196F3',
+                  '$defaultConfigId',
+                  0, 0, 1, 1, datetime('now'), datetime('now')
+                )
+              ''');
+
+              // 将现有文档和文本块关联到默认知识库
+              await customStatement('''
+                UPDATE knowledge_documents_table
+                SET knowledge_base_id = 'default_kb'
+                WHERE knowledge_base_id IS NULL
+              ''');
+
+              await customStatement('''
+                UPDATE knowledge_chunks_table
+                SET knowledge_base_id = 'default_kb'
+                WHERE knowledge_base_id IS NULL
+              ''');
+            } catch (e) {
+              debugPrint('Failed to migrate to multi-knowledge base: $e');
+            }
+          }
+          if (from < 10) {
+            try {
+              debugPrint('🔄 执行数据库版本10迁移...');
+
+              // 检查并修复知识库表结构
+              await customStatement('''
+                CREATE TABLE IF NOT EXISTS knowledge_bases_table_new (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  name TEXT NOT NULL,
+                  description TEXT,
+                  icon TEXT,
+                  color TEXT,
+                  config_id TEXT NOT NULL,
+                  document_count INTEGER NOT NULL DEFAULT 0,
+                  chunk_count INTEGER NOT NULL DEFAULT 0,
+                  is_default BOOLEAN NOT NULL DEFAULT 0,
+                  is_enabled BOOLEAN NOT NULL DEFAULT 1,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  last_used_at INTEGER
+                )
+              ''');
+
+              // 检查并修复文档表结构
+              await customStatement('''
+                CREATE TABLE IF NOT EXISTS knowledge_documents_table_new (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  knowledge_base_id TEXT NOT NULL,
+                  name TEXT NOT NULL,
+                  type TEXT NOT NULL,
+                  size INTEGER NOT NULL,
+                  file_path TEXT NOT NULL,
+                  file_hash TEXT NOT NULL,
+                  chunks INTEGER NOT NULL DEFAULT 0,
+                  status TEXT NOT NULL DEFAULT 'pending',
+                  index_progress REAL NOT NULL DEFAULT 0.0,
+                  uploaded_at INTEGER NOT NULL,
+                  processed_at INTEGER,
+                  metadata TEXT,
+                  error_message TEXT
+                )
+              ''');
+
+              // 检查并修复文本块表结构
+              await customStatement('''
+                CREATE TABLE IF NOT EXISTS knowledge_chunks_table_new (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  knowledge_base_id TEXT NOT NULL,
+                  document_id TEXT NOT NULL,
+                  content TEXT NOT NULL,
+                  chunk_index INTEGER NOT NULL,
+                  character_count INTEGER NOT NULL,
+                  token_count INTEGER NOT NULL,
+                  embedding TEXT,
+                  created_at INTEGER NOT NULL
+                )
+              ''');
+
+              // 迁移现有数据（如果存在）
+              // 检查旧表是否存在，如果存在则迁移数据
+              final tablesResult = await customSelect('''
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name IN ('knowledge_documents_table', 'knowledge_chunks_table')
+              ''').get();
+
+              final hasDocTable = tablesResult.any(
+                (row) => row.data['name'] == 'knowledge_documents_table',
+              );
+              final hasChunkTable = tablesResult.any(
+                (row) => row.data['name'] == 'knowledge_chunks_table',
+              );
+
+              if (hasDocTable) {
+                // 迁移文档数据，为所有记录设置默认知识库ID
+                await customStatement('''
+                  INSERT OR IGNORE INTO knowledge_documents_table_new
+                  SELECT
+                    id,
+                    'default_kb' as knowledge_base_id,
+                    name, type, size, file_path, file_hash, chunks, status,
+                    index_progress, uploaded_at, processed_at, metadata, error_message
+                  FROM knowledge_documents_table
+                ''');
+              }
+
+              if (hasChunkTable) {
+                // 迁移文本块数据，为所有记录设置默认知识库ID
+                await customStatement('''
+                  INSERT OR IGNORE INTO knowledge_chunks_table_new
+                  SELECT
+                    id,
+                    'default_kb' as knowledge_base_id,
+                    document_id, content, chunk_index, character_count,
+                    token_count, embedding, created_at
+                  FROM knowledge_chunks_table
+                ''');
+              }
+
+              // 替换旧表
+              await customStatement(
+                'DROP TABLE IF EXISTS knowledge_documents_table',
+              );
+              await customStatement(
+                'DROP TABLE IF EXISTS knowledge_chunks_table',
+              );
+              await customStatement(
+                'ALTER TABLE knowledge_documents_table_new RENAME TO knowledge_documents_table',
+              );
+              await customStatement(
+                'ALTER TABLE knowledge_chunks_table_new RENAME TO knowledge_chunks_table',
+              );
+
+              // 确保默认知识库存在
+              await _ensureDefaultKnowledgeBase();
+
+              debugPrint('✅ 数据库版本10迁移完成');
+            } catch (e) {
+              debugPrint('❌ 数据库版本10迁移失败: $e');
+            }
+          }
+          if (from < 11) {
+            try {
+              debugPrint('🔄 执行数据库版本11迁移（修复版本10问题）...');
+
+              // 直接删除可能存在问题的旧表，重新创建
+              await customStatement(
+                'DROP TABLE IF EXISTS knowledge_documents_table',
+              );
+              await customStatement(
+                'DROP TABLE IF EXISTS knowledge_chunks_table',
+              );
+              await customStatement(
+                'DROP TABLE IF EXISTS knowledge_bases_table',
+              );
+
+              // 重新创建所有知识库相关表
+              await customStatement('''
+                CREATE TABLE knowledge_bases_table (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  name TEXT NOT NULL,
+                  description TEXT,
+                  icon TEXT,
+                  color TEXT,
+                  config_id TEXT NOT NULL,
+                  document_count INTEGER NOT NULL DEFAULT 0,
+                  chunk_count INTEGER NOT NULL DEFAULT 0,
+                  is_default BOOLEAN NOT NULL DEFAULT 0,
+                  is_enabled BOOLEAN NOT NULL DEFAULT 1,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  last_used_at INTEGER
+                )
+              ''');
+
+              await customStatement('''
+                CREATE TABLE knowledge_documents_table (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  knowledge_base_id TEXT NOT NULL,
+                  name TEXT NOT NULL,
+                  type TEXT NOT NULL,
+                  size INTEGER NOT NULL,
+                  file_path TEXT NOT NULL,
+                  file_hash TEXT NOT NULL,
+                  chunks INTEGER NOT NULL DEFAULT 0,
+                  status TEXT NOT NULL DEFAULT 'pending',
+                  index_progress REAL NOT NULL DEFAULT 0.0,
+                  uploaded_at INTEGER NOT NULL,
+                  processed_at INTEGER,
+                  metadata TEXT,
+                  error_message TEXT
+                )
+              ''');
+
+              await customStatement('''
+                CREATE TABLE knowledge_chunks_table (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  knowledge_base_id TEXT NOT NULL,
+                  document_id TEXT NOT NULL,
+                  content TEXT NOT NULL,
+                  chunk_index INTEGER NOT NULL,
+                  character_count INTEGER NOT NULL,
+                  token_count INTEGER NOT NULL,
+                  embedding TEXT,
+                  created_at INTEGER NOT NULL
+                )
+              ''');
+
+              // 确保默认知识库存在
+              await _ensureDefaultKnowledgeBase();
+
+              debugPrint('✅ 数据库版本11迁移完成');
+            } catch (e) {
+              debugPrint('❌ 数据库版本11迁移失败: $e');
+            }
+          }
+          if (from < 12) {
+            try {
+              debugPrint('🔄 执行数据库版本12迁移（添加图片支持）...');
+
+              // 添加 imageUrls 列到 chat_messages_table
+              await m.addColumn(chatMessagesTable, chatMessagesTable.imageUrls);
+
+              debugPrint('✅ 数据库版本12迁移完成');
+            } catch (e) {
+              debugPrint('❌ 数据库版本12迁移失败: $e');
+              // 如果添加列失败，可能是因为列已经存在，这是正常的
+              debugPrint('这可能是因为列已经存在，继续执行...');
+            }
+          }
         });
       },
       beforeOpen: (details) async {
@@ -157,18 +446,18 @@ class AppDatabase extends _$AppDatabase {
 
   /// 插入默认数据
   Future<void> _insertDefaultData() async {
-    // 插入默认LLM配置示例
+    // 插入默认LLM配置示例（仅作为模板，默认禁用）
     await into(llmConfigsTable).insert(
       LlmConfigsTableCompanion.insert(
         id: 'default-openai',
-        name: 'OpenAI 配置',
+        name: 'OpenAI 配置模板',
         provider: 'openai',
         apiKey: '',
-        defaultModel: Value('gpt-3.5-turbo'),
-        defaultEmbeddingModel: Value('text-embedding-3-small'),
+        defaultModel: const Value(''), // 不设置默认模型
+        defaultEmbeddingModel: const Value(''), // 不设置默认嵌入模型
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        isEnabled: const Value(false), // 默认禁用，需要用户配置API密钥
+        isEnabled: const Value(false), // 默认禁用，需要用户配置
       ),
     );
 
@@ -445,6 +734,92 @@ class AppDatabase extends _$AppDatabase {
     return (delete(chatMessagesTable)..where((t) => t.id.equals(id))).go();
   }
 
+  // ==================== 知识库相关查询 ====================
+
+  /// 获取所有知识库
+  Future<List<KnowledgeBasesTableData>> getAllKnowledgeBases() {
+    return (select(knowledgeBasesTable)
+          ..where((t) => t.isEnabled.equals(true))
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.isDefault), // 默认知识库优先
+            (t) => OrderingTerm.desc(t.updatedAt), // 按更新时间排序
+          ]))
+        .get();
+  }
+
+  /// 获取默认知识库
+  Future<KnowledgeBasesTableData?> getDefaultKnowledgeBase() async {
+    final result =
+        await (select(knowledgeBasesTable)
+              ..where((t) => t.isDefault.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
+    return result;
+  }
+
+  /// 根据ID获取知识库
+  Future<KnowledgeBasesTableData?> getKnowledgeBaseById(String id) async {
+    return await (select(
+      knowledgeBasesTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  /// 创建知识库
+  Future<void> createKnowledgeBase(KnowledgeBasesTableCompanion knowledgeBase) {
+    return into(knowledgeBasesTable).insert(knowledgeBase);
+  }
+
+  /// 更新知识库
+  Future<void> updateKnowledgeBase(
+    String id,
+    KnowledgeBasesTableCompanion knowledgeBase,
+  ) {
+    return (update(
+      knowledgeBasesTable,
+    )..where((t) => t.id.equals(id))).write(knowledgeBase);
+  }
+
+  /// 删除知识库
+  Future<int> deleteKnowledgeBase(String id) {
+    return (delete(knowledgeBasesTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// 更新知识库统计信息
+  Future<void> updateKnowledgeBaseStats(String knowledgeBaseId) async {
+    // 统计文档数量
+    final docCount =
+        await (selectOnly(knowledgeDocumentsTable)
+              ..addColumns([knowledgeDocumentsTable.id.count()])
+              ..where(
+                knowledgeDocumentsTable.knowledgeBaseId.equals(knowledgeBaseId),
+              ))
+            .getSingle();
+
+    // 统计文本块数量
+    final chunkCount =
+        await (selectOnly(knowledgeChunksTable)
+              ..addColumns([knowledgeChunksTable.id.count()])
+              ..where(
+                knowledgeChunksTable.knowledgeBaseId.equals(knowledgeBaseId),
+              ))
+            .getSingle();
+
+    // 更新统计信息
+    await (update(
+      knowledgeBasesTable,
+    )..where((t) => t.id.equals(knowledgeBaseId))).write(
+      KnowledgeBasesTableCompanion(
+        documentCount: Value(
+          docCount.read(knowledgeDocumentsTable.id.count()) ?? 0,
+        ),
+        chunkCount: Value(
+          chunkCount.read(knowledgeChunksTable.id.count()) ?? 0,
+        ),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   // ==================== 知识库文档相关查询 ====================
 
   /// 获取所有知识库文档
@@ -452,6 +827,16 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       knowledgeDocumentsTable,
     )..orderBy([(t) => OrderingTerm.desc(t.uploadedAt)])).get();
+  }
+
+  /// 根据知识库ID获取文档
+  Future<List<KnowledgeDocumentsTableData>> getDocumentsByKnowledgeBase(
+    String knowledgeBaseId,
+  ) {
+    return (select(knowledgeDocumentsTable)
+          ..where((t) => t.knowledgeBaseId.equals(knowledgeBaseId))
+          ..orderBy([(t) => OrderingTerm.desc(t.uploadedAt)]))
+        .get();
   }
 
   /// 根据状态获取文档
@@ -602,6 +987,30 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  /// 根据知识库ID获取所有文本块
+  Future<List<KnowledgeChunksTableData>> getChunksByKnowledgeBase(
+    String knowledgeBaseId,
+  ) {
+    return (select(knowledgeChunksTable)
+          ..where((t) => t.knowledgeBaseId.equals(knowledgeBaseId))
+          ..orderBy([(t) => OrderingTerm.asc(t.chunkIndex)]))
+        .get();
+  }
+
+  /// 根据知识库ID获取有嵌入向量的文本块（用于向量搜索）
+  Future<List<KnowledgeChunksTableData>> getEmbeddedChunksByKnowledgeBase(
+    String knowledgeBaseId,
+  ) {
+    return (select(knowledgeChunksTable)
+          ..where(
+            (t) =>
+                t.knowledgeBaseId.equals(knowledgeBaseId) &
+                t.embedding.isNotNull(),
+          )
+          ..orderBy([(t) => OrderingTerm.asc(t.chunkIndex)]))
+        .get();
+  }
+
   /// 插入文本块
   Future<void> insertKnowledgeChunk(KnowledgeChunksTableCompanion chunk) {
     return into(knowledgeChunksTable).insert(chunk);
@@ -642,6 +1051,20 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       knowledgeChunksTable,
     )..where((t) => t.content.lower().contains(lowerQuery))).get();
+  }
+
+  /// 在指定知识库中搜索文本块
+  Future<List<KnowledgeChunksTableData>> searchChunksByKnowledgeBase(
+    String query,
+    String knowledgeBaseId,
+  ) {
+    final lowerQuery = query.toLowerCase();
+    return (select(knowledgeChunksTable)..where(
+          (t) =>
+              t.knowledgeBaseId.equals(knowledgeBaseId) &
+              t.content.lower().contains(lowerQuery),
+        ))
+        .get();
   }
 
   // ---------- 新增分页、计数优化 ----------
@@ -812,6 +1235,62 @@ class AppDatabase extends _$AppDatabase {
   Future<Map<String, String>> getAllSettings() async {
     final results = await select(generalSettingsTable).get();
     return {for (final result in results) result.key: result.value};
+  }
+
+  /// 确保默认知识库存在
+  Future<void> _ensureDefaultKnowledgeBase() async {
+    try {
+      debugPrint('🔧 检查默认知识库...');
+
+      // 检查是否已存在默认知识库
+      final existingKb = await customSelect(
+        'SELECT id FROM knowledge_bases_table WHERE id = ?',
+        variables: [Variable.withString('default_kb')],
+      ).getSingleOrNull();
+
+      if (existingKb != null) {
+        debugPrint('✅ 默认知识库已存在');
+        return;
+      }
+
+      // 检查是否有知识库配置
+      final configResult = await customSelect(
+        'SELECT id FROM knowledge_base_configs_table LIMIT 1',
+      ).getSingleOrNull();
+
+      final defaultConfigId = configResult?.data['id'] ?? 'default_config';
+
+      // 如果没有配置，先创建默认配置
+      if (configResult == null) {
+        await customStatement('''
+          INSERT INTO knowledge_base_configs_table (
+            id, name, embedding_model_id, embedding_model_name,
+            embedding_model_provider, chunk_size, chunk_overlap,
+            created_at, updated_at
+          ) VALUES (
+            'default_config', '默认配置', 'text-embedding-3-small',
+            'Text Embedding 3 Small', 'openai', 1000, 200,
+            ${DateTime.now().millisecondsSinceEpoch}, ${DateTime.now().millisecondsSinceEpoch}
+          )
+        ''');
+      }
+
+      // 创建默认知识库
+      await customStatement('''
+        INSERT INTO knowledge_bases_table (
+          id, name, description, icon, color, config_id, document_count, chunk_count,
+          is_default, is_enabled, created_at, updated_at
+        ) VALUES (
+          'default_kb', '默认知识库', '系统默认知识库', 'folder', '#2196F3',
+          '$defaultConfigId',
+          0, 0, 1, 1, ${DateTime.now().millisecondsSinceEpoch}, ${DateTime.now().millisecondsSinceEpoch}
+        )
+      ''');
+
+      debugPrint('✅ 默认知识库创建成功');
+    } catch (e) {
+      debugPrint('❌ 创建默认知识库失败: $e');
+    }
   }
 }
 

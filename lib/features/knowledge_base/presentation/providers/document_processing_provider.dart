@@ -54,45 +54,70 @@ class DocumentProcessingNotifier
     required String documentId,
     required String filePath,
     required String fileType,
+    required String knowledgeBaseId,
     int chunkSize = 1000,
     int chunkOverlap = 200,
   }) async {
     try {
+      debugPrint('🔄 开始处理文档: $documentId');
+
       // 更新处理状态
       _updateProgress(documentId, 0.0);
-      _updateDocumentStatus(documentId, 'processing');
+      await _updateDocumentStatus(documentId, 'processing');
+      debugPrint('📊 文档状态已更新为processing');
 
-      // 处理文档
-      final result = await _processingService.processDocument(
-        documentId: documentId,
-        filePath: filePath,
-        fileType: fileType,
-        chunkSize: chunkSize,
-        chunkOverlap: chunkOverlap,
-      );
+      // 处理文档（添加超时机制）
+      debugPrint('📄 开始提取文档内容...');
+      final result = await _processingService
+          .processDocument(
+            documentId: documentId,
+            filePath: filePath,
+            fileType: fileType,
+            chunkSize: chunkSize,
+            chunkOverlap: chunkOverlap,
+          )
+          .timeout(
+            const Duration(minutes: 10), // 10分钟超时
+            onTimeout: () {
+              debugPrint('⏰ 文档处理超时: $documentId');
+              return DocumentProcessingResult(
+                chunks: [],
+                error: '文档处理超时（超过10分钟）',
+              );
+            },
+          );
 
       if (result.isSuccess) {
+        debugPrint('✅ 文档处理成功，生成了${result.chunks.length}个文本块');
+
         // 保存文本块到数据库
         _updateProgress(documentId, 0.4);
-        await _saveChunksToDatabase(documentId, result.chunks);
+        debugPrint('💾 保存文本块到数据库...');
+        await _saveChunksToDatabase(documentId, knowledgeBaseId, result.chunks);
 
         // 生成嵌入向量
         _updateProgress(documentId, 0.6);
+        debugPrint('🧠 生成嵌入向量...');
         await _generateEmbeddingsForChunks(documentId, result.chunks);
 
         // 更新文档状态
         _updateProgress(documentId, 1.0);
+        debugPrint('🎉 更新文档状态为completed');
         await _updateDocumentStatus(documentId, 'completed');
         await _updateDocumentMetadata(documentId, result.metadata);
 
         // 清除进度信息
         _clearProgress(documentId);
+        debugPrint('✅ 文档处理完成: $documentId');
       } else {
         // 处理失败
+        debugPrint('❌ 文档处理失败: ${result.error}');
         await _updateDocumentStatus(documentId, 'failed', result.error);
         _updateError(documentId, result.error);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('💥 文档处理异常: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
       await _updateDocumentStatus(documentId, 'failed', e.toString());
       _updateError(documentId, e.toString());
     }
@@ -114,6 +139,7 @@ class DocumentProcessingNotifier
           documentId: doc.id,
           filePath: doc.filePath,
           fileType: doc.type,
+          knowledgeBaseId: doc.knowledgeBaseId,
           chunkSize: chunkSize,
           chunkOverlap: chunkOverlap,
         );
@@ -143,6 +169,7 @@ class DocumentProcessingNotifier
           documentId: documentId,
           filePath: doc.filePath,
           fileType: doc.type,
+          knowledgeBaseId: doc.knowledgeBaseId,
           chunkSize: chunkSize,
           chunkOverlap: chunkOverlap,
         );
@@ -155,11 +182,13 @@ class DocumentProcessingNotifier
   /// 保存文本块到数据库
   Future<void> _saveChunksToDatabase(
     String documentId,
+    String knowledgeBaseId,
     List<DocumentChunk> chunks,
   ) async {
     final companions = chunks.map((chunk) {
       return KnowledgeChunksTableCompanion.insert(
         id: chunk.id,
+        knowledgeBaseId: knowledgeBaseId,
         documentId: documentId,
         content: chunk.content,
         chunkIndex: chunk.index,
@@ -172,9 +201,10 @@ class DocumentProcessingNotifier
     await _database.insertKnowledgeChunks(companions);
 
     // 更新文档的块数量
-    await _database.upsertKnowledgeDocument(
+    await (_database.update(
+      _database.knowledgeDocumentsTable,
+    )..where((t) => t.id.equals(documentId))).write(
       KnowledgeDocumentsTableCompanion(
-        id: Value(documentId),
         chunks: Value(chunks.length),
         processedAt: Value(DateTime.now()),
       ),
@@ -187,9 +217,11 @@ class DocumentProcessingNotifier
     String status, [
     String? errorMessage,
   ]) async {
-    await _database.upsertKnowledgeDocument(
+    // 使用update语句只更新特定字段，避免数据验证错误
+    await (_database.update(
+      _database.knowledgeDocumentsTable,
+    )..where((t) => t.id.equals(documentId))).write(
       KnowledgeDocumentsTableCompanion(
-        id: Value(documentId),
         status: Value(status),
         errorMessage: Value(errorMessage),
         processedAt: Value(DateTime.now()),
@@ -202,10 +234,12 @@ class DocumentProcessingNotifier
     String documentId,
     Map<String, dynamic> metadata,
   ) async {
-    await _database.upsertKnowledgeDocument(
+    // 使用update语句只更新元数据字段
+    await (_database.update(
+      _database.knowledgeDocumentsTable,
+    )..where((t) => t.id.equals(documentId))).write(
       KnowledgeDocumentsTableCompanion(
-        id: Value(documentId),
-        metadata: Value(metadata.isNotEmpty ? metadata.toString() : null),
+        metadata: Value(metadata.isNotEmpty ? jsonEncode(metadata) : null),
       ),
     );
   }
@@ -246,42 +280,77 @@ class DocumentProcessingNotifier
     return state.processingErrors[documentId];
   }
 
-  /// 为文本块生成嵌入向量
+  /// 为文本块生成嵌入向量（批处理版本）
   Future<void> _generateEmbeddingsForChunks(
     String documentId,
     List<DocumentChunk> chunks,
   ) async {
     try {
+      debugPrint('🧠 开始生成嵌入向量，总共 ${chunks.length} 个文本块');
+
       // 获取知识库配置
       final config = _ref.read(knowledgeBaseConfigProvider).currentConfig;
       if (config == null) {
         throw Exception('未找到知识库配置');
       }
 
-      // 提取文本内容
-      final texts = chunks.map((chunk) => chunk.content).toList();
+      // 分批处理，避免一次性处理太多文本块导致超时
+      const batchSize = 10; // 每批处理10个文本块
+      int processedCount = 0;
 
-      // 生成嵌入向量
-      final result = await _embeddingService.generateEmbeddingsForChunks(
-        chunks: texts,
-        config: config,
-      );
+      for (int i = 0; i < chunks.length; i += batchSize) {
+        final endIndex = (i + batchSize < chunks.length)
+            ? i + batchSize
+            : chunks.length;
+        final batchChunks = chunks.sublist(i, endIndex);
+        final batchTexts = batchChunks.map((chunk) => chunk.content).toList();
 
-      if (result.isSuccess) {
-        // 保存嵌入向量到数据库
-        for (int i = 0; i < chunks.length; i++) {
-          if (i < result.embeddings.length) {
-            final embeddingJson = jsonEncode(result.embeddings[i]);
-            await _database.updateChunkEmbedding(chunks[i].id, embeddingJson);
+        debugPrint(
+          '🔄 处理第 ${(i / batchSize).floor() + 1} 批，包含 ${batchChunks.length} 个文本块',
+        );
+
+        try {
+          // 生成当前批次的嵌入向量
+          final result = await _embeddingService.generateEmbeddingsForChunks(
+            chunks: batchTexts,
+            config: config,
+          );
+
+          if (result.isSuccess) {
+            // 保存嵌入向量到数据库
+            for (int j = 0; j < batchChunks.length; j++) {
+              if (j < result.embeddings.length) {
+                final embeddingJson = jsonEncode(result.embeddings[j]);
+                await _database.updateChunkEmbedding(
+                  batchChunks[j].id,
+                  embeddingJson,
+                );
+              }
+            }
+            processedCount += batchChunks.length;
+            debugPrint('✅ 已完成 $processedCount/${chunks.length} 个文本块的嵌入向量生成');
+          } else {
+            debugPrint(
+              '❌ 第 ${(i / batchSize).floor() + 1} 批嵌入向量生成失败: ${result.error}',
+            );
+            // 继续处理下一批，不中断整个流程
           }
+        } catch (batchError) {
+          debugPrint('❌ 第 ${(i / batchSize).floor() + 1} 批处理异常: $batchError');
+          // 继续处理下一批
         }
-      } else {
-        throw Exception('生成嵌入向量失败: ${result.error}');
+
+        // 每批之间稍作延迟，避免API限流
+        if (i + batchSize < chunks.length) {
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
       }
+
+      debugPrint('🎉 嵌入向量生成完成，成功处理 $processedCount/${chunks.length} 个文本块');
     } catch (e) {
       // 嵌入生成失败不应该影响整个文档处理流程
       // 只记录错误，文档仍然可以被标记为已完成
-      debugPrint('为文档 $documentId 生成嵌入向量失败: $e');
+      debugPrint('❌ 为文档 $documentId 生成嵌入向量失败: $e');
     }
   }
 }

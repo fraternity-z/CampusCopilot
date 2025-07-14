@@ -83,7 +83,11 @@ class GoogleLlmProvider extends LlmProvider {
       return ChatResult(
         content: response.text ?? '',
         model: modelName,
-        finishReason: _mapFinishReason(response.candidates.first.finishReason),
+        finishReason: _mapFinishReason(
+          response.candidates.isNotEmpty
+              ? response.candidates.first.finishReason
+              : null,
+        ),
         tokenUsage: TokenUsage(
           inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
           outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
@@ -109,7 +113,9 @@ class GoogleLlmProvider extends LlmProvider {
           isDone: response.candidates.isNotEmpty,
           model: modelName,
           finishReason: _mapFinishReason(
-            response.candidates.first.finishReason,
+            response.candidates.isNotEmpty
+                ? response.candidates.first.finishReason
+                : null,
           ),
           tokenUsage: TokenUsage(
             inputTokens: response.usageMetadata?.promptTokenCount ?? 0,

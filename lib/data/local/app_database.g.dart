@@ -2765,6 +2765,14 @@ class $ChatMessagesTableTable extends ChatMessagesTable
   late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
       'model_name', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _imageUrlsMeta =
+      const VerificationMeta('imageUrls');
+  @override
+  late final GeneratedColumn<String> imageUrls = GeneratedColumn<String>(
+      'image_urls', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -2779,7 +2787,8 @@ class $ChatMessagesTableTable extends ChatMessagesTable
         tokenCount,
         thinkingContent,
         thinkingComplete,
-        modelName
+        modelName,
+        imageUrls
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2865,6 +2874,10 @@ class $ChatMessagesTableTable extends ChatMessagesTable
       context.handle(_modelNameMeta,
           modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta));
     }
+    if (data.containsKey('image_urls')) {
+      context.handle(_imageUrlsMeta,
+          imageUrls.isAcceptableOrUnknown(data['image_urls']!, _imageUrlsMeta));
+    }
     return context;
   }
 
@@ -2900,6 +2913,8 @@ class $ChatMessagesTableTable extends ChatMessagesTable
           DriftSqlType.bool, data['${effectivePrefix}thinking_complete'])!,
       modelName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}model_name']),
+      imageUrls: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_urls'])!,
     );
   }
 
@@ -2949,6 +2964,9 @@ class ChatMessagesTableData extends DataClass
 
   /// 使用的模型名称（用于特殊处理）
   final String? modelName;
+
+  /// 图片URL列表（JSON格式存储）
+  final String imageUrls;
   const ChatMessagesTableData(
       {required this.id,
       required this.content,
@@ -2962,7 +2980,8 @@ class ChatMessagesTableData extends DataClass
       this.tokenCount,
       this.thinkingContent,
       required this.thinkingComplete,
-      this.modelName});
+      this.modelName,
+      required this.imageUrls});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2989,6 +3008,7 @@ class ChatMessagesTableData extends DataClass
     if (!nullToAbsent || modelName != null) {
       map['model_name'] = Variable<String>(modelName);
     }
+    map['image_urls'] = Variable<String>(imageUrls);
     return map;
   }
 
@@ -3017,6 +3037,7 @@ class ChatMessagesTableData extends DataClass
       modelName: modelName == null && nullToAbsent
           ? const Value.absent()
           : Value(modelName),
+      imageUrls: Value(imageUrls),
     );
   }
 
@@ -3037,6 +3058,7 @@ class ChatMessagesTableData extends DataClass
       thinkingContent: serializer.fromJson<String?>(json['thinkingContent']),
       thinkingComplete: serializer.fromJson<bool>(json['thinkingComplete']),
       modelName: serializer.fromJson<String?>(json['modelName']),
+      imageUrls: serializer.fromJson<String>(json['imageUrls']),
     );
   }
   @override
@@ -3056,6 +3078,7 @@ class ChatMessagesTableData extends DataClass
       'thinkingContent': serializer.toJson<String?>(thinkingContent),
       'thinkingComplete': serializer.toJson<bool>(thinkingComplete),
       'modelName': serializer.toJson<String?>(modelName),
+      'imageUrls': serializer.toJson<String>(imageUrls),
     };
   }
 
@@ -3072,7 +3095,8 @@ class ChatMessagesTableData extends DataClass
           Value<int?> tokenCount = const Value.absent(),
           Value<String?> thinkingContent = const Value.absent(),
           bool? thinkingComplete,
-          Value<String?> modelName = const Value.absent()}) =>
+          Value<String?> modelName = const Value.absent(),
+          String? imageUrls}) =>
       ChatMessagesTableData(
         id: id ?? this.id,
         content: content ?? this.content,
@@ -3091,6 +3115,7 @@ class ChatMessagesTableData extends DataClass
             : this.thinkingContent,
         thinkingComplete: thinkingComplete ?? this.thinkingComplete,
         modelName: modelName.present ? modelName.value : this.modelName,
+        imageUrls: imageUrls ?? this.imageUrls,
       );
   ChatMessagesTableData copyWithCompanion(ChatMessagesTableCompanion data) {
     return ChatMessagesTableData(
@@ -3117,6 +3142,7 @@ class ChatMessagesTableData extends DataClass
           ? data.thinkingComplete.value
           : this.thinkingComplete,
       modelName: data.modelName.present ? data.modelName.value : this.modelName,
+      imageUrls: data.imageUrls.present ? data.imageUrls.value : this.imageUrls,
     );
   }
 
@@ -3135,7 +3161,8 @@ class ChatMessagesTableData extends DataClass
           ..write('tokenCount: $tokenCount, ')
           ..write('thinkingContent: $thinkingContent, ')
           ..write('thinkingComplete: $thinkingComplete, ')
-          ..write('modelName: $modelName')
+          ..write('modelName: $modelName, ')
+          ..write('imageUrls: $imageUrls')
           ..write(')'))
         .toString();
   }
@@ -3154,7 +3181,8 @@ class ChatMessagesTableData extends DataClass
       tokenCount,
       thinkingContent,
       thinkingComplete,
-      modelName);
+      modelName,
+      imageUrls);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3171,7 +3199,8 @@ class ChatMessagesTableData extends DataClass
           other.tokenCount == this.tokenCount &&
           other.thinkingContent == this.thinkingContent &&
           other.thinkingComplete == this.thinkingComplete &&
-          other.modelName == this.modelName);
+          other.modelName == this.modelName &&
+          other.imageUrls == this.imageUrls);
 }
 
 class ChatMessagesTableCompanion
@@ -3189,6 +3218,7 @@ class ChatMessagesTableCompanion
   final Value<String?> thinkingContent;
   final Value<bool> thinkingComplete;
   final Value<String?> modelName;
+  final Value<String> imageUrls;
   final Value<int> rowid;
   const ChatMessagesTableCompanion({
     this.id = const Value.absent(),
@@ -3204,6 +3234,7 @@ class ChatMessagesTableCompanion
     this.thinkingContent = const Value.absent(),
     this.thinkingComplete = const Value.absent(),
     this.modelName = const Value.absent(),
+    this.imageUrls = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatMessagesTableCompanion.insert({
@@ -3220,6 +3251,7 @@ class ChatMessagesTableCompanion
     this.thinkingContent = const Value.absent(),
     this.thinkingComplete = const Value.absent(),
     this.modelName = const Value.absent(),
+    this.imageUrls = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         content = Value(content),
@@ -3240,6 +3272,7 @@ class ChatMessagesTableCompanion
     Expression<String>? thinkingContent,
     Expression<bool>? thinkingComplete,
     Expression<String>? modelName,
+    Expression<String>? imageUrls,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3256,6 +3289,7 @@ class ChatMessagesTableCompanion
       if (thinkingContent != null) 'thinking_content': thinkingContent,
       if (thinkingComplete != null) 'thinking_complete': thinkingComplete,
       if (modelName != null) 'model_name': modelName,
+      if (imageUrls != null) 'image_urls': imageUrls,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3274,6 +3308,7 @@ class ChatMessagesTableCompanion
       Value<String?>? thinkingContent,
       Value<bool>? thinkingComplete,
       Value<String?>? modelName,
+      Value<String>? imageUrls,
       Value<int>? rowid}) {
     return ChatMessagesTableCompanion(
       id: id ?? this.id,
@@ -3289,6 +3324,7 @@ class ChatMessagesTableCompanion
       thinkingContent: thinkingContent ?? this.thinkingContent,
       thinkingComplete: thinkingComplete ?? this.thinkingComplete,
       modelName: modelName ?? this.modelName,
+      imageUrls: imageUrls ?? this.imageUrls,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3335,6 +3371,9 @@ class ChatMessagesTableCompanion
     if (modelName.present) {
       map['model_name'] = Variable<String>(modelName.value);
     }
+    if (imageUrls.present) {
+      map['image_urls'] = Variable<String>(imageUrls.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3357,6 +3396,678 @@ class ChatMessagesTableCompanion
           ..write('thinkingContent: $thinkingContent, ')
           ..write('thinkingComplete: $thinkingComplete, ')
           ..write('modelName: $modelName, ')
+          ..write('imageUrls: $imageUrls, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $KnowledgeBasesTableTable extends KnowledgeBasesTable
+    with TableInfo<$KnowledgeBasesTableTable, KnowledgeBasesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KnowledgeBasesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+      'icon', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+      'color', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _configIdMeta =
+      const VerificationMeta('configId');
+  @override
+  late final GeneratedColumn<String> configId = GeneratedColumn<String>(
+      'config_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _documentCountMeta =
+      const VerificationMeta('documentCount');
+  @override
+  late final GeneratedColumn<int> documentCount = GeneratedColumn<int>(
+      'document_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _chunkCountMeta =
+      const VerificationMeta('chunkCount');
+  @override
+  late final GeneratedColumn<int> chunkCount = GeneratedColumn<int>(
+      'chunk_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _isDefaultMeta =
+      const VerificationMeta('isDefault');
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+      'is_default', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_default" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isEnabledMeta =
+      const VerificationMeta('isEnabled');
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+      'is_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_enabled" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _lastUsedAtMeta =
+      const VerificationMeta('lastUsedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastUsedAt = GeneratedColumn<DateTime>(
+      'last_used_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        description,
+        icon,
+        color,
+        configId,
+        documentCount,
+        chunkCount,
+        isDefault,
+        isEnabled,
+        createdAt,
+        updatedAt,
+        lastUsedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'knowledge_bases_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<KnowledgeBasesTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+          _iconMeta, icon.isAcceptableOrUnknown(data['icon']!, _iconMeta));
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+          _colorMeta, color.isAcceptableOrUnknown(data['color']!, _colorMeta));
+    }
+    if (data.containsKey('config_id')) {
+      context.handle(_configIdMeta,
+          configId.isAcceptableOrUnknown(data['config_id']!, _configIdMeta));
+    } else if (isInserting) {
+      context.missing(_configIdMeta);
+    }
+    if (data.containsKey('document_count')) {
+      context.handle(
+          _documentCountMeta,
+          documentCount.isAcceptableOrUnknown(
+              data['document_count']!, _documentCountMeta));
+    }
+    if (data.containsKey('chunk_count')) {
+      context.handle(
+          _chunkCountMeta,
+          chunkCount.isAcceptableOrUnknown(
+              data['chunk_count']!, _chunkCountMeta));
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(_isDefaultMeta,
+          isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(_isEnabledMeta,
+          isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+          _lastUsedAtMeta,
+          lastUsedAt.isAcceptableOrUnknown(
+              data['last_used_at']!, _lastUsedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KnowledgeBasesTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KnowledgeBasesTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      icon: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}icon']),
+      color: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}color']),
+      configId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}config_id'])!,
+      documentCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}document_count'])!,
+      chunkCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chunk_count'])!,
+      isDefault: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
+      isEnabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_enabled'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      lastUsedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_used_at']),
+    );
+  }
+
+  @override
+  $KnowledgeBasesTableTable createAlias(String alias) {
+    return $KnowledgeBasesTableTable(attachedDatabase, alias);
+  }
+}
+
+class KnowledgeBasesTableData extends DataClass
+    implements Insertable<KnowledgeBasesTableData> {
+  /// 知识库唯一标识符
+  final String id;
+
+  /// 知识库名称
+  final String name;
+
+  /// 知识库描述
+  final String? description;
+
+  /// 知识库图标（可选）
+  final String? icon;
+
+  /// 知识库颜色（可选）
+  final String? color;
+
+  /// 关联的配置ID（引用knowledge_base_configs_table.id）
+  final String configId;
+
+  /// 文档数量
+  final int documentCount;
+
+  /// 文本块数量
+  final int chunkCount;
+
+  /// 是否为默认知识库
+  final bool isDefault;
+
+  /// 是否启用
+  final bool isEnabled;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+
+  /// 最后使用时间
+  final DateTime? lastUsedAt;
+  const KnowledgeBasesTableData(
+      {required this.id,
+      required this.name,
+      this.description,
+      this.icon,
+      this.color,
+      required this.configId,
+      required this.documentCount,
+      required this.chunkCount,
+      required this.isDefault,
+      required this.isEnabled,
+      required this.createdAt,
+      required this.updatedAt,
+      this.lastUsedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || icon != null) {
+      map['icon'] = Variable<String>(icon);
+    }
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<String>(color);
+    }
+    map['config_id'] = Variable<String>(configId);
+    map['document_count'] = Variable<int>(documentCount);
+    map['chunk_count'] = Variable<int>(chunkCount);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || lastUsedAt != null) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt);
+    }
+    return map;
+  }
+
+  KnowledgeBasesTableCompanion toCompanion(bool nullToAbsent) {
+    return KnowledgeBasesTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
+      color:
+          color == null && nullToAbsent ? const Value.absent() : Value(color),
+      configId: Value(configId),
+      documentCount: Value(documentCount),
+      chunkCount: Value(chunkCount),
+      isDefault: Value(isDefault),
+      isEnabled: Value(isEnabled),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      lastUsedAt: lastUsedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAt),
+    );
+  }
+
+  factory KnowledgeBasesTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KnowledgeBasesTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      icon: serializer.fromJson<String?>(json['icon']),
+      color: serializer.fromJson<String?>(json['color']),
+      configId: serializer.fromJson<String>(json['configId']),
+      documentCount: serializer.fromJson<int>(json['documentCount']),
+      chunkCount: serializer.fromJson<int>(json['chunkCount']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'icon': serializer.toJson<String?>(icon),
+      'color': serializer.toJson<String?>(color),
+      'configId': serializer.toJson<String>(configId),
+      'documentCount': serializer.toJson<int>(documentCount),
+      'chunkCount': serializer.toJson<int>(chunkCount),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
+    };
+  }
+
+  KnowledgeBasesTableData copyWith(
+          {String? id,
+          String? name,
+          Value<String?> description = const Value.absent(),
+          Value<String?> icon = const Value.absent(),
+          Value<String?> color = const Value.absent(),
+          String? configId,
+          int? documentCount,
+          int? chunkCount,
+          bool? isDefault,
+          bool? isEnabled,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> lastUsedAt = const Value.absent()}) =>
+      KnowledgeBasesTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description.present ? description.value : this.description,
+        icon: icon.present ? icon.value : this.icon,
+        color: color.present ? color.value : this.color,
+        configId: configId ?? this.configId,
+        documentCount: documentCount ?? this.documentCount,
+        chunkCount: chunkCount ?? this.chunkCount,
+        isDefault: isDefault ?? this.isDefault,
+        isEnabled: isEnabled ?? this.isEnabled,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+      );
+  KnowledgeBasesTableData copyWithCompanion(KnowledgeBasesTableCompanion data) {
+    return KnowledgeBasesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      color: data.color.present ? data.color.value : this.color,
+      configId: data.configId.present ? data.configId.value : this.configId,
+      documentCount: data.documentCount.present
+          ? data.documentCount.value
+          : this.documentCount,
+      chunkCount:
+          data.chunkCount.present ? data.chunkCount.value : this.chunkCount,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastUsedAt:
+          data.lastUsedAt.present ? data.lastUsedAt.value : this.lastUsedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeBasesTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('icon: $icon, ')
+          ..write('color: $color, ')
+          ..write('configId: $configId, ')
+          ..write('documentCount: $documentCount, ')
+          ..write('chunkCount: $chunkCount, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastUsedAt: $lastUsedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      description,
+      icon,
+      color,
+      configId,
+      documentCount,
+      chunkCount,
+      isDefault,
+      isEnabled,
+      createdAt,
+      updatedAt,
+      lastUsedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KnowledgeBasesTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.icon == this.icon &&
+          other.color == this.color &&
+          other.configId == this.configId &&
+          other.documentCount == this.documentCount &&
+          other.chunkCount == this.chunkCount &&
+          other.isDefault == this.isDefault &&
+          other.isEnabled == this.isEnabled &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.lastUsedAt == this.lastUsedAt);
+}
+
+class KnowledgeBasesTableCompanion
+    extends UpdateCompanion<KnowledgeBasesTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String?> icon;
+  final Value<String?> color;
+  final Value<String> configId;
+  final Value<int> documentCount;
+  final Value<int> chunkCount;
+  final Value<bool> isDefault;
+  final Value<bool> isEnabled;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> lastUsedAt;
+  final Value<int> rowid;
+  const KnowledgeBasesTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.color = const Value.absent(),
+    this.configId = const Value.absent(),
+    this.documentCount = const Value.absent(),
+    this.chunkCount = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  KnowledgeBasesTableCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.color = const Value.absent(),
+    required String configId,
+    this.documentCount = const Value.absent(),
+    this.chunkCount = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        configId = Value(configId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<KnowledgeBasesTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? icon,
+    Expression<String>? color,
+    Expression<String>? configId,
+    Expression<int>? documentCount,
+    Expression<int>? chunkCount,
+    Expression<bool>? isDefault,
+    Expression<bool>? isEnabled,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? lastUsedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (icon != null) 'icon': icon,
+      if (color != null) 'color': color,
+      if (configId != null) 'config_id': configId,
+      if (documentCount != null) 'document_count': documentCount,
+      if (chunkCount != null) 'chunk_count': chunkCount,
+      if (isDefault != null) 'is_default': isDefault,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  KnowledgeBasesTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? description,
+      Value<String?>? icon,
+      Value<String?>? color,
+      Value<String>? configId,
+      Value<int>? documentCount,
+      Value<int>? chunkCount,
+      Value<bool>? isDefault,
+      Value<bool>? isEnabled,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? lastUsedAt,
+      Value<int>? rowid}) {
+    return KnowledgeBasesTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      configId: configId ?? this.configId,
+      documentCount: documentCount ?? this.documentCount,
+      chunkCount: chunkCount ?? this.chunkCount,
+      isDefault: isDefault ?? this.isDefault,
+      isEnabled: isEnabled ?? this.isEnabled,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
+    if (configId.present) {
+      map['config_id'] = Variable<String>(configId.value);
+    }
+    if (documentCount.present) {
+      map['document_count'] = Variable<int>(documentCount.value);
+    }
+    if (chunkCount.present) {
+      map['chunk_count'] = Variable<int>(chunkCount.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KnowledgeBasesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('icon: $icon, ')
+          ..write('color: $color, ')
+          ..write('configId: $configId, ')
+          ..write('documentCount: $documentCount, ')
+          ..write('chunkCount: $chunkCount, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3373,6 +4084,12 @@ class $KnowledgeDocumentsTableTable extends KnowledgeDocumentsTable
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _knowledgeBaseIdMeta =
+      const VerificationMeta('knowledgeBaseId');
+  @override
+  late final GeneratedColumn<String> knowledgeBaseId = GeneratedColumn<String>(
+      'knowledge_base_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -3450,6 +4167,7 @@ class $KnowledgeDocumentsTableTable extends KnowledgeDocumentsTable
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        knowledgeBaseId,
         name,
         type,
         size,
@@ -3478,6 +4196,14 @@ class $KnowledgeDocumentsTableTable extends KnowledgeDocumentsTable
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('knowledge_base_id')) {
+      context.handle(
+          _knowledgeBaseIdMeta,
+          knowledgeBaseId.isAcceptableOrUnknown(
+              data['knowledge_base_id']!, _knowledgeBaseIdMeta));
+    } else if (isInserting) {
+      context.missing(_knowledgeBaseIdMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -3559,6 +4285,8 @@ class $KnowledgeDocumentsTableTable extends KnowledgeDocumentsTable
     return KnowledgeDocumentsTableData(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      knowledgeBaseId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}knowledge_base_id'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       type: attachedDatabase.typeMapping
@@ -3597,6 +4325,9 @@ class KnowledgeDocumentsTableData extends DataClass
   /// 文档唯一标识符
   final String id;
 
+  /// 所属知识库ID（引用knowledge_bases_table.id）
+  final String knowledgeBaseId;
+
   /// 文档名称
   final String name;
 
@@ -3634,6 +4365,7 @@ class KnowledgeDocumentsTableData extends DataClass
   final String? errorMessage;
   const KnowledgeDocumentsTableData(
       {required this.id,
+      required this.knowledgeBaseId,
       required this.name,
       required this.type,
       required this.size,
@@ -3650,6 +4382,7 @@ class KnowledgeDocumentsTableData extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['knowledge_base_id'] = Variable<String>(knowledgeBaseId);
     map['name'] = Variable<String>(name);
     map['type'] = Variable<String>(type);
     map['size'] = Variable<int>(size);
@@ -3674,6 +4407,7 @@ class KnowledgeDocumentsTableData extends DataClass
   KnowledgeDocumentsTableCompanion toCompanion(bool nullToAbsent) {
     return KnowledgeDocumentsTableCompanion(
       id: Value(id),
+      knowledgeBaseId: Value(knowledgeBaseId),
       name: Value(name),
       type: Value(type),
       size: Value(size),
@@ -3700,6 +4434,7 @@ class KnowledgeDocumentsTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return KnowledgeDocumentsTableData(
       id: serializer.fromJson<String>(json['id']),
+      knowledgeBaseId: serializer.fromJson<String>(json['knowledgeBaseId']),
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<String>(json['type']),
       size: serializer.fromJson<int>(json['size']),
@@ -3719,6 +4454,7 @@ class KnowledgeDocumentsTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'knowledgeBaseId': serializer.toJson<String>(knowledgeBaseId),
       'name': serializer.toJson<String>(name),
       'type': serializer.toJson<String>(type),
       'size': serializer.toJson<int>(size),
@@ -3736,6 +4472,7 @@ class KnowledgeDocumentsTableData extends DataClass
 
   KnowledgeDocumentsTableData copyWith(
           {String? id,
+          String? knowledgeBaseId,
           String? name,
           String? type,
           int? size,
@@ -3750,6 +4487,7 @@ class KnowledgeDocumentsTableData extends DataClass
           Value<String?> errorMessage = const Value.absent()}) =>
       KnowledgeDocumentsTableData(
         id: id ?? this.id,
+        knowledgeBaseId: knowledgeBaseId ?? this.knowledgeBaseId,
         name: name ?? this.name,
         type: type ?? this.type,
         size: size ?? this.size,
@@ -3768,6 +4506,9 @@ class KnowledgeDocumentsTableData extends DataClass
       KnowledgeDocumentsTableCompanion data) {
     return KnowledgeDocumentsTableData(
       id: data.id.present ? data.id.value : this.id,
+      knowledgeBaseId: data.knowledgeBaseId.present
+          ? data.knowledgeBaseId.value
+          : this.knowledgeBaseId,
       name: data.name.present ? data.name.value : this.name,
       type: data.type.present ? data.type.value : this.type,
       size: data.size.present ? data.size.value : this.size,
@@ -3793,6 +4534,7 @@ class KnowledgeDocumentsTableData extends DataClass
   String toString() {
     return (StringBuffer('KnowledgeDocumentsTableData(')
           ..write('id: $id, ')
+          ..write('knowledgeBaseId: $knowledgeBaseId, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('size: $size, ')
@@ -3812,6 +4554,7 @@ class KnowledgeDocumentsTableData extends DataClass
   @override
   int get hashCode => Object.hash(
       id,
+      knowledgeBaseId,
       name,
       type,
       size,
@@ -3829,6 +4572,7 @@ class KnowledgeDocumentsTableData extends DataClass
       identical(this, other) ||
       (other is KnowledgeDocumentsTableData &&
           other.id == this.id &&
+          other.knowledgeBaseId == this.knowledgeBaseId &&
           other.name == this.name &&
           other.type == this.type &&
           other.size == this.size &&
@@ -3846,6 +4590,7 @@ class KnowledgeDocumentsTableData extends DataClass
 class KnowledgeDocumentsTableCompanion
     extends UpdateCompanion<KnowledgeDocumentsTableData> {
   final Value<String> id;
+  final Value<String> knowledgeBaseId;
   final Value<String> name;
   final Value<String> type;
   final Value<int> size;
@@ -3861,6 +4606,7 @@ class KnowledgeDocumentsTableCompanion
   final Value<int> rowid;
   const KnowledgeDocumentsTableCompanion({
     this.id = const Value.absent(),
+    this.knowledgeBaseId = const Value.absent(),
     this.name = const Value.absent(),
     this.type = const Value.absent(),
     this.size = const Value.absent(),
@@ -3877,6 +4623,7 @@ class KnowledgeDocumentsTableCompanion
   });
   KnowledgeDocumentsTableCompanion.insert({
     required String id,
+    required String knowledgeBaseId,
     required String name,
     required String type,
     required int size,
@@ -3891,6 +4638,7 @@ class KnowledgeDocumentsTableCompanion
     this.errorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
+        knowledgeBaseId = Value(knowledgeBaseId),
         name = Value(name),
         type = Value(type),
         size = Value(size),
@@ -3899,6 +4647,7 @@ class KnowledgeDocumentsTableCompanion
         uploadedAt = Value(uploadedAt);
   static Insertable<KnowledgeDocumentsTableData> custom({
     Expression<String>? id,
+    Expression<String>? knowledgeBaseId,
     Expression<String>? name,
     Expression<String>? type,
     Expression<int>? size,
@@ -3915,6 +4664,7 @@ class KnowledgeDocumentsTableCompanion
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (knowledgeBaseId != null) 'knowledge_base_id': knowledgeBaseId,
       if (name != null) 'name': name,
       if (type != null) 'type': type,
       if (size != null) 'size': size,
@@ -3933,6 +4683,7 @@ class KnowledgeDocumentsTableCompanion
 
   KnowledgeDocumentsTableCompanion copyWith(
       {Value<String>? id,
+      Value<String>? knowledgeBaseId,
       Value<String>? name,
       Value<String>? type,
       Value<int>? size,
@@ -3948,6 +4699,7 @@ class KnowledgeDocumentsTableCompanion
       Value<int>? rowid}) {
     return KnowledgeDocumentsTableCompanion(
       id: id ?? this.id,
+      knowledgeBaseId: knowledgeBaseId ?? this.knowledgeBaseId,
       name: name ?? this.name,
       type: type ?? this.type,
       size: size ?? this.size,
@@ -3969,6 +4721,9 @@ class KnowledgeDocumentsTableCompanion
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (knowledgeBaseId.present) {
+      map['knowledge_base_id'] = Variable<String>(knowledgeBaseId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -4016,6 +4771,7 @@ class KnowledgeDocumentsTableCompanion
   String toString() {
     return (StringBuffer('KnowledgeDocumentsTableCompanion(')
           ..write('id: $id, ')
+          ..write('knowledgeBaseId: $knowledgeBaseId, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('size: $size, ')
@@ -4044,6 +4800,12 @@ class $KnowledgeChunksTableTable extends KnowledgeChunksTable
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _knowledgeBaseIdMeta =
+      const VerificationMeta('knowledgeBaseId');
+  @override
+  late final GeneratedColumn<String> knowledgeBaseId = GeneratedColumn<String>(
+      'knowledge_base_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _documentIdMeta =
       const VerificationMeta('documentId');
@@ -4090,6 +4852,7 @@ class $KnowledgeChunksTableTable extends KnowledgeChunksTable
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        knowledgeBaseId,
         documentId,
         content,
         chunkIndex,
@@ -4113,6 +4876,14 @@ class $KnowledgeChunksTableTable extends KnowledgeChunksTable
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('knowledge_base_id')) {
+      context.handle(
+          _knowledgeBaseIdMeta,
+          knowledgeBaseId.isAcceptableOrUnknown(
+              data['knowledge_base_id']!, _knowledgeBaseIdMeta));
+    } else if (isInserting) {
+      context.missing(_knowledgeBaseIdMeta);
     }
     if (data.containsKey('document_id')) {
       context.handle(
@@ -4174,6 +4945,8 @@ class $KnowledgeChunksTableTable extends KnowledgeChunksTable
     return KnowledgeChunksTableData(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      knowledgeBaseId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}knowledge_base_id'])!,
       documentId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}document_id'])!,
       content: attachedDatabase.typeMapping
@@ -4202,6 +4975,9 @@ class KnowledgeChunksTableData extends DataClass
   /// 文本块唯一标识符
   final String id;
 
+  /// 所属知识库ID（引用knowledge_bases_table.id）
+  final String knowledgeBaseId;
+
   /// 所属文档ID
   final String documentId;
 
@@ -4224,6 +5000,7 @@ class KnowledgeChunksTableData extends DataClass
   final DateTime createdAt;
   const KnowledgeChunksTableData(
       {required this.id,
+      required this.knowledgeBaseId,
       required this.documentId,
       required this.content,
       required this.chunkIndex,
@@ -4235,6 +5012,7 @@ class KnowledgeChunksTableData extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['knowledge_base_id'] = Variable<String>(knowledgeBaseId);
     map['document_id'] = Variable<String>(documentId);
     map['content'] = Variable<String>(content);
     map['chunk_index'] = Variable<int>(chunkIndex);
@@ -4250,6 +5028,7 @@ class KnowledgeChunksTableData extends DataClass
   KnowledgeChunksTableCompanion toCompanion(bool nullToAbsent) {
     return KnowledgeChunksTableCompanion(
       id: Value(id),
+      knowledgeBaseId: Value(knowledgeBaseId),
       documentId: Value(documentId),
       content: Value(content),
       chunkIndex: Value(chunkIndex),
@@ -4267,6 +5046,7 @@ class KnowledgeChunksTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return KnowledgeChunksTableData(
       id: serializer.fromJson<String>(json['id']),
+      knowledgeBaseId: serializer.fromJson<String>(json['knowledgeBaseId']),
       documentId: serializer.fromJson<String>(json['documentId']),
       content: serializer.fromJson<String>(json['content']),
       chunkIndex: serializer.fromJson<int>(json['chunkIndex']),
@@ -4281,6 +5061,7 @@ class KnowledgeChunksTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'knowledgeBaseId': serializer.toJson<String>(knowledgeBaseId),
       'documentId': serializer.toJson<String>(documentId),
       'content': serializer.toJson<String>(content),
       'chunkIndex': serializer.toJson<int>(chunkIndex),
@@ -4293,6 +5074,7 @@ class KnowledgeChunksTableData extends DataClass
 
   KnowledgeChunksTableData copyWith(
           {String? id,
+          String? knowledgeBaseId,
           String? documentId,
           String? content,
           int? chunkIndex,
@@ -4302,6 +5084,7 @@ class KnowledgeChunksTableData extends DataClass
           DateTime? createdAt}) =>
       KnowledgeChunksTableData(
         id: id ?? this.id,
+        knowledgeBaseId: knowledgeBaseId ?? this.knowledgeBaseId,
         documentId: documentId ?? this.documentId,
         content: content ?? this.content,
         chunkIndex: chunkIndex ?? this.chunkIndex,
@@ -4314,6 +5097,9 @@ class KnowledgeChunksTableData extends DataClass
       KnowledgeChunksTableCompanion data) {
     return KnowledgeChunksTableData(
       id: data.id.present ? data.id.value : this.id,
+      knowledgeBaseId: data.knowledgeBaseId.present
+          ? data.knowledgeBaseId.value
+          : this.knowledgeBaseId,
       documentId:
           data.documentId.present ? data.documentId.value : this.documentId,
       content: data.content.present ? data.content.value : this.content,
@@ -4333,6 +5119,7 @@ class KnowledgeChunksTableData extends DataClass
   String toString() {
     return (StringBuffer('KnowledgeChunksTableData(')
           ..write('id: $id, ')
+          ..write('knowledgeBaseId: $knowledgeBaseId, ')
           ..write('documentId: $documentId, ')
           ..write('content: $content, ')
           ..write('chunkIndex: $chunkIndex, ')
@@ -4345,13 +5132,14 @@ class KnowledgeChunksTableData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, documentId, content, chunkIndex,
-      characterCount, tokenCount, embedding, createdAt);
+  int get hashCode => Object.hash(id, knowledgeBaseId, documentId, content,
+      chunkIndex, characterCount, tokenCount, embedding, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is KnowledgeChunksTableData &&
           other.id == this.id &&
+          other.knowledgeBaseId == this.knowledgeBaseId &&
           other.documentId == this.documentId &&
           other.content == this.content &&
           other.chunkIndex == this.chunkIndex &&
@@ -4364,6 +5152,7 @@ class KnowledgeChunksTableData extends DataClass
 class KnowledgeChunksTableCompanion
     extends UpdateCompanion<KnowledgeChunksTableData> {
   final Value<String> id;
+  final Value<String> knowledgeBaseId;
   final Value<String> documentId;
   final Value<String> content;
   final Value<int> chunkIndex;
@@ -4374,6 +5163,7 @@ class KnowledgeChunksTableCompanion
   final Value<int> rowid;
   const KnowledgeChunksTableCompanion({
     this.id = const Value.absent(),
+    this.knowledgeBaseId = const Value.absent(),
     this.documentId = const Value.absent(),
     this.content = const Value.absent(),
     this.chunkIndex = const Value.absent(),
@@ -4385,6 +5175,7 @@ class KnowledgeChunksTableCompanion
   });
   KnowledgeChunksTableCompanion.insert({
     required String id,
+    required String knowledgeBaseId,
     required String documentId,
     required String content,
     required int chunkIndex,
@@ -4394,6 +5185,7 @@ class KnowledgeChunksTableCompanion
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
+        knowledgeBaseId = Value(knowledgeBaseId),
         documentId = Value(documentId),
         content = Value(content),
         chunkIndex = Value(chunkIndex),
@@ -4402,6 +5194,7 @@ class KnowledgeChunksTableCompanion
         createdAt = Value(createdAt);
   static Insertable<KnowledgeChunksTableData> custom({
     Expression<String>? id,
+    Expression<String>? knowledgeBaseId,
     Expression<String>? documentId,
     Expression<String>? content,
     Expression<int>? chunkIndex,
@@ -4413,6 +5206,7 @@ class KnowledgeChunksTableCompanion
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (knowledgeBaseId != null) 'knowledge_base_id': knowledgeBaseId,
       if (documentId != null) 'document_id': documentId,
       if (content != null) 'content': content,
       if (chunkIndex != null) 'chunk_index': chunkIndex,
@@ -4426,6 +5220,7 @@ class KnowledgeChunksTableCompanion
 
   KnowledgeChunksTableCompanion copyWith(
       {Value<String>? id,
+      Value<String>? knowledgeBaseId,
       Value<String>? documentId,
       Value<String>? content,
       Value<int>? chunkIndex,
@@ -4436,6 +5231,7 @@ class KnowledgeChunksTableCompanion
       Value<int>? rowid}) {
     return KnowledgeChunksTableCompanion(
       id: id ?? this.id,
+      knowledgeBaseId: knowledgeBaseId ?? this.knowledgeBaseId,
       documentId: documentId ?? this.documentId,
       content: content ?? this.content,
       chunkIndex: chunkIndex ?? this.chunkIndex,
@@ -4452,6 +5248,9 @@ class KnowledgeChunksTableCompanion
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (knowledgeBaseId.present) {
+      map['knowledge_base_id'] = Variable<String>(knowledgeBaseId.value);
     }
     if (documentId.present) {
       map['document_id'] = Variable<String>(documentId.value);
@@ -4484,6 +5283,7 @@ class KnowledgeChunksTableCompanion
   String toString() {
     return (StringBuffer('KnowledgeChunksTableCompanion(')
           ..write('id: $id, ')
+          ..write('knowledgeBaseId: $knowledgeBaseId, ')
           ..write('documentId: $documentId, ')
           ..write('content: $content, ')
           ..write('chunkIndex: $chunkIndex, ')
@@ -6447,6 +7247,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ChatSessionsTableTable(this);
   late final $ChatMessagesTableTable chatMessagesTable =
       $ChatMessagesTableTable(this);
+  late final $KnowledgeBasesTableTable knowledgeBasesTable =
+      $KnowledgeBasesTableTable(this);
   late final $KnowledgeDocumentsTableTable knowledgeDocumentsTable =
       $KnowledgeDocumentsTableTable(this);
   late final $KnowledgeChunksTableTable knowledgeChunksTable =
@@ -6467,6 +7269,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         personaGroupsTable,
         chatSessionsTable,
         chatMessagesTable,
+        knowledgeBasesTable,
         knowledgeDocumentsTable,
         knowledgeChunksTable,
         knowledgeBaseConfigsTable,
@@ -7674,6 +8477,7 @@ typedef $$ChatMessagesTableTableCreateCompanionBuilder
   Value<String?> thinkingContent,
   Value<bool> thinkingComplete,
   Value<String?> modelName,
+  Value<String> imageUrls,
   Value<int> rowid,
 });
 typedef $$ChatMessagesTableTableUpdateCompanionBuilder
@@ -7691,6 +8495,7 @@ typedef $$ChatMessagesTableTableUpdateCompanionBuilder
   Value<String?> thinkingContent,
   Value<bool> thinkingComplete,
   Value<String?> modelName,
+  Value<String> imageUrls,
   Value<int> rowid,
 });
 
@@ -7744,6 +8549,9 @@ class $$ChatMessagesTableTableFilterComposer
 
   ColumnFilters<String> get modelName => $composableBuilder(
       column: $table.modelName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imageUrls => $composableBuilder(
+      column: $table.imageUrls, builder: (column) => ColumnFilters(column));
 }
 
 class $$ChatMessagesTableTableOrderingComposer
@@ -7797,6 +8605,9 @@ class $$ChatMessagesTableTableOrderingComposer
 
   ColumnOrderings<String> get modelName => $composableBuilder(
       column: $table.modelName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imageUrls => $composableBuilder(
+      column: $table.imageUrls, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ChatMessagesTableTableAnnotationComposer
@@ -7846,6 +8657,9 @@ class $$ChatMessagesTableTableAnnotationComposer
 
   GeneratedColumn<String> get modelName =>
       $composableBuilder(column: $table.modelName, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrls =>
+      $composableBuilder(column: $table.imageUrls, builder: (column) => column);
 }
 
 class $$ChatMessagesTableTableTableManager extends RootTableManager<
@@ -7890,6 +8704,7 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             Value<String?> thinkingContent = const Value.absent(),
             Value<bool> thinkingComplete = const Value.absent(),
             Value<String?> modelName = const Value.absent(),
+            Value<String> imageUrls = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatMessagesTableCompanion(
@@ -7906,6 +8721,7 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             thinkingContent: thinkingContent,
             thinkingComplete: thinkingComplete,
             modelName: modelName,
+            imageUrls: imageUrls,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -7922,6 +8738,7 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             Value<String?> thinkingContent = const Value.absent(),
             Value<bool> thinkingComplete = const Value.absent(),
             Value<String?> modelName = const Value.absent(),
+            Value<String> imageUrls = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatMessagesTableCompanion.insert(
@@ -7938,6 +8755,7 @@ class $$ChatMessagesTableTableTableManager extends RootTableManager<
             thinkingContent: thinkingContent,
             thinkingComplete: thinkingComplete,
             modelName: modelName,
+            imageUrls: imageUrls,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -7963,9 +8781,309 @@ typedef $$ChatMessagesTableTableProcessedTableManager = ProcessedTableManager<
     ),
     ChatMessagesTableData,
     PrefetchHooks Function()>;
+typedef $$KnowledgeBasesTableTableCreateCompanionBuilder
+    = KnowledgeBasesTableCompanion Function({
+  required String id,
+  required String name,
+  Value<String?> description,
+  Value<String?> icon,
+  Value<String?> color,
+  required String configId,
+  Value<int> documentCount,
+  Value<int> chunkCount,
+  Value<bool> isDefault,
+  Value<bool> isEnabled,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> lastUsedAt,
+  Value<int> rowid,
+});
+typedef $$KnowledgeBasesTableTableUpdateCompanionBuilder
+    = KnowledgeBasesTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> description,
+  Value<String?> icon,
+  Value<String?> color,
+  Value<String> configId,
+  Value<int> documentCount,
+  Value<int> chunkCount,
+  Value<bool> isDefault,
+  Value<bool> isEnabled,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> lastUsedAt,
+  Value<int> rowid,
+});
+
+class $$KnowledgeBasesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $KnowledgeBasesTableTable> {
+  $$KnowledgeBasesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get icon => $composableBuilder(
+      column: $table.icon, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get color => $composableBuilder(
+      column: $table.color, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get configId => $composableBuilder(
+      column: $table.configId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get documentCount => $composableBuilder(
+      column: $table.documentCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chunkCount => $composableBuilder(
+      column: $table.chunkCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$KnowledgeBasesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $KnowledgeBasesTableTable> {
+  $$KnowledgeBasesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+      column: $table.icon, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get color => $composableBuilder(
+      column: $table.color, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get configId => $composableBuilder(
+      column: $table.configId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get documentCount => $composableBuilder(
+      column: $table.documentCount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chunkCount => $composableBuilder(
+      column: $table.chunkCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+      column: $table.isEnabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$KnowledgeBasesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KnowledgeBasesTableTable> {
+  $$KnowledgeBasesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<String> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<String> get configId =>
+      $composableBuilder(column: $table.configId, builder: (column) => column);
+
+  GeneratedColumn<int> get documentCount => $composableBuilder(
+      column: $table.documentCount, builder: (column) => column);
+
+  GeneratedColumn<int> get chunkCount => $composableBuilder(
+      column: $table.chunkCount, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
+      column: $table.lastUsedAt, builder: (column) => column);
+}
+
+class $$KnowledgeBasesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $KnowledgeBasesTableTable,
+    KnowledgeBasesTableData,
+    $$KnowledgeBasesTableTableFilterComposer,
+    $$KnowledgeBasesTableTableOrderingComposer,
+    $$KnowledgeBasesTableTableAnnotationComposer,
+    $$KnowledgeBasesTableTableCreateCompanionBuilder,
+    $$KnowledgeBasesTableTableUpdateCompanionBuilder,
+    (
+      KnowledgeBasesTableData,
+      BaseReferences<_$AppDatabase, $KnowledgeBasesTableTable,
+          KnowledgeBasesTableData>
+    ),
+    KnowledgeBasesTableData,
+    PrefetchHooks Function()> {
+  $$KnowledgeBasesTableTableTableManager(
+      _$AppDatabase db, $KnowledgeBasesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KnowledgeBasesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KnowledgeBasesTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KnowledgeBasesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> icon = const Value.absent(),
+            Value<String?> color = const Value.absent(),
+            Value<String> configId = const Value.absent(),
+            Value<int> documentCount = const Value.absent(),
+            Value<int> chunkCount = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> lastUsedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeBasesTableCompanion(
+            id: id,
+            name: name,
+            description: description,
+            icon: icon,
+            color: color,
+            configId: configId,
+            documentCount: documentCount,
+            chunkCount: chunkCount,
+            isDefault: isDefault,
+            isEnabled: isEnabled,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            lastUsedAt: lastUsedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> description = const Value.absent(),
+            Value<String?> icon = const Value.absent(),
+            Value<String?> color = const Value.absent(),
+            required String configId,
+            Value<int> documentCount = const Value.absent(),
+            Value<int> chunkCount = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<bool> isEnabled = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> lastUsedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              KnowledgeBasesTableCompanion.insert(
+            id: id,
+            name: name,
+            description: description,
+            icon: icon,
+            color: color,
+            configId: configId,
+            documentCount: documentCount,
+            chunkCount: chunkCount,
+            isDefault: isDefault,
+            isEnabled: isEnabled,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            lastUsedAt: lastUsedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$KnowledgeBasesTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $KnowledgeBasesTableTable,
+    KnowledgeBasesTableData,
+    $$KnowledgeBasesTableTableFilterComposer,
+    $$KnowledgeBasesTableTableOrderingComposer,
+    $$KnowledgeBasesTableTableAnnotationComposer,
+    $$KnowledgeBasesTableTableCreateCompanionBuilder,
+    $$KnowledgeBasesTableTableUpdateCompanionBuilder,
+    (
+      KnowledgeBasesTableData,
+      BaseReferences<_$AppDatabase, $KnowledgeBasesTableTable,
+          KnowledgeBasesTableData>
+    ),
+    KnowledgeBasesTableData,
+    PrefetchHooks Function()>;
 typedef $$KnowledgeDocumentsTableTableCreateCompanionBuilder
     = KnowledgeDocumentsTableCompanion Function({
   required String id,
+  required String knowledgeBaseId,
   required String name,
   required String type,
   required int size,
@@ -7983,6 +9101,7 @@ typedef $$KnowledgeDocumentsTableTableCreateCompanionBuilder
 typedef $$KnowledgeDocumentsTableTableUpdateCompanionBuilder
     = KnowledgeDocumentsTableCompanion Function({
   Value<String> id,
+  Value<String> knowledgeBaseId,
   Value<String> name,
   Value<String> type,
   Value<int> size,
@@ -8009,6 +9128,10 @@ class $$KnowledgeDocumentsTableTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
@@ -8058,6 +9181,10 @@ class $$KnowledgeDocumentsTableTableOrderingComposer
   });
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
@@ -8109,6 +9236,9 @@ class $$KnowledgeDocumentsTableTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
@@ -8179,6 +9309,7 @@ class $$KnowledgeDocumentsTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String> knowledgeBaseId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> type = const Value.absent(),
             Value<int> size = const Value.absent(),
@@ -8195,6 +9326,7 @@ class $$KnowledgeDocumentsTableTableTableManager extends RootTableManager<
           }) =>
               KnowledgeDocumentsTableCompanion(
             id: id,
+            knowledgeBaseId: knowledgeBaseId,
             name: name,
             type: type,
             size: size,
@@ -8211,6 +9343,7 @@ class $$KnowledgeDocumentsTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            required String knowledgeBaseId,
             required String name,
             required String type,
             required int size,
@@ -8227,6 +9360,7 @@ class $$KnowledgeDocumentsTableTableTableManager extends RootTableManager<
           }) =>
               KnowledgeDocumentsTableCompanion.insert(
             id: id,
+            knowledgeBaseId: knowledgeBaseId,
             name: name,
             type: type,
             size: size,
@@ -8268,6 +9402,7 @@ typedef $$KnowledgeDocumentsTableTableProcessedTableManager
 typedef $$KnowledgeChunksTableTableCreateCompanionBuilder
     = KnowledgeChunksTableCompanion Function({
   required String id,
+  required String knowledgeBaseId,
   required String documentId,
   required String content,
   required int chunkIndex,
@@ -8280,6 +9415,7 @@ typedef $$KnowledgeChunksTableTableCreateCompanionBuilder
 typedef $$KnowledgeChunksTableTableUpdateCompanionBuilder
     = KnowledgeChunksTableCompanion Function({
   Value<String> id,
+  Value<String> knowledgeBaseId,
   Value<String> documentId,
   Value<String> content,
   Value<int> chunkIndex,
@@ -8301,6 +9437,10 @@ class $$KnowledgeChunksTableTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get documentId => $composableBuilder(
       column: $table.documentId, builder: (column) => ColumnFilters(column));
@@ -8337,6 +9477,10 @@ class $$KnowledgeChunksTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get documentId => $composableBuilder(
       column: $table.documentId, builder: (column) => ColumnOrderings(column));
 
@@ -8371,6 +9515,9 @@ class $$KnowledgeChunksTableTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get knowledgeBaseId => $composableBuilder(
+      column: $table.knowledgeBaseId, builder: (column) => column);
 
   GeneratedColumn<String> get documentId => $composableBuilder(
       column: $table.documentId, builder: (column) => column);
@@ -8425,6 +9572,7 @@ class $$KnowledgeChunksTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String> knowledgeBaseId = const Value.absent(),
             Value<String> documentId = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<int> chunkIndex = const Value.absent(),
@@ -8436,6 +9584,7 @@ class $$KnowledgeChunksTableTableTableManager extends RootTableManager<
           }) =>
               KnowledgeChunksTableCompanion(
             id: id,
+            knowledgeBaseId: knowledgeBaseId,
             documentId: documentId,
             content: content,
             chunkIndex: chunkIndex,
@@ -8447,6 +9596,7 @@ class $$KnowledgeChunksTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            required String knowledgeBaseId,
             required String documentId,
             required String content,
             required int chunkIndex,
@@ -8458,6 +9608,7 @@ class $$KnowledgeChunksTableTableTableManager extends RootTableManager<
           }) =>
               KnowledgeChunksTableCompanion.insert(
             id: id,
+            knowledgeBaseId: knowledgeBaseId,
             documentId: documentId,
             content: content,
             chunkIndex: chunkIndex,
@@ -9377,6 +10528,8 @@ class $AppDatabaseManager {
       $$ChatSessionsTableTableTableManager(_db, _db.chatSessionsTable);
   $$ChatMessagesTableTableTableManager get chatMessagesTable =>
       $$ChatMessagesTableTableTableManager(_db, _db.chatMessagesTable);
+  $$KnowledgeBasesTableTableTableManager get knowledgeBasesTable =>
+      $$KnowledgeBasesTableTableTableManager(_db, _db.knowledgeBasesTable);
   $$KnowledgeDocumentsTableTableTableManager get knowledgeDocumentsTable =>
       $$KnowledgeDocumentsTableTableTableManager(
           _db, _db.knowledgeDocumentsTable);

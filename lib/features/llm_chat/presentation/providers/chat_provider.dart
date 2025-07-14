@@ -9,6 +9,9 @@ import '../../domain/usecases/chat_service.dart';
 import '../../../persona_management/presentation/providers/persona_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/services/speech_service.dart';
+import '../../../../core/services/image_service.dart';
+import '../../../../core/services/image_generation_service.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -17,6 +20,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final _uuid = const Uuid();
   StreamSubscription? _currentStreamSubscription;
   final SpeechService _speechService = SpeechService();
+  final ImageService _imageService = ImageService();
+  final ImageGenerationService _imageGenerationService =
+      ImageGenerationService();
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
     // 延迟加载会话列表，避免构造函数中的异步操作
@@ -311,7 +317,142 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 清除所有附件
   void clearAttachments() {
-    state = state.copyWith(attachedFiles: []);
+    state = state.copyWith(attachedFiles: [], attachedImages: []);
+  }
+
+  /// 从相册选择图片
+  Future<void> pickImagesFromGallery({int maxImages = 5}) async {
+    try {
+      final images = await _imageService.pickImagesFromGallery(
+        maxImages: maxImages,
+      );
+
+      if (images.isNotEmpty) {
+        state = state.copyWith(
+          attachedImages: [...state.attachedImages, ...images],
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(error: '选择图片失败: $e');
+    }
+  }
+
+  /// 拍摄照片
+  Future<void> capturePhoto() async {
+    try {
+      final image = await _imageService.capturePhoto();
+
+      if (image != null) {
+        state = state.copyWith(
+          attachedImages: [...state.attachedImages, image],
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(error: '拍摄照片失败: $e');
+    }
+  }
+
+  /// 选择单张图片
+  Future<void> pickSingleImage() async {
+    try {
+      final image = await _imageService.pickSingleImageFromGallery();
+
+      if (image != null) {
+        state = state.copyWith(
+          attachedImages: [...state.attachedImages, image],
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(error: '选择图片失败: $e');
+    }
+  }
+
+  /// 移除图片
+  void removeImage(ImageResult image) {
+    state = state.copyWith(
+      attachedImages: state.attachedImages
+          .where((img) => img.savedPath != image.savedPath)
+          .toList(),
+    );
+  }
+
+  /// 清除所有图片
+  void clearImages() {
+    state = state.copyWith(attachedImages: []);
+  }
+
+  /// 生成AI图片
+  Future<void> generateImage({
+    required String prompt,
+    int count = 1,
+    ImageSize size = ImageSize.size1024x1024,
+    ImageQuality quality = ImageQuality.standard,
+    ImageStyle style = ImageStyle.vivid,
+  }) async {
+    // 检查是否有当前会话
+    ChatSession? currentSession = state.currentSession;
+    if (currentSession == null) {
+      state = state.copyWith(error: '无法找到当前对话会话');
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 获取 OpenAI 配置
+      final settings = _ref.read(settingsProvider);
+      final openaiConfig = settings.openaiConfig;
+
+      if (openaiConfig == null || openaiConfig.apiKey.isEmpty) {
+        throw Exception('请先配置 OpenAI API 密钥');
+      }
+
+      // 生成图片
+      final results = await _imageGenerationService.generateImages(
+        prompt: prompt,
+        count: count,
+        size: size,
+        quality: quality,
+        style: style,
+        apiKey: openaiConfig.apiKey,
+        baseUrl: openaiConfig.baseUrl,
+      );
+
+      if (results.isNotEmpty) {
+        // 创建包含生成图片的消息
+        final imageUrls = results.map((r) => 'file://${r.localPath}').toList();
+        final imageMessage = ChatMessage(
+          id: _uuid.v4(),
+          chatSessionId: currentSession.id,
+          content: '生成了${results.length}张图片：$prompt',
+          isFromUser: false,
+          timestamp: DateTime.now(),
+          type: MessageType.image,
+          imageUrls: imageUrls,
+          status: MessageStatus.sent,
+          metadata: {
+            'generated': true,
+            'prompt': prompt,
+            'model': results.first.model,
+            'size': results.first.sizeDescription,
+            'quality': quality.name,
+            'style': style.name,
+          },
+        );
+
+        // 保存到数据库
+        await _chatService.insertMessage(imageMessage);
+
+        // 更新UI
+        state = state.copyWith(
+          messages: [...state.messages, imageMessage],
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(error: '图片生成失败: $e', isLoading: false);
+      rethrow; // 重新抛出异常，让调用者能够捕获
+    }
   }
 
   /// 发送消息
@@ -333,17 +474,30 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }
     }
 
-    if (text.isEmpty && state.attachedFiles.isEmpty) return;
+    if (text.isEmpty &&
+        state.attachedFiles.isEmpty &&
+        state.attachedImages.isEmpty) {
+      return;
+    }
 
     state = state.copyWith(isLoading: true, error: null);
 
-    // 将附件信息合并到消息内容中
+    // 准备消息内容和图片URL
     String messageContent = text;
+    List<String> imageUrls = [];
+
+    // 处理附加的图片
+    if (state.attachedImages.isNotEmpty) {
+      imageUrls = state.attachedImages.map((img) => img.base64String).toList();
+      if (text.isEmpty) {
+        messageContent = '发送了${state.attachedImages.length}张图片';
+      }
+    }
+
+    // 处理其他附件
     if (state.attachedFiles.isNotEmpty) {
       final fileNames = state.attachedFiles.map((f) => f.name).join(', ');
-      messageContent = '$text\n\n[附件: $fileNames]';
-      // 发送后清除附件
-      state = state.copyWith(attachedFiles: []);
+      messageContent = '$messageContent\n\n[附件: $fileNames]';
     }
 
     try {
@@ -355,10 +509,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isFromUser: true,
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
+        type: imageUrls.isNotEmpty ? MessageType.image : MessageType.text,
+        imageUrls: imageUrls,
       );
 
-      // 立即将用户消息添加到UI
-      state = state.copyWith(messages: [...state.messages, userMessage]);
+      // 立即将用户消息添加到UI，并清除附件
+      state = state.copyWith(
+        messages: [...state.messages, userMessage],
+        attachedFiles: [],
+        attachedImages: [],
+      );
 
       // 创建AI消息占位符
       final aiMessageId = _uuid.v4();
@@ -379,6 +539,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         sessionId: currentSession.id,
         content: messageContent,
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
+        imageUrls: imageUrls, // 传递图片URL
       );
 
       String fullResponse = '';
@@ -548,6 +709,7 @@ class ChatState {
   final String? error;
   final List<ChatSession> sessions;
   final List<PlatformFile> attachedFiles;
+  final List<ImageResult> attachedImages; // 新增：附加的图片
   final bool isListening;
   final String speechText;
   final bool contextCleared; // 标记是否已清除上下文
@@ -559,6 +721,7 @@ class ChatState {
     this.error,
     this.sessions = const [],
     this.attachedFiles = const [],
+    this.attachedImages = const [], // 新增
     this.isListening = false,
     this.speechText = '',
     this.contextCleared = false,
@@ -571,6 +734,7 @@ class ChatState {
     String? error,
     List<ChatSession>? sessions,
     List<PlatformFile>? attachedFiles,
+    List<ImageResult>? attachedImages, // 新增
     bool? isListening,
     String? speechText,
     bool? contextCleared,
@@ -582,6 +746,7 @@ class ChatState {
       error: error,
       sessions: sessions ?? this.sessions,
       attachedFiles: attachedFiles ?? this.attachedFiles,
+      attachedImages: attachedImages ?? this.attachedImages, // 新增
       isListening: isListening ?? this.isListening,
       speechText: speechText ?? this.speechText,
       contextCleared: contextCleared ?? this.contextCleared,

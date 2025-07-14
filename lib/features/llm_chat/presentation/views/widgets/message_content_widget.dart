@@ -92,13 +92,26 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             modelName: widget.message.modelName ?? '',
             isCompleted: true, // UI层面分离时总是完整的
           ),
+        // 图片显示
+        if (widget.message.imageUrls.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              '包含 ${widget.message.imageUrls.length} 张图片',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
         // 主要内容
-        _buildContentWithMath(
-          context: context,
-          content: actualContent,
-          styleSheet: _getMarkdownStyleSheet(context),
-          codeBlockSettings: codeBlockSettings,
-        ),
+        if (actualContent.trim().isNotEmpty)
+          _buildContentWithMath(
+            context: context,
+            content: actualContent,
+            styleSheet: _getMarkdownStyleSheet(context),
+            codeBlockSettings: codeBlockSettings,
+          ),
       ],
     );
   }

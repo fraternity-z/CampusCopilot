@@ -120,6 +120,9 @@ class ChatSettings with _$ChatSettings {
 
     /// 是否自动保存聊天
     @Default(true) bool autoSaveChat,
+
+    /// 是否启用RAG知识库增强
+    @Default(true) bool enableRag,
   }) = _ChatSettings;
 
   factory ChatSettings.fromJson(Map<String, dynamic> json) =>

@@ -120,11 +120,17 @@ class OpenAiLlmProvider extends LlmProvider {
         // tools: options?.tools?.map(_convertToOpenAITool).toList(),
       );
 
+      if (chatCompletion.choices.isEmpty) {
+        throw ApiException('OpenAI API返回了空的选择列表');
+      }
+
       final choice = chatCompletion.choices.first;
       final usage = chatCompletion.usage;
 
       // 保存完整的原始内容
-      final originalContent = choice.message.content?.first.text ?? '';
+      final originalContent = choice.message.content?.isNotEmpty == true
+          ? choice.message.content!.first.text ?? ''
+          : '';
 
       debugPrint('🧠 接收完整响应内容: 长度=${originalContent.length}');
 
@@ -173,6 +179,8 @@ class OpenAiLlmProvider extends LlmProvider {
       String accumulatedContent = ''; // 累积完整原始内容
 
       await for (final chunk in stream) {
+        if (chunk.choices.isEmpty) continue;
+
         final choice = chunk.choices.first;
         final delta = choice.delta;
 

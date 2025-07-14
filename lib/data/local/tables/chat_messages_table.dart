@@ -45,6 +45,9 @@ class ChatMessagesTable extends Table {
   /// 使用的模型名称（用于特殊处理）
   TextColumn get modelName => text().nullable()();
 
+  /// 图片URL列表（JSON格式存储）
+  TextColumn get imageUrls => text().withDefault(const Constant('[]'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -101,6 +101,15 @@ extension ChatMessageExtensions on ChatMessage {
   /// 是否为错误消息
   bool get isErrorMessage => type == MessageType.error;
 
+  /// 是否为图片消息
+  bool get isImageMessage => type == MessageType.image;
+
+  /// 是否包含图片
+  bool get hasImages => imageUrls.isNotEmpty;
+
+  /// 是否为多模态消息（包含文本和图片）
+  bool get isMultimodal => hasImages && content.trim().isNotEmpty;
+
   /// 是否发送成功
   bool get isSent => status == MessageStatus.sent;
 
@@ -177,6 +186,42 @@ extension ChatMessageFactory on ChatMessage {
       timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
       type: MessageType.system,
+    );
+  }
+
+  /// 创建图片消息
+  static ChatMessage createImageMessage({
+    required String content,
+    required String chatSessionId,
+    required List<String> imageUrls,
+    String? parentMessageId,
+    bool isFromUser = true,
+  }) {
+    return ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      isFromUser: isFromUser,
+      timestamp: DateTime.now(),
+      chatSessionId: chatSessionId,
+      type: MessageType.image,
+      imageUrls: imageUrls,
+      parentMessageId: parentMessageId,
+    );
+  }
+
+  /// 创建用户图片消息（便捷方法）
+  static ChatMessage createUserImageMessage({
+    required String content,
+    required String chatSessionId,
+    required List<String> imageUrls,
+    String? parentMessageId,
+  }) {
+    return createImageMessage(
+      content: content,
+      chatSessionId: chatSessionId,
+      imageUrls: imageUrls,
+      parentMessageId: parentMessageId,
+      isFromUser: true,
     );
   }
 

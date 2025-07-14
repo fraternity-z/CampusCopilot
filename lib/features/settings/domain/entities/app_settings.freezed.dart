@@ -1143,6 +1143,9 @@ mixin _$ChatSettings {
   /// 是否自动保存聊天
   bool get autoSaveChat => throw _privateConstructorUsedError;
 
+  /// 是否启用RAG知识库增强
+  bool get enableRag => throw _privateConstructorUsedError;
+
   /// Serializes this ChatSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -1164,7 +1167,8 @@ abstract class $ChatSettingsCopyWith<$Res> {
       double temperature,
       int maxTokens,
       bool enableStreaming,
-      bool autoSaveChat});
+      bool autoSaveChat,
+      bool enableRag});
 }
 
 /// @nodoc
@@ -1187,6 +1191,7 @@ class _$ChatSettingsCopyWithImpl<$Res, $Val extends ChatSettings>
     Object? maxTokens = null,
     Object? enableStreaming = null,
     Object? autoSaveChat = null,
+    Object? enableRag = null,
   }) {
     return _then(_value.copyWith(
       maxHistoryLength: null == maxHistoryLength
@@ -1209,6 +1214,10 @@ class _$ChatSettingsCopyWithImpl<$Res, $Val extends ChatSettings>
           ? _value.autoSaveChat
           : autoSaveChat // ignore: cast_nullable_to_non_nullable
               as bool,
+      enableRag: null == enableRag
+          ? _value.enableRag
+          : enableRag // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -1226,7 +1235,8 @@ abstract class _$$ChatSettingsImplCopyWith<$Res>
       double temperature,
       int maxTokens,
       bool enableStreaming,
-      bool autoSaveChat});
+      bool autoSaveChat,
+      bool enableRag});
 }
 
 /// @nodoc
@@ -1247,6 +1257,7 @@ class __$$ChatSettingsImplCopyWithImpl<$Res>
     Object? maxTokens = null,
     Object? enableStreaming = null,
     Object? autoSaveChat = null,
+    Object? enableRag = null,
   }) {
     return _then(_$ChatSettingsImpl(
       maxHistoryLength: null == maxHistoryLength
@@ -1269,6 +1280,10 @@ class __$$ChatSettingsImplCopyWithImpl<$Res>
           ? _value.autoSaveChat
           : autoSaveChat // ignore: cast_nullable_to_non_nullable
               as bool,
+      enableRag: null == enableRag
+          ? _value.enableRag
+          : enableRag // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1281,7 +1296,8 @@ class _$ChatSettingsImpl implements _ChatSettings {
       this.temperature = 0.7,
       this.maxTokens = 2048,
       this.enableStreaming = true,
-      this.autoSaveChat = true});
+      this.autoSaveChat = true,
+      this.enableRag = true});
 
   factory _$ChatSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ChatSettingsImplFromJson(json);
@@ -1311,9 +1327,14 @@ class _$ChatSettingsImpl implements _ChatSettings {
   @JsonKey()
   final bool autoSaveChat;
 
+  /// 是否启用RAG知识库增强
+  @override
+  @JsonKey()
+  final bool enableRag;
+
   @override
   String toString() {
-    return 'ChatSettings(maxHistoryLength: $maxHistoryLength, temperature: $temperature, maxTokens: $maxTokens, enableStreaming: $enableStreaming, autoSaveChat: $autoSaveChat)';
+    return 'ChatSettings(maxHistoryLength: $maxHistoryLength, temperature: $temperature, maxTokens: $maxTokens, enableStreaming: $enableStreaming, autoSaveChat: $autoSaveChat, enableRag: $enableRag)';
   }
 
   @override
@@ -1330,13 +1351,15 @@ class _$ChatSettingsImpl implements _ChatSettings {
             (identical(other.enableStreaming, enableStreaming) ||
                 other.enableStreaming == enableStreaming) &&
             (identical(other.autoSaveChat, autoSaveChat) ||
-                other.autoSaveChat == autoSaveChat));
+                other.autoSaveChat == autoSaveChat) &&
+            (identical(other.enableRag, enableRag) ||
+                other.enableRag == enableRag));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, maxHistoryLength, temperature,
-      maxTokens, enableStreaming, autoSaveChat);
+      maxTokens, enableStreaming, autoSaveChat, enableRag);
 
   /// Create a copy of ChatSettings
   /// with the given fields replaced by the non-null parameter values.
@@ -1360,7 +1383,8 @@ abstract class _ChatSettings implements ChatSettings {
       final double temperature,
       final int maxTokens,
       final bool enableStreaming,
-      final bool autoSaveChat}) = _$ChatSettingsImpl;
+      final bool autoSaveChat,
+      final bool enableRag}) = _$ChatSettingsImpl;
 
   factory _ChatSettings.fromJson(Map<String, dynamic> json) =
       _$ChatSettingsImpl.fromJson;
@@ -1384,6 +1408,10 @@ abstract class _ChatSettings implements ChatSettings {
   /// 是否自动保存聊天
   @override
   bool get autoSaveChat;
+
+  /// 是否启用RAG知识库增强
+  @override
+  bool get enableRag;
 
   /// Create a copy of ChatSettings
   /// with the given fields replaced by the non-null parameter values.
