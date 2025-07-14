@@ -3,6 +3,30 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'chat_message.freezed.dart';
 part 'chat_message.g.dart';
 
+/// 文件附件信息
+@freezed
+class FileAttachment with _$FileAttachment {
+  const factory FileAttachment({
+    /// 文件名
+    required String fileName,
+
+    /// 文件大小（字节）
+    required int fileSize,
+
+    /// 文件类型/扩展名
+    required String fileType,
+
+    /// 文件路径（可选，用于本地文件）
+    String? filePath,
+
+    /// 文件内容（用于传递给AI，但不在UI中显示）
+    String? content,
+  }) = _FileAttachment;
+
+  factory FileAttachment.fromJson(Map<String, dynamic> json) =>
+      _$FileAttachmentFromJson(json);
+}
+
 /// 聊天消息实体
 ///
 /// 领域层的核心实体，表示一条聊天消息
@@ -42,6 +66,9 @@ class ChatMessage with _$ChatMessage {
 
     /// 图片URL列表（用于多模态消息）
     @Default([]) List<String> imageUrls,
+
+    /// 附件文件信息列表
+    @Default([]) List<FileAttachment> attachments,
 
     /// 思考链内容（AI思考过程）
     String? thinkingContent,

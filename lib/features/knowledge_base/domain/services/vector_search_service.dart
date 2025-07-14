@@ -59,11 +59,19 @@ class VectorSearchService {
     final startTime = DateTime.now();
 
     try {
+      debugPrint('🔍 开始向量搜索: "$query"');
+      debugPrint('📊 搜索配置: 相似度阈值=$similarityThreshold, 最大结果数=$maxResults');
+      if (knowledgeBaseId != null) {
+        debugPrint('📚 限定知识库: $knowledgeBaseId');
+      }
+
       // 1. 为查询生成嵌入向量
+      debugPrint('🧮 生成查询嵌入向量...');
       final queryEmbeddingResult = await _embeddingService
           .generateSingleEmbedding(text: query, config: config);
 
       if (!queryEmbeddingResult.isSuccess) {
+        debugPrint('❌ 生成查询嵌入向量失败: ${queryEmbeddingResult.error}');
         return VectorSearchResult(
           items: [],
           error: '生成查询嵌入向量失败: ${queryEmbeddingResult.error}',
@@ -72,14 +80,30 @@ class VectorSearchService {
         );
       }
 
+      debugPrint('✅ 查询嵌入向量生成成功');
+
       final queryEmbedding = queryEmbeddingResult.embeddings.first;
 
       // 2. 获取指定知识库的有嵌入向量的文本块
+      debugPrint('📚 获取文本块...');
       final chunks = knowledgeBaseId != null
           ? await _database.getEmbeddedChunksByKnowledgeBase(knowledgeBaseId)
           : await _database.getChunksWithEmbeddings();
 
+      debugPrint('📊 找到 ${chunks.length} 个有嵌入向量的文本块');
+
+      if (chunks.isEmpty) {
+        debugPrint('⚠️ 没有找到任何有嵌入向量的文本块');
+        return VectorSearchResult(
+          items: [],
+          error: '知识库中没有可搜索的内容，请先上传并处理文档',
+          totalResults: 0,
+          searchTime: _calculateSearchTime(startTime),
+        );
+      }
+
       // 3. 计算相似度并筛选结果
+      debugPrint('🧮 计算相似度...');
       final results = <SearchResultItem>[];
 
       for (final chunk in chunks) {

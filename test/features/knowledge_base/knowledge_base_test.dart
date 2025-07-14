@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_assistant/features/knowledge_base/domain/entities/knowledge_document.dart';
 import 'package:ai_assistant/features/knowledge_base/domain/services/document_processing_service.dart';
 import 'package:ai_assistant/features/knowledge_base/domain/services/embedding_service.dart';
+import 'package:ai_assistant/data/local/app_database.dart';
 // 移除未使用的 RAG 服务导入，后续需要时再添加
 // import 'package:ai_assistant/features/knowledge_base/domain/services/rag_service.dart';
 
@@ -49,7 +50,9 @@ void main() {
     });
 
     test('EmbeddingService should calculate cosine similarity', () {
-      final service = EmbeddingService();
+      // 为测试创建一个模拟的数据库实例
+      final mockDatabase = AppDatabase();
+      final service = EmbeddingService(mockDatabase);
 
       final vector1 = [1.0, 0.0, 0.0];
       final vector2 = [0.0, 1.0, 0.0];

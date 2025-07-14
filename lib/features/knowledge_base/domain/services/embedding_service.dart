@@ -17,6 +17,10 @@ class EmbeddingGenerationResult {
 
 /// 嵌入服务
 class EmbeddingService {
+  final AppDatabase _database;
+
+  EmbeddingService(this._database);
+
   /// 为文本块生成嵌入向量
   Future<EmbeddingGenerationResult> generateEmbeddings({
     required List<String> texts,
@@ -158,13 +162,10 @@ class EmbeddingService {
     KnowledgeBaseConfig config,
   ) async {
     try {
-      // 从数据库获取实际的LLM配置
-      final database = AppDatabase();
-
       debugPrint('🔍 查找嵌入模型配置: ${config.embeddingModelProvider}');
 
       // 根据提供商查找对应的LLM配置
-      final allConfigs = await database.getEnabledLlmConfigs();
+      final allConfigs = await _database.getEnabledLlmConfigs();
 
       // 查找匹配的提供商配置
       LlmConfigsTableData? matchingConfig;

@@ -128,6 +128,10 @@ class RagService {
     String? systemPrompt,
   }) async {
     try {
+      debugPrint('🔍 开始RAG增强: "$userQuery"');
+      debugPrint('📊 配置信息: ${config.name} - ${config.embeddingModelName}');
+      debugPrint('🎯 相似度阈值: $similarityThreshold, 最大上下文数: $maxContexts');
+
       // 检索相关上下文
       final retrievalResult = await retrieveContext(
         query: userQuery,
@@ -136,12 +140,29 @@ class RagService {
         maxResults: maxContexts,
       );
 
-      if (!retrievalResult.isSuccess || retrievalResult.contexts.isEmpty) {
-        // 没有找到相关上下文，返回原始查询
+      if (!retrievalResult.isSuccess) {
+        debugPrint('❌ RAG检索失败: ${retrievalResult.error}');
         return RagEnhancedPrompt(
           enhancedPrompt: userQuery,
           usedContexts: [],
           originalQuery: userQuery,
+        );
+      }
+
+      if (retrievalResult.contexts.isEmpty) {
+        debugPrint('ℹ️ 未找到相关上下文，返回原始查询');
+        return RagEnhancedPrompt(
+          enhancedPrompt: userQuery,
+          usedContexts: [],
+          originalQuery: userQuery,
+        );
+      }
+
+      debugPrint('✅ 找到 ${retrievalResult.contexts.length} 个相关上下文');
+      for (int i = 0; i < retrievalResult.contexts.length; i++) {
+        final context = retrievalResult.contexts[i];
+        debugPrint(
+          '📄 上下文 ${i + 1}: 相似度=${context.similarity.toStringAsFixed(3)}, 长度=${context.content.length}',
         );
       }
 
@@ -211,61 +232,34 @@ class RagService {
 
   /// 判断查询是否需要RAG增强
   bool shouldUseRag(String query) {
-    // 简单的启发式规则判断是否需要使用RAG
-    final lowerQuery = query.toLowerCase();
+    debugPrint('🤔 判断是否需要RAG增强: "$query"');
 
-    // 包含疑问词的查询通常需要RAG
-    final questionWords = [
-      '什么',
-      '如何',
-      '怎么',
-      '为什么',
-      '哪里',
-      '什么时候',
-      '谁',
-      'what',
-      'how',
-      'why',
-      'where',
-      'when',
-      'who',
-      'which',
-    ];
+    // 简化判断逻辑，更宽松地使用RAG
+    final trimmedQuery = query.trim();
 
-    for (final word in questionWords) {
-      if (lowerQuery.contains(word)) {
-        return true;
-      }
+    // 空查询不使用RAG
+    if (trimmedQuery.isEmpty) {
+      debugPrint('❌ 空查询，不使用RAG');
+      return false;
     }
 
-    // 包含特定关键词的查询
-    final knowledgeKeywords = [
-      '解释',
-      '说明',
-      '介绍',
-      '定义',
-      '原理',
-      '方法',
-      '步骤',
-      'explain',
-      'describe',
-      'define',
-      'principle',
-      'method',
-    ];
-
-    for (final keyword in knowledgeKeywords) {
-      if (lowerQuery.contains(keyword)) {
-        return true;
-      }
+    // 非常短的查询（如单个词或简单问候）可能不需要RAG
+    if (trimmedQuery.length <= 3) {
+      debugPrint('❌ 查询过短，不使用RAG');
+      return false;
     }
 
-    // 查询长度超过一定阈值
-    if (query.length > 10) {
-      return true;
+    // 简单问候语不使用RAG
+    final lowerQuery = trimmedQuery.toLowerCase();
+    final greetings = ['hi', 'hello', '你好', '嗨', 'hey', '哈喽'];
+    if (greetings.contains(lowerQuery)) {
+      debugPrint('❌ 简单问候语，不使用RAG');
+      return false;
     }
 
-    return false;
+    // 其他情况都尝试使用RAG
+    debugPrint('✅ 查询适合使用RAG增强');
+    return true;
   }
 
   /// 获取文档统计信息

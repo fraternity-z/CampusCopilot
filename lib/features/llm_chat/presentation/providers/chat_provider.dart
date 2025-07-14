@@ -12,6 +12,7 @@ import '../../../../core/services/speech_service.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -487,30 +488,106 @@ class ChatNotifier extends StateNotifier<ChatState> {
     List<String> imageUrls = [];
 
     // 处理附加的图片
+    List<String> imageUrlsForAI = []; // 用于传递给AI的base64格式
     if (state.attachedImages.isNotEmpty) {
-      imageUrls = state.attachedImages.map((img) => img.base64String).toList();
+      // UI显示用：使用本地文件路径，这样ImagePreviewWidget可以正确显示
+      imageUrls = state.attachedImages
+          .map((img) => 'file://${img.savedPath}')
+          .toList();
+
+      // AI处理用：使用base64格式
+      imageUrlsForAI = state.attachedImages
+          .map((img) => img.base64String)
+          .toList();
+
       if (text.isEmpty) {
         messageContent = '发送了${state.attachedImages.length}张图片';
       }
     }
 
-    // 处理其他附件
+    // 处理其他附件 - 分离UI显示和AI内容
+    final fileAttachments = <FileAttachment>[];
+    final fileContents = <String>[];
+
     if (state.attachedFiles.isNotEmpty) {
-      final fileNames = state.attachedFiles.map((f) => f.name).join(', ');
-      messageContent = '$messageContent\n\n[附件: $fileNames]';
+      for (final file in state.attachedFiles) {
+        if (file.path != null) {
+          try {
+            // 使用文档处理服务读取文件内容
+            final documentProcessingService = _ref.read(
+              documentProcessingServiceProvider,
+            );
+            final extractionResult = await documentProcessingService
+                .extractTextFromFile(file.path!, file.extension ?? 'unknown');
+
+            // 创建文件附件信息（用于UI显示）
+            final attachment = FileAttachment(
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: file.extension ?? 'unknown',
+              filePath: file.path,
+              content: extractionResult.error == null
+                  ? extractionResult.text
+                  : null,
+            );
+            fileAttachments.add(attachment);
+
+            // 添加文件内容到消息（用于传递给AI）
+            if (extractionResult.error == null &&
+                extractionResult.text.isNotEmpty) {
+              fileContents.add(
+                '文件 "${file.name}" 的内容：\n${extractionResult.text}',
+              );
+            } else {
+              fileContents.add(
+                '文件 "${file.name}" 无法读取内容：${extractionResult.error ?? "未知错误"}',
+              );
+            }
+          } catch (e) {
+            // 即使读取失败，也创建附件信息
+            final attachment = FileAttachment(
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: file.extension ?? 'unknown',
+              filePath: file.path,
+            );
+            fileAttachments.add(attachment);
+            fileContents.add('文件 "${file.name}" 读取失败：$e');
+          }
+        } else {
+          // 路径无效的情况
+          final attachment = FileAttachment(
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.extension ?? 'unknown',
+          );
+          fileAttachments.add(attachment);
+          fileContents.add('文件 "${file.name}" 路径无效');
+        }
+      }
+
+      // 只有在有文件内容时才添加到消息中（用于AI处理）
+      if (fileContents.isNotEmpty) {
+        messageContent = '$messageContent\n\n${fileContents.join('\n\n')}';
+      }
     }
 
     try {
-      // 首先创建用户消息并立即显示在UI中
+      // 创建用户消息（UI显示用，不包含文件内容）
+      final displayContent = text.trim().isEmpty && fileAttachments.isNotEmpty
+          ? '发送了${fileAttachments.length}个文件'
+          : text;
+
       final userMessage = ChatMessage(
         id: _uuid.v4(),
         chatSessionId: currentSession.id,
-        content: messageContent,
+        content: displayContent,
         isFromUser: true,
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
         type: imageUrls.isNotEmpty ? MessageType.image : MessageType.text,
         imageUrls: imageUrls,
+        attachments: fileAttachments,
       );
 
       // 立即将用户消息添加到UI，并清除附件
@@ -539,7 +616,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         sessionId: currentSession.id,
         content: messageContent,
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
-        imageUrls: imageUrls, // 传递图片URL
+        imageUrls: imageUrlsForAI, // 传递base64格式的图片给AI
       );
 
       String fullResponse = '';

@@ -13,6 +13,8 @@ import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'enhanced_mermaid_renderer.dart';
+import 'file_attachment_card.dart';
+import 'image_preview_widget.dart';
 
 /// 消息内容渲染组件
 ///
@@ -92,16 +94,29 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             modelName: widget.message.modelName ?? '',
             isCompleted: true, // UI层面分离时总是完整的
           ),
+        // 文件附件显示
+        if (widget.message.attachments.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: widget.message.attachments.map((attachment) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: FileAttachmentCard(attachment: attachment),
+                );
+              }).toList(),
+            ),
+          ),
+
         // 图片显示
         if (widget.message.imageUrls.isNotEmpty)
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              '包含 ${widget.message.imageUrls.length} 张图片',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontStyle: FontStyle.italic,
-              ),
+            child: ImagePreviewWidget(
+              imageUrls: widget.message.imageUrls,
+              thumbnailSize: 120,
+              maxImagesPerRow: 3,
             ),
           ),
         // 主要内容

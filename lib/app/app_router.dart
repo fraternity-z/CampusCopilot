@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 import '../features/llm_chat/presentation/views/widgets/animated_title_widget.dart';
 import 'package:flutter/services.dart';
@@ -64,11 +66,106 @@ class ModelParameters {
       enableMaxTokens: enableMaxTokens ?? this.enableMaxTokens,
     );
   }
+
+  /// 转换为JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'temperature': temperature,
+      'maxTokens': maxTokens,
+      'topP': topP,
+      'contextLength': contextLength,
+      'enableMaxTokens': enableMaxTokens,
+    };
+  }
+
+  /// 从JSON创建实例
+  factory ModelParameters.fromJson(Map<String, dynamic> json) {
+    return ModelParameters(
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
+      maxTokens: (json['maxTokens'] as num?)?.toDouble() ?? 2048,
+      topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
+      contextLength: (json['contextLength'] as num?)?.toDouble() ?? 10,
+      enableMaxTokens: json['enableMaxTokens'] as bool? ?? true,
+    );
+  }
 }
 
-final modelParametersProvider = StateProvider<ModelParameters>((ref) {
-  return const ModelParameters();
-});
+/// 模型参数状态管理器
+class ModelParametersNotifier extends StateNotifier<ModelParameters> {
+  ModelParametersNotifier() : super(const ModelParameters()) {
+    _loadParameters();
+  }
+
+  /// 加载参数
+  Future<void> _loadParameters() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final parametersJson = prefs.getString('model_parameters');
+
+      if (parametersJson != null) {
+        final parametersMap =
+            json.decode(parametersJson) as Map<String, dynamic>;
+        state = ModelParameters.fromJson(parametersMap);
+        debugPrint('📊 模型参数已加载: ${state.toJson()}');
+      }
+    } catch (e) {
+      debugPrint('❌ 加载模型参数失败: $e');
+    }
+  }
+
+  /// 保存参数
+  Future<void> _saveParameters() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final parametersJson = json.encode(state.toJson());
+      await prefs.setString('model_parameters', parametersJson);
+      debugPrint('💾 模型参数已保存: ${state.toJson()}');
+    } catch (e) {
+      debugPrint('❌ 保存模型参数失败: $e');
+    }
+  }
+
+  /// 更新温度
+  Future<void> updateTemperature(double temperature) async {
+    state = state.copyWith(temperature: temperature);
+    await _saveParameters();
+  }
+
+  /// 更新最大Token数
+  Future<void> updateMaxTokens(double maxTokens) async {
+    state = state.copyWith(maxTokens: maxTokens);
+    await _saveParameters();
+  }
+
+  /// 更新Top-P
+  Future<void> updateTopP(double topP) async {
+    state = state.copyWith(topP: topP);
+    await _saveParameters();
+  }
+
+  /// 更新上下文长度
+  Future<void> updateContextLength(double contextLength) async {
+    state = state.copyWith(contextLength: contextLength);
+    await _saveParameters();
+  }
+
+  /// 更新是否启用最大Token限制
+  Future<void> updateEnableMaxTokens(bool enableMaxTokens) async {
+    state = state.copyWith(enableMaxTokens: enableMaxTokens);
+    await _saveParameters();
+  }
+
+  /// 重置参数
+  Future<void> resetParameters() async {
+    state = const ModelParameters();
+    await _saveParameters();
+  }
+}
+
+final modelParametersProvider =
+    StateNotifierProvider<ModelParametersNotifier, ModelParameters>((ref) {
+      return ModelParametersNotifier();
+    });
 
 /// 代码块设置状态管理
 class CodeBlockSettings {
@@ -1629,9 +1726,7 @@ class NavigationSidebar extends ConsumerWidget {
           max: 2.0,
           divisions: 40,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = params.copyWith(
-              temperature: value,
-            );
+            ref.read(modelParametersProvider.notifier).updateTemperature(value);
           },
         ),
         const SizedBox(height: 16),
@@ -1642,9 +1737,9 @@ class NavigationSidebar extends ConsumerWidget {
           subtitle: '关闭后，请求将不包含 max_tokens 参数',
           value: params.enableMaxTokens,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = params.copyWith(
-              enableMaxTokens: value,
-            );
+            ref
+                .read(modelParametersProvider.notifier)
+                .updateEnableMaxTokens(value);
           },
         ),
         const SizedBox(height: 12),
@@ -1658,8 +1753,7 @@ class NavigationSidebar extends ConsumerWidget {
             max: 128000,
             divisions: 100,
             onChanged: (value) {
-              ref.read(modelParametersProvider.notifier).state = params
-                  .copyWith(maxTokens: value);
+              ref.read(modelParametersProvider.notifier).updateMaxTokens(value);
             },
             editable: true,
           ),
@@ -1674,9 +1768,7 @@ class NavigationSidebar extends ConsumerWidget {
           max: 1.0,
           divisions: 100,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).state = params.copyWith(
-              topP: value,
-            );
+            ref.read(modelParametersProvider.notifier).updateTopP(value);
           },
         ),
         const SizedBox(height: 16),
@@ -1690,9 +1782,9 @@ class NavigationSidebar extends ConsumerWidget {
           divisions: 19,
           onChanged: (value) {
             final intVal = value.round().toDouble();
-            ref.read(modelParametersProvider.notifier).state = params.copyWith(
-              contextLength: intVal,
-            );
+            ref
+                .read(modelParametersProvider.notifier)
+                .updateContextLength(intVal);
           },
         ),
         const SizedBox(height: 16),
@@ -1701,8 +1793,7 @@ class NavigationSidebar extends ConsumerWidget {
           width: double.infinity,
           child: OutlinedButton(
             onPressed: () {
-              ref.read(modelParametersProvider.notifier).state =
-                  const ModelParameters();
+              ref.read(modelParametersProvider.notifier).resetParameters();
             },
             child: const Text('重置模型参数'),
           ),
@@ -1946,8 +2037,7 @@ class NavigationSidebar extends ConsumerWidget {
             onPressed: () {
               Navigator.of(context).pop();
               // 重置所有设置
-              ref.read(modelParametersProvider.notifier).state =
-                  const ModelParameters();
+              ref.read(modelParametersProvider.notifier).resetParameters();
               ref.read(codeBlockSettingsProvider.notifier).state =
                   const CodeBlockSettings();
               ref.read(generalSettingsProvider.notifier).state =

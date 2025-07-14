@@ -127,6 +127,16 @@ class ChatService {
       final settingsState = _ref.read(settingsProvider);
       final ragEnabled = settingsState.chatSettings.enableRag;
 
+      debugPrint('🔧 RAG状态检查:');
+      debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
+      debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      if (knowledgeConfig != null) {
+        debugPrint('  - 配置名称: ${knowledgeConfig.name}');
+        debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
+      }
+      debugPrint('  - 查询内容: "$content"');
+      debugPrint('  - 是否需要RAG: ${ragService.shouldUseRag(content)}');
+
       if (ragEnabled &&
           knowledgeConfig != null &&
           ragService.shouldUseRag(content)) {
@@ -141,14 +151,22 @@ class ChatService {
           if (ragResult.usedContexts.isNotEmpty) {
             enhancedPrompt = ragResult.enhancedPrompt;
             debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+            debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
           } else {
             debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
           }
-        } catch (e) {
+        } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+          debugPrint('堆栈跟踪: $stackTrace');
         }
-      } else if (!ragEnabled) {
-        debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
+      } else {
+        if (!ragEnabled) {
+          debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
+        } else if (knowledgeConfig == null) {
+          debugPrint('⚠️ 没有知识库配置，使用原始查询');
+        } else if (!ragService.shouldUseRag(content)) {
+          debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
+        }
       }
 
       // 6. 构建上下文消息
@@ -284,6 +302,16 @@ class ChatService {
       final settingsState = _ref.read(settingsProvider);
       final ragEnabled = settingsState.chatSettings.enableRag;
 
+      debugPrint('🔧 流式聊天RAG状态检查:');
+      debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
+      debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      if (knowledgeConfig != null) {
+        debugPrint('  - 配置名称: ${knowledgeConfig.name}');
+        debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
+      }
+      debugPrint('  - 查询内容: "$content"');
+      debugPrint('  - 是否需要RAG: ${ragService.shouldUseRag(content)}');
+
       if (ragEnabled &&
           knowledgeConfig != null &&
           ragService.shouldUseRag(content)) {
@@ -298,14 +326,22 @@ class ChatService {
           if (ragResult.usedContexts.isNotEmpty) {
             enhancedPrompt = ragResult.enhancedPrompt;
             debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+            debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
           } else {
             debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
           }
-        } catch (e) {
+        } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+          debugPrint('堆栈跟踪: $stackTrace');
         }
-      } else if (!ragEnabled) {
-        debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
+      } else {
+        if (!ragEnabled) {
+          debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
+        } else if (knowledgeConfig == null) {
+          debugPrint('⚠️ 没有知识库配置，使用原始查询');
+        } else if (!ragService.shouldUseRag(content)) {
+          debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
+        }
       }
 
       // 6. 构建上下文消息

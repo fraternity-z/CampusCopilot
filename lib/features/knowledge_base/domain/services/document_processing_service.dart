@@ -281,14 +281,34 @@ class DocumentProcessingService {
   /// 提取PDF文本内容
   Future<TextExtractionResult> _extractPdfText(String filePath) async {
     try {
-      // 注意：pdf包主要用于创建PDF，不是解析现有PDF的最佳选择
-      // 这里提供基础实现，实际应用中建议使用专门的PDF解析库
-      return const TextExtractionResult(
+      debugPrint('📄 开始处理PDF文件: $filePath');
+      final file = File(filePath);
+
+      if (!await file.exists()) {
+        return const TextExtractionResult(text: '', error: 'PDF文件不存在');
+      }
+
+      final bytes = await file.readAsBytes();
+      debugPrint('📊 PDF文件大小: ${bytes.length} bytes');
+
+      // 暂时返回提示信息，PDF文本提取需要专门的库
+      // 建议用户将PDF转换为文本文件或使用支持PDF解析的专门库
+      return TextExtractionResult(
         text: '',
-        error: 'PDF文本提取功能需要使用专门的PDF解析库',
+        error:
+            'PDF文本提取功能暂未完全实现。建议：\n'
+            '1. 将PDF内容复制粘贴为文本文件上传\n'
+            '2. 使用支持文本选择的PDF查看器复制内容\n'
+            '3. 将PDF转换为Word文档后上传\n'
+            '注意：扫描版PDF无法直接提取文本，需要OCR处理。',
       );
-    } catch (e) {
-      return TextExtractionResult(text: '', error: 'PDF文件读取失败: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 PDF文件处理异常: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
+      return TextExtractionResult(
+        text: '',
+        error: 'PDF文件读取失败: $e。建议使用文本版PDF而非扫描版PDF。',
+      );
     }
   }
 

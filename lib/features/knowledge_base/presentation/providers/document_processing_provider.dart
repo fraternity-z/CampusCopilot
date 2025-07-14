@@ -364,7 +364,8 @@ final documentProcessingServiceProvider = Provider<DocumentProcessingService>((
 
 /// 嵌入服务Provider
 final embeddingServiceProvider = Provider<EmbeddingService>((ref) {
-  return EmbeddingService();
+  final database = ref.read(appDatabaseProvider);
+  return EmbeddingService(database);
 });
 
 /// 文档处理Provider

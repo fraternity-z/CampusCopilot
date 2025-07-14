@@ -6,6 +6,25 @@ part of 'chat_message.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$FileAttachmentImpl _$$FileAttachmentImplFromJson(Map<String, dynamic> json) =>
+    _$FileAttachmentImpl(
+      fileName: json['fileName'] as String,
+      fileSize: (json['fileSize'] as num).toInt(),
+      fileType: json['fileType'] as String,
+      filePath: json['filePath'] as String?,
+      content: json['content'] as String?,
+    );
+
+Map<String, dynamic> _$$FileAttachmentImplToJson(
+        _$FileAttachmentImpl instance) =>
+    <String, dynamic>{
+      'fileName': instance.fileName,
+      'fileSize': instance.fileSize,
+      'fileType': instance.fileType,
+      'filePath': instance.filePath,
+      'content': instance.content,
+    };
+
 _$ChatMessageImpl _$$ChatMessageImplFromJson(Map<String, dynamic> json) =>
     _$ChatMessageImpl(
       id: json['id'] as String,
@@ -22,6 +41,10 @@ _$ChatMessageImpl _$$ChatMessageImplFromJson(Map<String, dynamic> json) =>
       tokenCount: (json['tokenCount'] as num?)?.toInt(),
       imageUrls: (json['imageUrls'] as List<dynamic>?)
               ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      attachments: (json['attachments'] as List<dynamic>?)
+              ?.map((e) => FileAttachment.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       thinkingContent: json['thinkingContent'] as String?,
@@ -42,6 +65,7 @@ Map<String, dynamic> _$$ChatMessageImplToJson(_$ChatMessageImpl instance) =>
       'parentMessageId': instance.parentMessageId,
       'tokenCount': instance.tokenCount,
       'imageUrls': instance.imageUrls,
+      'attachments': instance.attachments,
       'thinkingContent': instance.thinkingContent,
       'thinkingComplete': instance.thinkingComplete,
       'modelName': instance.modelName,

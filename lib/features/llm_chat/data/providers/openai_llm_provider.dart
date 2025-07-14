@@ -290,16 +290,49 @@ class OpenAiLlmProvider extends LlmProvider {
 
     // 转换聊天消息
     for (final message in messages) {
+      final contentItems =
+          <OpenAIChatCompletionChoiceMessageContentItemModel>[];
+
+      // 添加文本内容
+      if (message.content.isNotEmpty) {
+        contentItems.add(
+          OpenAIChatCompletionChoiceMessageContentItemModel.text(
+            message.content,
+          ),
+        );
+      }
+
+      // 添加图片内容（如果有）
+      if (message.imageUrls.isNotEmpty) {
+        for (final imageUrl in message.imageUrls) {
+          // 检查是否是base64格式的图片
+          if (imageUrl.startsWith('data:image/')) {
+            contentItems.add(
+              OpenAIChatCompletionChoiceMessageContentItemModel.imageUrl(
+                imageUrl,
+              ),
+            );
+          } else if (imageUrl.startsWith('file://')) {
+            // 如果是文件路径，需要转换为base64
+            // 这里暂时跳过，因为需要异步读取文件
+            debugPrint('⚠️ 文件路径格式的图片暂不支持: $imageUrl');
+          } else {
+            // 假设是URL或base64字符串
+            contentItems.add(
+              OpenAIChatCompletionChoiceMessageContentItemModel.imageUrl(
+                imageUrl,
+              ),
+            );
+          }
+        }
+      }
+
       openAIMessages.add(
         OpenAIChatCompletionChoiceMessageModel(
           role: message.isFromUser
               ? OpenAIChatMessageRole.user
               : OpenAIChatMessageRole.assistant,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              message.content,
-            ),
-          ],
+          content: contentItems,
         ),
       );
     }
