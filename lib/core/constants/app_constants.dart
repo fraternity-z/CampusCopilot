@@ -51,7 +51,7 @@ class AppConstants {
   static const int maxFileSize = 50 * 1024 * 1024; // 50MB
 
   /// 网络配置
-  static const int networkTimeoutSeconds = 30;
+  static const int networkTimeoutSeconds = 60; // 增加到60秒
   static const int maxRetryAttempts = 3;
   static const int retryDelaySeconds = 2;
 

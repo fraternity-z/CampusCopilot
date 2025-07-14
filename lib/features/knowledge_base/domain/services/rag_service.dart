@@ -70,15 +70,32 @@ class RagService {
     try {
       final startTime = DateTime.now();
 
-      // 使用向量搜索检索相关内容
-      final searchResult = await _vectorSearchService.hybridSearch(
-        query: query,
-        config: config,
-        similarityThreshold: similarityThreshold,
-        maxResults: maxResults,
-      );
+      debugPrint('🔍 开始RAG检索: "$query"');
+      debugPrint('📊 配置: ${config.name} - ${config.embeddingModelProvider}');
+
+      // 使用向量搜索检索相关内容（添加超时处理）
+      final searchResult = await _vectorSearchService
+          .hybridSearch(
+            query: query,
+            config: config,
+            similarityThreshold: similarityThreshold,
+            maxResults: maxResults,
+          )
+          .timeout(
+            const Duration(minutes: 3), // 3分钟超时
+            onTimeout: () {
+              debugPrint('⏰ RAG检索超时');
+              return VectorSearchResult(
+                items: [],
+                error: 'RAG检索超时，请检查网络连接或稍后重试',
+                totalResults: 0,
+                searchTime: 0,
+              );
+            },
+          );
 
       if (!searchResult.isSuccess) {
+        debugPrint('❌ RAG检索失败: ${searchResult.error}');
         return RagRetrievalResult(
           contexts: [],
           error: searchResult.error,
@@ -100,6 +117,8 @@ class RagService {
           )
           .toList();
 
+      debugPrint('✅ RAG检索成功: 找到${contexts.length}个相关上下文');
+
       return RagRetrievalResult(
         contexts: contexts,
         searchTime: DateTime.now()
@@ -109,10 +128,20 @@ class RagService {
         totalResults: contexts.length,
       );
     } catch (e) {
-      debugPrint('RAG检索失败: $e');
+      debugPrint('❌ RAG检索异常: $e');
+      String errorMessage = e.toString();
+
+      // 提供更友好的错误信息
+      if (errorMessage.contains('SocketException')) {
+        errorMessage = 'RAG检索网络连接失败，请检查网络设置';
+      } else if (errorMessage.contains('TimeoutException') ||
+          errorMessage.contains('超时')) {
+        errorMessage = 'RAG检索超时，请检查网络连接或稍后重试';
+      }
+
       return RagRetrievalResult(
         contexts: [],
-        error: e.toString(),
+        error: errorMessage,
         searchTime: 0,
         totalResults: 0,
       );

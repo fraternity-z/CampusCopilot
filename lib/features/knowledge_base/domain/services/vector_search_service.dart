@@ -60,7 +60,8 @@ class VectorSearchService {
 
     try {
       debugPrint('🔍 开始向量搜索: "$query"');
-      debugPrint('📊 搜索配置: 相似度阈值=$similarityThreshold, 最大结果数=$maxResults');
+      debugPrint('📊 使用配置: ${config.name} - ${config.embeddingModelProvider}');
+      debugPrint('📊 搜索参数: 相似度阈值=$similarityThreshold, 最大结果数=$maxResults');
       if (knowledgeBaseId != null) {
         debugPrint('📚 限定知识库: $knowledgeBaseId');
       }
@@ -157,10 +158,25 @@ class VectorSearchService {
         searchTime: _calculateSearchTime(startTime),
       );
     } catch (e) {
-      debugPrint('向量搜索失败: $e');
+      debugPrint('❌ 向量搜索失败: $e');
+      String errorMessage = e.toString();
+
+      // 提供更友好的错误信息
+      if (errorMessage.contains('SocketException')) {
+        errorMessage = '向量搜索网络连接失败，请检查网络设置或API服务地址';
+      } else if (errorMessage.contains('TimeoutException') ||
+          errorMessage.contains('超时')) {
+        errorMessage = '向量搜索超时，请检查网络连接或稍后重试';
+      } else if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized')) {
+        errorMessage = 'API密钥无效，请检查嵌入模型的API密钥配置';
+      } else if (errorMessage.contains('404')) {
+        errorMessage = 'API端点不存在，请检查嵌入模型的API地址配置';
+      }
+
       return VectorSearchResult(
         items: [],
-        error: e.toString(),
+        error: errorMessage,
         totalResults: 0,
         searchTime: _calculateSearchTime(startTime),
       );

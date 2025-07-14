@@ -227,10 +227,19 @@ class OpenAiLlmProvider extends LlmProvider {
     try {
       final model = config.defaultEmbeddingModel ?? 'text-embedding-3-small';
 
-      final embedding = await OpenAI.instance.embedding.create(
-        model: model,
-        input: texts,
-      );
+      debugPrint('🔗 OpenAI嵌入请求: 模型=$model, 文本数量=${texts.length}');
+      debugPrint('🌐 API端点: ${config.baseUrl ?? 'https://api.openai.com'}');
+
+      final embedding = await OpenAI.instance.embedding
+          .create(model: model, input: texts)
+          .timeout(
+            const Duration(minutes: 2), // 2分钟超时
+            onTimeout: () {
+              throw Exception('OpenAI嵌入请求超时，请检查网络连接或API服务状态');
+            },
+          );
+
+      debugPrint('✅ OpenAI嵌入请求成功: 生成${embedding.data.length}个向量');
 
       return EmbeddingResult(
         embeddings: embedding.data.map((e) => e.embeddings).toList(),
@@ -242,6 +251,7 @@ class OpenAiLlmProvider extends LlmProvider {
         ),
       );
     } catch (e) {
+      debugPrint('❌ OpenAI嵌入请求失败: $e');
       throw _handleOpenAIError(e);
     }
   }
@@ -362,17 +372,48 @@ class OpenAiLlmProvider extends LlmProvider {
 
   /// 处理OpenAI错误
   AppException _handleOpenAIError(dynamic error) {
-    // 简化错误处理，因为OpenAI包的异常类型可能不稳定
     final errorMessage = error.toString();
+    debugPrint('🔍 OpenAI错误详情: $errorMessage');
 
+    // 网络连接错误
+    if (errorMessage.contains('SocketException')) {
+      return NetworkException('网络连接失败，请检查网络设置或API服务地址是否正确');
+    }
+
+    // 超时错误
+    if (errorMessage.contains('TimeoutException') ||
+        errorMessage.contains('超时')) {
+      return NetworkException('请求超时，请检查网络连接或稍后重试');
+    }
+
+    // API认证错误
     if (errorMessage.contains('401') || errorMessage.contains('Unauthorized')) {
       return ApiException.invalidApiKey();
-    } else if (errorMessage.contains('429') ||
-        errorMessage.contains('rate limit')) {
+    }
+
+    // 速率限制错误
+    if (errorMessage.contains('429') || errorMessage.contains('rate limit')) {
       return ApiException.rateLimitExceeded();
-    } else if (errorMessage.contains('402') || errorMessage.contains('quota')) {
+    }
+
+    // 配额超限错误
+    if (errorMessage.contains('402') || errorMessage.contains('quota')) {
       return ApiException.quotaExceeded();
     }
-    return ApiException('未知错误: ${error.toString()}');
+
+    // 404错误 - API端点不存在
+    if (errorMessage.contains('404')) {
+      return ApiException('API端点不存在，请检查baseUrl配置是否正确');
+    }
+
+    // 500系列服务器错误
+    if (errorMessage.contains('500') ||
+        errorMessage.contains('502') ||
+        errorMessage.contains('503') ||
+        errorMessage.contains('504')) {
+      return ApiException('OpenAI服务器错误，请稍后重试');
+    }
+
+    return ApiException('OpenAI请求失败: $errorMessage');
   }
 }

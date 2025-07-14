@@ -1084,8 +1084,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
-                    width: 80,
-                    height: 80,
+                    width: 120, // 增大预览图宽度
+                    height: 120, // 增大预览图高度
                     child: Image.memory(
                       image.thumbnailBytes,
                       fit: BoxFit.cover,

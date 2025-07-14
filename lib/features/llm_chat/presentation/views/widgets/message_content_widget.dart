@@ -115,8 +115,8 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: ImagePreviewWidget(
               imageUrls: widget.message.imageUrls,
-              thumbnailSize: 120,
-              maxImagesPerRow: 3,
+              thumbnailSize: 200, // 增大预览图尺寸
+              maxImagesPerRow: 2, // 减少每行图片数量，让图片更大
             ),
           ),
         // 主要内容

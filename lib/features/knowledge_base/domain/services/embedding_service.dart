@@ -36,20 +36,46 @@ class EmbeddingService {
       if (llmConfig == null) {
         return const EmbeddingGenerationResult(
           embeddings: [],
-          error: '无法找到嵌入模型的配置',
+          error: '无法找到嵌入模型的配置，请检查知识库配置中的嵌入模型设置',
         );
       }
+
+      debugPrint(
+        '🔗 使用嵌入服务: ${llmConfig.provider} - ${llmConfig.baseUrl ?? '默认端点'}',
+      );
 
       // 创建LLM提供商（非空）
       final provider = LlmProviderFactory.createProvider(llmConfig);
 
-      // 生成嵌入向量
-      final result = await provider.generateEmbeddings(texts);
+      // 生成嵌入向量（添加超时处理）
+      final result = await provider
+          .generateEmbeddings(texts)
+          .timeout(
+            const Duration(minutes: 2), // 2分钟超时
+            onTimeout: () {
+              throw Exception('嵌入向量生成超时，请检查网络连接或API服务状态');
+            },
+          );
 
       return EmbeddingGenerationResult(embeddings: result.embeddings);
     } catch (e) {
       debugPrint('生成嵌入向量失败: $e');
-      return EmbeddingGenerationResult(embeddings: [], error: e.toString());
+      String errorMessage = e.toString();
+
+      // 提供更友好的错误信息
+      if (errorMessage.contains('SocketException')) {
+        errorMessage = '网络连接失败，请检查网络设置或API服务地址是否正确';
+      } else if (errorMessage.contains('TimeoutException') ||
+          errorMessage.contains('超时')) {
+        errorMessage = '请求超时，请检查网络连接或稍后重试';
+      } else if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized')) {
+        errorMessage = 'API密钥无效，请检查嵌入模型的API密钥配置';
+      } else if (errorMessage.contains('404')) {
+        errorMessage = 'API端点不存在，请检查嵌入模型的API地址配置';
+      }
+
+      return EmbeddingGenerationResult(embeddings: [], error: errorMessage);
     }
   }
 
