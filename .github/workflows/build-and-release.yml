@@ -129,21 +129,54 @@ jobs:
       run: flutter build ios --release --no-codesign
       continue-on-error: true
 
-    - name: 创建iOS构建信息
+    - name: 打包iOS构建产物
       run: |
         mkdir -p ios-build
-        echo "iOS构建信息" > ios-build/build-info.txt
-        echo "版本: ${{ needs.prepare.outputs.version }}" >> ios-build/build-info.txt
-        echo "注意: 此构建未签名，需要在Xcode中配置签名后才能安装到设备上。" >> ios-build/build-info.txt
 
-        # 打包构建信息
-        zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip ios-build
+        # 检查构建产物是否存在
+        if [ -d "build/ios/iphoneos/Runner.app" ]; then
+          echo "✅ 找到iOS构建产物，开始打包..."
+
+          # 复制.app文件到打包目录
+          cp -r build/ios/iphoneos/Runner.app ios-build/
+
+          # 创建构建信息
+          echo "iOS构建信息" > ios-build/build-info.txt
+          echo "版本: ${{ needs.prepare.outputs.version }}" >> ios-build/build-info.txt
+          echo "构建时间: $(date)" >> ios-build/build-info.txt
+          echo "注意: 此构建未签名，需要在Xcode中配置签名后才能安装到设备上。" >> ios-build/build-info.txt
+          echo "安装说明: 将Runner.app拖拽到Xcode中进行签名，然后安装到设备。" >> ios-build/build-info.txt
+
+          # 显示打包内容
+          echo "📦 打包内容:"
+          ls -la ios-build/
+
+          # 打包
+          zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip ios-build
+
+          echo "✅ iOS构建产物打包完成"
+        else
+          echo "❌ 未找到iOS构建产物，创建错误信息..."
+
+          # 创建错误信息
+          echo "iOS构建失败" > ios-build/build-error.txt
+          echo "版本: ${{ needs.prepare.outputs.version }}" >> ios-build/build-error.txt
+          echo "错误: 未找到构建产物 build/ios/iphoneos/Runner.app" >> ios-build/build-error.txt
+          echo "构建时间: $(date)" >> ios-build/build-error.txt
+
+          # 显示构建目录内容用于调试
+          echo "🔍 构建目录内容:"
+          find build -name "*.app" -type d 2>/dev/null || echo "未找到.app文件"
+
+          # 打包错误信息
+          zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-build-failed.zip ios-build
+        fi
 
     - name: 上传iOS构建产物
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
-        path: AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip
+        path: AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-*.zip
 
   # 注意：Windows构建已被移除，因为持续出现文件锁定问题
 
