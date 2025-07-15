@@ -1,25 +1,16 @@
-# 🚀 AI Assistant CI/CD 工作流指南
+# 🚀 AnywhereChat CI/CD 工作流指南
 
-本指南详细说明如何使用为AI Assistant项目设置的GitHub Actions工作流，包括自动构建APK、IPA、EXE文件并发布release。
+本指南详细说明如何使用为AnywhereChat项目设置的GitHub Actions工作流，包括自动构建APK、IPA、EXE文件并发布release。
 
 ## 📋 工作流概览
 
-我们为项目配置了三个主要的工作流：
+我们为项目配置了一个主要的工作流：
 
-### 1. 🔄 持续集成构建 (pr-build.yml)
-- **触发条件**: PR提交和推送到main/develop分支
-- **功能**: 代码检查、测试、调试版本构建
-- **用途**: 开发过程中的质量检查
-
-### 2. 🎯 构建并发布 (build-and-release.yml)
-- **触发条件**: 推送版本标签 (v*.* 格式) 或手动触发
+### 🎯 构建并发布全平台应用 (build-and-release.yml)
+- **触发条件**: 仅手动触发或推送版本标签 (v*.* 格式)
 - **功能**: 构建所有平台的release版本并自动发布GitHub Release
+- **支持平台**: Windows、Android、iOS、macOS、Linux
 - **用途**: 正式版本发布
-
-### 3. ✍️ 签名构建 (signed-build.yml)
-- **触发条件**: 手动触发
-- **功能**: 构建带签名的生产版本，可上传到应用商店
-- **用途**: 应用商店发布准备
 
 ## 🛠️ 初始设置
 

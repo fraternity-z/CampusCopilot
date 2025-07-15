@@ -15,13 +15,61 @@ env:
   FLUTTER_VERSION: '3.32.5'
 
 jobs:
-  # 构建Android APK
-  build-android:
+  # 准备发布
+  prepare:
     runs-on: ubuntu-latest
     outputs:
+      version: ${{ github.ref_name || github.event.inputs.version }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_id: ${{ steps.create_release.outputs.id }}
-    
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 创建Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name || github.event.inputs.version }}
+        name: AnywhereChat ${{ github.ref_name || github.event.inputs.version }}
+        body: |
+          # AnywhereChat ${{ github.ref_name || github.event.inputs.version }}
+
+          **发布时间**: $(date +'%Y-%m-%d %H:%M:%S UTC')
+
+          ## 📦 构建产物
+
+          ### 移动端
+          - ✅ **Android APK**: 适用于Android 5.0+设备
+          - ⚠️ **iOS**: 未签名构建，需要在Xcode中配置签名
+
+          ### 桌面端
+          - ✅ **Windows**: 便携版ZIP包，适用于Windows 10+
+          - ✅ **macOS**: 应用包，适用于macOS 10.14+
+          - ✅ **Linux**: 压缩包，适用于主流Linux发行版
+
+          ## 🔧 技术信息
+
+          - **Flutter版本**: ${{ env.FLUTTER_VERSION }}
+          - **Dart版本**: 3.8.1
+          - **构建环境**: GitHub Actions
+          - **许可证**: 双重许可证 (Apache 2.0 / 商业许可证)
+
+          ## 📞 支持
+
+          - 商业许可证咨询: 927751260@qq.com
+          - 技术支持: GitHub Issues
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 构建Android APK
+  build-android:
+    needs: prepare
+    runs-on: ubuntu-latest
+
     steps:
     - name: 检出代码
       uses: actions/checkout@v4
@@ -31,13 +79,17 @@ jobs:
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
-        architecture: x64
 
     - name: 设置JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
+
+    - name: 设置Gradle环境
+      run: |
+        mkdir -p ~/.gradle
+        echo "org.gradle.java.home=$JAVA_HOME" > ~/.gradle/gradle.properties
 
     - name: 安装Flutter依赖
       run: flutter pub get
@@ -46,126 +98,22 @@ jobs:
       run: dart run build_runner build --delete-conflicting-outputs
 
     - name: 构建Android APK
-      run: flutter build apk --release --split-per-abi
+      run: flutter build apk --release
 
-    - name: 构建Android AAB
-      run: flutter build appbundle --release
-
-    - name: 创建Release
-      id: create_release
-      uses: actions/create-release@v1
+    - name: 上传APK到Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        files: build/app/outputs/flutter-apk/app-release.apk
+        name: AnywhereChat-Android-${{ needs.prepare.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name || github.event.inputs.version }}
-        release_name: AI Assistant ${{ github.ref_name || github.event.inputs.version }}
-        draft: false
-        prerelease: false
-        body: |
-          ## 🚀 AI Assistant ${{ github.ref_name || github.event.inputs.version }}
-          
-          ### 📱 支持平台
-          - ✅ Android (APK/AAB)
-          - ✅ iOS (IPA)
-          - ✅ Windows (EXE/MSIX)
-          
-          ### 📁 下载文件
-          - **Android用户**: 下载 `ai-assistant-android.apk`
-          - **iOS用户**: 下载 `ai-assistant-ios.ipa` (需要企业签名或自签名)
-          - **Windows用户**: 下载 `ai-assistant-windows.zip` 或 `ai-assistant-windows.msix`
-          
-          ### 🔧 版本信息
-          - Flutter版本: ${{ env.FLUTTER_VERSION }}
-          - 构建时间: ${{ github.run_number }}
-          
-          ### 📋 更新内容
-          请查看提交历史了解详细更新内容。
 
-    - name: 上传Android APK (ARM64)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-        asset_name: ai-assistant-android-arm64.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: 上传Android APK (ARM)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-        asset_name: ai-assistant-android-arm.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: 上传Android APK (x64)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-x86_64-release.apk
-        asset_name: ai-assistant-android-x64.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: 上传Android AAB
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/bundle/release/app-release.aab
-        asset_name: ai-assistant-android.aab
-        asset_content_type: application/octet-stream
-
-  # 构建iOS IPA
-  build-ios:
-    runs-on: macos-latest
-    needs: build-android
-    
-    steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-
-    - name: 设置Flutter环境
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
-        channel: 'stable'
-        architecture: x64
-
-    - name: 安装Flutter依赖
-      run: flutter pub get
-
-    - name: 构建iOS (无签名)
-      run: flutter build ios --release --no-codesign
-
-    - name: 创建IPA包
-      run: |
-        cd build/ios/iphoneos
-        mkdir -p Payload
-        cp -r Runner.app Payload/
-        zip -r ai-assistant-ios.ipa Payload/
-        mv ai-assistant-ios.ipa ../../../
-
-    - name: 上传iOS IPA
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.build-android.outputs.upload_url }}
-        asset_path: ai-assistant-ios.ipa
-        asset_name: ai-assistant-ios.ipa
-        asset_content_type: application/octet-stream
-
-  # 构建Windows EXE
+  # 构建Windows应用
   build-windows:
+    needs: prepare
     runs-on: windows-latest
-    needs: build-android
-    
+
     steps:
     - name: 检出代码
       uses: actions/checkout@v4
@@ -175,56 +123,196 @@ jobs:
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
-        architecture: x64
 
     - name: 安装Flutter依赖
       run: flutter pub get
 
-    - name: 启用Windows桌面支持
-      run: flutter config --enable-windows-desktop
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
 
     - name: 构建Windows应用
       run: flutter build windows --release
 
-    - name: 构建MSIX包
-      run: flutter pub run msix:create
-
-    - name: 创建Windows发布包
+    - name: 创建Windows便携包
       run: |
-        Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "ai-assistant-windows.zip"
+        $buildPath = "build\windows\x64\runner\Release"
+        $packagePath = "AnywhereChat-Windows-${{ needs.prepare.outputs.version }}"
 
-    - name: 上传Windows ZIP
-      uses: actions/upload-release-asset@v1
+        New-Item -ItemType Directory -Path $packagePath -Force
+        Copy-Item -Path "$buildPath\*" -Destination $packagePath -Recurse -Force
+
+        @"
+        @echo off
+        cd /d "%~dp0"
+        start "" "anywherechat.exe"
+        "@ | Out-File -FilePath "$packagePath\启动AnywhereChat.bat" -Encoding ASCII
+
+        @"
+        AnywhereChat Windows 便携版
+
+        运行方式：
+        1. 双击 anywherechat.exe 直接运行
+        2. 或双击 启动AnywhereChat.bat 运行
+
+        系统要求：Windows 10+ 64位
+        版本: ${{ needs.prepare.outputs.version }}
+        "@ | Out-File -FilePath "$packagePath\README.txt" -Encoding UTF8
+
+        Compress-Archive -Path $packagePath -DestinationPath "$packagePath.zip"
+
+    - name: 上传Windows包到Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        files: AnywhereChat-Windows-${{ needs.prepare.outputs.version }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.build-android.outputs.upload_url }}
-        asset_path: ai-assistant-windows.zip
-        asset_name: ai-assistant-windows.zip
-        asset_content_type: application/zip
 
-    - name: 上传Windows MSIX
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # 构建iOS应用
+  build-ios:
+    needs: prepare
+    runs-on: macos-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
       with:
-        upload_url: ${{ needs.build-android.outputs.upload_url }}
-        asset_path: build\windows\x64\runner\Release\ai_assistant.msix
-        asset_name: ai-assistant-windows.msix
-        asset_content_type: application/octet-stream
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: 构建iOS应用（无签名）
+      run: flutter build ios --release --no-codesign
       continue-on-error: true
 
-  # 构建信息汇总
-  build-summary:
-    runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-windows]
-    if: always()
-    
+    - name: 创建iOS构建信息
+      run: |
+        mkdir -p ios-build
+        echo "iOS构建信息" > ios-build/build-info.txt
+        echo "版本: ${{ needs.prepare.outputs.version }}" >> ios-build/build-info.txt
+        echo "注意: 此构建未签名，需要在Xcode中配置签名后才能安装到设备上。" >> ios-build/build-info.txt
+
+        # 打包构建信息
+        zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip ios-build
+
+    - name: 上传iOS信息到Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        files: AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 构建macOS应用
+  build-macos:
+    needs: prepare
+    runs-on: macos-latest
+
     steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: 构建macOS应用
+      run: flutter build macos --release
+      continue-on-error: true
+
+    - name: 打包macOS应用
+      run: |
+        cd build/macos/Build/Products/Release
+        zip -r AnywhereChat-macOS-${{ needs.prepare.outputs.version }}.zip anywherechat.app
+
+    - name: 上传macOS应用到Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        files: build/macos/Build/Products/Release/AnywhereChat-macOS-${{ needs.prepare.outputs.version }}.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 构建Linux应用
+  build-linux:
+    needs: prepare
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 安装Linux依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: 构建Linux应用
+      run: flutter build linux --release
+      continue-on-error: true
+
+    - name: 打包Linux应用
+      run: |
+        cd build/linux/x64/release/bundle
+        tar -czvf AnywhereChat-Linux-${{ needs.prepare.outputs.version }}.tar.gz *
+
+    - name: 上传Linux应用到Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        files: build/linux/x64/release/bundle/AnywhereChat-Linux-${{ needs.prepare.outputs.version }}.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 完成发布
+  finalize-release:
+    needs: [prepare, build-android, build-windows, build-ios, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: 发布Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.prepare.outputs.version }}
+        draft: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: 构建完成通知
       run: |
-        echo "🎉 AI Assistant 跨平台构建完成!"
+        echo "🎉 AnywhereChat 跨平台构建完成!"
         echo "📱 Android: ✅"
-        echo "🍎 iOS: ✅" 
+        echo "🍎 iOS: ✅"
         echo "🖥️ Windows: ✅"
-        echo "🔗 Release链接: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name || github.event.inputs.version }}" 
+        echo "🖥️ macOS: ✅"
+        echo "🖥️ Linux: ✅"
+        echo "🔗 Release链接: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.version }}"
