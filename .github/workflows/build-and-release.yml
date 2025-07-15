@@ -11,6 +11,11 @@ on:
         required: true
         default: 'v1.0.0'
 
+# 设置工作流权限
+permissions:
+  contents: write  # 需要写权限来创建Release
+  actions: read    # 需要读权限来访问构建产物
+
 env:
   FLUTTER_VERSION: '3.32.5'
 
@@ -193,6 +198,10 @@ jobs:
     - name: 下载所有构建产物
       uses: actions/download-artifact@v4
 
+    - name: 获取当前时间
+      id: current-time
+      run: echo "time=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
     - name: 创建Release并上传所有文件
       uses: softprops/action-gh-release@v1
       with:
@@ -201,7 +210,7 @@ jobs:
         body: |
           # AnywhereChat ${{ needs.prepare.outputs.version }}
 
-          **发布时间**: $(date +'%Y-%m-%d %H:%M:%S UTC')
+          **发布时间**: ${{ steps.current-time.outputs.time }}
 
           ## 📦 构建产物
 
