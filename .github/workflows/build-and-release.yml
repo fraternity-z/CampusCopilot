@@ -130,13 +130,66 @@ jobs:
         name: ios-build
         path: AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip
 
+  # 构建Windows应用
+  build-windows:
+    needs: prepare
+    runs-on: windows-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    - name: 清理环境
+      shell: pwsh
+      run: |
+        flutter clean
+        if (Test-Path .dart_tool) {
+          Remove-Item -Recurse -Force .dart_tool
+        }
+
+    - name: 安装Flutter依赖
+      run: flutter pub get
+
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: 构建Windows应用
+      run: flutter build windows --release
+
+    - name: 打包Windows应用
+      shell: pwsh
+      run: |
+        $version = "${{ needs.prepare.outputs.version }}"
+        $buildPath = "build\windows\x64\runner\Release"
+        $packageName = "AnywhereChat-Windows-$version"
+
+        # 创建打包目录
+        New-Item -ItemType Directory -Force -Path $packageName
+
+        # 复制应用文件
+        Copy-Item -Recurse -Path "$buildPath\*" -Destination $packageName
+
+        # 创建ZIP包
+        Compress-Archive -Path $packageName -DestinationPath "$packageName.zip"
+
+    - name: 上传Windows构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: AnywhereChat-Windows-${{ needs.prepare.outputs.version }}.zip
 
 
 
 
   # 完成发布
   finalize-release:
-    needs: [prepare, build-android,  build-ios]
+    needs: [prepare, build-android, build-windows, build-ios]
     runs-on: ubuntu-latest
     if: always()
 
