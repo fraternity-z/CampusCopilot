@@ -102,13 +102,14 @@ jobs:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
 
-    - name: 清理残留目录
+    - name: 清理 Flutter 缓存
       shell: pwsh
       run: |
-        flutter clean
-        Remove-Item -Recurse -Force .dart_tool
-       # （可选）如果想彻底清理全局缓存也可以加：
-      # Remove-Item -Recurse -Force $env:PUB_CACHE
+         flutter clean
+         if (Test-Path .dart_tool) {
+           Remove-Item -Recurse -Force .dart_tool
+         }
+
 
 
 
