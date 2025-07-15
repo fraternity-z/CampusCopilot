@@ -87,73 +87,7 @@ jobs:
         name: android-build
         path: AnywhereChat-Android-${{ needs.prepare.outputs.version }}.apk
 
-  # 构建Windows应用
-  build-windows:
-    needs: prepare
-    runs-on: windows-latest
 
-    steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-
-    - name: 设置Flutter环境
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
-        channel: 'stable'
-
-    - name: 清理 Flutter 缓存
-      shell: pwsh
-      run: |
-         flutter clean
-         if (Test-Path .dart_tool) {
-           Remove-Item -Recurse -Force .dart_tool
-         }
-
-
-
-
-    - name: 安装Flutter依赖
-      run: flutter pub get
-
-    - name: 生成代码
-      run: dart run build_runner build --delete-conflicting-outputs
-
-    - name: 构建Windows应用
-      run: flutter build windows --release
-
-    - name: 创建Windows便携包
-      run: |
-        $buildPath = "build\windows\x64\runner\Release"
-        $packagePath = "AnywhereChat-Windows-${{ needs.prepare.outputs.version }}"
-
-        New-Item -ItemType Directory -Path $packagePath -Force
-        Copy-Item -Path "$buildPath\*" -Destination $packagePath -Recurse -Force
-
-        @"
-        @echo off
-        cd /d "%~dp0"
-        start "" "anywherechat.exe"
-        "@ | Out-File -FilePath "$packagePath\启动AnywhereChat.bat" -Encoding ASCII
-
-        @"
-        AnywhereChat Windows 便携版
-
-        运行方式：
-        1. 双击 anywherechat.exe 直接运行
-        2. 或双击 启动AnywhereChat.bat 运行
-
-        系统要求：Windows 10+ 64位
-        版本: ${{ needs.prepare.outputs.version }}
-        "@ | Out-File -FilePath "$packagePath\README.txt" -Encoding UTF8
-
-        Compress-Archive -Path $packagePath -DestinationPath "$packagePath.zip"
-
-    - name: 上传Windows构建产物
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-build
-        path: AnywhereChat-Windows-${{ needs.prepare.outputs.version }}.zip
 
   # 构建iOS应用
   build-ios:
@@ -202,7 +136,7 @@ jobs:
 
   # 完成发布
   finalize-release:
-    needs: [prepare, build-android, build-windows, build-ios]
+    needs: [prepare, build-android,  build-ios]
     runs-on: ubuntu-latest
     if: always()
 
