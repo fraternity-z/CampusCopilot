@@ -57,25 +57,37 @@ jobs:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
 
-    - name: 设置JDK 17
+    - name: 设置JDK 21
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21'
 
     - name: 设置Gradle环境
       run: |
         mkdir -p ~/.gradle
         echo "org.gradle.java.home=$JAVA_HOME" > ~/.gradle/gradle.properties
+        echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" >> ~/.gradle/gradle.properties
+        echo "org.gradle.java.target=21" >> ~/.gradle/gradle.properties
 
-    - name: 安装Flutter依赖
-      run: flutter pub get
+        # 验证Java版本
+        java -version
+        echo "JAVA_HOME=$JAVA_HOME"
+
+    - name: 清理并安装Flutter依赖
+      run: |
+        flutter clean
+        rm -rf .dart_tool
+        flutter pub get --no-precompile
 
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
 
     - name: 构建Android APK
-      run: flutter build apk --release
+      run: |
+        echo "开始构建Android APK..."
+        flutter build apk --release --verbose
+        echo "Android APK构建完成"
 
     - name: 重命名APK文件
       run: |
@@ -104,8 +116,11 @@ jobs:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
 
-    - name: 安装Flutter依赖
-      run: flutter pub get
+    - name: 清理并安装Flutter依赖
+      run: |
+        flutter clean
+        rm -rf .dart_tool
+        flutter pub get --no-precompile
 
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
@@ -152,9 +167,29 @@ jobs:
         if (Test-Path .dart_tool) {
           Remove-Item -Recurse -Force .dart_tool
         }
+        # 等待文件系统释放锁定
+        Start-Sleep -Seconds 2
 
     - name: 安装Flutter依赖
-      run: flutter pub get
+      shell: pwsh
+      run: |
+        # 重试机制处理文件锁定问题
+        $maxRetries = 3
+        $retryCount = 0
+        do {
+          try {
+            flutter pub get --no-precompile
+            break
+          }
+          catch {
+            $retryCount++
+            if ($retryCount -ge $maxRetries) {
+              throw
+            }
+            Write-Host "Retry $retryCount/$maxRetries after 5 seconds..."
+            Start-Sleep -Seconds 5
+          }
+        } while ($retryCount -lt $maxRetries)
 
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
