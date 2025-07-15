@@ -3,17 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../data/local/tables/general_settings_table.dart';
 import '../../../../core/di/database_providers.dart';
+import '../../../../core/network/proxy_config.dart';
 
 /// 常规设置状态
 class GeneralSettingsState {
   final bool autoTopicNamingEnabled;
   final String? autoTopicNamingModelId;
+  final ProxyConfig proxyConfig;
   final bool isLoading;
   final String? error;
 
   const GeneralSettingsState({
     this.autoTopicNamingEnabled = false,
     this.autoTopicNamingModelId,
+    this.proxyConfig = const ProxyConfig(),
     this.isLoading = false,
     this.error,
   });
@@ -21,6 +24,7 @@ class GeneralSettingsState {
   GeneralSettingsState copyWith({
     bool? autoTopicNamingEnabled,
     String? autoTopicNamingModelId,
+    ProxyConfig? proxyConfig,
     bool? isLoading,
     String? error,
   }) {
@@ -29,6 +33,7 @@ class GeneralSettingsState {
           autoTopicNamingEnabled ?? this.autoTopicNamingEnabled,
       autoTopicNamingModelId:
           autoTopicNamingModelId ?? this.autoTopicNamingModelId,
+      proxyConfig: proxyConfig ?? this.proxyConfig,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
     );
@@ -56,9 +61,13 @@ class GeneralSettingsNotifier extends StateNotifier<GeneralSettingsState> {
         GeneralSettingsKeys.autoTopicNamingModelId,
       );
 
+      // 加载代理配置
+      final proxyConfig = await _loadProxyConfig();
+
       state = state.copyWith(
         autoTopicNamingEnabled: autoNamingEnabled == 'true',
         autoTopicNamingModelId: autoNamingModelId,
+        proxyConfig: proxyConfig,
         isLoading: false,
       );
     } catch (e) {
@@ -95,6 +104,96 @@ class GeneralSettingsNotifier extends StateNotifier<GeneralSettingsState> {
       state = state.copyWith(autoTopicNamingModelId: modelId);
     } catch (e) {
       state = state.copyWith(error: '保存设置失败: $e');
+    }
+  }
+
+  /// 加载代理配置
+  Future<ProxyConfig> _loadProxyConfig() async {
+    try {
+      final proxyMode = await _database.getSetting(
+        GeneralSettingsKeys.proxyMode,
+      );
+      final proxyType = await _database.getSetting(
+        GeneralSettingsKeys.proxyType,
+      );
+      final proxyHost = await _database.getSetting(
+        GeneralSettingsKeys.proxyHost,
+      );
+      final proxyPort = await _database.getSetting(
+        GeneralSettingsKeys.proxyPort,
+      );
+      final proxyUsername = await _database.getSetting(
+        GeneralSettingsKeys.proxyUsername,
+      );
+      final proxyPassword = await _database.getSetting(
+        GeneralSettingsKeys.proxyPassword,
+      );
+
+      return ProxyConfig(
+        mode: _parseProxyMode(proxyMode),
+        type: _parseProxyType(proxyType),
+        host: proxyHost ?? '',
+        port: int.tryParse(proxyPort ?? '8080') ?? 8080,
+        username: proxyUsername ?? '',
+        password: proxyPassword ?? '',
+      );
+    } catch (e) {
+      return const ProxyConfig(); // 返回默认配置
+    }
+  }
+
+  /// 解析代理模式
+  ProxyMode _parseProxyMode(String? mode) {
+    switch (mode) {
+      case 'system':
+        return ProxyMode.system;
+      case 'custom':
+        return ProxyMode.custom;
+      default:
+        return ProxyMode.none;
+    }
+  }
+
+  /// 解析代理类型
+  ProxyType _parseProxyType(String? type) {
+    switch (type) {
+      case 'https':
+        return ProxyType.https;
+      case 'socks5':
+        return ProxyType.socks5;
+      default:
+        return ProxyType.http;
+    }
+  }
+
+  /// 设置代理配置
+  Future<void> setProxyConfig(ProxyConfig config) async {
+    try {
+      await _database.setSetting(
+        GeneralSettingsKeys.proxyMode,
+        config.mode.name,
+      );
+      await _database.setSetting(
+        GeneralSettingsKeys.proxyType,
+        config.type.name,
+      );
+      await _database.setSetting(GeneralSettingsKeys.proxyHost, config.host);
+      await _database.setSetting(
+        GeneralSettingsKeys.proxyPort,
+        config.port.toString(),
+      );
+      await _database.setSetting(
+        GeneralSettingsKeys.proxyUsername,
+        config.username,
+      );
+      await _database.setSetting(
+        GeneralSettingsKeys.proxyPassword,
+        config.password,
+      );
+
+      state = state.copyWith(proxyConfig: config);
+    } catch (e) {
+      state = state.copyWith(error: '保存代理配置失败: $e');
     }
   }
 

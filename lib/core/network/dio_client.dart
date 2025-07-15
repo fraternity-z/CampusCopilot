@@ -3,9 +3,11 @@ import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'dart:io';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
+import 'proxy_config.dart';
 
 /// Dio HTTP客户端配置
 ///
@@ -22,6 +24,7 @@ class DioClient {
   factory DioClient() => _instance;
 
   late final Dio _dio;
+  ProxyConfig _proxyConfig = const ProxyConfig();
 
   DioClient._internal() {
     _dio = Dio();
@@ -44,16 +47,8 @@ class DioClient {
       },
     );
 
-    // 配置HTTP适配器以启用连接池
-    if (_dio.httpClientAdapter is IOHttpClientAdapter) {
-      final adapter = _dio.httpClientAdapter as IOHttpClientAdapter;
-      adapter.createHttpClient = () {
-        final client = adapter.createHttpClient!();
-        client.maxConnectionsPerHost = 5; // 每个主机最大连接数
-        client.idleTimeout = Duration(seconds: 15); // 连接空闲超时
-        return client;
-      };
-    }
+    // 配置HTTP适配器以启用连接池和代理
+    _configureHttpAdapter();
 
     // 添加拦截器
     _dio.interceptors.addAll([
@@ -63,8 +58,81 @@ class DioClient {
     ]);
   }
 
+  /// 配置HTTP适配器
+  void _configureHttpAdapter() {
+    if (_dio.httpClientAdapter is IOHttpClientAdapter) {
+      final adapter = _dio.httpClientAdapter as IOHttpClientAdapter;
+      adapter.createHttpClient = () {
+        final client = HttpClient();
+
+        // 配置连接池
+        client.maxConnectionsPerHost = 5; // 每个主机最大连接数
+        client.idleTimeout = Duration(seconds: 15); // 连接空闲超时
+
+        // 配置代理
+        _configureProxy(client);
+
+        return client;
+      };
+    }
+  }
+
+  /// 配置代理设置
+  void _configureProxy(HttpClient client) {
+    switch (_proxyConfig.mode) {
+      case ProxyMode.none:
+        // 不使用代理，清除代理设置
+        client.findProxy = null;
+        break;
+
+      case ProxyMode.system:
+        // 使用系统代理，让HttpClient自动检测
+        client.findProxy = HttpClient.findProxyFromEnvironment;
+        break;
+
+      case ProxyMode.custom:
+        // 使用自定义代理
+        if (_proxyConfig.isValid) {
+          client.findProxy = (uri) {
+            return '${_proxyConfig.proxyProtocol} ${_proxyConfig.proxyUrl}';
+          };
+
+          // 如果需要认证，设置代理认证
+          if (_proxyConfig.requiresAuth) {
+            client.addProxyCredentials(
+              _proxyConfig.host,
+              _proxyConfig.port,
+              'realm', // 通常代理不需要realm，但API需要
+              HttpClientBasicCredentials(
+                _proxyConfig.username,
+                _proxyConfig.password,
+              ),
+            );
+          }
+        }
+        break;
+    }
+  }
+
   /// 获取Dio实例
   Dio get dio => _dio;
+
+  /// 更新代理配置
+  void updateProxyConfig(ProxyConfig config) {
+    _proxyConfig = config;
+    // 重新配置HTTP适配器以应用新的代理设置
+    _configureHttpAdapter();
+
+    if (kDebugMode) {
+      debugPrint('🌐 代理配置已更新: ${config.mode.displayName}');
+      if (config.isCustom && config.isValid) {
+        debugPrint('🌐 代理地址: ${config.host}:${config.port}');
+      }
+    }
+  }
+
+  /// 获取当前代理配置
+  ProxyConfig get proxyConfig => _proxyConfig;
 
   /// GET请求
   Future<Response<T>> get<T>(

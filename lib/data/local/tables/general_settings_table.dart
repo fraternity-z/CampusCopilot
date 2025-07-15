@@ -28,4 +28,23 @@ class GeneralSettingsKeys {
 
   /// 话题自动命名使用的模型ID
   static const String autoTopicNamingModelId = 'auto_topic_naming_model_id';
+
+  // 代理服务配置
+  /// 代理模式 (none/system/custom)
+  static const String proxyMode = 'proxy_mode';
+
+  /// 代理类型 (http/https/socks5)
+  static const String proxyType = 'proxy_type';
+
+  /// 代理服务器地址
+  static const String proxyHost = 'proxy_host';
+
+  /// 代理服务器端口
+  static const String proxyPort = 'proxy_port';
+
+  /// 代理用户名（可选）
+  static const String proxyUsername = 'proxy_username';
+
+  /// 代理密码（可选）
+  static const String proxyPassword = 'proxy_password';
 }

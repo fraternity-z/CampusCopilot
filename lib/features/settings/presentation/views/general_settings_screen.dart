@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/general_settings_provider.dart';
+import '../../../../core/network/proxy_config.dart';
 
 /// 常规设置页面
 class GeneralSettingsScreen extends ConsumerWidget {
@@ -32,6 +33,9 @@ class GeneralSettingsScreen extends ConsumerWidget {
               settingsState,
               availableModelsAsync,
             ),
+            const SizedBox(height: 16),
+            // 代理服务设置
+            _buildProxySection(context, ref, settingsState),
           ],
         ),
       ),
@@ -267,6 +271,252 @@ class GeneralSettingsScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// 构建代理服务设置区域
+  Widget _buildProxySection(
+    BuildContext context,
+    WidgetRef ref,
+    GeneralSettingsState settingsState,
+  ) {
+    final proxyConfig = settingsState.proxyConfig;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // 标题
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.vpn_lock,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '代理服务',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 代理模式选择
+            _buildProxyModeSelector(context, ref, proxyConfig),
+
+            // 自定义代理配置
+            if (proxyConfig.mode == ProxyMode.custom) ...[
+              const SizedBox(height: 16),
+              _buildCustomProxyConfig(context, ref, proxyConfig),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建代理模式选择器
+  Widget _buildProxyModeSelector(
+    BuildContext context,
+    WidgetRef ref,
+    ProxyConfig proxyConfig,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '代理模式',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        ...ProxyMode.values.map(
+          (mode) => RadioListTile<ProxyMode>(
+            title: Text(mode.displayName),
+            subtitle: Text(
+              mode.description,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            value: mode,
+            groupValue: proxyConfig.mode,
+            onChanged: (value) {
+              if (value != null) {
+                final newConfig = proxyConfig.copyWith(mode: value);
+                ref
+                    .read(generalSettingsProvider.notifier)
+                    .setProxyConfig(newConfig);
+              }
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建自定义代理配置
+  Widget _buildCustomProxyConfig(
+    BuildContext context,
+    WidgetRef ref,
+    ProxyConfig proxyConfig,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 代理类型选择
+        Text(
+          '代理类型',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<ProxyType>(
+          value: proxyConfig.type,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: ProxyType.values
+              .map(
+                (type) => DropdownMenuItem(
+                  value: type,
+                  child: Text(type.displayName),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value != null) {
+              final newConfig = proxyConfig.copyWith(type: value);
+              ref
+                  .read(generalSettingsProvider.notifier)
+                  .setProxyConfig(newConfig);
+            }
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // 服务器地址和端口
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: TextFormField(
+                initialValue: proxyConfig.host,
+                decoration: const InputDecoration(
+                  labelText: '服务器地址',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                onChanged: (value) {
+                  final newConfig = proxyConfig.copyWith(host: value);
+                  ref
+                      .read(generalSettingsProvider.notifier)
+                      .setProxyConfig(newConfig);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 1,
+              child: TextFormField(
+                initialValue: proxyConfig.port.toString(),
+                decoration: const InputDecoration(
+                  labelText: '端口',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  final port = int.tryParse(value) ?? 8080;
+                  final newConfig = proxyConfig.copyWith(port: port);
+                  ref
+                      .read(generalSettingsProvider.notifier)
+                      .setProxyConfig(newConfig);
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // 认证信息（可选）
+        Text(
+          '认证信息（可选）',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: proxyConfig.username,
+          decoration: const InputDecoration(
+            labelText: '用户名',
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          onChanged: (value) {
+            final newConfig = proxyConfig.copyWith(username: value);
+            ref
+                .read(generalSettingsProvider.notifier)
+                .setProxyConfig(newConfig);
+          },
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          initialValue: proxyConfig.password,
+          decoration: const InputDecoration(
+            labelText: '密码',
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          obscureText: true,
+          onChanged: (value) {
+            final newConfig = proxyConfig.copyWith(password: value);
+            ref
+                .read(generalSettingsProvider.notifier)
+                .setProxyConfig(newConfig);
+          },
+        ),
+      ],
     );
   }
 }

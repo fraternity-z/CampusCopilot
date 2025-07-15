@@ -6,6 +6,7 @@ import 'app_router.dart';
 import '../shared/theme/app_theme.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/settings/domain/entities/app_settings.dart' as app_settings;
+import '../core/network/proxy_service.dart';
 
 /// 应用程序根Widget
 ///
@@ -70,6 +71,9 @@ class _AppWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 初始化代理配置监听
+    ref.watch(proxyConfigWatcherProvider);
+
     return Scaffold(
       body: child,
       // 可以在这里添加全局的Snackbar、Loading等
