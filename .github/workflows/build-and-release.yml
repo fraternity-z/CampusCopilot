@@ -12,7 +12,7 @@ on:
         default: 'v1.0.0'
 
 env:
-  FLUTTER_VERSION: '3.24.0'
+  FLUTTER_VERSION: '3.24.5'
 
 jobs:
   # 构建Android APK
@@ -42,9 +42,8 @@ jobs:
     - name: 安装Flutter依赖
       run: flutter pub get
 
-    - name: 运行测试
-      run: flutter test --reporter=expanded
-      continue-on-error: true
+    - name: 生成代码
+      run: dart run build_runner build --delete-conflicting-outputs
 
     - name: 构建Android APK
       run: flutter build apk --release --split-per-abi

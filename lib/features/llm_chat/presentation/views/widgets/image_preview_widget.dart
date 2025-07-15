@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'image_viewer_screen.dart';
@@ -213,6 +214,7 @@ class ImagePreviewWidget extends StatelessWidget {
   void _openImageViewer(BuildContext context, int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'ImageViewer'),
         builder: (context) =>
             ImageViewerScreen(imageUrls: imageUrls, initialIndex: initialIndex),
       ),
@@ -220,7 +222,243 @@ class ImagePreviewWidget extends StatelessWidget {
   }
 }
 
-/// 单张图片预览卡片（带文件信息）
+/// 聊天消息中的图片卡片组件
+class MessageImageCard extends StatelessWidget {
+  final String imageUrl;
+  final String? fileName;
+  final int? fileSize;
+  final List<String> allImageUrls;
+  final int imageIndex;
+
+  const MessageImageCard({
+    super.key,
+    required this.imageUrl,
+    this.fileName,
+    this.fileSize,
+    required this.allImageUrls,
+    required this.imageIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.all(4),
+      child: InkWell(
+        onTap: () => _openImageViewer(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 150,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 图片预览区域
+              Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: _buildImageWidget(),
+                ),
+              ),
+
+              // 文件信息区域
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 文件名
+                    Text(
+                      fileName ?? _getImageFileName(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // 文件大小和类型标签
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (fileSize != null)
+                          Text(
+                            _formatFileSize(fileSize!),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 10,
+                            ),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.pink.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'IMAGE',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.pink,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageWidget() {
+    if (imageUrl.startsWith('data:image/')) {
+      // Base64 图片
+      try {
+        final base64String = imageUrl.split(',')[1];
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: 150,
+          height: 150,
+          errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+        );
+      } catch (e) {
+        return _buildErrorWidget();
+      }
+    } else if (imageUrl.startsWith('file://')) {
+      // 本地文件
+      final filePath = imageUrl.substring(7);
+      return Image.file(
+        File(filePath),
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
+        errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+      );
+    } else if (imageUrl.startsWith('http://') ||
+        imageUrl.startsWith('https://')) {
+      // 网络图片
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
+        errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 150,
+            height: 150,
+            color: Colors.grey[200],
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      // 其他情况，尝试作为本地文件处理
+      return Image.file(
+        File(imageUrl),
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
+        errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+      );
+    }
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      width: 150,
+      height: 150,
+      color: Colors.grey[300],
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.broken_image, color: Colors.grey, size: 32),
+            SizedBox(height: 4),
+            Text('加载失败', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openImageViewer(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'ImageViewer'),
+        builder: (context) => ImageViewerScreen(
+          imageUrls: allImageUrls,
+          initialIndex: imageIndex,
+        ),
+      ),
+    );
+  }
+
+  String _getImageFileName() {
+    if (imageUrl.startsWith('data:image/')) {
+      return '图片.jpg';
+    } else if (imageUrl.contains('/')) {
+      return imageUrl.split('/').last;
+    } else {
+      return '图片';
+    }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    } else if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else {
+      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    }
+  }
+}
+
+/// 单张图片预览卡片（带文件信息）- 保留用于其他地方
 class ImageAttachmentCard extends StatelessWidget {
   final String imageUrl;
   final String? fileName;
@@ -262,11 +500,7 @@ class ImageAttachmentCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: ImagePreviewWidget(
-                    imageUrls: [imageUrl],
-                    thumbnailSize: 48,
-                    showFileInfo: false,
-                  ),
+                  child: _buildThumbnailImage(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -337,9 +571,90 @@ class ImageAttachmentCard extends StatelessWidget {
     );
   }
 
+  Widget _buildThumbnailImage() {
+    if (imageUrl.startsWith('data:image/')) {
+      // Base64 图片
+      try {
+        final base64String = imageUrl.split(',')[1];
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: 48,
+          height: 48,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildThumbnailErrorWidget(),
+        );
+      } catch (e) {
+        return _buildThumbnailErrorWidget();
+      }
+    } else if (imageUrl.startsWith('file://')) {
+      // 本地文件
+      final filePath = imageUrl.substring(7);
+      return Image.file(
+        File(filePath),
+        fit: BoxFit.cover,
+        width: 48,
+        height: 48,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildThumbnailErrorWidget(),
+      );
+    } else if (imageUrl.startsWith('http://') ||
+        imageUrl.startsWith('https://')) {
+      // 网络图片
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: 48,
+        height: 48,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildThumbnailErrorWidget(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 48,
+            height: 48,
+            color: Colors.grey[200],
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      // 其他情况，尝试作为本地文件处理
+      return Image.file(
+        File(imageUrl),
+        fit: BoxFit.cover,
+        width: 48,
+        height: 48,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildThumbnailErrorWidget(),
+      );
+    }
+  }
+
+  Widget _buildThumbnailErrorWidget() {
+    return Container(
+      width: 48,
+      height: 48,
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(Icons.broken_image, color: Colors.grey, size: 20),
+      ),
+    );
+  }
+
   void _openImageViewer(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'ImageViewer'),
         builder: (context) =>
             ImageViewerScreen(imageUrls: [imageUrl], initialIndex: 0),
       ),

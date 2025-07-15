@@ -11,7 +11,7 @@ import '../providers/llm_provider.dart';
 import '../../data/providers/llm_provider_factory.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
-import '../../../../core/constants/app_constants.dart';
+
 import '../../../../data/local/app_database.dart';
 import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
@@ -183,6 +183,7 @@ class ChatService {
         systemPrompt: persona.systemPrompt,
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
+        topP: params.topP,
         // 思考链相关参数暂时使用默认设置
         reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
         maxReasoningTokens: 2000,
@@ -371,6 +372,7 @@ class ChatService {
         systemPrompt: persona.systemPrompt, // 使用智能体的提示词
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
+        topP: params.topP,
         stream: true,
         // 思考链相关参数
         reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
@@ -383,8 +385,9 @@ class ChatService {
       );
       debugPrint('⚙️ 开始调用AI API');
       debugPrint(
-        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
+        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}, TopP=${chatOptions.topP}',
       );
+      debugPrint('📝 上下文消息数量: ${contextMessages.length}');
 
       String accumulatedRawContent = ''; // 完整原始内容
       String accumulatedThinking = ''; // 思考链内容
@@ -577,8 +580,11 @@ class ChatService {
     ChatSessionConfig? config, {
     String? enhancedUserMessage,
   }) async {
-    final contextWindowSize =
-        config?.contextWindowSize ?? AppConstants.defaultContextWindowSize;
+    // 从侧边栏参数获取上下文长度
+    final params = _ref.read(modelParametersProvider);
+    final contextWindowSize = params.contextLength.toInt();
+
+    debugPrint('📊 使用上下文长度: $contextWindowSize');
 
     // 获取最近的消息
     final recentMessages = await _database.getRecentMessages(

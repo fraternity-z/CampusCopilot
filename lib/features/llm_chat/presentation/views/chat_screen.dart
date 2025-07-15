@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'widgets/animated_title_widget.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../../core/services/image_service.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
@@ -1157,7 +1159,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _pickFiles(WidgetRef ref) async {
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result != null) {
-      ref.read(chatProvider.notifier).attachFiles(result.files);
+      // 分离图片文件和文档文件
+      final imageFiles = <PlatformFile>[];
+      final documentFiles = <PlatformFile>[];
+
+      for (final file in result.files) {
+        final extension = file.extension?.toLowerCase();
+        if (_isImageFile(extension)) {
+          imageFiles.add(file);
+        } else {
+          documentFiles.add(file);
+        }
+      }
+
+      // 处理图片文件 - 转换为ImageResult
+      if (imageFiles.isNotEmpty) {
+        try {
+          await _processImageFiles(ref, imageFiles);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('处理图片文件失败: $e')));
+          }
+        }
+      }
+
+      // 处理文档文件
+      if (documentFiles.isNotEmpty) {
+        ref.read(chatProvider.notifier).attachFiles(documentFiles);
+      }
+    }
+  }
+
+  /// 判断是否为图片文件
+  bool _isImageFile(String? extension) {
+    if (extension == null) return false;
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    return imageExtensions.contains(extension.toLowerCase());
+  }
+
+  /// 处理图片文件
+  Future<void> _processImageFiles(
+    WidgetRef ref,
+    List<PlatformFile> imageFiles,
+  ) async {
+    final imageService = ImageService();
+    final chatNotifier = ref.read(chatProvider.notifier);
+
+    for (final file in imageFiles) {
+      if (file.path != null) {
+        try {
+          // 使用ImageService处理图片文件
+          final xFile = XFile(file.path!);
+          final imageResult = await imageService.processImageFromXFile(xFile);
+
+          // 添加到聊天状态
+          chatNotifier.addProcessedImage(imageResult);
+        } catch (e) {
+          debugPrint('处理图片文件失败: ${file.name}, 错误: $e');
+          // 继续处理其他图片
+        }
+      }
     }
   }
 

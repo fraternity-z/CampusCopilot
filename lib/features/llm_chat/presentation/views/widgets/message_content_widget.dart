@@ -109,15 +109,11 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             ),
           ),
 
-        // 图片显示
+        // 图片显示 - 卡片式布局
         if (widget.message.imageUrls.isNotEmpty)
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ImagePreviewWidget(
-              imageUrls: widget.message.imageUrls,
-              thumbnailSize: 200, // 增大预览图尺寸
-              maxImagesPerRow: 2, // 减少每行图片数量，让图片更大
-            ),
+            child: _buildImageCards(),
           ),
         // 主要内容
         if (actualContent.trim().isNotEmpty)
@@ -202,6 +198,44 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     }
 
     return {'thinking': thinkingContent, 'content': actualContent};
+  }
+
+  /// 构建图片卡片网格
+  Widget _buildImageCards() {
+    // 从消息元数据中获取图片文件名和大小信息
+    final imageFileNames =
+        widget.message.metadata?['imageFileNames'] as List<dynamic>?;
+    final imageFileSizes =
+        widget.message.metadata?['imageFileSizes'] as List<dynamic>?;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: widget.message.imageUrls.asMap().entries.map((entry) {
+        final index = entry.key;
+        final imageUrl = entry.value;
+
+        // 获取对应索引的文件名和大小
+        String? fileName;
+        int? fileSize;
+
+        if (imageFileNames != null && index < imageFileNames.length) {
+          fileName = imageFileNames[index] as String?;
+        }
+
+        if (imageFileSizes != null && index < imageFileSizes.length) {
+          fileSize = imageFileSizes[index] as int?;
+        }
+
+        return MessageImageCard(
+          imageUrl: imageUrl,
+          allImageUrls: widget.message.imageUrls,
+          imageIndex: index,
+          fileName: fileName,
+          fileSize: fileSize,
+        );
+      }).toList(),
+    );
   }
 
   /// 渲染带块级数学公式的内容。

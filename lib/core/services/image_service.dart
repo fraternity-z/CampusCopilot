@@ -90,6 +90,11 @@ class ImageService {
     }
   }
 
+  /// 处理单个XFile图片（公共方法）
+  Future<ImageResult> processImageFromXFile(XFile image) async {
+    return await _processImage(image);
+  }
+
   /// 处理图片列表
   Future<List<ImageResult>> _processImages(List<XFile> images) async {
     final List<ImageResult> results = [];

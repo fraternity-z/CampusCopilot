@@ -1297,7 +1297,7 @@ class _$ChatSettingsImpl implements _ChatSettings {
       this.maxTokens = 2048,
       this.enableStreaming = true,
       this.autoSaveChat = true,
-      this.enableRag = true});
+      this.enableRag = false});
 
   factory _$ChatSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ChatSettingsImplFromJson(json);

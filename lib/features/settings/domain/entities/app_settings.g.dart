@@ -115,7 +115,7 @@ _$ChatSettingsImpl _$$ChatSettingsImplFromJson(Map<String, dynamic> json) =>
       maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 2048,
       enableStreaming: json['enableStreaming'] as bool? ?? true,
       autoSaveChat: json['autoSaveChat'] as bool? ?? true,
-      enableRag: json['enableRag'] as bool? ?? true,
+      enableRag: json['enableRag'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$ChatSettingsImplToJson(_$ChatSettingsImpl instance) =>

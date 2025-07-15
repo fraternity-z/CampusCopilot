@@ -344,13 +344,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 /// 主要的Shell布局，包含侧边栏导航
-class MainShell extends ConsumerWidget {
+class MainShell extends ConsumerStatefulWidget {
   final Widget child;
 
   const MainShell({super.key, required this.child});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> {
+  bool _hasModalRoute = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 监听路由变化
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateModalRouteState();
+    });
+  }
+
+  void _updateModalRouteState() {
+    final newState = Navigator.of(context).canPop();
+    if (newState != _hasModalRoute) {
+      setState(() {
+        _hasModalRoute = newState;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isCollapsed = ref.watch(sidebarCollapsedProvider);
 
     // 检查当前路由是否是设置页面，避免遮挡返回键
@@ -358,17 +383,41 @@ class MainShell extends ConsumerWidget {
     final isChatPage = currentRoute.startsWith('/chat');
 
     return Scaffold(
-      // 添加浮动ActionButton来展开侧边栏 - 但在设置页面时不显示
-      floatingActionButton: (isCollapsed && isChatPage)
-          ? FloatingActionButton(
-              mini: true,
-              onPressed: () {
-                ref
-                    .read(uiSettingsProvider.notifier)
-                    .setSidebarCollapsed(false);
-              },
-              tooltip: '展开侧边栏',
-              child: const Icon(Icons.menu),
+      // 添加浮动ActionButton来展开侧边栏 - 但在设置页面或有模态页面时不显示
+      floatingActionButton: (isCollapsed && isChatPage && !_hasModalRoute)
+          ? Container(
+              margin: const EdgeInsets.only(top: 8, left: 8),
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(16),
+                color: Theme.of(context).colorScheme.surface,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    ref
+                        .read(uiSettingsProvider.notifier)
+                        .setSidebarCollapsed(false);
+                  },
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.menu,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
@@ -376,7 +425,7 @@ class MainShell extends ConsumerWidget {
       body: Stack(
         children: [
           // 主内容区域 - 现在占满整个屏幕
-          child,
+          widget.child,
 
           // 侧边栏浮层
           if (!isCollapsed) ...[
@@ -1777,9 +1826,9 @@ class NavigationSidebar extends ConsumerWidget {
           context,
           label: '上下文长度',
           value: params.contextLength,
-          min: 1,
+          min: 0,
           max: 20,
-          divisions: 19,
+          divisions: 20,
           onChanged: (value) {
             final intVal = value.round().toDouble();
             ref

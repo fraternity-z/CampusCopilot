@@ -382,6 +382,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(attachedImages: []);
   }
 
+  /// 添加处理过的图片
+  void addProcessedImage(ImageResult image) {
+    state = state.copyWith(attachedImages: [...state.attachedImages, image]);
+  }
+
   /// 生成AI图片
   Future<void> generateImage({
     required String prompt,
@@ -578,6 +583,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
           ? '发送了${fileAttachments.length}个文件'
           : text;
 
+      // 准备图片元数据
+      Map<String, dynamic>? messageMetadata;
+      if (state.attachedImages.isNotEmpty) {
+        messageMetadata = {
+          'imageFileNames': state.attachedImages
+              .map((img) => img.fileName)
+              .toList(),
+          'imageFileSizes': state.attachedImages
+              .map((img) => img.originalSize)
+              .toList(),
+        };
+      }
+
       final userMessage = ChatMessage(
         id: _uuid.v4(),
         chatSessionId: currentSession.id,
@@ -588,6 +606,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         type: imageUrls.isNotEmpty ? MessageType.image : MessageType.text,
         imageUrls: imageUrls,
         attachments: fileAttachments,
+        metadata: messageMetadata,
       );
 
       // 立即将用户消息添加到UI，并清除附件

@@ -1,6 +1,6 @@
-# 📱 在Android Studio虚拟机上运行AI Assistant
+# 📱 在Android Studio虚拟机上运行AnywhereChat
 
-本指南将教您如何在Android Studio的Android虚拟机（AVD）上运行AI Assistant Flutter应用。
+本指南将教您如何在Android Studio的Android虚拟机（AVD）上运行AnywhereChat Flutter应用。
 
 ## 🛠️ 环境准备
 
