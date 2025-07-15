@@ -13,7 +13,7 @@
 - 不支持自动触发，确保发布的可控性
 
 **构建平台**:
-- ✅ **Windows**: 64位便携版 ZIP 包
+- ❌ **Windows**: 暂时移除（文件锁定问题）
 - ✅ **Android**: Release APK + Debug APK
 - ⚠️ **iOS**: 未签名构建 (开发阶段)
 
@@ -125,12 +125,9 @@ v1.0.0-rc.1     # 候选版本
 ## 📦 构建产物
 
 ### Windows
-- **文件**: `AnywhereChat-Windows-{version}.zip`
-- **内容**: 
-  - 应用程序文件
-  - 启动脚本 (`启动AnywhereChat.bat`)
-  - README 说明文件
-- **要求**: Windows 10+ 64位系统
+- **状态**: ❌ 暂时移除
+- **原因**: GitHub Actions中持续出现文件锁定问题
+- **替代方案**: 本地构建 `flutter build windows --release`
 
 ### Android
 - **Release APK**: `AnywhereChat-Android-Release-{version}.apk`
@@ -152,8 +149,8 @@ Java: 17 (Android 构建)
 ```
 
 ### 构建环境
-- **Android**: Ubuntu Latest + Java 17
-- **Windows**: Windows Latest
+- **Android**: Ubuntu Latest + Java 21
+- **Windows**: ❌ 暂时移除
 - **iOS**: macOS Latest
 
 ### 构建步骤
