@@ -111,7 +111,7 @@ dependencies:
   open_file: ^3.5.10
 
   # 语音识别
-  speech_to_text: ^7.2.0
+  speech_to_text: ^7.1.0
   permission_handler: ^11.3.1
 
   # Markdown渲染和代码高亮
