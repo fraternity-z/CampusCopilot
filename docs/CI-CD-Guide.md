@@ -9,7 +9,7 @@
 ### 🎯 构建并发布全平台应用 (build-and-release.yml)
 - **触发条件**: 仅手动触发或推送版本标签 (v*.* 格式)
 - **功能**: 构建所有平台的release版本并自动发布GitHub Release
-- **支持平台**: Windows、Android、iOS、macOS、Linux
+- **支持平台**: Windows、Android、iOS
 - **用途**: 正式版本发布
 
 ## 🛠️ 初始设置

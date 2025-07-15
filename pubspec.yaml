@@ -146,8 +146,8 @@ dev_dependencies:
 
 # MSIX配置 (Windows发布)
 msix_config:
-  display_name: AI Assistant
-  publisher_display_name: AI Assistant Team
+  display_name: AnywhereChat
+  publisher_display_name: AnywhereChat Team
   identity_name: com.aiassistant.app
   msix_version: 1.0.0.0
   logo_path: assets/images/logo.png
@@ -155,22 +155,18 @@ msix_config:
 
 # 启动图标生成配置
 flutter_launcher_icons:
-  image_path: "assets/icons/app_icon.png"
+  image_path: "assets/images/logo.png"
   android: true
   ios: true
   web:
     generate: true
-    image_path: "assets/icons/app_icon.png"
+    image_path: "assets/images/logo.png"
   windows:
     generate: true
-    image_path: "assets/icons/app_icon.png"
-  macos:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
+    image_path: "assets/images/logo.png"
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
-    - assets/icons/
