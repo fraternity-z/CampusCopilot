@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 /// 图片查看器屏幕
 ///
@@ -318,16 +317,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     try {
       final currentImageUrl = widget.imageUrls[_currentIndex];
 
-      // 请求存储权限
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('需要存储权限才能保存图片')));
-        }
-        return;
-      }
+      // 注意：在某些平台上可能需要存储权限，这里简化处理
 
       // 显示加载提示
       if (mounted) {

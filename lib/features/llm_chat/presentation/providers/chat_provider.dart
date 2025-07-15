@@ -8,7 +8,7 @@ import '../../domain/entities/chat_session.dart';
 import '../../domain/usecases/chat_service.dart';
 import '../../../persona_management/presentation/providers/persona_provider.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../../core/services/speech_service.dart';
+
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
@@ -20,7 +20,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final Ref _ref;
   final _uuid = const Uuid();
   StreamSubscription? _currentStreamSubscription;
-  final SpeechService _speechService = SpeechService();
+
   final ImageService _imageService = ImageService();
   final ImageGenerationService _imageGenerationService =
       ImageGenerationService();
@@ -28,7 +28,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
     // 延迟加载会话列表，避免构造函数中的异步操作
     _initialize();
-    _initializeSpeechService();
 
     // 设置会话标题更新回调
     _chatService.onSessionTitleUpdated = _onSessionTitleUpdated;
@@ -731,70 +730,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(messages: updatedMessages, isLoading: false);
     }
   }
-
-  /// 初始化语音识别服务
-  void _initializeSpeechService() {
-    _speechService.setOnResult((text) {
-      state = state.copyWith(speechText: text);
-    });
-
-    _speechService.setOnError((error) {
-      state = state.copyWith(error: error, isListening: false, speechText: '');
-    });
-
-    _speechService.setOnListeningStatusChanged((isListening) {
-      state = state.copyWith(isListening: isListening);
-    });
-  }
-
-  /// 开始语音识别
-  Future<void> startSpeechRecognition() async {
-    if (state.isListening) return;
-
-    state = state.copyWith(speechText: '', error: null);
-
-    final success = await _speechService.startListening();
-    if (!success) {
-      state = state.copyWith(error: '无法开始语音识别，请检查麦克风权限', isListening: false);
-    }
-  }
-
-  /// 停止语音识别
-  Future<void> stopSpeechRecognition() async {
-    if (!state.isListening) return;
-    await _speechService.stopListening();
-  }
-
-  /// 取消语音识别
-  Future<void> cancelSpeechRecognition() async {
-    if (!state.isListening) return;
-    await _speechService.cancel();
-    state = state.copyWith(isListening: false, speechText: '');
-  }
-
-  /// 确认语音识别结果
-  void confirmSpeechText() {
-    if (state.speechText.isNotEmpty) {
-      // 将语音识别的文本发送为消息
-      sendMessage(state.speechText);
-      // 清空语音文本
-      state = state.copyWith(speechText: '');
-    }
-  }
-
-  /// 清空语音文本
-  void clearSpeechText() {
-    state = state.copyWith(speechText: '');
-  }
-
-  /// 获取语音服务是否可用
-  bool get isSpeechAvailable => _speechService.isAvailable;
-
-  @override
-  void dispose() {
-    _speechService.dispose();
-    super.dispose();
-  }
 }
 
 /// 聊天状态
@@ -806,8 +741,6 @@ class ChatState {
   final List<ChatSession> sessions;
   final List<PlatformFile> attachedFiles;
   final List<ImageResult> attachedImages; // 新增：附加的图片
-  final bool isListening;
-  final String speechText;
   final bool contextCleared; // 标记是否已清除上下文
 
   const ChatState({
@@ -818,8 +751,6 @@ class ChatState {
     this.sessions = const [],
     this.attachedFiles = const [],
     this.attachedImages = const [], // 新增
-    this.isListening = false,
-    this.speechText = '',
     this.contextCleared = false,
   });
 
@@ -831,8 +762,6 @@ class ChatState {
     List<ChatSession>? sessions,
     List<PlatformFile>? attachedFiles,
     List<ImageResult>? attachedImages, // 新增
-    bool? isListening,
-    String? speechText,
     bool? contextCleared,
   }) {
     return ChatState(
@@ -843,15 +772,13 @@ class ChatState {
       sessions: sessions ?? this.sessions,
       attachedFiles: attachedFiles ?? this.attachedFiles,
       attachedImages: attachedImages ?? this.attachedImages, // 新增
-      isListening: isListening ?? this.isListening,
-      speechText: speechText ?? this.speechText,
       contextCleared: contextCleared ?? this.contextCleared,
     );
   }
 
   @override
   String toString() {
-    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, error: $error, sessions: ${sessions.length}, isListening: $isListening, speechText: "$speechText")';
+    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, error: $error, sessions: ${sessions.length})';
   }
 }
 

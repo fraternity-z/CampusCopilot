@@ -710,62 +710,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             decoration: const BoxDecoration(
                               color: Colors.transparent,
                             ),
-                            child: Consumer(
-                              builder: (context, ref, child) {
-                                final speechText = ref.watch(
-                                  chatProvider.select((s) => s.speechText),
-                                );
-                                final isListening = ref.watch(
-                                  chatProvider.select((s) => s.isListening),
-                                );
-
-                                // 当有语音文本时，更新输入框
-                                if (speechText.isNotEmpty &&
-                                    _messageController.text != speechText) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    _messageController.text = speechText;
-                                    _messageController
-                                        .selection = TextSelection.fromPosition(
-                                      TextPosition(offset: speechText.length),
-                                    );
-                                  });
-                                }
-
-                                return TextField(
-                                  controller: _messageController,
-                                  focusNode: _inputFocusNode,
-                                  decoration: InputDecoration(
-                                    hintText: isListening
-                                        ? '正在听您说话...'
-                                        : '输入消息...',
-                                    hintStyle: TextStyle(
-                                      fontSize: 16,
-                                      color: isListening
-                                          ? const Color(0xFFFF6B6B)
-                                          : const Color(0xFF999999),
-                                    ),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    filled: false,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: isListening
-                                        ? const Color(0xFFFF6B6B)
-                                        : const Color(0xFF333333),
-                                    height: 1.5,
-                                  ),
-                                  maxLines: 1,
-                                  keyboardType: TextInputType.text,
-                                  textInputAction: TextInputAction.send,
-                                  onSubmitted: (_) => _sendMessage(ref),
-                                  enabled: !isListening, // 录音时禁用手动输入
-                                );
-                              },
+                            child: TextField(
+                              controller: _messageController,
+                              focusNode: _inputFocusNode,
+                              decoration: const InputDecoration(
+                                hintText: '输入消息...',
+                                hintStyle: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF999999),
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF333333),
+                                height: 1.5,
+                              ),
+                              maxLines: 1,
+                              keyboardType: TextInputType.text,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _sendMessage(ref),
                             ),
                           ),
                         ),
@@ -818,70 +786,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // 语音按钮
-                            Consumer(
-                              builder: (context, ref, child) {
-                                final isListening = ref.watch(
-                                  chatProvider.select((s) => s.isListening),
-                                );
-                                final speechText = ref.watch(
-                                  chatProvider.select((s) => s.speechText),
-                                );
-
-                                return MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  child: GestureDetector(
-                                    onTap: () => _handleVoiceButton(ref),
-                                    child: Tooltip(
-                                      message: isListening
-                                          ? '停止录音'
-                                          : (speechText.isNotEmpty
-                                                ? '确认发送语音'
-                                                : '语音输入'),
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: isListening
-                                              ? const Color(0xFFFF6B6B)
-                                              : (speechText.isNotEmpty
-                                                    ? const Color(0xFF4CAF50)
-                                                    : const Color(0xFFF5F5F5)),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          boxShadow: isListening
-                                              ? [
-                                                  BoxShadow(
-                                                    color: const Color(
-                                                      0xFFFF6B6B,
-                                                    ).withValues(alpha: 0.3),
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ]
-                                              : null,
-                                        ),
-                                        child: Icon(
-                                          isListening
-                                              ? Icons.stop_rounded
-                                              : (speechText.isNotEmpty
-                                                    ? Icons.check_rounded
-                                                    : Icons.mic_outlined),
-                                          color:
-                                              isListening ||
-                                                  speechText.isNotEmpty
-                                              ? Colors.white
-                                              : const Color(0xFF666666),
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
                             // 发送/停止按钮 - 改进样式和状态管理
                             ValueListenableBuilder<TextEditingValue>(
                               valueListenable: _messageController,
@@ -1221,24 +1125,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // 继续处理其他图片
         }
       }
-    }
-  }
-
-  /// 处理语音按钮点击
-  void _handleVoiceButton(WidgetRef ref) {
-    final chatNotifier = ref.read(chatProvider.notifier);
-    final isListening = ref.read(chatProvider.select((s) => s.isListening));
-    final speechText = ref.read(chatProvider.select((s) => s.speechText));
-
-    if (isListening) {
-      // 如果正在录音，则停止录音
-      chatNotifier.stopSpeechRecognition();
-    } else if (speechText.isNotEmpty) {
-      // 如果有语音文本，则确认并发送
-      chatNotifier.confirmSpeechText();
-    } else {
-      // 开始录音
-      chatNotifier.startSpeechRecognition();
     }
   }
 

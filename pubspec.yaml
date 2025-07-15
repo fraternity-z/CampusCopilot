@@ -110,9 +110,7 @@ dependencies:
   google_fonts: ^6.2.1
   open_file: ^3.5.10
 
-  # 语音识别
-  speech_to_text: ^7.1.0
-  permission_handler: ^11.3.1
+
 
   # Markdown渲染和代码高亮
   flutter_markdown: ^0.7.3+2
@@ -151,7 +149,7 @@ msix_config:
   identity_name: com.aiassistant.app
   msix_version: 1.0.0.0
   logo_path: assets/images/logo.png
-  capabilities: 'internetClient,microphone,webcam'
+  capabilities: 'internetClient,webcam'
 
 # 启动图标生成配置
 flutter_launcher_icons:
