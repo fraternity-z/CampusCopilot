@@ -69,7 +69,7 @@ lib/
 ## 🚀 快速开始
 
 ### 环境要求
-- Flutter SDK >= 3.24.5
+- Flutter SDK >= 3.32.5
 - Dart SDK >= 3.8.1
 - Android Studio / VS Code
 - Git

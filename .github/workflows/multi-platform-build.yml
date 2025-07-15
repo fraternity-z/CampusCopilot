@@ -39,7 +39,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Verify Flutter installation
@@ -115,7 +115,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Verify Flutter installation
@@ -160,7 +160,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Verify Flutter installation
@@ -245,7 +245,7 @@ jobs:
           
           ## 🔧 技术信息
 
-          - **Flutter版本**: 3.24.5
+          - **Flutter版本**: 3.32.5
           - **Dart版本**: 3.8.1
           - **构建环境**: GitHub Actions
           - **许可证**: 双重许可证 (Apache 2.0 / 商业许可证)

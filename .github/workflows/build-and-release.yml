@@ -12,7 +12,7 @@ on:
         default: 'v1.0.0'
 
 env:
-  FLUTTER_VERSION: '3.24.5'
+  FLUTTER_VERSION: '3.32.5'
 
 jobs:
   # 构建Android APK

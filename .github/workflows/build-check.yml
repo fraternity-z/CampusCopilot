@@ -22,7 +22,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Check Flutter version
@@ -58,7 +58,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Get dependencies
@@ -80,7 +80,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Get dependencies
@@ -102,7 +102,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.32.5'
           channel: 'stable'
 
       - name: Get dependencies
@@ -146,5 +146,5 @@ jobs:
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Flutter Version**: 3.24.5" >> $GITHUB_STEP_SUMMARY
+          echo "**Flutter Version**: 3.32.5" >> $GITHUB_STEP_SUMMARY
           echo "**Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY

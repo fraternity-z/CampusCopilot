@@ -146,7 +146,7 @@ v1.0.0-rc.1     # 候选版本
 
 ### 环境配置
 ```yaml
-Flutter: 3.24.5 (stable)
+Flutter: 3.32.5 (stable)
 Dart: 3.8.1 (随 Flutter 安装)
 Java: 17 (Android 构建)
 ```
@@ -171,7 +171,7 @@ Java: 17 (Android 构建)
 #### 1. Flutter 版本不匹配
 ```yaml
 # 确保工作流使用正确版本
-flutter-version: '3.24.5'
+flutter-version: '3.32.5'
 channel: 'stable'
 ```
 
@@ -207,7 +207,7 @@ dart run build_runner build --delete-conflicting-outputs
 2. **本地复现**
    ```bash
    # 使用相同的 Flutter 版本
-   flutter version 3.24.5
+   flutter version 3.32.5
    
    # 清理并重新构建
    flutter clean
