@@ -61,6 +61,7 @@ jobs:
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
+        cache: true  # 启用Flutter缓存
 
     - name: 设置JDK 21
       uses: actions/setup-java@v4
@@ -68,41 +69,128 @@ jobs:
         distribution: 'zulu'
         java-version: '21'
 
+    # 缓存Gradle依赖
+    - name: 缓存Gradle依赖
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.android/build-cache
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    # 缓存Flutter依赖
+    - name: 缓存Flutter依赖
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          .dart_tool
+        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
+
     - name: 设置Gradle环境
       run: |
         mkdir -p ~/.gradle
         echo "org.gradle.java.home=$JAVA_HOME" > ~/.gradle/gradle.properties
-        echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" >> ~/.gradle/gradle.properties
+        echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+UseG1GC" >> ~/.gradle/gradle.properties
         echo "org.gradle.java.target=21" >> ~/.gradle/gradle.properties
+        echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
+        echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+        echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
 
         # 验证Java版本
         java -version
         echo "JAVA_HOME=$JAVA_HOME"
 
-    - name: 清理并安装Flutter依赖
+    - name: 安装Flutter依赖
       run: |
-        flutter clean
-        rm -rf .dart_tool
-        flutter pub get --no-precompile
+        # 只在缓存未命中时清理
+        if [ ! -d ".dart_tool" ]; then
+          flutter clean
+        fi
+        flutter pub get
 
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
 
+    # 预热Gradle守护进程
+    - name: 预热Gradle守护进程
+      run: |
+        cd android
+        ./gradlew --version
+        ./gradlew tasks --quiet
+
     - name: 构建Android APK
       run: |
-        echo "开始构建Android APK..."
-        flutter build apk --release --verbose
-        echo "Android APK构建完成"
+        echo "🚀 开始构建Android APK..."
+        echo "📊 构建开始时间: $(date)"
 
-    - name: 重命名APK文件
+        # 使用优化的构建参数
+        flutter build apk --release \
+          --target-platform android-arm64 \
+          --split-per-abi \
+          --obfuscate \
+          --split-debug-info=build/debug-info
+
+        echo "✅ Android APK构建完成"
+        echo "📊 构建结束时间: $(date)"
+
+        # 显示构建产物信息
+        echo "📦 构建产物:"
+        ls -la build/app/outputs/flutter-apk/
+
+    - name: 打包Android构建产物
       run: |
-        mv build/app/outputs/flutter-apk/app-release.apk AnywhereChat-Android-${{ needs.prepare.outputs.version }}.apk
+        mkdir -p android-build
+
+        # 检查是否有分架构APK文件
+        if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk" ]; then
+          echo "📱 找到分架构APK文件，开始打包..."
+
+          # 复制所有架构的APK文件
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk android-build/AnywhereChat-Android-${{ needs.prepare.outputs.version }}-arm64.apk
+
+          # 如果有其他架构的APK也复制
+          if [ -f "build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk" ]; then
+            cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk android-build/AnywhereChat-Android-${{ needs.prepare.outputs.version }}-arm32.apk
+          fi
+
+          # 创建构建信息
+          echo "Android构建信息" > android-build/build-info.txt
+          echo "版本: ${{ needs.prepare.outputs.version }}" >> android-build/build-info.txt
+          echo "构建时间: $(date)" >> android-build/build-info.txt
+          echo "架构: ARM64 (推荐)" >> android-build/build-info.txt
+          echo "最小SDK: Android 5.0 (API 21)" >> android-build/build-info.txt
+          echo "优化: 启用代码混淆和分架构构建" >> android-build/build-info.txt
+
+        elif [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+          echo "📱 找到通用APK文件..."
+          cp build/app/outputs/flutter-apk/app-release.apk android-build/AnywhereChat-Android-${{ needs.prepare.outputs.version }}.apk
+
+          # 创建构建信息
+          echo "Android构建信息" > android-build/build-info.txt
+          echo "版本: ${{ needs.prepare.outputs.version }}" >> android-build/build-info.txt
+          echo "构建时间: $(date)" >> android-build/build-info.txt
+          echo "架构: 通用 (所有架构)" >> android-build/build-info.txt
+          echo "最小SDK: Android 5.0 (API 21)" >> android-build/build-info.txt
+        else
+          echo "❌ 未找到APK文件"
+          exit 1
+        fi
+
+        # 显示最终的构建产物
+        echo "📦 最终构建产物:"
+        ls -la android-build/
 
     - name: 上传Android构建产物
       uses: actions/upload-artifact@v4
       with:
         name: android-build
-        path: AnywhereChat-Android-${{ needs.prepare.outputs.version }}.apk
+        path: android-build/*
 
 
 

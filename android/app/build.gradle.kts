@@ -13,10 +13,30 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+        // 启用增量编译
+        incremental = true
     }
 
     kotlinOptions {
         jvmTarget = "21"  // 修复JVM目标兼容性问题
+    }
+
+    // 构建性能优化
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // 打包优化
+    packagingOptions {
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt"
+            )
+        }
     }
 
     defaultConfig {
