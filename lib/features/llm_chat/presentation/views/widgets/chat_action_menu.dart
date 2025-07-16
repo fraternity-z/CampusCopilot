@@ -17,7 +17,13 @@ class ChatActionMenu extends ConsumerWidget {
         width: 24,
         height: 24,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-        child: const Icon(Icons.more_vert, color: Color(0xFF999999), size: 24),
+        child: Center(
+          child: Icon(
+            Icons.more_horiz, // 改为水平三点，更美观
+            color: const Color(0xFF999999),
+            size: 20, // 统一图标大小
+          ),
+        ),
       ),
       tooltip: '更多操作',
       offset: const Offset(0, -200), // 向上弹出

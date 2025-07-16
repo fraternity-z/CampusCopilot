@@ -752,6 +752,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         // 左侧工具图标
                         MouseRegion(
@@ -767,10 +768,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Icon(
-                                  Icons.add,
-                                  color: Color(0xFF999999),
-                                  size: 24,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.add,
+                                    color: Color(0xFF999999),
+                                    size: 20, // 统一图标大小
+                                  ),
                                 ),
                               ),
                             ),
@@ -1334,12 +1337,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Icon(
-                    Icons.auto_awesome,
-                    size: 16,
-                    color: _ragEnabled
-                        ? Theme.of(context).colorScheme.primary
-                        : const Color(0xFF999999),
+                  child: Center(
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 20, // 统一图标大小
+                      color: _ragEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : const Color(0xFF999999),
+                    ),
                   ),
                 ),
               ),
