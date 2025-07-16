@@ -17,6 +17,7 @@ import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
 import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
+import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../../data/local/tables/general_settings_table.dart';
 
@@ -127,9 +128,15 @@ class ChatService {
       final settingsState = _ref.read(settingsProvider);
       final ragEnabled = settingsState.chatSettings.enableRag;
 
+      // 获取当前选中的知识库
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+
       debugPrint('🔧 RAG状态检查:');
       debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
       debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      debugPrint('  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
       if (knowledgeConfig != null) {
         debugPrint('  - 配置名称: ${knowledgeConfig.name}');
         debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
@@ -139,12 +146,16 @@ class ChatService {
 
       if (ragEnabled &&
           knowledgeConfig != null &&
+          currentKnowledgeBase != null &&
           ragService.shouldUseRag(content)) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
           final ragResult = await ragService.enhancePrompt(
             userQuery: content,
             config: knowledgeConfig,
+            knowledgeBaseId: currentKnowledgeBase.id,
+            similarityThreshold: knowledgeConfig.similarityThreshold,
+            maxContexts: knowledgeConfig.maxRetrievedChunks,
             systemPrompt: persona.systemPrompt,
           );
 
@@ -164,6 +175,8 @@ class ChatService {
           debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
         } else if (knowledgeConfig == null) {
           debugPrint('⚠️ 没有知识库配置，使用原始查询');
+        } else if (currentKnowledgeBase == null) {
+          debugPrint('⚠️ 没有选中知识库，使用原始查询');
         } else if (!ragService.shouldUseRag(content)) {
           debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }
@@ -303,9 +316,15 @@ class ChatService {
       final settingsState = _ref.read(settingsProvider);
       final ragEnabled = settingsState.chatSettings.enableRag;
 
+      // 获取当前选中的知识库
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+
       debugPrint('🔧 流式聊天RAG状态检查:');
       debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
       debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      debugPrint('  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
       if (knowledgeConfig != null) {
         debugPrint('  - 配置名称: ${knowledgeConfig.name}');
         debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
@@ -315,12 +334,16 @@ class ChatService {
 
       if (ragEnabled &&
           knowledgeConfig != null &&
+          currentKnowledgeBase != null &&
           ragService.shouldUseRag(content)) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
           final ragResult = await ragService.enhancePrompt(
             userQuery: content,
             config: knowledgeConfig,
+            knowledgeBaseId: currentKnowledgeBase.id,
+            similarityThreshold: knowledgeConfig.similarityThreshold,
+            maxContexts: knowledgeConfig.maxRetrievedChunks,
             systemPrompt: persona.systemPrompt,
           );
 
@@ -340,6 +363,8 @@ class ChatService {
           debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
         } else if (knowledgeConfig == null) {
           debugPrint('⚠️ 没有知识库配置，使用原始查询');
+        } else if (currentKnowledgeBase == null) {
+          debugPrint('⚠️ 没有选中知识库，使用原始查询');
         } else if (!ragService.shouldUseRag(content)) {
           debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }

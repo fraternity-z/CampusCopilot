@@ -144,13 +144,17 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       // 重新加载文档列表
       await _loadDocuments();
 
-      // 启动文档处理
+      // 启动文档处理（使用配置中的分块参数）
       final processingNotifier = _ref.read(documentProcessingProvider.notifier);
+      final config = _ref.read(knowledgeBaseConfigProvider).currentConfig;
+
       await processingNotifier.processDocument(
         documentId: documentId,
         filePath: filePath,
         fileType: fileType,
         knowledgeBaseId: targetKnowledgeBaseId,
+        chunkSize: config?.chunkSize ?? 1000,
+        chunkOverlap: config?.chunkOverlap ?? 200,
       );
 
       // 处理完成后重新加载文档列表

@@ -34,6 +34,7 @@ final ragEnhancedPromptProvider =
       return ragService.enhancePrompt(
         userQuery: request.query,
         config: request.config,
+        knowledgeBaseId: request.knowledgeBaseId,
         similarityThreshold: request.similarityThreshold,
         maxContexts: request.maxContexts,
         systemPrompt: request.systemPrompt,
@@ -44,6 +45,7 @@ final ragEnhancedPromptProvider =
 class RagPromptRequest {
   final String query;
   final KnowledgeBaseConfig config;
+  final String? knowledgeBaseId;
   final double similarityThreshold;
   final int maxContexts;
   final String? systemPrompt;
@@ -51,6 +53,7 @@ class RagPromptRequest {
   const RagPromptRequest({
     required this.query,
     required this.config,
+    this.knowledgeBaseId,
     this.similarityThreshold = 0.7,
     this.maxContexts = 3,
     this.systemPrompt,
@@ -62,6 +65,7 @@ class RagPromptRequest {
     return other is RagPromptRequest &&
         other.query == query &&
         other.config == config &&
+        other.knowledgeBaseId == knowledgeBaseId &&
         other.similarityThreshold == similarityThreshold &&
         other.maxContexts == maxContexts &&
         other.systemPrompt == systemPrompt;
@@ -72,6 +76,7 @@ class RagPromptRequest {
     return Object.hash(
       query,
       config,
+      knowledgeBaseId,
       similarityThreshold,
       maxContexts,
       systemPrompt,

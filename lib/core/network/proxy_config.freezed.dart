@@ -187,7 +187,7 @@ class _$ProxyConfigImpl implements _ProxyConfig {
       {this.mode = ProxyMode.none,
       this.type = ProxyType.http,
       this.host = '',
-      this.port = 8080,
+      this.port = ProxyConstants.defaultHttpPort,
       this.username = '',
       this.password = ''});
 

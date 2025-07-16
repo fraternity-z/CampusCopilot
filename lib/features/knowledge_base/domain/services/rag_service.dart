@@ -64,6 +64,7 @@ class RagService {
   Future<RagRetrievalResult> retrieveContext({
     required String query,
     required KnowledgeBaseConfig config,
+    String? knowledgeBaseId,
     double similarityThreshold = 0.7,
     int maxResults = 5,
   }) async {
@@ -72,12 +73,22 @@ class RagService {
 
       debugPrint('🔍 开始RAG检索: "$query"');
       debugPrint('📊 配置: ${config.name} - ${config.embeddingModelProvider}');
+      if (knowledgeBaseId != null) {
+        debugPrint('📚 限定知识库: $knowledgeBaseId');
+      }
+
+      // 在搜索前清理不兼容的向量数据
+      await _vectorSearchService.cleanupIncompatibleVectors(
+        config: config,
+        knowledgeBaseId: knowledgeBaseId,
+      );
 
       // 使用向量搜索检索相关内容（添加超时处理）
       final searchResult = await _vectorSearchService
           .hybridSearch(
             query: query,
             config: config,
+            knowledgeBaseId: knowledgeBaseId,
             similarityThreshold: similarityThreshold,
             maxResults: maxResults,
           )
@@ -152,6 +163,7 @@ class RagService {
   Future<RagEnhancedPrompt> enhancePrompt({
     required String userQuery,
     required KnowledgeBaseConfig config,
+    String? knowledgeBaseId,
     double similarityThreshold = 0.7,
     int maxContexts = 3,
     String? systemPrompt,
@@ -165,6 +177,7 @@ class RagService {
       final retrievalResult = await retrieveContext(
         query: userQuery,
         config: config,
+        knowledgeBaseId: knowledgeBaseId,
         similarityThreshold: similarityThreshold,
         maxResults: maxContexts,
       );

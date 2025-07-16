@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
@@ -25,6 +26,8 @@ class DioClient {
 
   late final Dio _dio;
   ProxyConfig _proxyConfig = const ProxyConfig();
+  bool _proxyConfigChanged = false;
+  HttpClient? _cachedHttpClient;
 
   DioClient._internal() {
     _dio = Dio();
@@ -62,7 +65,13 @@ class DioClient {
   void _configureHttpAdapter() {
     if (_dio.httpClientAdapter is IOHttpClientAdapter) {
       final adapter = _dio.httpClientAdapter as IOHttpClientAdapter;
+
       adapter.createHttpClient = () {
+        // 如果代理配置没有变化且有缓存的客户端，复用之前的客户端
+        if (_cachedHttpClient != null && !_proxyConfigChanged) {
+          return _cachedHttpClient!;
+        }
+
         final client = HttpClient();
 
         // 配置连接池
@@ -71,6 +80,10 @@ class DioClient {
 
         // 配置代理
         _configureProxy(client);
+
+        // 缓存客户端并重置变化标志
+        _cachedHttpClient = client;
+        _proxyConfigChanged = false;
 
         return client;
       };
@@ -119,14 +132,23 @@ class DioClient {
 
   /// 更新代理配置
   void updateProxyConfig(ProxyConfig config) {
-    _proxyConfig = config;
-    // 重新配置HTTP适配器以应用新的代理设置
-    _configureHttpAdapter();
+    // 只有配置真正改变时才更新
+    if (_proxyConfig != config) {
+      _proxyConfig = config;
+      _proxyConfigChanged = true;
 
-    if (kDebugMode) {
-      debugPrint('🌐 代理配置已更新: ${config.mode.displayName}');
-      if (config.isCustom && config.isValid) {
-        debugPrint('🌐 代理地址: ${config.host}:${config.port}');
+      // 清除缓存的客户端，强制重新创建
+      _cachedHttpClient?.close(force: true);
+      _cachedHttpClient = null;
+
+      // 重新配置HTTP适配器以应用新的代理设置
+      _configureHttpAdapter();
+
+      if (kDebugMode) {
+        debugPrint('🌐 代理配置已更新: ${config.mode.displayName}');
+        if (config.isCustom && config.isValid) {
+          debugPrint('🌐 代理地址: ${config.host}:${config.port}');
+        }
       }
     }
   }
@@ -234,9 +256,22 @@ class DioClient {
       );
 
       final stream = response.data!.stream;
-      // 直接处理数据流
+      final buffer = StringBuffer();
+
+      // 使用缓冲区减少字符串创建次数
       await for (final chunk in stream) {
-        yield String.fromCharCodes(chunk);
+        buffer.write(String.fromCharCodes(chunk));
+
+        // 当缓冲区达到一定大小时才输出，减少 yield 次数
+        if (buffer.length >= 1024) {
+          yield buffer.toString();
+          buffer.clear();
+        }
+      }
+
+      // 输出剩余内容
+      if (buffer.isNotEmpty) {
+        yield buffer.toString();
       }
     } catch (e) {
       throw _handleError(e);
@@ -246,13 +281,23 @@ class DioClient {
   /// 错误处理
   AppException _handleError(dynamic error) {
     if (error is DioException) {
+      // 添加请求路径信息，方便调试
+      final path = error.requestOptions.uri.path;
+
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:
         case DioExceptionType.receiveTimeout:
-          return NetworkException.connectionTimeout();
+          return NetworkException('请求超时: $path', code: 'NETWORK_TIMEOUT');
 
         case DioExceptionType.connectionError:
+          // 检查是否是代理连接错误
+          if (error.error is SocketException) {
+            final socketError = error.error as SocketException;
+            if (socketError.message.contains('proxy')) {
+              return NetworkException('代理连接失败: $path', originalError: error);
+            }
+          }
           return NetworkException.noInternet();
 
         case DioExceptionType.badResponse:
@@ -268,13 +313,20 @@ class DioClient {
 
         default:
           return NetworkException(
-            error.message ?? '网络请求失败',
+            error.message ?? '网络请求失败: $path',
             originalError: error,
           );
       }
     }
 
     return NetworkException('未知网络错误', originalError: error);
+  }
+
+  /// 清理资源（在应用退出时调用）
+  void dispose() {
+    _cachedHttpClient?.close(force: true);
+    _cachedHttpClient = null;
+    _dio.close(force: true);
   }
 }
 
@@ -324,6 +376,9 @@ class _ErrorInterceptor extends Interceptor {
 
 /// 重试拦截器（优化版本）
 class _RetryInterceptor extends Interceptor {
+  // 添加静态配置，避免重复计算
+  static const _retryableStatusCodes = {500, 502, 503, 504};
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (_shouldRetry(err)) {
@@ -332,9 +387,9 @@ class _RetryInterceptor extends Interceptor {
       if (retryCount < AppConstants.maxRetryAttempts) {
         err.requestOptions.extra['retryCount'] = retryCount + 1;
 
-        // 指数退避：1s, 2s, 4s...
-        final delay = Duration(seconds: (1 << retryCount));
-        await Future.delayed(delay);
+        // 使用更合理的退避策略：min(2^n * 1000, 16000) ms
+        final delayMs = math.min(1000 * (1 << retryCount), 16000);
+        await Future.delayed(Duration(milliseconds: delayMs));
 
         try {
           // 重用原始Dio实例而不是创建新的
@@ -354,11 +409,13 @@ class _RetryInterceptor extends Interceptor {
 
   /// 判断是否应该重试
   bool _shouldRetry(DioException err) {
+    // 优化判断逻辑，使用集合查找
     return err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.sendTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.connectionError ||
-        (err.response?.statusCode != null && err.response!.statusCode! >= 500);
+        (err.response?.statusCode != null &&
+            _retryableStatusCodes.contains(err.response!.statusCode));
   }
 }
 

@@ -239,10 +239,29 @@ class OpenAiLlmProvider extends LlmProvider {
             },
           );
 
+      // 检查响应数据是否有效
+      if (embedding.data.isEmpty) {
+        throw Exception('OpenAI API返回了空的嵌入数据');
+      }
+
       debugPrint('✅ OpenAI嵌入请求成功: 生成${embedding.data.length}个向量');
 
+      // 安全地处理嵌入数据
+      final embeddings = <List<double>>[];
+      for (final item in embedding.data) {
+        if (item.embeddings.isNotEmpty) {
+          embeddings.add(item.embeddings);
+        } else {
+          debugPrint('⚠️ 发现空的嵌入向量，跳过');
+        }
+      }
+
+      if (embeddings.isEmpty) {
+        throw Exception('所有嵌入向量都为空');
+      }
+
       return EmbeddingResult(
-        embeddings: embedding.data.map((e) => e.embeddings).toList(),
+        embeddings: embeddings,
         model: model,
         tokenUsage: TokenUsage(
           inputTokens: embedding.usage?.promptTokens ?? 0,
@@ -252,6 +271,13 @@ class OpenAiLlmProvider extends LlmProvider {
       );
     } catch (e) {
       debugPrint('❌ OpenAI嵌入请求失败: $e');
+      debugPrint('🔍 OpenAI错误详情: $e');
+
+      // 提供更详细的错误信息
+      if (e.toString().contains('NoSuchMethodError')) {
+        debugPrint('💡 这可能是API响应格式问题，请检查OpenAI API版本兼容性');
+      }
+
       throw _handleOpenAIError(e);
     }
   }
@@ -374,6 +400,11 @@ class OpenAiLlmProvider extends LlmProvider {
   AppException _handleOpenAIError(dynamic error) {
     final errorMessage = error.toString();
     debugPrint('🔍 OpenAI错误详情: $errorMessage');
+
+    // NoSuchMethodError - 通常是API响应格式问题
+    if (errorMessage.contains('NoSuchMethodError')) {
+      return ApiException('API响应格式异常，可能是OpenAI API版本不兼容或响应数据为空');
+    }
 
     // 网络连接错误
     if (errorMessage.contains('SocketException')) {

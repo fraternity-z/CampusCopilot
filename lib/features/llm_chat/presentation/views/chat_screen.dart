@@ -1357,149 +1357,249 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   /// 显示RAG控制菜单
   void _showRagControlMenu(BuildContext context, WidgetRef ref) {
-    final multiKbState = ref.read(multiKnowledgeBaseProvider);
-
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题
-            Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'RAG知识库控制',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          // 使用watch来监听知识库状态变化
+          final multiKbState = ref.watch(multiKnowledgeBaseProvider);
 
-            // RAG总开关
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _ragEnabled ? Icons.toggle_on : Icons.toggle_off,
-                    color: _ragEnabled
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey,
-                    size: 32,
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 标题
+                Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'RAG知识库控制',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // RAG总开关
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'RAG增强功能',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w500),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _ragEnabled ? Icons.toggle_on : Icons.toggle_off,
+                        color: _ragEnabled
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'RAG增强功能',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              _ragEnabled ? '已启用知识库检索' : '已禁用知识库检索',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          _ragEnabled ? '已启用知识库检索' : '已禁用知识库检索',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
+                      ),
+                      Switch(
+                        value: _ragEnabled,
+                        onChanged: (value) async {
+                          setState(() {
+                            _ragEnabled = value;
+                          });
+                          await ref
+                              .read(settingsProvider.notifier)
+                              .updateRagEnabled(value);
+
+                          // 当RAG开关状态变化时，重新加载知识库列表
+                          if (value) {
+                            ref
+                                .read(multiKnowledgeBaseProvider.notifier)
+                                .reload();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 显示加载状态
+                if (_ragEnabled && multiKbState.isLoading) ...[
+                  const SizedBox(height: 20),
+                  const Center(child: CircularProgressIndicator()),
+                ],
+
+                // 显示错误信息
+                if (_ragEnabled && multiKbState.error != null) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '加载知识库失败: ${multiKbState.error}',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onErrorContainer,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Switch(
-                    value: _ragEnabled,
-                    onChanged: (value) async {
-                      setState(() {
-                        _ragEnabled = value;
-                      });
-                      await ref
-                          .read(settingsProvider.notifier)
-                          .updateRagEnabled(value);
-                    },
-                  ),
                 ],
-              ),
-            ),
 
-            if (_ragEnabled && multiKbState.knowledgeBases.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text(
-                '选择知识库',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 12),
-
-              // 知识库列表
-              ...multiKbState.knowledgeBases.map((kb) {
-                final isSelected =
-                    multiKbState.currentKnowledgeBase?.id == kb.id;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(
-                              context,
-                            ).colorScheme.outline.withValues(alpha: 0.3),
-                      width: isSelected ? 2 : 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    leading: Icon(kb.getIcon(), color: kb.getColor(), size: 24),
-                    title: Text(
-                      kb.name,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                // 知识库列表
+                if (_ragEnabled &&
+                    !multiKbState.isLoading &&
+                    multiKbState.error == null) ...[
+                  if (multiKbState.knowledgeBases.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      '选择知识库',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    subtitle: Text(kb.getStatusDescription()),
-                    trailing: isSelected
-                        ? Icon(
-                            Icons.check_circle,
-                            color: Theme.of(context).colorScheme.primary,
-                          )
-                        : null,
-                    onTap: () {
-                      ref
-                          .read(multiKnowledgeBaseProvider.notifier)
-                          .selectKnowledgeBase(kb.id);
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                );
-              }),
-            ],
+                    const SizedBox(height: 12),
 
-            const SizedBox(height: 20),
-          ],
-        ),
+                    // 知识库列表
+                    ...multiKbState.knowledgeBases.map((kb) {
+                      final isSelected =
+                          multiKbState.currentKnowledgeBase?.id == kb.id;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.outline.withValues(alpha: 0.3),
+                            width: isSelected ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            kb.getIcon(),
+                            color: kb.getColor(),
+                            size: 24,
+                          ),
+                          title: Text(
+                            kb.name,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          subtitle: Text(kb.getStatusDescription()),
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check_circle,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            ref
+                                .read(multiKnowledgeBaseProvider.notifier)
+                                .selectKnowledgeBase(kb.id);
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.library_books_outlined,
+                            size: 48,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '暂无知识库',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '请先创建知识库并上传文档',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -13,7 +13,7 @@ _$ProxyConfigImpl _$$ProxyConfigImplFromJson(Map<String, dynamic> json) =>
       type: $enumDecodeNullable(_$ProxyTypeEnumMap, json['type']) ??
           ProxyType.http,
       host: json['host'] as String? ?? '',
-      port: (json['port'] as num?)?.toInt() ?? 8080,
+      port: (json['port'] as num?)?.toInt() ?? ProxyConstants.defaultHttpPort,
       username: json['username'] as String? ?? '',
       password: json['password'] as String? ?? '',
     );

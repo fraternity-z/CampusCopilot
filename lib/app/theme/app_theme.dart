@@ -17,136 +17,115 @@ class AppTheme {
   static const Color _secondaryColor = Color(0xFF50E3C2);
   static const Color _errorColor = Color(0xFFD0021B);
 
-  /// 浅色主题
-  static ThemeData get lightTheme {
-    final baseTheme = ThemeData.light(useMaterial3: true);
+  /// 构建主题数据
+  static ThemeData _buildTheme(Brightness brightness) {
+    final isLight = brightness == Brightness.light;
+    final baseTheme = isLight
+        ? ThemeData.light(useMaterial3: true)
+        : ThemeData.dark(useMaterial3: true);
+
     final textTheme = GoogleFonts.notoSansScTextTheme(baseTheme.textTheme);
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _primaryColor,
       secondary: _secondaryColor,
       error: _errorColor,
-      brightness: Brightness.light,
+      brightness: brightness,
     );
 
     return baseTheme.copyWith(
       colorScheme: colorScheme,
       textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: true,
+      appBarTheme: _buildAppBarTheme(colorScheme),
+      cardTheme: _buildCardTheme(colorScheme),
+      inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
+      elevatedButtonTheme: _buildElevatedButtonTheme(colorScheme),
+      iconButtonTheme: _buildIconButtonTheme(colorScheme),
+      listTileTheme: _buildListTileTheme(),
+      dividerTheme: _buildDividerTheme(colorScheme),
+    );
+  }
+
+  /// 构建 AppBar 主题
+  static AppBarTheme _buildAppBarTheme(ColorScheme colorScheme) {
+    return AppBarTheme(
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+      scrolledUnderElevation: 1,
+      centerTitle: true,
+    );
+  }
+
+  /// 构建卡片主题
+  static CardThemeData _buildCardTheme(ColorScheme colorScheme) {
+    return CardThemeData(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: colorScheme.surfaceContainer,
+    );
+  }
+
+  /// 构建输入框主题
+  static InputDecorationTheme _buildInputDecorationTheme(
+    ColorScheme colorScheme,
+  ) {
+    return InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: colorScheme.surfaceContainer,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          elevation: 2,
-        ),
-      ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: colorScheme.onSurfaceVariant,
-        ),
-      ),
-      listTileTheme: ListTileThemeData(
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
+  /// 构建按钮主题
+  static ElevatedButtonThemeData _buildElevatedButtonTheme(
+    ColorScheme colorScheme,
+  ) {
+    return ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      dividerTheme: DividerThemeData(
-        color: colorScheme.outlineVariant.withAlpha(128),
-        thickness: 1,
-        space: 1,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        elevation: 2,
       ),
     );
   }
+
+  /// 构建图标按钮主题
+  static IconButtonThemeData _buildIconButtonTheme(ColorScheme colorScheme) {
+    return IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  /// 构建列表项主题
+  static ListTileThemeData _buildListTileTheme() {
+    return ListTileThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+  }
+
+  /// 构建分割线主题
+  static DividerThemeData _buildDividerTheme(ColorScheme colorScheme) {
+    return DividerThemeData(
+      color: colorScheme.outlineVariant.withAlpha(128),
+      thickness: 1,
+      space: 1,
+    );
+  }
+
+  /// 浅色主题
+  static ThemeData get lightTheme => _buildTheme(Brightness.light);
 
   /// 深色主题
-  static ThemeData get darkTheme {
-    final baseTheme = ThemeData.dark(useMaterial3: true);
-    final textTheme = GoogleFonts.notoSansScTextTheme(baseTheme.textTheme);
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _primaryColor,
-      secondary: _secondaryColor,
-      error: _errorColor,
-      brightness: Brightness.dark,
-    );
-    return baseTheme.copyWith(
-      colorScheme: colorScheme,
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: true,
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: colorScheme.surfaceContainer,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          elevation: 2,
-        ),
-      ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: colorScheme.onSurfaceVariant,
-        ),
-      ),
-      listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      dividerTheme: DividerThemeData(
-        color: colorScheme.outlineVariant.withAlpha(128),
-        thickness: 1,
-        space: 1,
-      ),
-    );
-  }
+  static ThemeData get darkTheme => _buildTheme(Brightness.dark);
 }
 
 /// 自定义颜色扩展

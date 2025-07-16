@@ -9,7 +9,7 @@ class AppConstants {
   AppConstants._();
 
   /// 应用信息
-  static const String appName = 'AI Assistant';
+  static const String appName = 'AnywhereChat';
   static const String appVersion = '1.0.0';
   static const String appDescription = '模块化跨平台AI助手';
 

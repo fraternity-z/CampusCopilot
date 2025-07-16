@@ -1038,6 +1038,12 @@ class AppDatabase extends _$AppDatabase {
         .write(KnowledgeChunksTableCompanion(embedding: Value(embedding)));
   }
 
+  /// 清理文本块的嵌入向量（设为null）
+  Future<void> clearChunkEmbedding(String chunkId) {
+    return (update(knowledgeChunksTable)..where((t) => t.id.equals(chunkId)))
+        .write(const KnowledgeChunksTableCompanion(embedding: Value(null)));
+  }
+
   /// 获取所有有嵌入向量的文本块
   Future<List<KnowledgeChunksTableData>> getChunksWithEmbeddings() {
     return (select(

@@ -3,6 +3,17 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'proxy_config.freezed.dart';
 part 'proxy_config.g.dart';
 
+/// 代理常量定义
+class ProxyConstants {
+  ProxyConstants._();
+
+  static const int defaultHttpPort = 8080;
+  static const int defaultHttpsPort = 443;
+  static const int defaultSocks5Port = 1080;
+  static const int minPort = 1;
+  static const int maxPort = 65535;
+}
+
 /// 代理模式枚举
 enum ProxyMode {
   /// 不使用代理（直连）
@@ -41,7 +52,7 @@ class ProxyConfig with _$ProxyConfig {
     @Default('') String host,
 
     /// 代理服务器端口
-    @Default(8080) int port,
+    @Default(ProxyConstants.defaultHttpPort) int port,
 
     /// 用户名（可选，用于需要认证的代理）
     @Default('') String username,
@@ -86,6 +97,10 @@ extension ProxyConfigExtension on ProxyConfig {
     }
   }
 
+  /// 端口是否有效
+  bool get isPortValid =>
+      port >= ProxyConstants.minPort && port <= ProxyConstants.maxPort;
+
   /// 验证配置是否有效
   bool get isValid {
     switch (mode) {
@@ -93,7 +108,19 @@ extension ProxyConfigExtension on ProxyConfig {
       case ProxyMode.system:
         return true;
       case ProxyMode.custom:
-        return host.isNotEmpty && port > 0 && port <= 65535;
+        return host.isNotEmpty && isPortValid;
+    }
+  }
+
+  /// 获取默认端口
+  int get defaultPort {
+    switch (type) {
+      case ProxyType.http:
+        return ProxyConstants.defaultHttpPort;
+      case ProxyType.https:
+        return ProxyConstants.defaultHttpsPort;
+      case ProxyType.socks5:
+        return ProxyConstants.defaultSocks5Port;
     }
   }
 }
