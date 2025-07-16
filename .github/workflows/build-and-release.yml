@@ -134,32 +134,69 @@ jobs:
       run: flutter build ios --release --no-codesign
       continue-on-error: true
 
-    - name: 打包iOS构建产物
+    - name: 创建IPA文件
       run: |
         mkdir -p ios-build
+        mkdir -p Payload
 
         # 检查构建产物是否存在
         if [ -d "build/ios/iphoneos/Runner.app" ]; then
-          echo "✅ 找到iOS构建产物，开始打包..."
+          echo "✅ 找到iOS构建产物，开始创建IPA..."
 
-          # 复制.app文件到打包目录
+          # 复制.app到Payload目录（IPA标准结构）
+          cp -r build/ios/iphoneos/Runner.app Payload/
+
+          # 创建IPA文件（IPA本质上是一个特殊的ZIP文件）
+          zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.ipa Payload
+
+          # 移动IPA到构建目录
+          mv AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.ipa ios-build/
+
+          # 同时保留.app文件供开发者使用
           cp -r build/ios/iphoneos/Runner.app ios-build/
+
+          # 创建安装说明
+          cat > ios-build/README.md << 'INSTALL_README'
+          # AnywhereChat iOS 安装说明
+
+          ## 📱 文件说明
+          - AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.ipa - 未签名的IPA文件
+          - Runner.app - 应用包文件（供开发者使用）
+
+          ## 🔧 安装方法
+
+          ### 方法一：使用第三方工具（推荐）
+          1. 下载 AltStore 或 Sideloadly
+          2. 使用工具安装 .ipa 文件到设备
+
+          ### 方法二：使用Xcode（需要开发者账号）
+          1. 打开Xcode
+          2. 将 Runner.app 拖拽到Xcode中
+          3. 配置签名证书
+          4. 安装到设备
+
+          ## ⚠️ 注意事项
+          - 此构建未签名，无法直接安装
+          - 需要有效的Apple开发者证书进行签名
+          - 安装后可能需要在设置中信任开发者
+          INSTALL_README
 
           # 创建构建信息
           echo "iOS构建信息" > ios-build/build-info.txt
           echo "版本: ${{ needs.prepare.outputs.version }}" >> ios-build/build-info.txt
           echo "构建时间: $(date)" >> ios-build/build-info.txt
-          echo "注意: 此构建未签名，需要在Xcode中配置签名后才能安装到设备上。" >> ios-build/build-info.txt
-          echo "安装说明: 将Runner.app拖拽到Xcode中进行签名，然后安装到设备。" >> ios-build/build-info.txt
+          echo "文件类型: IPA (iOS App Package)" >> ios-build/build-info.txt
+          echo "签名状态: 未签名" >> ios-build/build-info.txt
 
           # 显示打包内容
           echo "📦 打包内容:"
           ls -la ios-build/
 
-          # 打包
-          zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.zip ios-build
+          # 显示IPA文件信息
+          echo "📱 IPA文件信息:"
+          file ios-build/*.ipa
 
-          echo "✅ iOS构建产物打包完成"
+          echo "✅ iOS IPA文件创建完成"
         else
           echo "❌ 未找到iOS构建产物，创建错误信息..."
 
@@ -172,9 +209,6 @@ jobs:
           # 显示构建目录内容用于调试
           echo "🔍 构建目录内容:"
           find build -name "*.app" -type d 2>/dev/null || echo "未找到.app文件"
-
-          # 打包错误信息
-          zip -r AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-build-failed.zip ios-build
         fi
 
     - name: 上传iOS构建产物
@@ -215,8 +249,8 @@ jobs:
           ## 📦 构建产物
 
           ### 移动端
-          - ✅ **Android APK**: 适用于Android 5.0+设备
-          - ⚠️ **iOS**: 未签名构建，需要在Xcode中配置签名
+          - ✅ **Android APK**: 适用于Android 5.0+设备，可直接安装
+          - ✅ **iOS IPA**: 未签名IPA文件，需要使用第三方工具或Xcode签名后安装
 
           ### 桌面端
           - ❌ **Windows**: 暂时移除（文件锁定问题）
