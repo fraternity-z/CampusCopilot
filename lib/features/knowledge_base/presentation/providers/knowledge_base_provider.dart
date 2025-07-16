@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -6,6 +7,8 @@ import 'package:crypto/crypto.dart';
 
 import '../../domain/entities/knowledge_document.dart';
 import '../../domain/services/vector_search_service.dart';
+import '../../domain/services/enhanced_vector_search_service.dart';
+import '../../data/providers/unified_vector_search_provider.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import 'document_processing_provider.dart';
@@ -195,28 +198,75 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
       final config = _ref.read(knowledgeBaseConfigProvider).currentConfig;
 
       if (config != null) {
-        // 使用向量搜索
-        final vectorSearchService = VectorSearchService(
-          _database,
-          _ref.read(embeddingServiceProvider),
-        );
-
-        final searchResult = await vectorSearchService.hybridSearch(
-          query: query,
-          config: config,
-          similarityThreshold: config.similarityThreshold,
-          maxResults: config.maxRetrievedChunks,
-        );
-
-        if (searchResult.isSuccess) {
-          state = state.copyWith(
-            vectorSearchResults: searchResult.items,
-            searchResults: [], // 清空旧的文档搜索结果
-            isLoading: false,
-            searchTime: searchResult.searchTime,
+        try {
+          // 使用统一向量搜索服务
+          final vectorSearchService = await _ref.read(
+            unifiedVectorSearchServiceProvider.future,
           );
-        } else {
-          // 向量搜索失败，回退到简单文本搜索
+          final serviceType = await _ref.read(
+            vectorSearchServiceTypeProvider.future,
+          );
+
+          debugPrint('🔍 使用向量搜索服务: ${serviceType.name}');
+
+          if (vectorSearchService is EnhancedVectorSearchService) {
+            // 使用增强向量搜索服务
+            final searchResult = await vectorSearchService.hybridSearch(
+              query: query,
+              config: config,
+              similarityThreshold: config.similarityThreshold,
+              maxResults: config.maxRetrievedChunks,
+            );
+
+            if (searchResult.isSuccess) {
+              // 转换增强搜索结果为标准搜索结果
+              final convertedItems = searchResult.items.map((item) {
+                return SearchResultItem(
+                  chunkId: item.chunkId,
+                  documentId: item.documentId,
+                  content: item.content,
+                  similarity: item.similarity,
+                  chunkIndex: item.chunkIndex,
+                  metadata: item.metadata,
+                );
+              }).toList();
+
+              state = state.copyWith(
+                vectorSearchResults: convertedItems,
+                searchResults: [], // 清空旧的文档搜索结果
+                isLoading: false,
+                searchTime: searchResult.searchTime,
+              );
+            } else {
+              // 向量搜索失败，回退到简单文本搜索
+              await _fallbackTextSearch(query);
+            }
+          } else if (vectorSearchService is VectorSearchService) {
+            // 使用传统向量搜索服务
+            final searchResult = await vectorSearchService.hybridSearch(
+              query: query,
+              config: config,
+              similarityThreshold: config.similarityThreshold,
+              maxResults: config.maxRetrievedChunks,
+            );
+
+            if (searchResult.isSuccess) {
+              state = state.copyWith(
+                vectorSearchResults: searchResult.items,
+                searchResults: [], // 清空旧的文档搜索结果
+                isLoading: false,
+                searchTime: searchResult.searchTime,
+              );
+            } else {
+              // 向量搜索失败，回退到简单文本搜索
+              await _fallbackTextSearch(query);
+            }
+          } else {
+            debugPrint('❌ 未知的向量搜索服务类型');
+            await _fallbackTextSearch(query);
+          }
+        } catch (e) {
+          debugPrint('❌ 向量搜索失败，回退到简单搜索: $e');
           await _fallbackTextSearch(query);
         }
       } else {

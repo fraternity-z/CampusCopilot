@@ -15,11 +15,13 @@ import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../data/local/app_database.dart';
 import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../../data/local/tables/general_settings_table.dart';
+
+// 知识库相关导入
 import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
-import '../../../../data/local/tables/general_settings_table.dart';
 
 /// 聊天服务
 ///
@@ -154,9 +156,6 @@ class ChatService {
             userQuery: content,
             config: knowledgeConfig,
             knowledgeBaseId: currentKnowledgeBase.id,
-            similarityThreshold: knowledgeConfig.similarityThreshold,
-            maxContexts: knowledgeConfig.maxRetrievedChunks,
-            systemPrompt: persona.systemPrompt,
           );
 
           if (ragResult.usedContexts.isNotEmpty) {
@@ -305,7 +304,7 @@ class ChatService {
       );
       debugPrint('🤖 AI Provider已创建');
 
-      // 5. 检查是否需要RAG增强
+      // 4.5. 检查是否需要RAG增强
       String enhancedPrompt = content;
       final ragService = _ref.read(ragServiceProvider);
       final knowledgeConfig = _ref
@@ -321,7 +320,7 @@ class ChatService {
           .read(multiKnowledgeBaseProvider)
           .currentKnowledgeBase;
 
-      debugPrint('🔧 流式聊天RAG状态检查:');
+      debugPrint('🔧 RAG状态检查:');
       debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
       debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
       debugPrint('  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
@@ -342,9 +341,6 @@ class ChatService {
             userQuery: content,
             config: knowledgeConfig,
             knowledgeBaseId: currentKnowledgeBase.id,
-            similarityThreshold: knowledgeConfig.similarityThreshold,
-            maxContexts: knowledgeConfig.maxRetrievedChunks,
-            systemPrompt: persona.systemPrompt,
           );
 
           if (ragResult.usedContexts.isNotEmpty) {
@@ -370,7 +366,7 @@ class ChatService {
         }
       }
 
-      // 6. 构建上下文消息
+      // 5. 构建上下文消息
       final contextMessages = includeContext
           ? await _buildContextMessages(
               sessionId,

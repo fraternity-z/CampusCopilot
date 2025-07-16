@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/multi_knowledge_base_provider.dart';
 import '../providers/knowledge_base_config_provider.dart';
 import '../../domain/entities/knowledge_base.dart';
+import '../widgets/system_status_widget.dart';
 import 'knowledge_base_create_dialog.dart';
 import 'knowledge_base_edit_dialog.dart';
 import 'knowledge_base_config_create_dialog.dart';

@@ -18,8 +18,8 @@ import '../features/settings/presentation/views/data_management_screen.dart';
 import '../features/settings/presentation/views/about_screen.dart';
 import '../features/settings/presentation/views/model_management_screen.dart';
 import '../features/settings/presentation/views/provider_config_screen.dart';
-import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
 import '../features/settings/presentation/providers/ui_settings_provider.dart';
+import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
 
 /// 侧边栏标签页状态管理
 final sidebarTabProvider = StateProvider<SidebarTab>(
@@ -262,12 +262,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: 'chat',
             builder: (context, state) => const ChatScreen(),
           ),
-          // 知识库管理
+
+          // 知识库
           GoRoute(
             path: '/knowledge',
             name: 'knowledge',
             builder: (context, state) => const KnowledgeBaseScreen(),
           ),
+
           // 设置
           GoRoute(
             path: '/settings',
