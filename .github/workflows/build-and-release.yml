@@ -117,10 +117,40 @@ jobs:
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
 
-    # 预热Gradle守护进程
-    - name: 预热Gradle守护进程
+    # 初始化Gradle Wrapper并预热守护进程
+    - name: 初始化Gradle Wrapper并预热守护进程
       run: |
         cd android
+
+        # 运行初始化脚本
+        if [ -f "init-gradle-wrapper.sh" ]; then
+          echo "🔧 运行 Gradle Wrapper 初始化脚本..."
+          chmod +x init-gradle-wrapper.sh
+          ./init-gradle-wrapper.sh
+        else
+          echo "⚠️ 初始化脚本不存在，使用备用方法..."
+
+          # 备用方法：直接检查和设置
+          if [ ! -f "gradlew" ]; then
+            echo "❌ gradlew文件不存在"
+            exit 1
+          fi
+
+          # 设置执行权限
+          chmod +x gradlew
+
+          # 如果没有 gradle-wrapper.jar，尝试下载
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "📦 下载 gradle-wrapper.jar..."
+            mkdir -p gradle/wrapper
+            curl -L -o gradle/wrapper/gradle-wrapper.jar \
+              "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar" || \
+              echo "⚠️ 下载失败，继续尝试..."
+          fi
+        fi
+
+        # 预热 Gradle 守护进程
+        echo "🔥 预热 Gradle 守护进程..."
         ./gradlew --version
         ./gradlew tasks --quiet
 
@@ -244,30 +274,30 @@ jobs:
           cp -r build/ios/iphoneos/Runner.app ios-build/
 
           # 创建安装说明
-          cat > ios-build/README.md << 'INSTALL_README'
-          # AnywhereChat iOS 安装说明
+          cat > ios-build/README.md << 'EOF'
+        # AnywhereChat iOS 安装说明
 
-          ## 📱 文件说明
-          - AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.ipa - 未签名的IPA文件
-          - Runner.app - 应用包文件（供开发者使用）
+        ## 📱 文件说明
+        - AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-unsigned.ipa - 未签名的IPA文件
+        - Runner.app - 应用包文件（供开发者使用）
 
-          ## 🔧 安装方法
+        ## 🔧 安装方法
 
-          ### 方法一：使用第三方工具（推荐）
-          1. 下载 AltStore 或 Sideloadly
-          2. 使用工具安装 .ipa 文件到设备
+        ### 方法一：使用第三方工具（推荐）
+        1. 下载 AltStore 或 Sideloadly
+        2. 使用工具安装 .ipa 文件到设备
 
-          ### 方法二：使用Xcode（需要开发者账号）
-          1. 打开Xcode
-          2. 将 Runner.app 拖拽到Xcode中
-          3. 配置签名证书
-          4. 安装到设备
+        ### 方法二：使用Xcode（需要开发者账号）
+        1. 打开Xcode
+        2. 将 Runner.app 拖拽到Xcode中
+        3. 配置签名证书
+        4. 安装到设备
 
-          ## ⚠️ 注意事项
-          - 此构建未签名，无法直接安装
-          - 需要有效的Apple开发者证书进行签名
-          - 安装后可能需要在设置中信任开发者
-          INSTALL_README
+        ## ⚠️ 注意事项
+        - 此构建未签名，无法直接安装
+        - 需要有效的Apple开发者证书进行签名
+        - 安装后可能需要在设置中信任开发者
+        EOF
 
           # 创建构建信息
           echo "iOS构建信息" > ios-build/build-info.txt
@@ -303,7 +333,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
-        path: AnywhereChat-iOS-${{ needs.prepare.outputs.version }}-*.zip
+        path: ios-build/*
 
   # 注意：Windows构建已被移除，因为持续出现文件锁定问题
 

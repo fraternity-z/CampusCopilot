@@ -259,12 +259,8 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final List<Match> allMatches = [];
     allMatches.addAll(mathRegex.allMatches(normalizedContent));
 
-    // Debug: Check for mermaid matches
+    // 添加 Mermaid 图表匹配
     final mermaidMatches = mermaidRegex.allMatches(normalizedContent);
-    if (mermaidMatches.isNotEmpty) {
-      // ignore: avoid_print
-      print('Found ${mermaidMatches.length} mermaid diagrams');
-    }
     allMatches.addAll(mermaidMatches);
 
     // Sort by start index

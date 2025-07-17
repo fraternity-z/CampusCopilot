@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/widgets/elegant_notification.dart';
 import 'package:drift/drift.dart' as drift;
 
 import '../../../llm_chat/data/providers/llm_provider_factory.dart';
@@ -565,6 +567,9 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       );
 
       if (selected != null && selected.isNotEmpty) {
+        int addedCount = 0;
+        int skippedCount = 0;
+
         for (final model in selected) {
           try {
             await service.addCustomModel(
@@ -574,17 +579,27 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
               type: model.type,
               configId: _existingConfig?.id,
             );
-          } catch (_) {
-            // ignore dup
+            addedCount++;
+          } catch (e) {
+            // 模型可能已存在，跳过
+            skippedCount++;
+            debugPrint('跳过重复模型: ${model.id} - $e');
           }
         }
 
         await _loadModels();
 
         if (mounted) {
-          ScaffoldMessenger.of(
+          String message = '已添加 $addedCount 个模型';
+          if (skippedCount > 0) {
+            message += '，跳过 $skippedCount 个重复模型';
+          }
+          ElegantNotification.success(
             context,
-          ).showSnackBar(SnackBar(content: Text('已添加 ${selected.length} 个模型')));
+            message,
+            duration: const Duration(seconds: 3),
+            showAtTop: false,
+          );
         }
       }
     } catch (e) {

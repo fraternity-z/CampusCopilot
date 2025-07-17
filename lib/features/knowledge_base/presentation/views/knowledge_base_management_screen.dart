@@ -40,7 +40,7 @@ class _KnowledgeBaseManagementScreenState
           ? const Center(child: CircularProgressIndicator())
           : multiKbState.error != null
           ? _buildErrorView(multiKbState.error!)
-          : _buildKnowledgeBaseList(multiKbState.knowledgeBases),
+          : _buildMainContent(multiKbState.knowledgeBases),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateDialog(),
         child: const Icon(Icons.add),
@@ -75,6 +75,23 @@ class _KnowledgeBaseManagementScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMainContent(List<KnowledgeBase> knowledgeBases) {
+    return Column(
+      children: [
+        // 系统状态监控组件
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SystemStatusWidget(
+            showDetails: false,
+            onTap: () => SystemStatusDialog.show(context),
+          ),
+        ),
+        // 知识库列表
+        Expanded(child: _buildKnowledgeBaseList(knowledgeBases)),
+      ],
     );
   }
 

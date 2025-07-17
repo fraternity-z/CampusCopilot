@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/knowledge_document.dart';
+import '../../data/providers/embedding_service_provider.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
@@ -72,8 +73,9 @@ class KnowledgeBaseConfigState {
 class KnowledgeBaseConfigNotifier
     extends StateNotifier<KnowledgeBaseConfigState> {
   final AppDatabase _database;
+  final Ref _ref;
 
-  KnowledgeBaseConfigNotifier(this._database)
+  KnowledgeBaseConfigNotifier(this._database, this._ref)
     : super(const KnowledgeBaseConfigState()) {
     _initializeConfigs();
   }
@@ -200,9 +202,30 @@ class KnowledgeBaseConfigNotifier
 
       debugPrint('🎯 总共加载了 ${allModels.length} 个可用模型');
 
-      // 返回所有启用的模型，让用户选择任何模型作为嵌入模型
-      // 不再限制只能选择embedding类型的模型
-      state = state.copyWith(availableEmbeddingModels: allModels);
+      // 过滤嵌入模型：只显示类型为embedding或名称包含"embedding"的模型
+      final embeddingModels = allModels.where((model) {
+        // 检查模型类型是否为embedding
+        if (model.type == ModelType.embedding) {
+          return true;
+        }
+
+        // 检查模型名称或ID是否包含"embedding"（不区分大小写）
+        final nameContainsEmbedding = model.name.toLowerCase().contains(
+          'embedding',
+        );
+        final idContainsEmbedding = model.id.toLowerCase().contains(
+          'embedding',
+        );
+
+        return nameContainsEmbedding || idContainsEmbedding;
+      }).toList();
+
+      debugPrint('🔍 过滤后的嵌入模型: ${embeddingModels.length} 个');
+      for (final model in embeddingModels) {
+        debugPrint('  - ${model.name} (${model.id}) - 类型: ${model.type}');
+      }
+
+      state = state.copyWith(availableEmbeddingModels: embeddingModels);
     } catch (e) {
       debugPrint('❌ 加载嵌入模型列表失败: $e');
       // 忽略错误，使用空列表
@@ -335,6 +358,9 @@ class KnowledgeBaseConfigNotifier
 
       await _database.setDefaultKnowledgeBaseConfig(configId);
       await _loadConfigs();
+
+      // 刷新嵌入服务以应用新配置
+      _refreshEmbeddingService();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
@@ -345,6 +371,37 @@ class KnowledgeBaseConfigNotifier
     final config = state.configs.where((c) => c.id == configId).firstOrNull;
     if (config != null) {
       state = state.copyWith(currentConfig: config);
+
+      // 刷新嵌入服务以应用新配置
+      _refreshEmbeddingService();
+    }
+  }
+
+  /// 刷新嵌入服务
+  void _refreshEmbeddingService() {
+    try {
+      final currentConfig = state.currentConfig;
+      if (currentConfig != null) {
+        // 获取嵌入服务刷新函数并调用
+        final refreshFunction = _ref.read(embeddingServiceRefreshProvider);
+        refreshFunction(
+          newProvider: currentConfig.embeddingModelProvider,
+          newModel: currentConfig.embeddingModelId,
+        );
+
+        // 更新嵌入模型切换状态
+        final switchFunction = _ref.read(embeddingModelSwitchProvider);
+        switchFunction(
+          currentConfig.embeddingModelProvider,
+          currentConfig.embeddingModelId,
+        );
+
+        debugPrint(
+          '🔄 已刷新嵌入服务: ${currentConfig.embeddingModelProvider}/${currentConfig.embeddingModelId}',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 刷新嵌入服务失败: $e');
     }
   }
 
@@ -374,7 +431,7 @@ final knowledgeBaseConfigProvider =
       KnowledgeBaseConfigState
     >((ref) {
       final database = ref.read(appDatabaseProvider);
-      return KnowledgeBaseConfigNotifier(database);
+      return KnowledgeBaseConfigNotifier(database, ref);
     });
 
 /// 当前知识库配置Provider

@@ -19,6 +19,13 @@ class EmbeddingGenerationResult {
 class EmbeddingService {
   final AppDatabase _database;
 
+  // 提供者缓存，支持实时切换
+  final Map<String, LlmProvider> _providerCache = {};
+
+  // 缓存过期时间（5分钟）
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
   EmbeddingService(this._database);
 
   /// 为文本块生成嵌入向量
@@ -44,8 +51,8 @@ class EmbeddingService {
         '🔗 使用嵌入服务: ${llmConfig.provider} - ${llmConfig.baseUrl ?? '默认端点'}',
       );
 
-      // 创建LLM提供商（非空）
-      final provider = LlmProviderFactory.createProvider(llmConfig);
+      // 获取或创建LLM提供商（支持实时切换）
+      final provider = _getOrCreateProvider(llmConfig);
 
       // 生成嵌入向量（添加超时处理）
       final result = await provider
@@ -181,6 +188,65 @@ class EmbeddingService {
 
     // 返回前N个结果
     return results.take(maxResults).toList();
+  }
+
+  /// 获取或创建LLM提供商（支持实时切换）
+  LlmProvider _getOrCreateProvider(LlmConfig config) {
+    final cacheKey =
+        '${config.provider}_${config.id}_${config.updatedAt.millisecondsSinceEpoch}';
+    final now = DateTime.now();
+
+    // 检查缓存是否存在且未过期
+    final cachedProvider = _providerCache[cacheKey];
+    final cacheTime = _cacheTimestamps[cacheKey];
+
+    if (cachedProvider != null &&
+        cacheTime != null &&
+        now.difference(cacheTime) < _cacheExpiry) {
+      debugPrint('🚀 使用缓存的嵌入提供者: ${config.provider}');
+      return cachedProvider;
+    }
+
+    // 清理过期的缓存
+    _cleanExpiredCache();
+
+    // 创建新的提供者
+    debugPrint('🔄 创建新的嵌入提供者: ${config.provider}');
+    final provider = LlmProviderFactory.createProvider(config);
+
+    // 缓存新的提供者
+    _providerCache[cacheKey] = provider;
+    _cacheTimestamps[cacheKey] = now;
+
+    return provider;
+  }
+
+  /// 清理过期的缓存
+  void _cleanExpiredCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+
+    for (final entry in _cacheTimestamps.entries) {
+      if (now.difference(entry.value) >= _cacheExpiry) {
+        expiredKeys.add(entry.key);
+      }
+    }
+
+    for (final key in expiredKeys) {
+      _providerCache.remove(key);
+      _cacheTimestamps.remove(key);
+    }
+
+    if (expiredKeys.isNotEmpty) {
+      debugPrint('🧹 清理了 ${expiredKeys.length} 个过期的嵌入提供者缓存');
+    }
+  }
+
+  /// 清除所有缓存（用于强制刷新）
+  void clearCache() {
+    _providerCache.clear();
+    _cacheTimestamps.clear();
+    debugPrint('🧹 已清除所有嵌入提供者缓存');
   }
 
   /// 获取嵌入模型的LLM配置

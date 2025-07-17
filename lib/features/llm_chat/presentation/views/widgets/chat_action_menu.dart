@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../shared/widgets/modern_button.dart';
 import '../../providers/chat_provider.dart';
+import '../../../../../core/widgets/elegant_notification.dart';
 
 /// 聊天操作菜单组件
 ///
@@ -165,11 +166,10 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () {
               ref.read(chatProvider.notifier).clearChat();
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已清空当前对话页面'),
-                  backgroundColor: Colors.orange,
-                ),
+              ElegantNotification.warning(
+                context,
+                '已清空当前对话页面',
+                duration: const Duration(seconds: 2),
               );
             },
             style: ModernButtonStyle.danger,
@@ -205,11 +205,10 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () {
               ref.read(chatProvider.notifier).clearContext();
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已清除对话上下文，下次对话将不包含历史'),
-                  backgroundColor: Colors.blue,
-                ),
+              ElegantNotification.info(
+                context,
+                '已清除对话上下文，下次对话将不包含历史',
+                duration: const Duration(seconds: 3),
               );
             },
             style: ModernButtonStyle.primary,

@@ -122,8 +122,27 @@ class DocumentProcessingService {
         case 'docx':
           return await _extractDocxText(filePath);
 
+        case 'pptx':
+          return await _extractPptxText(filePath);
+
+        case 'xlsx':
+          return await _extractXlsxText(filePath);
+
         case 'rtf':
           return await _extractRtfText(filePath);
+
+        case 'csv':
+          return await _extractCsvText(filePath);
+
+        case 'json':
+          return await _extractJsonText(filePath);
+
+        case 'xml':
+          return await _extractXmlText(filePath);
+
+        case 'html':
+        case 'htm':
+          return await _extractHtmlText(filePath);
 
         default:
           // 尝试作为纯文本读取
@@ -420,6 +439,328 @@ class DocumentProcessingService {
       return TextExtractionResult(text: textBuffer.toString().trim());
     } catch (e) {
       return TextExtractionResult(text: '', error: 'RTF文件读取失败: $e');
+    }
+  }
+
+  /// 提取PPTX文本内容
+  Future<TextExtractionResult> _extractPptxText(String filePath) async {
+    try {
+      debugPrint('📄 开始处理PPTX文件: $filePath');
+      final file = File(filePath);
+
+      if (!await file.exists()) {
+        return const TextExtractionResult(text: '', error: 'PPTX文件不存在');
+      }
+
+      final bytes = await file.readAsBytes();
+      debugPrint('📊 PPTX文件大小: ${bytes.length} bytes');
+
+      // 使用ZipDecoder解析PPTX文件结构
+      final archive = ZipDecoder().decodeBytes(bytes);
+      final pptxContent = StringBuffer();
+      int slideCount = 0;
+
+      // 查找所有幻灯片文件
+      for (final archiveFile in archive) {
+        if (archiveFile.name.startsWith('ppt/slides/slide') &&
+            archiveFile.name.endsWith('.xml')) {
+          slideCount++;
+
+          try {
+            final xmlContent = archiveFile.content as List<int>;
+            final xmlString = utf8.decode(xmlContent);
+            final xmlDoc = XmlDocument.parse(xmlString);
+
+            // 提取所有文本节点
+            final textNodes = xmlDoc.findAllElements('a:t');
+
+            if (textNodes.isNotEmpty) {
+              pptxContent.writeln('\n=== 幻灯片 $slideCount ===');
+              for (final textNode in textNodes) {
+                final text = textNode.innerText.trim();
+                if (text.isNotEmpty) {
+                  pptxContent.writeln(text);
+                }
+              }
+            }
+          } catch (xmlError) {
+            debugPrint('❌ 幻灯片 $slideCount XML解析错误: $xmlError');
+            continue;
+          }
+        }
+      }
+
+      final extractedText = pptxContent.toString().trim();
+      debugPrint(
+        '✅ PPTX文本提取完成，处理了 $slideCount 张幻灯片，长度: ${extractedText.length}',
+      );
+
+      if (extractedText.isEmpty) {
+        return const TextExtractionResult(text: '', error: 'PPTX文件中未找到文本内容');
+      }
+
+      return TextExtractionResult(text: extractedText);
+    } catch (e, stackTrace) {
+      debugPrint('💥 PPTX文件处理异常: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
+      return TextExtractionResult(text: '', error: 'PPTX文件读取失败: $e');
+    }
+  }
+
+  /// 提取XLSX文本内容
+  Future<TextExtractionResult> _extractXlsxText(String filePath) async {
+    try {
+      debugPrint('📄 开始处理XLSX文件: $filePath');
+      final file = File(filePath);
+
+      if (!await file.exists()) {
+        return const TextExtractionResult(text: '', error: 'XLSX文件不存在');
+      }
+
+      final bytes = await file.readAsBytes();
+      debugPrint('📊 XLSX文件大小: ${bytes.length} bytes');
+
+      // 使用ZipDecoder解析XLSX文件结构
+      final archive = ZipDecoder().decodeBytes(bytes);
+      final xlsxContent = StringBuffer();
+
+      // 查找共享字符串表
+      Map<int, String> sharedStrings = {};
+      for (final archiveFile in archive) {
+        if (archiveFile.name == 'xl/sharedStrings.xml') {
+          try {
+            final xmlContent = archiveFile.content as List<int>;
+            final xmlString = utf8.decode(xmlContent);
+            final xmlDoc = XmlDocument.parse(xmlString);
+
+            final stringItems = xmlDoc.findAllElements('si');
+            int index = 0;
+            for (final item in stringItems) {
+              final textNodes = item.findAllElements('t');
+              final text = textNodes.map((node) => node.innerText).join('');
+              sharedStrings[index] = text;
+              index++;
+            }
+          } catch (e) {
+            debugPrint('❌ 共享字符串解析错误: $e');
+          }
+          break;
+        }
+      }
+
+      // 查找工作表文件
+      int sheetCount = 0;
+      for (final archiveFile in archive) {
+        if (archiveFile.name.startsWith('xl/worksheets/sheet') &&
+            archiveFile.name.endsWith('.xml')) {
+          sheetCount++;
+
+          try {
+            final xmlContent = archiveFile.content as List<int>;
+            final xmlString = utf8.decode(xmlContent);
+            final xmlDoc = XmlDocument.parse(xmlString);
+
+            xlsxContent.writeln('\n=== 工作表 $sheetCount ===');
+
+            // 提取所有单元格
+            final cells = xmlDoc.findAllElements('c');
+            for (final cell in cells) {
+              final valueElement = cell.findElements('v').firstOrNull;
+              if (valueElement != null) {
+                final value = valueElement.innerText;
+                final cellType = cell.getAttribute('t');
+
+                String cellText = value;
+                if (cellType == 's') {
+                  // 共享字符串引用
+                  final index = int.tryParse(value);
+                  if (index != null && sharedStrings.containsKey(index)) {
+                    cellText = sharedStrings[index]!;
+                  }
+                }
+
+                if (cellText.trim().isNotEmpty) {
+                  xlsxContent.writeln(cellText);
+                }
+              }
+            }
+          } catch (xmlError) {
+            debugPrint('❌ 工作表 $sheetCount XML解析错误: $xmlError');
+            continue;
+          }
+        }
+      }
+
+      final extractedText = xlsxContent.toString().trim();
+      debugPrint(
+        '✅ XLSX文本提取完成，处理了 $sheetCount 个工作表，长度: ${extractedText.length}',
+      );
+
+      if (extractedText.isEmpty) {
+        return const TextExtractionResult(text: '', error: 'XLSX文件中未找到文本内容');
+      }
+
+      return TextExtractionResult(text: extractedText);
+    } catch (e, stackTrace) {
+      debugPrint('💥 XLSX文件处理异常: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
+      return TextExtractionResult(text: '', error: 'XLSX文件读取失败: $e');
+    }
+  }
+
+  /// 提取CSV文本内容
+  Future<TextExtractionResult> _extractCsvText(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString(encoding: utf8);
+
+      // 简单的CSV解析，将逗号分隔的内容转换为可读文本
+      final lines = content.split('\n');
+      final csvContent = StringBuffer();
+
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i].trim();
+        if (line.isNotEmpty) {
+          // 将CSV行转换为更可读的格式
+          final cells = line
+              .split(',')
+              .map((cell) => cell.trim().replaceAll('"', ''))
+              .toList();
+          if (i == 0) {
+            csvContent.writeln('=== 表头 ===');
+          }
+          csvContent.writeln(cells.join(' | '));
+        }
+      }
+
+      return TextExtractionResult(text: csvContent.toString().trim());
+    } catch (e) {
+      return TextExtractionResult(text: '', error: 'CSV文件读取失败: $e');
+    }
+  }
+
+  /// 提取JSON文本内容
+  Future<TextExtractionResult> _extractJsonText(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString(encoding: utf8);
+
+      // 尝试解析JSON并提取文本内容
+      final jsonContent = StringBuffer();
+
+      try {
+        final jsonData = json.decode(content);
+        _extractJsonValues(jsonData, jsonContent, 0);
+      } catch (jsonError) {
+        // 如果JSON解析失败，返回原始内容
+        return TextExtractionResult(text: content);
+      }
+
+      return TextExtractionResult(text: jsonContent.toString().trim());
+    } catch (e) {
+      return TextExtractionResult(text: '', error: 'JSON文件读取失败: $e');
+    }
+  }
+
+  /// 递归提取JSON值
+  void _extractJsonValues(dynamic data, StringBuffer buffer, int depth) {
+    final indent = '  ' * depth;
+
+    if (data is Map) {
+      for (final entry in data.entries) {
+        buffer.writeln('$indent${entry.key}:');
+        _extractJsonValues(entry.value, buffer, depth + 1);
+      }
+    } else if (data is List) {
+      for (int i = 0; i < data.length; i++) {
+        buffer.writeln('$indent[$i]:');
+        _extractJsonValues(data[i], buffer, depth + 1);
+      }
+    } else {
+      buffer.writeln('$indent$data');
+    }
+  }
+
+  /// 提取XML文本内容
+  Future<TextExtractionResult> _extractXmlText(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString(encoding: utf8);
+
+      try {
+        final xmlDoc = XmlDocument.parse(content);
+        final xmlContent = StringBuffer();
+
+        // 递归提取所有文本节点
+        _extractXmlTextNodes(xmlDoc.rootElement, xmlContent, 0);
+
+        return TextExtractionResult(text: xmlContent.toString().trim());
+      } catch (xmlError) {
+        // 如果XML解析失败，返回原始内容
+        return TextExtractionResult(text: content);
+      }
+    } catch (e) {
+      return TextExtractionResult(text: '', error: 'XML文件读取失败: $e');
+    }
+  }
+
+  /// 递归提取XML文本节点
+  void _extractXmlTextNodes(
+    XmlElement element,
+    StringBuffer buffer,
+    int depth,
+  ) {
+    final indent = '  ' * depth;
+
+    // 添加元素名称
+    buffer.writeln('$indent${element.name}:');
+
+    // 提取文本内容
+    final text = element.innerText.trim();
+    if (text.isNotEmpty &&
+        element.children.every((child) => child is XmlText)) {
+      buffer.writeln('$indent  $text');
+    }
+
+    // 递归处理子元素
+    for (final child in element.children) {
+      if (child is XmlElement) {
+        _extractXmlTextNodes(child, buffer, depth + 1);
+      }
+    }
+  }
+
+  /// 提取HTML文本内容
+  Future<TextExtractionResult> _extractHtmlText(String filePath) async {
+    try {
+      final file = File(filePath);
+      final content = await file.readAsString(encoding: utf8);
+
+      // 简单的HTML标签移除
+      String cleanText = content
+          .replaceAll(
+            RegExp(
+              r'<script[^>]*>.*?</script>',
+              caseSensitive: false,
+              dotAll: true,
+            ),
+            '',
+          )
+          .replaceAll(
+            RegExp(
+              r'<style[^>]*>.*?</style>',
+              caseSensitive: false,
+              dotAll: true,
+            ),
+            '',
+          )
+          .replaceAll(RegExp(r'<[^>]+>'), ' ')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+
+      return TextExtractionResult(text: cleanText);
+    } catch (e) {
+      return TextExtractionResult(text: '', error: 'HTML文件读取失败: $e');
     }
   }
 }

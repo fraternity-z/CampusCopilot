@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'widgets/animated_title_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/services/image_service.dart';
+import '../../../../core/widgets/elegant_notification.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
@@ -1267,9 +1268,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(chatProvider.notifier).pickImagesFromGallery();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        ElegantNotification.error(
           context,
-        ).showSnackBar(SnackBar(content: Text('选择图片失败: $e')));
+          '选择图片失败: $e',
+          duration: const Duration(seconds: 3),
+        );
       }
     }
   }
@@ -1280,9 +1283,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(chatProvider.notifier).capturePhoto();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        ElegantNotification.error(
           context,
-        ).showSnackBar(SnackBar(content: Text('拍摄照片失败: $e')));
+          '拍摄照片失败: $e',
+          duration: const Duration(seconds: 3),
+        );
       }
     }
   }

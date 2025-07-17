@@ -6,6 +6,9 @@ import '../../domain/entities/knowledge_document.dart';
 import '../providers/knowledge_base_provider.dart';
 import '../providers/knowledge_base_config_provider.dart';
 import '../providers/document_processing_provider.dart';
+import '../../data/providers/concurrent_document_processing_provider.dart';
+import '../../domain/services/concurrent_document_processing_service.dart';
+import '../../../../core/widgets/elegant_notification.dart';
 import 'knowledge_base_management_screen.dart';
 import '../providers/rag_provider.dart';
 import '../../domain/services/vector_search_service.dart';
@@ -844,56 +847,90 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 上传文档
   void _uploadDocument() async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt', 'md', 'docx'],
+        allowedExtensions: [
+          'pdf',
+          'txt',
+          'md',
+          'docx',
+          'pptx',
+          'xlsx',
+          'csv',
+          'json',
+          'xml',
+          'html',
+          'htm',
+        ],
         allowMultiple: true,
       );
 
       if (result != null) {
+        // 准备文档信息列表
+        final documents = <DocumentUploadInfo>[];
+
         for (final file in result.files) {
           if (file.path != null) {
-            try {
-              // 使用文档处理服务来提取文本内容，而不是直接读取
-              final documentProcessingService = ref.read(
-                documentProcessingServiceProvider,
-              );
-              final extractionResult = await documentProcessingService
-                  .extractTextFromFile(file.path!, file.extension ?? 'unknown');
+            final documentId =
+                '${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+            documents.add(
+              DocumentUploadInfo(
+                documentId: documentId,
+                filePath: file.path!,
+                fileType: file.extension ?? 'unknown',
+                title: file.name,
+                fileSize: file.size,
+              ),
+            );
 
-              if (extractionResult.error != null) {
-                throw Exception(extractionResult.error);
-              }
-
-              // 上传文档
-              await ref
-                  .read(knowledgeBaseProvider.notifier)
-                  .uploadDocument(
-                    title: file.name,
-                    content: extractionResult.text,
-                    filePath: file.path!,
-                    fileType: file.extension ?? 'unknown',
-                    fileSize: file.size,
-                  );
-
-              if (!mounted) continue;
-              scaffoldMessenger.showSnackBar(
-                SnackBar(content: Text('文档 ${file.name} 上传成功')),
-              );
-            } catch (e) {
-              if (!mounted) continue;
-              scaffoldMessenger.showSnackBar(
-                SnackBar(content: Text('上传失败: $e')),
-              );
-            }
+            // 先保存文档记录到数据库
+            await ref
+                .read(knowledgeBaseProvider.notifier)
+                .uploadDocument(
+                  title: file.name,
+                  content: '', // 内容将在处理完成后更新
+                  filePath: file.path!,
+                  fileType: file.extension ?? 'unknown',
+                  fileSize: file.size,
+                );
           }
+        }
+
+        if (documents.isNotEmpty) {
+          // 使用并发文档处理服务处理所有文档
+          final concurrentProcessor = ref.read(
+            concurrentDocumentProcessingProvider.notifier,
+          );
+          await concurrentProcessor.submitMultipleDocuments(
+            documents: documents,
+            knowledgeBaseId: 'default_kb',
+            chunkSize: 1000,
+            chunkOverlap: 200,
+          );
+
+          if (!mounted) return;
+          ElegantNotification.success(
+            context,
+            '已提交 ${documents.length} 个文档进行处理',
+            duration: const Duration(seconds: 3),
+            actionLabel: '查看进度',
+            onAction: () {
+              // 显示处理进度对话框
+              _showProcessingProgressDialog();
+            },
+            showAtTop: false, // 显示在底部，避免遮挡顶部内容
+          );
         }
       }
     } catch (e) {
       if (!mounted) return;
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('文档上传失败')));
+      ElegantNotification.error(
+        context,
+        '文档上传失败: $e',
+        duration: const Duration(seconds: 4),
+        showAtTop: false,
+      );
     }
   }
 
@@ -911,16 +948,23 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 重新索引文档
   void _reindexDocument(KnowledgeDocument document) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(knowledgeBaseProvider.notifier).reindexDocuments();
       if (!mounted) return;
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('文档 ${document.title} 重新索引完成')),
+      ElegantNotification.success(
+        context,
+        '文档 ${document.title} 重新索引完成',
+        duration: const Duration(seconds: 2),
+        showAtTop: false,
       );
     } catch (e) {
       if (!mounted) return;
-      scaffoldMessenger.showSnackBar(SnackBar(content: Text('重新索引失败: $e')));
+      ElegantNotification.error(
+        context,
+        '重新索引失败: $e',
+        duration: const Duration(seconds: 3),
+        showAtTop: false,
+      );
     }
   }
 
@@ -1229,16 +1273,22 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已选择嵌入模型: ${model.name} ($providerName)')),
+        ElegantNotification.success(
+          context,
+          '已选择嵌入模型: ${model.name} ($providerName)',
+          duration: const Duration(seconds: 2),
+          showAtTop: false,
         );
       }
     } catch (e) {
       debugPrint('❌ 选择模型失败: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
+        ElegantNotification.error(
           context,
-        ).showSnackBar(SnackBar(content: Text('选择模型失败: $e')));
+          '选择模型失败: $e',
+          duration: const Duration(seconds: 3),
+          showAtTop: false,
+        );
       }
     }
   }
@@ -1727,6 +1777,207 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 显示处理进度对话框
+  void _showProcessingProgressDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const ProcessingProgressDialog(),
+    );
+  }
+}
+
+/// 处理进度对话框
+class ProcessingProgressDialog extends ConsumerWidget {
+  const ProcessingProgressDialog({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final processingState = ref.watch(concurrentDocumentProcessingProvider);
+    final stats = ref.watch(processingStatsProvider);
+
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.hourglass_empty, color: Colors.blue),
+          SizedBox(width: 8),
+          Text('文档处理进度'),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        height: 300,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 统计信息
+            _buildStatsSection(stats),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            // 任务列表
+            Expanded(
+              child: _buildTasksList(processingState.tasks.values.toList()),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('关闭'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            ref
+                .read(concurrentDocumentProcessingProvider.notifier)
+                .cleanupCompletedTasks();
+          },
+          child: const Text('清理已完成'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsSection(Map<String, dynamic> stats) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('处理统计', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatItem('总任务', '${stats['totalTasks'] ?? 0}'),
+              _buildStatItem('处理中', '${stats['processingTasks'] ?? 0}'),
+              _buildStatItem('等待中', '${stats['pendingTasks'] ?? 0}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatItem(
+                '已完成',
+                '${stats['completedTasks'] ?? 0}',
+                Colors.green,
+              ),
+              _buildStatItem('失败', '${stats['failedTasks'] ?? 0}', Colors.red),
+              _buildStatItem(
+                '已取消',
+                '${stats['cancelledTasks'] ?? 0}',
+                Colors.orange,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, [Color? color]) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color ?? Colors.blue,
+          ),
+        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildTasksList(List<ConcurrentProcessingTask> tasks) {
+    if (tasks.isEmpty) {
+      return const Center(child: Text('暂无处理任务'));
+    }
+
+    return ListView.builder(
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        return _buildTaskItem(task);
+      },
+    );
+  }
+
+  Widget _buildTaskItem(ConcurrentProcessingTask task) {
+    IconData statusIcon;
+    Color statusColor;
+    String statusText;
+
+    switch (task.status) {
+      case ConcurrentProcessingTaskStatus.pending:
+        statusIcon = Icons.hourglass_empty;
+        statusColor = Colors.orange;
+        statusText = '等待中';
+        break;
+      case ConcurrentProcessingTaskStatus.processing:
+        statusIcon = Icons.sync;
+        statusColor = Colors.blue;
+        statusText = '处理中';
+        break;
+      case ConcurrentProcessingTaskStatus.completed:
+        statusIcon = Icons.check_circle;
+        statusColor = Colors.green;
+        statusText = '已完成';
+        break;
+      case ConcurrentProcessingTaskStatus.failed:
+        statusIcon = Icons.error;
+        statusColor = Colors.red;
+        statusText = '失败';
+        break;
+      case ConcurrentProcessingTaskStatus.cancelled:
+        statusIcon = Icons.cancel;
+        statusColor = Colors.grey;
+        statusText = '已取消';
+        break;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: Icon(statusIcon, color: statusColor),
+        title: Text(
+          task.documentId,
+          style: const TextStyle(fontSize: 14),
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('类型: ${task.fileType}'),
+            if (task.status == ConcurrentProcessingTaskStatus.processing)
+              LinearProgressIndicator(
+                value: task.progress,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+              ),
+            if (task.error != null)
+              Text(
+                '错误: ${task.error}',
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+          ],
+        ),
+        trailing: Text(
+          statusText,
+          style: TextStyle(color: statusColor, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

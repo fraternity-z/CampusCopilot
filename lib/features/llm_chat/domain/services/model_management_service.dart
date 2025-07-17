@@ -54,6 +54,21 @@ class ModelManagementService {
     String currency = 'USD',
     List<String> capabilities = const [],
   }) async {
+    // 检查是否已存在相同的模型（基于 modelId 和 provider）
+    final existingModels = await _database.getAllCustomModels();
+    final duplicateModel = existingModels
+        .where(
+          (model) =>
+              model.modelId == modelId &&
+              model.provider.toLowerCase() == provider.toLowerCase(),
+        )
+        .firstOrNull;
+
+    if (duplicateModel != null) {
+      debugPrint('⚠️ 模型已存在，跳过添加: $modelId ($provider)');
+      return; // 如果模型已存在，直接返回，不抛出异常
+    }
+
     final now = DateTime.now();
     final id = 'custom-${provider.toLowerCase()}-${now.millisecondsSinceEpoch}';
 
@@ -84,6 +99,7 @@ class ModelManagementService {
     );
 
     await _database.upsertCustomModel(model);
+    debugPrint('✅ 成功添加模型: $name ($modelId)');
 
     // 触发模型列表刷新
     _triggerModelListRefresh();
