@@ -48,8 +48,8 @@ unlinked_spec.ds
 **/android/**/gradle-wrapper.jar
 .gradle/
 **/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
+# **/android/gradlew  # 注释掉，gradlew需要被提交到版本控制
+# **/android/gradlew.bat  # 注释掉，gradlew.bat需要被提交到版本控制
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties

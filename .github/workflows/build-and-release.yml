@@ -120,34 +120,57 @@ jobs:
     # 初始化Gradle Wrapper并预热守护进程
     - name: 初始化Gradle Wrapper并预热守护进程
       run: |
+        echo "🔍 检查当前目录结构..."
+        ls -la
+
+        echo "🔍 检查android目录..."
+        ls -la android/
+
         cd android
 
-        # 运行初始化脚本
+        # 确保gradlew文件存在并有执行权限
+        if [ ! -f "gradlew" ]; then
+          echo "❌ gradlew文件不存在，尝试重新生成..."
+
+          # 尝试使用gradle wrapper命令重新生成
+          if command -v gradle >/dev/null 2>&1; then
+            echo "📦 使用gradle命令重新生成wrapper..."
+            gradle wrapper --gradle-version 8.12
+          else
+            echo "❌ gradle命令不可用，手动创建gradlew..."
+            # 从GitHub下载标准的gradlew文件
+            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradlew"
+            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradlew.bat"
+          fi
+        fi
+
+        # 确保gradlew有执行权限
+        chmod +x gradlew
+        chmod +x gradlew.bat 2>/dev/null || true
+
+        # 确保gradle-wrapper.jar存在
+        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+          echo "📦 下载 gradle-wrapper.jar..."
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar \
+            "https://services.gradle.org/distributions/gradle-8.12-bin.zip" && \
+            unzip -j gradle-8.12-bin.zip "gradle-8.12/lib/gradle-wrapper.jar" -d gradle/wrapper/ && \
+            rm gradle-8.12-bin.zip || \
+            curl -L -o gradle/wrapper/gradle-wrapper.jar \
+              "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
+        fi
+
+        # 运行初始化脚本（如果存在）
         if [ -f "init-gradle-wrapper.sh" ]; then
           echo "🔧 运行 Gradle Wrapper 初始化脚本..."
           chmod +x init-gradle-wrapper.sh
           ./init-gradle-wrapper.sh
-        else
-          echo "⚠️ 初始化脚本不存在，使用备用方法..."
-
-          # 备用方法：直接检查和设置
-          if [ ! -f "gradlew" ]; then
-            echo "❌ gradlew文件不存在"
-            exit 1
-          fi
-
-          # 设置执行权限
-          chmod +x gradlew
-
-          # 如果没有 gradle-wrapper.jar，尝试下载
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "📦 下载 gradle-wrapper.jar..."
-            mkdir -p gradle/wrapper
-            curl -L -o gradle/wrapper/gradle-wrapper.jar \
-              "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar" || \
-              echo "⚠️ 下载失败，继续尝试..."
-          fi
         fi
+
+        # 验证gradlew可执行
+        echo "🔍 验证gradlew文件..."
+        ls -la gradlew
+        file gradlew
 
         # 预热 Gradle 守护进程
         echo "🔥 预热 Gradle 守护进程..."
