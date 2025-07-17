@@ -226,6 +226,15 @@ class MultiKnowledgeBaseNotifier
 
     // 更新最后使用时间
     _updateLastUsedTime(id);
+
+    // 触发文档列表重新加载
+    _notifyKnowledgeBaseChanged();
+  }
+
+  /// 通知知识库选择改变，触发相关provider重新加载
+  void _notifyKnowledgeBaseChanged() {
+    // 这里可以通过ref来通知其他provider
+    // 由于Riverpod的限制，我们需要在UI层监听变化
   }
 
   /// 更新最后使用时间

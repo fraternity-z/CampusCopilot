@@ -13,6 +13,7 @@ import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import 'document_processing_provider.dart';
 import 'knowledge_base_config_provider.dart';
+import 'multi_knowledge_base_provider.dart';
 
 /// 知识库状态
 class KnowledgeBaseState {
@@ -65,12 +66,25 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     _loadDocuments();
   }
 
+  /// 重新加载文档列表（当知识库选择改变时调用）
+  Future<void> reloadDocuments() async {
+    await _loadDocuments();
+  }
+
   /// 加载文档列表
   Future<void> _loadDocuments() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final dbDocuments = await _database.getAllKnowledgeDocuments();
+      // 获取当前选中的知识库ID
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+
+      // 根据选中的知识库加载文档
+      final dbDocuments = currentKnowledgeBase != null
+          ? await _database.getDocumentsByKnowledgeBase(currentKnowledgeBase.id)
+          : await _database.getAllKnowledgeDocuments();
       final documents = dbDocuments
           .map(
             (doc) => KnowledgeDocument(
@@ -126,8 +140,12 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
         metadata: {},
       );
 
-      // 使用指定的知识库ID或默认知识库
-      final targetKnowledgeBaseId = knowledgeBaseId ?? 'default_kb';
+      // 使用指定的知识库ID或当前选中的知识库
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      final targetKnowledgeBaseId =
+          knowledgeBaseId ?? currentKnowledgeBase?.id ?? 'default_kb';
 
       // 保存到数据库
       await _database.upsertKnowledgeDocument(

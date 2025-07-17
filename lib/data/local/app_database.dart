@@ -849,6 +849,16 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  /// 根据ID列表获取文档
+  Future<List<KnowledgeDocumentsTableData>> getDocumentsByIds(
+    List<String> ids,
+  ) {
+    if (ids.isEmpty) return Future.value([]);
+    return (select(
+      knowledgeDocumentsTable,
+    )..where((t) => t.id.isIn(ids))).get();
+  }
+
   /// 插入或更新知识库文档
   Future<void> upsertKnowledgeDocument(
     KnowledgeDocumentsTableCompanion document,

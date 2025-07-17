@@ -10,6 +10,7 @@ import '../vector_databases/objectbox_vector_client.dart';
 enum VectorDatabaseType {
   /// 本地文件存储
   localFile,
+
   /// ObjectBox 数据库
   objectBox,
 }
@@ -19,7 +20,8 @@ enum VectorDatabaseType {
 /// 负责根据配置创建相应的向量数据库实例
 class VectorDatabaseFactory {
   // 实例缓存，避免重复创建
-  static final Map<VectorDatabaseType, VectorDatabaseInterface> _instanceCache = {};
+  static final Map<VectorDatabaseType, VectorDatabaseInterface> _instanceCache =
+      {};
 
   /// 创建向量数据库实例
   static Future<VectorDatabaseInterface> createDatabase({
@@ -61,7 +63,7 @@ class VectorDatabaseFactory {
     Map<String, dynamic>? config,
   ) async {
     String dbPath;
-    
+
     if (config != null && config.containsKey('path')) {
       dbPath = config['path'] as String;
     } else {

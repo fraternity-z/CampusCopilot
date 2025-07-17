@@ -13,6 +13,7 @@ class SearchResultItem {
   final double similarity;
   final int chunkIndex;
   final Map<String, dynamic> metadata;
+  final String? documentTitle; // 添加文档标题
 
   const SearchResultItem({
     required this.chunkId,
@@ -21,6 +22,7 @@ class SearchResultItem {
     required this.similarity,
     required this.chunkIndex,
     this.metadata = const {},
+    this.documentTitle,
   });
 }
 
@@ -123,7 +125,13 @@ class VectorSearchService {
         );
       }
 
-      // 3. 计算相似度并筛选结果（优化版本）
+      // 3. 获取文档标题映射
+      debugPrint('📄 获取文档信息...');
+      final documentTitles = await _getDocumentTitles(
+        chunks.map((c) => c.documentId).toSet(),
+      );
+
+      // 4. 计算相似度并筛选结果（优化版本）
       debugPrint('🧮 计算相似度...');
       final results = await _calculateSimilarityOptimized(
         queryEmbedding: queryEmbedding,
@@ -131,6 +139,7 @@ class VectorSearchService {
         similarityThreshold: similarityThreshold,
         maxResults: maxResults,
         config: config,
+        documentTitles: documentTitles,
       );
 
       // 4. 按相似度降序排序
@@ -514,6 +523,21 @@ class VectorSearchService {
     }
   }
 
+  /// 获取文档标题映射
+  Future<Map<String, String>> _getDocumentTitles(
+    Set<String> documentIds,
+  ) async {
+    try {
+      final documents = await _database.getDocumentsByIds(documentIds.toList());
+      return Map.fromEntries(
+        documents.map((doc) => MapEntry(doc.id, doc.name)),
+      );
+    } catch (e) {
+      debugPrint('获取文档标题失败: $e');
+      return {};
+    }
+  }
+
   /// 优化的相似度计算方法
   Future<List<SearchResultItem>> _calculateSimilarityOptimized({
     required List<double> queryEmbedding,
@@ -521,6 +545,7 @@ class VectorSearchService {
     required double similarityThreshold,
     required int maxResults,
     required KnowledgeBaseConfig config,
+    Map<String, String> documentTitles = const {},
   }) async {
     final results = <SearchResultItem>[];
     final allSimilarities = <double>[]; // 用于统计相似度分布
@@ -574,6 +599,7 @@ class VectorSearchService {
                   content: chunk.content,
                   similarity: similarity,
                   chunkIndex: chunk.chunkIndex,
+                  documentTitle: documentTitles[chunk.documentId],
                   metadata: {
                     'characterCount': chunk.characterCount,
                     'tokenCount': chunk.tokenCount,

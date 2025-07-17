@@ -18,14 +18,14 @@ class VectorDatabaseMigration {
     bool deleteSourceAfterMigration = false,
   }) async {
     final startTime = DateTime.now();
-    
+
     try {
       debugPrint('🔄 开始从本地文件向量数据库迁移到 ObjectBox...');
 
       // 初始化源数据库（本地文件）
       final sourceDbPath = localDbPath ?? await _getDefaultLocalDbPath();
       final sourceDb = LocalFileVectorClient(sourceDbPath);
-      
+
       if (!await sourceDb.initialize()) {
         throw Exception('无法初始化源数据库: $sourceDbPath');
       }
@@ -38,7 +38,7 @@ class VectorDatabaseMigration {
 
       // 获取源数据库中的所有集合
       final sourceCollections = await _getLocalFileCollections(sourceDbPath);
-      
+
       int totalCollections = sourceCollections.length;
       int totalDocuments = 0;
       int migratedCollections = 0;
@@ -75,7 +75,10 @@ class VectorDatabaseMigration {
           }
 
           // 获取源集合中的所有文档
-          final sourceDocuments = await _getLocalFileDocuments(sourceDbPath, collectionName);
+          final sourceDocuments = await _getLocalFileDocuments(
+            sourceDbPath,
+            collectionName,
+          );
           totalDocuments += sourceDocuments.length;
 
           if (sourceDocuments.isNotEmpty) {
@@ -137,7 +140,7 @@ class VectorDatabaseMigration {
     } catch (e) {
       final migrationTime = DateTime.now().difference(startTime);
       debugPrint('❌ 迁移失败: $e');
-      
+
       return VectorMigrationResult(
         success: false,
         totalCollections: 0,
@@ -159,7 +162,7 @@ class VectorDatabaseMigration {
   /// 获取本地文件数据库中的所有集合
   static Future<List<String>> _getLocalFileCollections(String dbPath) async {
     final collections = <String>[];
-    
+
     try {
       final dbDir = Directory(dbPath);
       if (!await dbDir.exists()) return collections;
@@ -183,7 +186,7 @@ class VectorDatabaseMigration {
     String collectionName,
   ) async {
     final documents = <VectorDocument>[];
-    
+
     try {
       final collectionDir = Directory(path.join(dbPath, collectionName));
       if (!await collectionDir.exists()) return documents;
@@ -193,13 +196,13 @@ class VectorDatabaseMigration {
           try {
             final content = await entity.readAsString();
             final data = jsonDecode(content) as Map<String, dynamic>;
-            
+
             final document = VectorDocument(
               id: data['id'] as String,
               vector: (data['vector'] as List).cast<double>(),
               metadata: data['metadata'] as Map<String, dynamic>? ?? {},
             );
-            
+
             documents.add(document);
           } catch (e) {
             debugPrint('⚠️ 跳过无效文档: ${entity.path} - $e');
@@ -218,13 +221,13 @@ class VectorDatabaseMigration {
     try {
       final localDbPath = await _getDefaultLocalDbPath();
       final localDbDir = Directory(localDbPath);
-      
+
       // 如果本地文件数据库存在且不为空，则需要迁移
       if (await localDbDir.exists()) {
         final collections = await _getLocalFileCollections(localDbPath);
         return collections.isNotEmpty;
       }
-      
+
       return false;
     } catch (e) {
       debugPrint('❌ 检查迁移需求失败: $e');

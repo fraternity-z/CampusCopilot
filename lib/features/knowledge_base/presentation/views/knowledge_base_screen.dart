@@ -14,6 +14,7 @@ import '../providers/rag_provider.dart';
 import '../../domain/services/vector_search_service.dart';
 import '../../../llm_chat/domain/providers/llm_provider.dart';
 import '../../../../core/di/database_providers.dart';
+import '../providers/multi_knowledge_base_provider.dart';
 
 /// 知识库管理界面
 ///
@@ -50,6 +51,14 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   @override
   Widget build(BuildContext context) {
+    // 监听知识库选择变化，重新加载文档
+    ref.listen(multiKnowledgeBaseProvider, (previous, next) {
+      if (previous?.currentKnowledgeBase?.id != next.currentKnowledgeBase?.id) {
+        // 知识库选择发生变化，重新加载文档
+        ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('知识库'),
@@ -902,9 +911,17 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
           final concurrentProcessor = ref.read(
             concurrentDocumentProcessingProvider.notifier,
           );
+
+          // 获取当前选中的知识库ID
+          final currentKnowledgeBase = ref
+              .read(multiKnowledgeBaseProvider)
+              .currentKnowledgeBase;
+          final targetKnowledgeBaseId =
+              currentKnowledgeBase?.id ?? 'default_kb';
+
           await concurrentProcessor.submitMultipleDocuments(
             documents: documents,
-            knowledgeBaseId: 'default_kb',
+            knowledgeBaseId: targetKnowledgeBaseId,
             chunkSize: 1000,
             chunkOverlap: 200,
           );
@@ -1600,7 +1617,29 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
               overflow: TextOverflow.ellipsis,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+
+            // 文档来源
+            if (result.documentTitle != null) ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.source,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '来源: ${result.documentTitle}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // 操作按钮
             Row(
