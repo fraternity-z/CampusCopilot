@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../domain/entities/knowledge_base.dart';
+import '../../data/providers/vector_database_provider.dart';
 
 /// 多知识库状态
 @immutable
@@ -47,8 +48,9 @@ class MultiKnowledgeBaseState {
 class MultiKnowledgeBaseNotifier
     extends StateNotifier<MultiKnowledgeBaseState> {
   final AppDatabase _database;
+  final Ref _ref;
 
-  MultiKnowledgeBaseNotifier(this._database)
+  MultiKnowledgeBaseNotifier(this._database, this._ref)
     : super(const MultiKnowledgeBaseState()) {
     _loadKnowledgeBases();
   }
@@ -132,7 +134,12 @@ class MultiKnowledgeBaseNotifier
         updatedAt: now,
       );
 
+      // 创建知识库记录
       await _database.createKnowledgeBase(companion);
+
+      // 创建对应的向量集合
+      await _createVectorCollectionForKnowledgeBase(id);
+
       await _loadKnowledgeBases();
     } catch (e) {
       debugPrint('创建知识库失败: $e');
@@ -303,8 +310,44 @@ class MultiKnowledgeBaseNotifier
       );
 
       debugPrint('✅ 默认知识库创建成功');
+
+      // 为默认知识库创建向量集合
+      await _createVectorCollectionForKnowledgeBase('default_kb');
     } catch (e) {
       debugPrint('❌ 创建默认知识库失败: $e');
+    }
+  }
+
+  /// 为知识库创建向量集合
+  Future<void> _createVectorCollectionForKnowledgeBase(
+    String knowledgeBaseId,
+  ) async {
+    try {
+      debugPrint('📁 为知识库创建向量集合: $knowledgeBaseId');
+
+      // 获取向量数据库
+      final vectorDatabase = await _ref.read(vectorDatabaseProvider.future);
+
+      // 使用默认的向量维度（OpenAI text-embedding-3-small 的维度）
+      const defaultVectorDimension = 1536;
+
+      final result = await vectorDatabase.createCollection(
+        collectionName: knowledgeBaseId,
+        vectorDimension: defaultVectorDimension,
+        description: '知识库 $knowledgeBaseId 的向量集合',
+        metadata: {
+          'knowledgeBaseId': knowledgeBaseId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+
+      if (result.success) {
+        debugPrint('✅ 向量集合创建成功: $knowledgeBaseId');
+      } else {
+        debugPrint('❌ 向量集合创建失败: $knowledgeBaseId - ${result.error}');
+      }
+    } catch (e) {
+      debugPrint('❌ 创建向量集合异常: $knowledgeBaseId - $e');
     }
   }
 }
@@ -315,5 +358,5 @@ final multiKnowledgeBaseProvider =
       ref,
     ) {
       final database = ref.watch(appDatabaseProvider);
-      return MultiKnowledgeBaseNotifier(database);
+      return MultiKnowledgeBaseNotifier(database, ref);
     });

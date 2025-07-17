@@ -5,6 +5,8 @@ import 'dart:convert';
 
 import '../../domain/services/document_processing_service.dart';
 import '../../domain/services/embedding_service.dart';
+import '../../domain/services/vector_database_interface.dart';
+import '../../data/providers/vector_database_provider.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 import 'knowledge_base_config_provider.dart';
@@ -317,16 +319,42 @@ class DocumentProcessingNotifier
           );
 
           if (result.isSuccess) {
-            // 保存嵌入向量到数据库
+            // 准备向量文档列表
+            final vectorDocuments = <VectorDocument>[];
+
+            // 保存嵌入向量到关系型数据库和向量数据库
             for (int j = 0; j < batchChunks.length; j++) {
               if (j < result.embeddings.length) {
-                final embeddingJson = jsonEncode(result.embeddings[j]);
-                await _database.updateChunkEmbedding(
-                  batchChunks[j].id,
-                  embeddingJson,
+                final chunk = batchChunks[j];
+                final embedding = result.embeddings[j];
+                final embeddingJson = jsonEncode(embedding);
+
+                // 保存到关系型数据库
+                await _database.updateChunkEmbedding(chunk.id, embeddingJson);
+
+                // 准备向量文档
+                vectorDocuments.add(
+                  VectorDocument(
+                    id: chunk.id,
+                    vector: embedding,
+                    metadata: {
+                      'documentId': documentId,
+                      'chunkIndex': chunk.index,
+                      'content': chunk.content,
+                      'characterCount': chunk.characterCount,
+                      'tokenCount': chunk.tokenCount,
+                      'createdAt': DateTime.now().toIso8601String(),
+                    },
+                  ),
                 );
               }
             }
+
+            // 批量保存到向量数据库
+            if (vectorDocuments.isNotEmpty) {
+              await _saveVectorsToVectorDatabase(vectorDocuments, documentId);
+            }
+
             processedCount += batchChunks.length;
             debugPrint('✅ 已完成 $processedCount/${chunks.length} 个文本块的嵌入向量生成');
           } else {
@@ -351,6 +379,43 @@ class DocumentProcessingNotifier
       // 嵌入生成失败不应该影响整个文档处理流程
       // 只记录错误，文档仍然可以被标记为已完成
       debugPrint('❌ 为文档 $documentId 生成嵌入向量失败: $e');
+    }
+  }
+
+  /// 保存向量到向量数据库
+  Future<void> _saveVectorsToVectorDatabase(
+    List<VectorDocument> vectorDocuments,
+    String documentId,
+  ) async {
+    try {
+      // 从文本块中获取知识库ID
+      final chunks = await _database.getChunksByDocument(documentId);
+      String knowledgeBaseId = 'default_kb';
+
+      if (chunks.isNotEmpty) {
+        knowledgeBaseId = chunks.first.knowledgeBaseId;
+      }
+
+      debugPrint(
+        '💾 保存 ${vectorDocuments.length} 个向量到向量数据库，知识库: $knowledgeBaseId',
+      );
+
+      // 获取向量数据库
+      final vectorDatabase = await _ref.read(vectorDatabaseProvider.future);
+
+      // 批量插入向量
+      final result = await vectorDatabase.insertVectors(
+        collectionName: knowledgeBaseId,
+        documents: vectorDocuments,
+      );
+
+      if (result.success) {
+        debugPrint('✅ 向量保存成功: ${vectorDocuments.length} 个向量');
+      } else {
+        debugPrint('❌ 向量保存失败: ${result.error}');
+      }
+    } catch (e) {
+      debugPrint('❌ 保存向量到向量数据库异常: $e');
     }
   }
 }
