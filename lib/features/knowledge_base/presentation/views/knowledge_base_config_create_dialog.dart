@@ -24,7 +24,7 @@ class _KnowledgeBaseConfigCreateDialogState
   int _chunkSize = 1000;
   int _chunkOverlap = 200;
   int _maxRetrievedChunks = 5;
-  double _similarityThreshold = 0.7;
+  double _similarityThreshold = 0.3; // 降低默认阈值，提高召回率
 
   @override
   void dispose() {
@@ -37,10 +37,32 @@ class _KnowledgeBaseConfigCreateDialogState
     final configState = ref.watch(knowledgeBaseConfigProvider);
     final availableModels = configState.availableEmbeddingModels;
 
+    // 确保选中的模型ID在可用模型列表中
+    if (_selectedModelId == null && availableModels.isNotEmpty) {
+      // 优先选择 text-embedding-3-small，如果不存在则选择第一个
+      final preferredModel = availableModels.firstWhere(
+        (model) => model.id == 'text-embedding-3-small',
+        orElse: () => availableModels.first,
+      );
+      _selectedModelId = preferredModel.id;
+      _selectedModelName = preferredModel.name;
+      _selectedModelProvider = preferredModel.provider;
+    } else if (_selectedModelId != null &&
+        !availableModels.any((model) => model.id == _selectedModelId)) {
+      // 如果当前选中的模型不在可用列表中，重置为第一个可用模型
+      if (availableModels.isNotEmpty) {
+        final firstModel = availableModels.first;
+        _selectedModelId = firstModel.id;
+        _selectedModelName = firstModel.name;
+        _selectedModelProvider = firstModel.provider;
+      }
+    }
+
     return AlertDialog(
       title: const Text('创建知识库配置'),
       content: SizedBox(
         width: double.maxFinite,
+        height: 500, // 设置固定高度，避免溢出
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -105,15 +127,20 @@ class _KnowledgeBaseConfigCreateDialogState
                     items: availableModels.map((model) {
                       return DropdownMenuItem(
                         value: model.id,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(model.name),
-                            Text(
-                              '${model.provider} • ${model.id}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(model.name, overflow: TextOverflow.ellipsis),
+                              Text(
+                                '${model.provider} • ${model.id}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),

@@ -242,7 +242,7 @@ class KnowledgeBaseConfigNotifier
     int chunkSize = 1000,
     int chunkOverlap = 200,
     int maxRetrievedChunks = 5,
-    double similarityThreshold = 0.7,
+    double similarityThreshold = 0.3, // 降低默认阈值，提高召回率
   }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);

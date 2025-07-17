@@ -1120,12 +1120,24 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
   /// 获取状态颜色
   Color _getStatusColor(String status) {
     switch (status) {
+      case 'completed':
       case '已完成':
         return Colors.green;
+      case 'processing':
+      case 'saving_chunks':
+      case 'generating_embeddings':
       case '处理中':
+      case '保存文本块':
+      case '生成向量':
         return Colors.orange;
+      case 'embedding_failed':
+      case 'failed':
+      case '向量生成失败':
       case '失败':
         return Colors.red;
+      case 'pending':
+      case '等待中':
+        return Colors.blue;
       default:
         return Colors.grey;
     }

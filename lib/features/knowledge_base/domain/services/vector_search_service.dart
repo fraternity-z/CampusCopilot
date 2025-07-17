@@ -59,7 +59,7 @@ class VectorSearchService {
     required String query,
     required KnowledgeBaseConfig config,
     String? knowledgeBaseId,
-    double similarityThreshold = 0.7,
+    double similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     int maxResults = 5,
   }) async {
     final startTime = DateTime.now();
@@ -523,6 +523,7 @@ class VectorSearchService {
     required KnowledgeBaseConfig config,
   }) async {
     final results = <SearchResultItem>[];
+    final allSimilarities = <double>[]; // 用于统计相似度分布
     int processedCount = 0;
     int skippedCount = 0;
 
@@ -561,6 +562,9 @@ class VectorSearchService {
               chunkEmbedding,
             );
 
+            // 记录所有相似度值用于统计
+            allSimilarities.add(similarity);
+
             // 如果相似度超过阈值，添加到结果中
             if (similarity >= similarityThreshold) {
               results.add(
@@ -596,6 +600,29 @@ class VectorSearchService {
     if (skippedCount > 0) {
       debugPrint('⚠️ 跳过了 $skippedCount 个维度不匹配的向量');
       debugPrint('💡 建议：重新处理文档以生成兼容的嵌入向量');
+    }
+
+    // 打印相似度分布统计
+    if (allSimilarities.isNotEmpty) {
+      allSimilarities.sort((a, b) => b.compareTo(a)); // 降序排列
+      final maxSim = allSimilarities.first;
+      final minSim = allSimilarities.last;
+      final avgSim =
+          allSimilarities.reduce((a, b) => a + b) / allSimilarities.length;
+
+      debugPrint('📊 相似度分布统计:');
+      debugPrint('  - 总文档块数: ${allSimilarities.length}');
+      debugPrint('  - 最高相似度: ${maxSim.toStringAsFixed(3)}');
+      debugPrint('  - 最低相似度: ${minSim.toStringAsFixed(3)}');
+      debugPrint('  - 平均相似度: ${avgSim.toStringAsFixed(3)}');
+      debugPrint('  - 阈值: ${similarityThreshold.toStringAsFixed(3)}');
+      debugPrint('  - 通过阈值的数量: ${results.length}');
+
+      // 显示前5个最高相似度
+      final top5 = allSimilarities.take(5).toList();
+      debugPrint(
+        '  - 前5个相似度: ${top5.map((s) => s.toStringAsFixed(3)).join(', ')}',
+      );
     }
 
     debugPrint('📊 处理了 $processedCount 个文本块，找到 ${results.length} 个匹配结果');

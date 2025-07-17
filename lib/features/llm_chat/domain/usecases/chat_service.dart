@@ -22,6 +22,7 @@ import '../../../../data/local/tables/general_settings_table.dart';
 import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
+import '../../../knowledge_base/domain/entities/knowledge_document.dart';
 
 /// 聊天服务
 ///
@@ -122,13 +123,45 @@ class ChatService {
       // 5. 检查是否需要RAG增强
       String enhancedPrompt = content;
       final ragService = _ref.read(ragServiceProvider);
-      final knowledgeConfig = _ref
-          .read(knowledgeBaseConfigProvider)
-          .currentConfig;
 
       // 检查RAG开关是否启用
       final settingsState = _ref.read(settingsProvider);
       final ragEnabled = settingsState.chatSettings.enableRag;
+
+      // 确保配置已加载完成
+      final knowledgeConfigState = _ref.read(knowledgeBaseConfigProvider);
+      var knowledgeConfig = knowledgeConfigState.currentConfig;
+
+      // 如果RAG启用但配置未加载完成，尝试等待或使用兜底配置
+      if (ragEnabled && knowledgeConfig == null) {
+        debugPrint('⏳ 知识库配置未就绪，尝试加载...');
+        try {
+          // 尝试从数据库直接获取兜底配置
+          final database = _ref.read(appDatabaseProvider);
+          final configs = await database.getAllKnowledgeBaseConfigs();
+          if (configs.isNotEmpty) {
+            final dbConfig = configs.first;
+            // 转换为 KnowledgeBaseConfig 类型
+            knowledgeConfig = KnowledgeBaseConfig(
+              id: dbConfig.id,
+              name: dbConfig.name,
+              embeddingModelId: dbConfig.embeddingModelId,
+              embeddingModelName: dbConfig.embeddingModelName,
+              embeddingModelProvider: dbConfig.embeddingModelProvider,
+              chunkSize: dbConfig.chunkSize,
+              chunkOverlap: dbConfig.chunkOverlap,
+              maxRetrievedChunks: dbConfig.maxRetrievedChunks,
+              similarityThreshold: dbConfig.similarityThreshold,
+              isDefault: dbConfig.isDefault,
+              createdAt: dbConfig.createdAt,
+              updatedAt: dbConfig.updatedAt,
+            );
+            debugPrint('🔄 使用兜底配置: ${knowledgeConfig.name}');
+          }
+        } catch (e) {
+          debugPrint('❌ 加载知识库配置失败: $e');
+        }
+      }
 
       // 获取当前选中的知识库
       final currentKnowledgeBase = _ref

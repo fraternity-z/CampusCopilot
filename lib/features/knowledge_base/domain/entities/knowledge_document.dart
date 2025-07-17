@@ -47,7 +47,7 @@ class KnowledgeBaseConfig {
     this.chunkSize = 1000,
     this.chunkOverlap = 200,
     this.maxRetrievedChunks = 5,
-    this.similarityThreshold = 0.7,
+    this.similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
@@ -217,8 +217,14 @@ class KnowledgeDocument {
     switch (status) {
       case 'processing':
         return '处理中';
+      case 'saving_chunks':
+        return '保存文本块';
+      case 'generating_embeddings':
+        return '生成向量';
       case 'completed':
         return '已完成';
+      case 'embedding_failed':
+        return '向量生成失败';
       case 'failed':
         return '失败';
       case 'pending':

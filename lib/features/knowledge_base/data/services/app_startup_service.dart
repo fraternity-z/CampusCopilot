@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/vector_database_provider.dart';
 import 'migration_check_service.dart';
+import '../../../../core/di/database_providers.dart';
 
 /// 应用启动服务
 ///
@@ -52,6 +53,12 @@ class AppStartupService {
       final vectorDbResult = await _initializeVectorDatabase(ref);
       if (!vectorDbResult.success) {
         result.warnings.add('向量数据库初始化失败: ${vectorDbResult.message}');
+      }
+
+      // 2.5. 确保所有知识库都有对应的向量集合
+      final vectorCollectionResult = await _ensureVectorCollections(ref);
+      if (!vectorCollectionResult.success) {
+        result.warnings.add('向量集合检查失败: ${vectorCollectionResult.message}');
       }
 
       // 3. 验证系统健康状态
@@ -181,6 +188,81 @@ class AppStartupService {
     } catch (e) {
       debugPrint('❌ 系统健康检查失败: $e');
       return AppStartupResult(success: false, message: '系统健康检查失败: $e');
+    }
+  }
+
+  /// 确保所有知识库都有对应的向量集合
+  Future<AppStartupResult> _ensureVectorCollections(WidgetRef ref) async {
+    try {
+      debugPrint('📁 检查知识库向量集合...');
+
+      // 获取数据库和向量数据库
+      final database = ref.read(appDatabaseProvider);
+      final vectorDatabase = await ref.read(vectorDatabaseProvider.future);
+
+      // 获取所有知识库
+      final knowledgeBases = await database.getAllKnowledgeBases();
+      debugPrint('📊 发现 ${knowledgeBases.length} 个知识库');
+
+      int createdCount = 0;
+      int existingCount = 0;
+      final errors = <String>[];
+
+      for (final kb in knowledgeBases) {
+        try {
+          // 检查向量集合是否存在
+          final collectionExists = await vectorDatabase.collectionExists(kb.id);
+
+          if (!collectionExists) {
+            debugPrint('🔧 为知识库创建向量集合: ${kb.id} (${kb.name})');
+
+            // 创建向量集合
+            const defaultVectorDimension = 1536;
+            final result = await vectorDatabase.createCollection(
+              collectionName: kb.id,
+              vectorDimension: defaultVectorDimension,
+              description: '知识库 ${kb.name} 的向量集合',
+              metadata: {
+                'knowledgeBaseId': kb.id,
+                'knowledgeBaseName': kb.name,
+                'createdAt': DateTime.now().toIso8601String(),
+                'autoCreated': 'true',
+              },
+            );
+
+            if (result.success) {
+              createdCount++;
+              debugPrint('✅ 向量集合创建成功: ${kb.id}');
+            } else {
+              errors.add('创建向量集合失败: ${kb.id} - ${result.error}');
+              debugPrint('❌ 向量集合创建失败: ${kb.id} - ${result.error}');
+            }
+          } else {
+            existingCount++;
+            debugPrint('✅ 向量集合已存在: ${kb.id}');
+          }
+        } catch (e) {
+          errors.add('处理知识库失败: ${kb.id} - $e');
+          debugPrint('❌ 处理知识库失败: ${kb.id} - $e');
+        }
+      }
+
+      final message = '向量集合检查完成: 已存在 $existingCount 个，新创建 $createdCount 个';
+      debugPrint('📊 $message');
+
+      if (errors.isNotEmpty) {
+        debugPrint('⚠️ 向量集合检查有错误: ${errors.join(', ')}');
+        return AppStartupResult(
+          success: false,
+          message: '$message，但有 ${errors.length} 个错误',
+          warnings: errors,
+        );
+      }
+
+      return AppStartupResult(success: true, message: message);
+    } catch (e) {
+      debugPrint('❌ 向量集合检查失败: $e');
+      return AppStartupResult(success: false, message: '向量集合检查失败: $e');
     }
   }
 

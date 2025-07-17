@@ -297,7 +297,8 @@ class DocumentProcessingNotifier
       }
 
       // 分批处理，避免一次性处理太多文本块导致超时
-      const batchSize = 10; // 每批处理10个文本块
+      // 根据文档规模动态调整批大小，默认 50，可通过配置覆盖
+      const batchSize = 50; // 每批处理50个文本块，提高吞吐量
       int processedCount = 0;
 
       for (int i = 0; i < chunks.length; i += batchSize) {
@@ -368,10 +369,7 @@ class DocumentProcessingNotifier
           // 继续处理下一批
         }
 
-        // 每批之间稍作延迟，避免API限流
-        if (i + batchSize < chunks.length) {
-          await Future.delayed(const Duration(milliseconds: 100));
-        }
+        // 如有必要可根据具体 API 限流策略在此处添加延迟，默认不等待
       }
 
       debugPrint('🎉 嵌入向量生成完成，成功处理 $processedCount/${chunks.length} 个文本块');
@@ -403,7 +401,42 @@ class DocumentProcessingNotifier
       // 获取向量数据库
       final vectorDatabase = await _ref.read(vectorDatabaseProvider.future);
 
+      // 确保目标集合存在，若不存在则自动创建
+      debugPrint('🔍 检查向量集合是否存在: $knowledgeBaseId');
+      final collectionExists = await vectorDatabase.collectionExists(
+        knowledgeBaseId,
+      );
+      debugPrint('📊 集合存在状态: $collectionExists');
+
+      if (!collectionExists) {
+        debugPrint('🔧 自动创建向量集合: $knowledgeBaseId');
+        // 使用首个向量的维度作为集合维度
+        final vectorDim = vectorDocuments.first.vector.length;
+        debugPrint('📏 向量维度: $vectorDim');
+
+        final createResult = await vectorDatabase.createCollection(
+          collectionName: knowledgeBaseId,
+          vectorDimension: vectorDim,
+          description: '知识库 $knowledgeBaseId 的向量集合',
+          metadata: {
+            'knowledgeBaseId': knowledgeBaseId,
+            'createdAt': DateTime.now().toIso8601String(),
+            'autoCreated': 'true',
+          },
+        );
+
+        if (createResult.success) {
+          debugPrint('✅ 向量集合创建成功: $knowledgeBaseId');
+        } else {
+          debugPrint('❌ 向量集合创建失败: $knowledgeBaseId - ${createResult.error}');
+          throw Exception('创建向量集合失败: ${createResult.error}');
+        }
+      } else {
+        debugPrint('✅ 向量集合已存在: $knowledgeBaseId');
+      }
+
       // 批量插入向量
+      debugPrint('📝 插入 ${vectorDocuments.length} 个向量到集合: $knowledgeBaseId');
       final result = await vectorDatabase.insertVectors(
         collectionName: knowledgeBaseId,
         documents: vectorDocuments,
@@ -413,6 +446,12 @@ class DocumentProcessingNotifier
         debugPrint('✅ 向量保存成功: ${vectorDocuments.length} 个向量');
       } else {
         debugPrint('❌ 向量保存失败: ${result.error}');
+        // 如果插入失败，再次检查集合是否存在
+        final stillExists = await vectorDatabase.collectionExists(
+          knowledgeBaseId,
+        );
+        debugPrint('🔍 插入失败后集合存在状态: $stillExists');
+        throw Exception('插入向量失败: ${result.error}');
       }
     } catch (e) {
       debugPrint('❌ 保存向量到向量数据库异常: $e');

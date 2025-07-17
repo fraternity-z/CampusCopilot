@@ -1,7 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:drift/drift.dart';
+import 'dart:convert';
 
 import '../../domain/services/concurrent_document_processing_service.dart';
+import '../../domain/entities/knowledge_document.dart';
+import '../../presentation/providers/knowledge_base_config_provider.dart';
+import '../../presentation/providers/document_processing_provider.dart';
+import '../../../../core/di/database_providers.dart';
+import '../../../../data/local/app_database.dart';
 
 /// 并发文档处理服务提供者
 final concurrentDocumentProcessingServiceProvider =
@@ -51,8 +58,9 @@ class ConcurrentDocumentProcessingState {
 class ConcurrentDocumentProcessingNotifier
     extends StateNotifier<ConcurrentDocumentProcessingState> {
   final ConcurrentDocumentProcessingService _processingService;
+  final Ref _ref;
 
-  ConcurrentDocumentProcessingNotifier(this._processingService)
+  ConcurrentDocumentProcessingNotifier(this._processingService, this._ref)
     : super(const ConcurrentDocumentProcessingState()) {
     _initialize();
   }
@@ -183,23 +191,52 @@ class ConcurrentDocumentProcessingNotifier
 
       final result = task.result!;
 
-      // 保存文本块到数据库
+      // 1. 更新状态为"正在保存文本块"
+      await _updateDocumentStatus(task.documentId, 'saving_chunks');
+
+      // 2. 保存文本块到数据库
       await _saveChunksToDatabase(
         task.documentId,
         task.knowledgeBaseId,
         result.chunks,
       );
 
-      // 生成嵌入向量
-      await _generateEmbeddingsForChunks(task.documentId, result.chunks);
+      // 3. 更新状态为"正在生成嵌入向量"
+      await _updateDocumentStatus(task.documentId, 'generating_embeddings');
 
-      // 更新文档状态
-      await _updateDocumentStatus(task.documentId, 'completed');
-      await _updateDocumentMetadata(task.documentId, result.metadata);
+      // 4. 生成嵌入向量
+      bool embeddingSuccess = false;
+      try {
+        embeddingSuccess = await _generateEmbeddingsForChunks(
+          task.documentId,
+          result.chunks,
+        );
+      } catch (e) {
+        debugPrint('❌ 嵌入向量生成异常: $e');
+        embeddingSuccess = false;
+      }
+
+      // 5. 根据嵌入向量生成结果更新最终状态
+      if (embeddingSuccess) {
+        await _updateDocumentStatus(task.documentId, 'completed');
+        debugPrint('✅ 文档处理完全完成: ${task.documentId}');
+      } else {
+        await _updateDocumentStatus(task.documentId, 'embedding_failed');
+        debugPrint('⚠️ 文档分块完成但嵌入向量生成失败: ${task.documentId}');
+      }
+
+      // 6. 更新文档元数据
+      await _updateDocumentMetadata(task.documentId, {
+        'totalChunks': result.chunks.length,
+        'processingTime': DateTime.now().difference(task.createdAt).inSeconds,
+        'embeddingSuccess': embeddingSuccess,
+        ...result.metadata,
+      });
 
       debugPrint('✅ 任务后续处理完成: ${task.id}');
     } catch (e) {
       debugPrint('❌ 任务后续处理失败: ${task.id} - $e');
+      await _updateDocumentStatus(task.documentId, 'failed');
     }
   }
 
@@ -209,28 +246,278 @@ class ConcurrentDocumentProcessingNotifier
     String knowledgeBaseId,
     List<dynamic> chunks, // 使用 dynamic 类型
   ) async {
-    // 这里需要根据实际的数据库接口来实现
-    // 暂时跳过具体实现，等待数据库接口完善
-    debugPrint('保存 ${chunks.length} 个文本块到数据库');
+    try {
+      debugPrint('💾 开始保存 ${chunks.length} 个文本块到数据库');
+
+      final database = _ref.read(appDatabaseProvider);
+
+      for (int i = 0; i < chunks.length; i++) {
+        final chunk = chunks[i];
+
+        // 从动态类型中提取数据
+        final chunkId = '${documentId}_chunk_$i';
+        final content = chunk.content as String? ?? '';
+        final characterCount = content.length;
+        final tokenCount = _estimateTokenCount(content);
+
+        // 保存文本块到数据库
+        await database.insertKnowledgeChunk(
+          KnowledgeChunksTableCompanion.insert(
+            id: chunkId,
+            knowledgeBaseId: knowledgeBaseId,
+            documentId: documentId,
+            content: content,
+            chunkIndex: i,
+            characterCount: characterCount,
+            tokenCount: tokenCount,
+            embedding: const Value(null), // 嵌入向量稍后生成
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        // 每50个块输出一次进度
+        if ((i + 1) % 50 == 0 || i == chunks.length - 1) {
+          debugPrint('💾 已保存 ${i + 1}/${chunks.length} 个文本块');
+        }
+      }
+
+      debugPrint('✅ 文本块保存完成，共保存 ${chunks.length} 个文本块');
+    } catch (e) {
+      debugPrint('❌ 保存文本块到数据库失败: $e');
+      rethrow;
+    }
+  }
+
+  /// 估算token数量（简化版本）
+  int _estimateTokenCount(String text) {
+    // 简化的token估算：大约每4个字符为1个token
+    return (text.length / 4).ceil();
+  }
+
+  /// 创建默认配置
+  Future<void> _createDefaultConfig(AppDatabase database) async {
+    try {
+      debugPrint('🔧 创建默认知识库配置...');
+
+      final now = DateTime.now();
+      final config = KnowledgeBaseConfigsTableCompanion.insert(
+        id: 'default_config',
+        name: '默认配置',
+        embeddingModelId: 'text-embedding-3-small',
+        embeddingModelName: 'Text Embedding 3 Small',
+        embeddingModelProvider: 'openai',
+        chunkSize: const Value(1000),
+        chunkOverlap: const Value(200),
+        maxRetrievedChunks: const Value(5),
+        similarityThreshold: const Value(0.3),
+        isDefault: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await database.upsertKnowledgeBaseConfig(config);
+      debugPrint('✅ 默认知识库配置创建成功');
+    } catch (e) {
+      debugPrint('❌ 创建默认知识库配置失败: $e');
+      rethrow;
+    }
   }
 
   /// 生成嵌入向量
-  Future<void> _generateEmbeddingsForChunks(
+  Future<bool> _generateEmbeddingsForChunks(
     String documentId,
     List<dynamic> chunks, // 使用 dynamic 类型
   ) async {
     try {
-      // 暂时跳过嵌入向量生成，等待接口完善
-      debugPrint('为文档 $documentId 生成嵌入向量（暂时跳过）');
+      debugPrint('🧠 开始为文档 $documentId 生成嵌入向量，共 ${chunks.length} 个文本块');
+
+      // 获取数据库中的文本块（因为并发处理的chunks可能格式不同）
+      final database = _ref.read(appDatabaseProvider);
+      final dbChunks = await database.getChunksByDocument(documentId);
+
+      if (dbChunks.isEmpty) {
+        debugPrint('⚠️ 未找到文档 $documentId 的文本块，跳过嵌入向量生成');
+        return false;
+      }
+
+      // 直接实现嵌入向量生成逻辑
+      final success = await _generateEmbeddingsForDocumentChunks(
+        documentId,
+        dbChunks,
+      );
+
+      if (success) {
+        debugPrint('✅ 文档 $documentId 嵌入向量生成完成');
+        return true;
+      } else {
+        debugPrint('❌ 文档 $documentId 嵌入向量生成失败');
+        return false;
+      }
     } catch (e) {
       debugPrint('❌ 生成嵌入向量异常: $e');
+      return false;
+    }
+  }
+
+  /// 为文档块生成嵌入向量的实现
+  Future<bool> _generateEmbeddingsForDocumentChunks(
+    String documentId,
+    List<dynamic> chunks,
+  ) async {
+    try {
+      // 获取知识库配置
+      final configState = _ref.read(knowledgeBaseConfigProvider);
+      var config = configState.currentConfig;
+
+      // 如果配置未加载，尝试获取兜底配置
+      if (config == null) {
+        debugPrint('⏳ 知识库配置未就绪，尝试加载兜底配置...');
+        try {
+          final database = _ref.read(appDatabaseProvider);
+          final configs = await database.getAllKnowledgeBaseConfigs();
+
+          if (configs.isNotEmpty) {
+            final dbConfig = configs.first;
+            // 转换为 KnowledgeBaseConfig 类型
+            config = KnowledgeBaseConfig(
+              id: dbConfig.id,
+              name: dbConfig.name,
+              embeddingModelId: dbConfig.embeddingModelId,
+              embeddingModelName: dbConfig.embeddingModelName,
+              embeddingModelProvider: dbConfig.embeddingModelProvider,
+              chunkSize: dbConfig.chunkSize,
+              chunkOverlap: dbConfig.chunkOverlap,
+              maxRetrievedChunks: dbConfig.maxRetrievedChunks,
+              similarityThreshold: dbConfig.similarityThreshold,
+              isDefault: dbConfig.isDefault,
+              createdAt: dbConfig.createdAt,
+              updatedAt: dbConfig.updatedAt,
+            );
+            debugPrint('🔄 使用兜底配置: ${config.name}');
+          } else {
+            // 如果数据库中也没有配置，创建一个默认配置
+            debugPrint('🔧 数据库中没有配置，创建默认配置...');
+            await _createDefaultConfig(database);
+
+            // 重新尝试获取配置
+            final newConfigs = await database.getAllKnowledgeBaseConfigs();
+            if (newConfigs.isNotEmpty) {
+              final dbConfig = newConfigs.first;
+              config = KnowledgeBaseConfig(
+                id: dbConfig.id,
+                name: dbConfig.name,
+                embeddingModelId: dbConfig.embeddingModelId,
+                embeddingModelName: dbConfig.embeddingModelName,
+                embeddingModelProvider: dbConfig.embeddingModelProvider,
+                chunkSize: dbConfig.chunkSize,
+                chunkOverlap: dbConfig.chunkOverlap,
+                maxRetrievedChunks: dbConfig.maxRetrievedChunks,
+                similarityThreshold: dbConfig.similarityThreshold,
+                isDefault: dbConfig.isDefault,
+                createdAt: dbConfig.createdAt,
+                updatedAt: dbConfig.updatedAt,
+              );
+              debugPrint('✅ 创建并使用默认配置: ${config.name}');
+            }
+          }
+        } catch (e) {
+          debugPrint('❌ 加载知识库配置失败: $e');
+        }
+      }
+
+      if (config == null) {
+        debugPrint('❌ 未找到知识库配置，无法生成嵌入向量');
+        return false;
+      }
+
+      // 获取嵌入服务
+      final embeddingService = _ref.read(embeddingServiceProvider);
+      final database = _ref.read(appDatabaseProvider);
+
+      debugPrint('🧠 开始生成嵌入向量，总共 ${chunks.length} 个文本块');
+
+      // 分批处理，避免一次性处理太多文本块导致超时
+      const batchSize = 50;
+      int processedCount = 0;
+
+      for (int i = 0; i < chunks.length; i += batchSize) {
+        final endIndex = (i + batchSize < chunks.length)
+            ? i + batchSize
+            : chunks.length;
+        final batchChunks = chunks.sublist(i, endIndex);
+        final batchTexts = batchChunks
+            .map((chunk) => chunk.content as String)
+            .toList();
+
+        debugPrint(
+          '🔄 处理第 ${(i / batchSize).floor() + 1} 批，包含 ${batchChunks.length} 个文本块',
+        );
+
+        try {
+          // 生成当前批次的嵌入向量
+          final result = await embeddingService.generateEmbeddingsForChunks(
+            chunks: batchTexts,
+            config: config,
+          );
+
+          if (result.isSuccess) {
+            // 保存嵌入向量到数据库
+            for (int j = 0; j < batchChunks.length; j++) {
+              if (j < result.embeddings.length) {
+                final chunk = batchChunks[j];
+                final embedding = result.embeddings[j];
+                final embeddingJson = jsonEncode(embedding);
+
+                // 保存到关系型数据库
+                await database.updateChunkEmbedding(chunk.id, embeddingJson);
+              }
+            }
+
+            processedCount += batchChunks.length;
+            debugPrint('✅ 已完成 $processedCount/${chunks.length} 个文本块的嵌入向量生成');
+
+            // 更新进度到数据库
+            final progress = processedCount / chunks.length;
+            await _updateDocumentProgress(documentId, progress);
+          } else {
+            debugPrint(
+              '❌ 第 ${(i / batchSize).floor() + 1} 批嵌入向量生成失败: ${result.error}',
+            );
+          }
+        } catch (batchError) {
+          debugPrint('❌ 第 ${(i / batchSize).floor() + 1} 批处理异常: $batchError');
+        }
+      }
+
+      debugPrint('🎉 嵌入向量生成完成，成功处理 $processedCount/${chunks.length} 个文本块');
+      return true;
+    } catch (e) {
+      debugPrint('❌ 为文档 $documentId 生成嵌入向量失败: $e');
+      return false;
     }
   }
 
   /// 更新文档状态
   Future<void> _updateDocumentStatus(String documentId, String status) async {
-    // 暂时跳过，等待数据库接口完善
-    debugPrint('更新文档状态: $documentId -> $status');
+    try {
+      debugPrint('📝 更新文档状态: $documentId -> $status');
+
+      final database = _ref.read(appDatabaseProvider);
+
+      // 使用 update 方法更新文档状态
+      await (database.update(
+        database.knowledgeDocumentsTable,
+      )..where((t) => t.id.equals(documentId))).write(
+        KnowledgeDocumentsTableCompanion(
+          status: Value(status),
+          processedAt: Value(DateTime.now()),
+        ),
+      );
+
+      debugPrint('✅ 文档状态更新成功: $documentId -> $status');
+    } catch (e) {
+      debugPrint('❌ 更新文档状态失败: $documentId -> $status, 错误: $e');
+    }
   }
 
   /// 更新文档元数据
@@ -238,8 +525,45 @@ class ConcurrentDocumentProcessingNotifier
     String documentId,
     Map<String, dynamic> metadata,
   ) async {
-    // 暂时跳过，等待数据库接口完善
-    debugPrint('更新文档元数据: $documentId');
+    try {
+      debugPrint('📝 更新文档元数据: $documentId');
+
+      final database = _ref.read(appDatabaseProvider);
+      final metadataJson = jsonEncode(metadata);
+
+      // 更新文档元数据
+      await (database.update(
+        database.knowledgeDocumentsTable,
+      )..where((t) => t.id.equals(documentId))).write(
+        KnowledgeDocumentsTableCompanion(
+          metadata: Value(metadataJson),
+          processedAt: Value(DateTime.now()),
+        ),
+      );
+
+      debugPrint('✅ 文档元数据更新成功: $documentId');
+    } catch (e) {
+      debugPrint('❌ 更新文档元数据失败: $documentId, 错误: $e');
+    }
+  }
+
+  /// 更新文档进度
+  Future<void> _updateDocumentProgress(
+    String documentId,
+    double progress,
+  ) async {
+    try {
+      final database = _ref.read(appDatabaseProvider);
+
+      // 更新文档进度
+      await (database.update(
+        database.knowledgeDocumentsTable,
+      )..where((t) => t.id.equals(documentId))).write(
+        KnowledgeDocumentsTableCompanion(indexProgress: Value(progress)),
+      );
+    } catch (e) {
+      debugPrint('❌ 更新文档进度失败: $documentId, 错误: $e');
+    }
   }
 
   /// 更新状态
@@ -295,7 +619,7 @@ final concurrentDocumentProcessingProvider =
         concurrentDocumentProcessingServiceProvider,
       );
 
-      return ConcurrentDocumentProcessingNotifier(processingService);
+      return ConcurrentDocumentProcessingNotifier(processingService, ref);
     });
 
 /// 处理统计信息提供者

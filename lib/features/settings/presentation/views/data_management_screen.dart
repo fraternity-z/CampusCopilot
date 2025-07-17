@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../providers/data_management_provider.dart';
 import '../../../llm_chat/presentation/providers/chat_provider.dart';
 import '../providers/settings_provider.dart';
+import '../../../knowledge_base/data/services/vector_collection_repair_service.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
 /// 数据管理页面
@@ -52,6 +53,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                 _buildBackupSection(context),
                 const SizedBox(height: 16),
                 _buildStorageSection(context),
+                const SizedBox(height: 16),
+                _buildSystemMaintenanceSection(context),
                 const SizedBox(height: 16),
                 _buildDangerZoneSection(context),
               ],
@@ -211,6 +214,50 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('错误: $err')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 系统维护区域
+  Widget _buildSystemMaintenanceSection(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.build, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '系统维护',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.auto_fix_high),
+              title: const Text('修复向量集合'),
+              subtitle: const Text('检查并修复缺失的向量集合，解决搜索问题'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _repairVectorCollections,
+              contentPadding: EdgeInsets.zero,
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('重建向量索引'),
+              subtitle: const Text('重新构建向量索引以提高搜索性能'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _rebuildVectorIndex,
+              contentPadding: EdgeInsets.zero,
             ),
           ],
         ),
@@ -672,5 +719,163 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
             double.parse(knowledgeSize) +
             0.1)
         .toStringAsFixed(2);
+  }
+
+  /// 修复向量集合
+  Future<void> _repairVectorCollections() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // 显示确认对话框
+      final confirmed = await _showConfirmationDialog(
+        context: context,
+        title: '修复向量集合',
+        content: '这将检查所有知识库并为缺失的向量集合创建新的集合。此操作是安全的，不会删除任何数据。\n\n是否继续？',
+        confirmText: '开始修复',
+      );
+
+      if (confirmed != true) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // 执行修复
+      final repairService = ref.read(vectorCollectionRepairServiceProvider);
+      final result = await repairService.repairAllCollections(ref);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // 显示结果
+        final message = result.success
+            ? '✅ ${result.message}'
+            : '❌ ${result.message}';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: result.success
+                ? Colors.green
+                : Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        // 如果有详细信息，显示详细对话框
+        if (result.hasAnyOperation) {
+          _showRepairResultDialog(result);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('修复失败: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 重建向量索引
+  Future<void> _rebuildVectorIndex() async {
+    // 显示确认对话框
+    final confirmed = await _showConfirmationDialog(
+      context: context,
+      title: '重建向量索引',
+      content: '此功能正在开发中，将在未来版本中提供。\n\n重建向量索引可以提高搜索性能，但需要较长时间。',
+      confirmText: '了解',
+    );
+
+    if (confirmed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('此功能正在开发中，敬请期待！'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// 显示修复结果详细对话框
+  void _showRepairResultDialog(VectorCollectionRepairResult result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('修复结果详情'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (result.existingCollections.isNotEmpty) ...[
+                Text(
+                  '✅ 已存在的向量集合 (${result.existingCollections.length})',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...result.existingCollections.map(
+                  (id) => Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 4),
+                    child: Text('• $id'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (result.createdCollections.isNotEmpty) ...[
+                Text(
+                  '🆕 新创建的向量集合 (${result.createdCollections.length})',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...result.createdCollections.map(
+                  (id) => Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 4),
+                    child: Text('• $id'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (result.failedCollections.isNotEmpty) ...[
+                Text(
+                  '❌ 创建失败的向量集合 (${result.failedCollections.length})',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...result.failedCollections.entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 4),
+                    child: Text('• ${entry.key}: ${entry.value}'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
   }
 }

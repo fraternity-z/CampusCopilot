@@ -164,21 +164,25 @@ class RagService {
     required String userQuery,
     required KnowledgeBaseConfig config,
     String? knowledgeBaseId,
-    double similarityThreshold = 0.7,
+    double? similarityThreshold, // 改为可选，优先使用配置中的阈值
     int maxContexts = 3,
     String? systemPrompt,
   }) async {
     try {
+      // 使用配置中的相似度阈值，如果没有传入则使用配置默认值
+      final effectiveThreshold =
+          similarityThreshold ?? config.similarityThreshold;
+
       debugPrint('🔍 开始RAG增强: "$userQuery"');
       debugPrint('📊 配置信息: ${config.name} - ${config.embeddingModelName}');
-      debugPrint('🎯 相似度阈值: $similarityThreshold, 最大上下文数: $maxContexts');
+      debugPrint('🎯 相似度阈值: $effectiveThreshold, 最大上下文数: $maxContexts');
 
       // 检索相关上下文
       final retrievalResult = await retrieveContext(
         query: userQuery,
         config: config,
         knowledgeBaseId: knowledgeBaseId,
-        similarityThreshold: similarityThreshold,
+        similarityThreshold: effectiveThreshold,
         maxResults: maxContexts,
       );
 
@@ -238,11 +242,8 @@ class RagService {
   }) {
     final buffer = StringBuffer();
 
-    // 添加系统提示词
-    if (systemPrompt != null && systemPrompt.isNotEmpty) {
-      buffer.writeln(systemPrompt);
-      buffer.writeln();
-    }
+    // 注意：不在这里添加系统提示词，避免与外层的 systemPrompt 重复
+    // 系统提示词应该由调用方通过 ChatOptions.systemPrompt 传递
 
     // 添加上下文信息
     if (contexts.isNotEmpty) {
