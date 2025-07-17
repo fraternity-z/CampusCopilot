@@ -162,24 +162,8 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
         ),
       );
 
-      // 重新加载文档列表
-      await _loadDocuments();
-
-      // 启动文档处理（使用配置中的分块参数）
-      final processingNotifier = _ref.read(documentProcessingProvider.notifier);
-      final config = _ref.read(knowledgeBaseConfigProvider).currentConfig;
-
-      await processingNotifier.processDocument(
-        documentId: documentId,
-        filePath: filePath,
-        fileType: fileType,
-        knowledgeBaseId: targetKnowledgeBaseId,
-        chunkSize: config?.chunkSize ?? 1000,
-        chunkOverlap: config?.chunkOverlap ?? 200,
-      );
-
-      // 处理完成后重新加载文档列表
-      await _loadDocuments();
+      // 注意：文档处理将由并发处理服务统一处理，这里不再单独处理
+      // 文档列表将在并发处理器中统一刷新
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }

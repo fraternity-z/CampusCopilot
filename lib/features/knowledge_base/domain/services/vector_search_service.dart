@@ -275,6 +275,10 @@ class VectorSearchService {
           ? await _database.searchChunksByKnowledgeBase(query, knowledgeBaseId)
           : await _database.searchChunks(query);
 
+      // 获取文档标题
+      final documentIds = chunks.map((c) => c.documentId).toSet();
+      final documentTitles = await _getDocumentTitles(documentIds);
+
       return chunks
           .map(
             (chunk) => SearchResultItem(
@@ -283,6 +287,7 @@ class VectorSearchService {
               content: chunk.content,
               similarity: _calculateKeywordSimilarity(query, chunk.content),
               chunkIndex: chunk.chunkIndex,
+              documentTitle: documentTitles[chunk.documentId],
               metadata: {
                 'characterCount': chunk.characterCount,
                 'tokenCount': chunk.tokenCount,
@@ -331,6 +336,7 @@ class VectorSearchService {
         content: item.content,
         similarity: item.similarity * vectorWeight,
         chunkIndex: item.chunkIndex,
+        documentTitle: item.documentTitle,
         metadata: {...item.metadata, 'searchType': 'vector'},
       );
     }
@@ -346,6 +352,7 @@ class VectorSearchService {
           content: item.content,
           similarity: existing.similarity + (item.similarity * keywordWeight),
           chunkIndex: item.chunkIndex,
+          documentTitle: existing.documentTitle ?? item.documentTitle,
           metadata: {...existing.metadata, 'searchType': 'hybrid'},
         );
       } else {
@@ -356,6 +363,7 @@ class VectorSearchService {
           content: item.content,
           similarity: item.similarity * keywordWeight,
           chunkIndex: item.chunkIndex,
+          documentTitle: item.documentTitle,
           metadata: {...item.metadata, 'searchType': 'keyword'},
         );
       }

@@ -4,6 +4,7 @@ import '../../../llm_chat/domain/providers/llm_provider.dart';
 import '../../../llm_chat/data/providers/llm_provider_factory.dart';
 import '../../domain/entities/knowledge_document.dart';
 import '../../../../data/local/app_database.dart';
+import 'dart:math' as math;
 
 /// 嵌入结果
 class EmbeddingGenerationResult {
@@ -151,7 +152,7 @@ class EmbeddingService {
       return 0.0;
     }
 
-    return dotProduct / (sqrt(norm1) * sqrt(norm2));
+    return dotProduct / (math.sqrt(norm1) * math.sqrt(norm2));
   }
 
   /// 搜索相似文本块
@@ -302,21 +303,7 @@ class EmbeddingService {
     }
   }
 
-  /// 平方根函数
-  double sqrt(double x) {
-    if (x < 0) return double.nan;
-    if (x == 0) return 0;
-
-    double guess = x / 2;
-    double prev = 0;
-
-    while ((guess - prev).abs() > 0.0001) {
-      prev = guess;
-      guess = (guess + x / guess) / 2;
-    }
-
-    return guess;
-  }
+  // 自定义 sqrt 已删除，统一使用 math.sqrt
 }
 
 /// 带嵌入向量的文本块

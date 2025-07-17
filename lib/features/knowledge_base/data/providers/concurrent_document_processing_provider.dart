@@ -7,6 +7,7 @@ import '../../domain/services/concurrent_document_processing_service.dart';
 import '../../domain/entities/knowledge_document.dart';
 import '../../presentation/providers/knowledge_base_config_provider.dart';
 import '../../presentation/providers/document_processing_provider.dart';
+import '../../presentation/providers/knowledge_base_provider.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
 
@@ -86,6 +87,9 @@ class ConcurrentDocumentProcessingNotifier
       debugPrint('📋 提交 ${documents.length} 个文档处理任务...');
 
       for (final doc in documents) {
+        // 立即更新文档状态为"处理中"
+        await _updateDocumentStatus(doc.documentId, 'processing');
+
         final taskId = await _processingService.submitTask(
           documentId: doc.documentId,
           filePath: doc.filePath,
@@ -103,6 +107,9 @@ class ConcurrentDocumentProcessingNotifier
 
       debugPrint('✅ 已提交 ${taskIds.length} 个处理任务');
       _updateState();
+
+      // 触发文档列表刷新以显示最新状态
+      _ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
 
       return taskIds;
     } catch (e) {
@@ -234,9 +241,15 @@ class ConcurrentDocumentProcessingNotifier
       });
 
       debugPrint('✅ 任务后续处理完成: ${task.id}');
+
+      // 刷新文档列表以显示最新状态
+      _ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
     } catch (e) {
       debugPrint('❌ 任务后续处理失败: ${task.id} - $e');
       await _updateDocumentStatus(task.documentId, 'failed');
+
+      // 即使失败也要刷新文档列表
+      _ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
     }
   }
 
@@ -439,6 +452,7 @@ class ConcurrentDocumentProcessingNotifier
       // 分批处理，避免一次性处理太多文本块导致超时
       const batchSize = 50;
       int processedCount = 0;
+      int failedCount = 0;
 
       for (int i = 0; i < chunks.length; i += batchSize) {
         final endIndex = (i + batchSize < chunks.length)
@@ -483,14 +497,24 @@ class ConcurrentDocumentProcessingNotifier
             debugPrint(
               '❌ 第 ${(i / batchSize).floor() + 1} 批嵌入向量生成失败: ${result.error}',
             );
+            failedCount += batchChunks.length;
           }
         } catch (batchError) {
           debugPrint('❌ 第 ${(i / batchSize).floor() + 1} 批处理异常: $batchError');
+          failedCount += batchChunks.length;
         }
       }
 
       debugPrint('🎉 嵌入向量生成完成，成功处理 $processedCount/${chunks.length} 个文本块');
-      return true;
+
+      // 只有当所有文本块都成功处理时才返回true
+      final success = processedCount == chunks.length && failedCount == 0;
+      if (!success) {
+        debugPrint(
+          '⚠️ 嵌入向量生成不完整：成功 $processedCount，失败 $failedCount，总计 ${chunks.length}',
+        );
+      }
+      return success;
     } catch (e) {
       debugPrint('❌ 为文档 $documentId 生成嵌入向量失败: $e');
       return false;
