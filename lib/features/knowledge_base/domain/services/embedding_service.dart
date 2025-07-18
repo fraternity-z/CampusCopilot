@@ -103,6 +103,9 @@ class EmbeddingService {
   }) async {
     try {
       final allEmbeddings = <List<double>>[];
+      final errors = <String>[];
+      int successCount = 0;
+      int failedCount = 0;
 
       // 分批处理以避免API限制
       for (int i = 0; i < chunks.length; i += batchSize) {
@@ -111,13 +114,37 @@ class EmbeddingService {
             : chunks.length;
         final batch = chunks.sublist(i, end);
 
-        final result = await generateEmbeddings(texts: batch, config: config);
+        try {
+          final result = await generateEmbeddings(texts: batch, config: config);
 
-        if (!result.isSuccess) {
-          return EmbeddingGenerationResult(embeddings: [], error: result.error);
+          if (result.isSuccess) {
+            allEmbeddings.addAll(result.embeddings);
+            successCount += batch.length;
+            debugPrint(
+              '✅ 嵌入服务批次 ${(i / batchSize).floor() + 1} 成功处理 ${batch.length} 个文本块',
+            );
+          } else {
+            // 批次失败，为每个文本块添加空向量占位
+            for (int j = 0; j < batch.length; j++) {
+              allEmbeddings.add([]); // 空向量表示失败
+            }
+            failedCount += batch.length;
+            errors.add('批次 ${(i / batchSize).floor() + 1}: ${result.error}');
+            debugPrint(
+              '⚠️ 嵌入服务批次 ${(i / batchSize).floor() + 1} 失败: ${result.error}，跳过继续处理',
+            );
+          }
+        } catch (batchError) {
+          // 批次异常，为每个文本块添加空向量占位
+          for (int j = 0; j < batch.length; j++) {
+            allEmbeddings.add([]); // 空向量表示失败
+          }
+          failedCount += batch.length;
+          errors.add('批次 ${(i / batchSize).floor() + 1} 异常: $batchError');
+          debugPrint(
+            '⚠️ 嵌入服务批次 ${(i / batchSize).floor() + 1} 异常: $batchError，跳过继续处理',
+          );
         }
-
-        allEmbeddings.addAll(result.embeddings);
 
         // 添加延迟以避免API速率限制
         if (i + batchSize < chunks.length) {
@@ -125,9 +152,28 @@ class EmbeddingService {
         }
       }
 
-      return EmbeddingGenerationResult(embeddings: allEmbeddings);
+      // 计算成功率
+      final successRate = successCount / chunks.length;
+
+      if (successCount > 0) {
+        debugPrint(
+          '✅ 嵌入服务批量处理完成：成功 $successCount，失败 $failedCount，成功率 ${(successRate * 100).toStringAsFixed(1)}%',
+        );
+
+        // 即使有部分失败，只要有成功的就返回成功结果
+        return EmbeddingGenerationResult(
+          embeddings: allEmbeddings,
+          error: errors.isNotEmpty ? '部分失败: ${errors.join('; ')}' : null,
+        );
+      } else {
+        debugPrint('❌ 嵌入服务批量处理全部失败');
+        return EmbeddingGenerationResult(
+          embeddings: [],
+          error: '所有批次都失败: ${errors.join('; ')}',
+        );
+      }
     } catch (e) {
-      debugPrint('批量生成嵌入向量失败: $e');
+      debugPrint('❌ 嵌入服务批量生成异常: $e');
       return EmbeddingGenerationResult(embeddings: [], error: e.toString());
     }
   }

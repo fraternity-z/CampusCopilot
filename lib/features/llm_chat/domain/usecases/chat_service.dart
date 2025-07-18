@@ -17,9 +17,11 @@ import 'dart:convert';
 import '../../../persona_management/domain/entities/persona.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../../data/local/tables/general_settings_table.dart';
+import '../../../knowledge_base/domain/services/rag_service.dart';
+import '../../../knowledge_base/domain/services/enhanced_rag_service.dart';
+import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 
 // 知识库相关导入
-import '../../../knowledge_base/presentation/providers/rag_provider.dart';
 import '../../../knowledge_base/presentation/providers/knowledge_base_config_provider.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 import '../../../knowledge_base/domain/entities/knowledge_document.dart';
@@ -122,7 +124,9 @@ class ChatService {
 
       // 5. 检查是否需要RAG增强
       String enhancedPrompt = content;
-      final ragService = _ref.read(ragServiceProvider);
+
+      // 使用统一RAG服务（优先使用增强版，失败时自动回退到传统版）
+      final ragService = await _ref.read(unifiedRagServiceProvider.future);
 
       // 检查RAG开关是否启用
       final settingsState = _ref.read(settingsProvider);
@@ -177,26 +181,62 @@ class ChatService {
         debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
       }
       debugPrint('  - 查询内容: "$content"');
-      debugPrint('  - 是否需要RAG: ${ragService.shouldUseRag(content)}');
+
+      // 判断是否需要RAG增强（兼容新旧版本）
+      bool shouldUseRag = false;
+      if (ragService is RagService) {
+        shouldUseRag = ragService.shouldUseRag(content);
+      } else {
+        // 对于EnhancedRagService，使用简化的判断逻辑
+        shouldUseRag =
+            content.trim().length > 3 &&
+            ![
+              'hi',
+              'hello',
+              '你好',
+              '嗨',
+              'hey',
+              '哈喽',
+            ].contains(content.trim().toLowerCase());
+      }
 
       if (ragEnabled &&
           knowledgeConfig != null &&
           currentKnowledgeBase != null &&
-          ragService.shouldUseRag(content)) {
+          shouldUseRag) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
-          final ragResult = await ragService.enhancePrompt(
-            userQuery: content,
-            config: knowledgeConfig,
-            knowledgeBaseId: currentKnowledgeBase.id,
-          );
 
-          if (ragResult.usedContexts.isNotEmpty) {
-            enhancedPrompt = ragResult.enhancedPrompt;
-            debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
-            debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
-          } else {
-            debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+          if (ragService is RagService) {
+            // 使用传统RAG服务
+            final ragResult = await ragService.enhancePrompt(
+              userQuery: content,
+              config: knowledgeConfig,
+              knowledgeBaseId: currentKnowledgeBase.id,
+            );
+
+            if (ragResult.usedContexts.isNotEmpty) {
+              enhancedPrompt = ragResult.enhancedPrompt;
+              debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+            } else {
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+            }
+          } else if (ragService is EnhancedRagService) {
+            // 使用增强RAG服务
+            final ragResult = await ragService.enhancePrompt(
+              userQuery: content,
+              config: knowledgeConfig,
+              knowledgeBaseId: currentKnowledgeBase.id,
+            );
+
+            if (ragResult.contexts.isNotEmpty) {
+              enhancedPrompt = ragResult.enhancedPrompt;
+              debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+            } else {
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+            }
           }
         } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
@@ -209,7 +249,7 @@ class ChatService {
           debugPrint('⚠️ 没有知识库配置，使用原始查询');
         } else if (currentKnowledgeBase == null) {
           debugPrint('⚠️ 没有选中知识库，使用原始查询');
-        } else if (!ragService.shouldUseRag(content)) {
+        } else if (!shouldUseRag) {
           debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }
       }
@@ -339,7 +379,9 @@ class ChatService {
 
       // 4.5. 检查是否需要RAG增强
       String enhancedPrompt = content;
-      final ragService = _ref.read(ragServiceProvider);
+
+      // 使用统一RAG服务（优先使用增强版，失败时自动回退到传统版）
+      final ragService = await _ref.read(unifiedRagServiceProvider.future);
       final knowledgeConfig = _ref
           .read(knowledgeBaseConfigProvider)
           .currentConfig;
@@ -362,26 +404,62 @@ class ChatService {
         debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
       }
       debugPrint('  - 查询内容: "$content"');
-      debugPrint('  - 是否需要RAG: ${ragService.shouldUseRag(content)}');
+
+      // 判断是否需要RAG增强（兼容新旧版本）
+      bool shouldUseRag = false;
+      if (ragService is RagService) {
+        shouldUseRag = ragService.shouldUseRag(content);
+      } else {
+        // 对于EnhancedRagService，使用简化的判断逻辑
+        shouldUseRag =
+            content.trim().length > 3 &&
+            ![
+              'hi',
+              'hello',
+              '你好',
+              '嗨',
+              'hey',
+              '哈喽',
+            ].contains(content.trim().toLowerCase());
+      }
 
       if (ragEnabled &&
           knowledgeConfig != null &&
           currentKnowledgeBase != null &&
-          ragService.shouldUseRag(content)) {
+          shouldUseRag) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
-          final ragResult = await ragService.enhancePrompt(
-            userQuery: content,
-            config: knowledgeConfig,
-            knowledgeBaseId: currentKnowledgeBase.id,
-          );
 
-          if (ragResult.usedContexts.isNotEmpty) {
-            enhancedPrompt = ragResult.enhancedPrompt;
-            debugPrint('✅ RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
-            debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
-          } else {
-            debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+          if (ragService is RagService) {
+            // 使用传统RAG服务
+            final ragResult = await ragService.enhancePrompt(
+              userQuery: content,
+              config: knowledgeConfig,
+              knowledgeBaseId: currentKnowledgeBase.id,
+            );
+
+            if (ragResult.usedContexts.isNotEmpty) {
+              enhancedPrompt = ragResult.enhancedPrompt;
+              debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+            } else {
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+            }
+          } else if (ragService is EnhancedRagService) {
+            // 使用增强RAG服务
+            final ragResult = await ragService.enhancePrompt(
+              userQuery: content,
+              config: knowledgeConfig,
+              knowledgeBaseId: currentKnowledgeBase.id,
+            );
+
+            if (ragResult.contexts.isNotEmpty) {
+              enhancedPrompt = ragResult.enhancedPrompt;
+              debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+            } else {
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+            }
           }
         } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
@@ -394,7 +472,7 @@ class ChatService {
           debugPrint('⚠️ 没有知识库配置，使用原始查询');
         } else if (currentKnowledgeBase == null) {
           debugPrint('⚠️ 没有选中知识库，使用原始查询');
-        } else if (!ragService.shouldUseRag(content)) {
+        } else if (!shouldUseRag) {
           debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }
       }

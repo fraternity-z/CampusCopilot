@@ -474,46 +474,80 @@ class ConcurrentDocumentProcessingNotifier
             config: config,
           );
 
-          if (result.isSuccess) {
-            // 保存嵌入向量到数据库
-            for (int j = 0; j < batchChunks.length; j++) {
-              if (j < result.embeddings.length) {
+          // 处理嵌入服务的结果（可能是部分成功）
+          int batchSuccessCount = 0;
+          for (int j = 0; j < batchChunks.length; j++) {
+            try {
+              if (j < result.embeddings.length &&
+                  result.embeddings[j].isNotEmpty) {
                 final chunk = batchChunks[j];
                 final embedding = result.embeddings[j];
                 final embeddingJson = jsonEncode(embedding);
 
                 // 保存到关系型数据库
                 await database.updateChunkEmbedding(chunk.id, embeddingJson);
+                batchSuccessCount++;
+              } else {
+                debugPrint('⚠️ 文本块 ${batchChunks[j].id} 没有有效的嵌入向量，跳过');
+                failedCount++;
               }
+            } catch (saveError) {
+              debugPrint(
+                '⚠️ 保存文本块 ${batchChunks[j].id} 的嵌入向量失败: $saveError，跳过继续处理',
+              );
+              failedCount++;
             }
+          }
 
-            processedCount += batchChunks.length;
-            debugPrint('✅ 已完成 $processedCount/${chunks.length} 个文本块的嵌入向量生成');
+          processedCount += batchSuccessCount;
 
-            // 更新进度到数据库
-            final progress = processedCount / chunks.length;
-            await _updateDocumentProgress(documentId, progress);
+          if (batchSuccessCount > 0) {
+            debugPrint(
+              '✅ 第 ${(i / batchSize).floor() + 1} 批完成：成功 $batchSuccessCount/${batchChunks.length} 个文本块',
+            );
           } else {
             debugPrint(
-              '❌ 第 ${(i / batchSize).floor() + 1} 批嵌入向量生成失败: ${result.error}',
+              '⚠️ 第 ${(i / batchSize).floor() + 1} 批全部失败：${result.error ?? "未知错误"}，跳过继续处理下一批',
             );
-            failedCount += batchChunks.length;
           }
+
+          // 更新进度到数据库
+          final progress = processedCount / chunks.length;
+          await _updateDocumentProgress(documentId, progress);
         } catch (batchError) {
-          debugPrint('❌ 第 ${(i / batchSize).floor() + 1} 批处理异常: $batchError');
+          debugPrint(
+            '⚠️ 第 ${(i / batchSize).floor() + 1} 批处理异常: $batchError，跳过继续处理下一批',
+          );
           failedCount += batchChunks.length;
+
+          // 即使批次失败，也更新进度以显示处理在继续
+          final progress = (processedCount + (i + batchSize)) / chunks.length;
+          await _updateDocumentProgress(documentId, progress.clamp(0.0, 1.0));
         }
       }
 
       debugPrint('🎉 嵌入向量生成完成，成功处理 $processedCount/${chunks.length} 个文本块');
 
-      // 只有当所有文本块都成功处理时才返回true
-      final success = processedCount == chunks.length && failedCount == 0;
-      if (!success) {
+      // 计算成功率，允许一定比例的失败（80%成功率即可认为处理成功）
+      final successRate = processedCount / chunks.length;
+      const minSuccessRate = 0.8; // 最低80%成功率
+
+      final success = successRate >= minSuccessRate;
+
+      if (success) {
+        if (failedCount > 0) {
+          debugPrint(
+            '✅ 嵌入向量生成基本完成：成功 $processedCount，失败 $failedCount，成功率 ${(successRate * 100).toStringAsFixed(1)}%',
+          );
+        } else {
+          debugPrint('✅ 嵌入向量生成完美完成：所有 $processedCount 个文本块都成功处理');
+        }
+      } else {
         debugPrint(
-          '⚠️ 嵌入向量生成不完整：成功 $processedCount，失败 $failedCount，总计 ${chunks.length}',
+          '❌ 嵌入向量生成失败过多：成功 $processedCount，失败 $failedCount，成功率 ${(successRate * 100).toStringAsFixed(1)}%（需要至少${(minSuccessRate * 100).toInt()}%）',
         );
       }
+
       return success;
     } catch (e) {
       debugPrint('❌ 为文档 $documentId 生成嵌入向量失败: $e');
