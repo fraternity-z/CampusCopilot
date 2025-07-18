@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../shared/utils/keyboard_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'widgets/animated_title_widget.dart';
@@ -134,7 +136,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
-    return Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea());
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea()),
+    );
   }
 
   /// 构建应用栏

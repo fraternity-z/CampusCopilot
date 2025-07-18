@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/utils/keyboard_utils.dart';
+
 import '../providers/general_settings_provider.dart';
 import '../../../../core/network/proxy_config.dart';
 
@@ -13,30 +15,37 @@ class GeneralSettingsScreen extends ConsumerWidget {
     final settingsState = ref.watch(generalSettingsProvider);
     final availableModelsAsync = ref.watch(availableChatModelsProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('常规设置'), elevation: 0),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 话题自动命名设置
-            _buildTopicNamingSection(
-              context,
-              ref,
-              settingsState,
-              availableModelsAsync,
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('常规设置'), elevation: 0),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
             ),
-            const SizedBox(height: 16),
-            // 代理服务设置
-            _buildProxySection(context, ref, settingsState),
-          ],
+          ),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // 话题自动命名设置
+              _buildTopicNamingSection(
+                context,
+                ref,
+                settingsState,
+                availableModelsAsync,
+              ),
+              const SizedBox(height: 16),
+              // 代理服务设置
+              _buildProxySection(context, ref, settingsState),
+            ],
+          ),
         ),
       ),
     );

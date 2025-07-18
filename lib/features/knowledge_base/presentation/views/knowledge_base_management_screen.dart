@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/utils/keyboard_utils.dart';
+
 import '../providers/multi_knowledge_base_provider.dart';
 import '../providers/knowledge_base_config_provider.dart';
 import '../../domain/entities/knowledge_base.dart';
@@ -24,26 +26,33 @@ class _KnowledgeBaseManagementScreenState
   Widget build(BuildContext context) {
     final multiKbState = ref.watch(multiKnowledgeBaseProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('知识库管理'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(multiKnowledgeBaseProvider.notifier).reload();
-            },
-          ),
-        ],
-      ),
-      body: multiKbState.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : multiKbState.error != null
-          ? _buildErrorView(multiKbState.error!)
-          : _buildMainContent(multiKbState.knowledgeBases),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateDialog(),
-        child: const Icon(Icons.add),
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('知识库管理'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                ref.read(multiKnowledgeBaseProvider.notifier).reload();
+              },
+            ),
+          ],
+        ),
+        body: multiKbState.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : multiKbState.error != null
+            ? _buildErrorView(multiKbState.error!)
+            : _buildMainContent(multiKbState.knowledgeBases),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showCreateDialog(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

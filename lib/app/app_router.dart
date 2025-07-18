@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../shared/widgets/keyboard_dismissible_wrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -362,19 +364,21 @@ class _MainShellState extends ConsumerState<MainShell> {
     final currentRoute = GoRouterState.of(context).uri.path;
     final isChatPage = currentRoute.startsWith('/chat');
 
-    return Scaffold(
-      floatingActionButton: (isCollapsed && isChatPage && !_hasModalRoute)
-          ? const SidebarExpandButton()
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      body: Stack(
-        children: [
-          widget.child,
-          if (!isCollapsed) ...[
-            const SidebarOverlay(),
-            const NavigationSidebar(),
+    return KeyboardSafeWrapper(
+      child: Scaffold(
+        floatingActionButton: (isCollapsed && isChatPage && !_hasModalRoute)
+            ? const SidebarExpandButton()
+            : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+        body: Stack(
+          children: [
+            widget.child,
+            if (!isCollapsed) ...[
+              const SidebarOverlay(),
+              const NavigationSidebar(),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

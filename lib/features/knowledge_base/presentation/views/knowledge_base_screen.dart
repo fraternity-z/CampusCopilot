@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../../../shared/utils/keyboard_utils.dart';
+
 import '../../domain/entities/knowledge_document.dart';
 import '../providers/knowledge_base_provider.dart';
 import '../providers/knowledge_base_config_provider.dart';
@@ -59,43 +61,50 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('知识库'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.folder), text: '文档'),
-            Tab(icon: Icon(Icons.search), text: '搜索'),
-            Tab(icon: Icon(Icons.settings), text: '设置'),
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('知识库'),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.folder), text: '文档'),
+              Tab(icon: Icon(Icons.search), text: '搜索'),
+              Tab(icon: Icon(Icons.settings), text: '设置'),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.library_books),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const KnowledgeBaseManagementScreen(),
+                  ),
+                );
+              },
+              tooltip: '知识库管理',
+            ),
+            IconButton(
+              icon: const Icon(Icons.upload_file),
+              onPressed: _uploadDocument,
+              tooltip: '上传文档',
+            ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.library_books),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const KnowledgeBaseManagementScreen(),
-                ),
-              );
-            },
-            tooltip: '知识库管理',
-          ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: _uploadDocument,
-            tooltip: '上传文档',
-          ),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildDocumentsTab(),
-          _buildSearchTab(),
-          _buildSettingsTab(),
-        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildDocumentsTab(),
+            _buildSearchTab(),
+            _buildSettingsTab(),
+          ],
+        ),
       ),
     );
   }

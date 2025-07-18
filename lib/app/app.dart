@@ -74,9 +74,6 @@ class _AppWrapper extends ConsumerWidget {
     // 初始化代理配置监听
     ref.watch(proxyConfigWatcherProvider);
 
-    return Scaffold(
-      body: child,
-      // 可以在这里添加全局的Snackbar、Loading等
-    );
+    return child ?? const SizedBox.shrink();
   }
 }

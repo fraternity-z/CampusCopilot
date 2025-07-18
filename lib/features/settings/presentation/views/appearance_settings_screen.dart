@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/utils/keyboard_utils.dart';
+
 import '../providers/settings_provider.dart';
 import '../../domain/entities/app_settings.dart' as app_settings;
 
@@ -10,19 +12,26 @@ class AppearanceSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('外观设置'), elevation: 0),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildThemeSection(context, ref),
-          const SizedBox(height: 16),
-          _buildAnimationSection(context, ref),
-          const SizedBox(height: 16),
-          _buildDisplaySection(context, ref),
-          const SizedBox(height: 16),
-          _buildThinkingChainSection(context, ref),
-        ],
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('外观设置'), elevation: 0),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildThemeSection(context, ref),
+            const SizedBox(height: 16),
+            _buildAnimationSection(context, ref),
+            const SizedBox(height: 16),
+            _buildDisplaySection(context, ref),
+            const SizedBox(height: 16),
+            _buildThinkingChainSection(context, ref),
+          ],
+        ),
       ),
     );
   }

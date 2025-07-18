@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../shared/utils/keyboard_utils.dart';
 import '../../../llm_chat/data/providers/llm_provider_factory.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
@@ -23,53 +25,60 @@ class ModelManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final supportedProviders = ref.watch(supportedProvidersProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('模型设置'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () => _showAddCustomProviderDialog(context, ref),
-            icon: const Icon(Icons.add),
-            tooltip: '添加自定义提供商',
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'AI 提供商配置',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '点击配置各个AI提供商的API密钥、模型列表等设置',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return GestureDetector(
+      onTap: () {
+        // 点击空白处收起键盘
+        KeyboardUtils.hideKeyboard(context);
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('模型设置'),
+          elevation: 0,
+          actions: [
+            IconButton(
+              onPressed: () => _showAddCustomProviderDialog(context, ref),
+              icon: const Icon(Icons.add),
+              tooltip: '添加自定义提供商',
             ),
-          ),
-          const SizedBox(height: 24),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'AI 提供商配置',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '点击配置各个AI提供商的API密钥、模型列表等设置',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
 
-          // 内置提供商
-          ...supportedProviders.map((providerId) {
-            return _buildProviderCard(context, providerId);
-          }),
+            // 内置提供商
+            ...supportedProviders.map((providerId) {
+              return _buildProviderCard(context, providerId);
+            }),
 
-          // 自定义提供商
-          Consumer(
-            builder: (context, ref, child) {
-              final customProviders = ref.watch(customProvidersListProvider);
-              return Column(
-                children: customProviders.map((provider) {
-                  return _buildCustomProviderCard(context, provider);
-                }).toList(),
-              );
-            },
-          ),
-        ],
+            // 自定义提供商
+            Consumer(
+              builder: (context, ref, child) {
+                final customProviders = ref.watch(customProvidersListProvider);
+                return Column(
+                  children: customProviders.map((provider) {
+                    return _buildCustomProviderCard(context, provider);
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
