@@ -79,30 +79,87 @@ final unifiedKnowledgeBaseStatsProvider = FutureProvider<Map<String, dynamic>>((
   }
 });
 
-/// 传统知识库统计信息提供者（保持向后兼容）
+/// 传统知识库统计信息提供者（已迁移到统一Provider）
+///
+/// 注意：此Provider已弃用，请使用 unifiedKnowledgeBaseStatsProvider
+@Deprecated('使用 unifiedKnowledgeBaseStatsProvider 替代')
 final knowledgeBaseStatsProvider = FutureProvider<Map<String, dynamic>>((
   ref,
 ) async {
-  final ragService = ref.read(ragServiceProvider);
-  return ragService.getKnowledgeBaseStats();
+  // 重定向到统一Provider以保持向后兼容
+  return ref.watch(unifiedKnowledgeBaseStatsProvider.future);
 });
 
-/// RAG增强提示词Provider
+/// 统一RAG增强提示词Provider
+///
+/// 使用统一RAG服务，自动选择最佳可用版本
+final unifiedRagEnhancedPromptProvider =
+    FutureProvider.family<dynamic, RagPromptRequest>((ref, request) async {
+      final ragService = await ref.read(unifiedRagServiceProvider.future);
+
+      if (ragService is RagService) {
+        return ragService.enhancePrompt(
+          userQuery: request.query,
+          config: request.config,
+          knowledgeBaseId: request.knowledgeBaseId,
+          similarityThreshold: request.similarityThreshold,
+          maxContexts: request.maxContexts,
+          systemPrompt: request.systemPrompt,
+        );
+      } else if (ragService is EnhancedRagService) {
+        return ragService.enhancePrompt(
+          userQuery: request.query,
+          config: request.config,
+          knowledgeBaseId: request.knowledgeBaseId,
+          similarityThreshold: request.similarityThreshold,
+          maxContexts: request.maxContexts,
+          systemPrompt: request.systemPrompt,
+        );
+      } else {
+        throw Exception('未知的RAG服务类型: ${ragService.runtimeType}');
+      }
+    });
+
+/// RAG增强提示词Provider（已迁移到统一Provider）
+///
+/// 注意：此Provider已弃用，请使用 unifiedRagEnhancedPromptProvider
+@Deprecated('使用 unifiedRagEnhancedPromptProvider 替代')
 final ragEnhancedPromptProvider =
     FutureProvider.family<RagEnhancedPrompt, RagPromptRequest>((
       ref,
       request,
     ) async {
-      final ragService = ref.read(ragServiceProvider);
-
-      return ragService.enhancePrompt(
-        userQuery: request.query,
-        config: request.config,
-        knowledgeBaseId: request.knowledgeBaseId,
-        similarityThreshold: request.similarityThreshold,
-        maxContexts: request.maxContexts,
-        systemPrompt: request.systemPrompt,
+      final result = await ref.read(
+        unifiedRagEnhancedPromptProvider(request).future,
       );
+
+      // 如果是传统RAG结果，直接返回
+      if (result is RagEnhancedPrompt) {
+        return result;
+      }
+
+      // 如果是增强RAG结果，转换为传统格式
+      if (result is EnhancedRagPrompt) {
+        // 将字符串上下文转换为RagContextItem
+        final contextItems = result.contexts
+            .map(
+              (context) => RagContextItem(
+                chunkId: 'enhanced_${DateTime.now().millisecondsSinceEpoch}',
+                documentId: 'unknown',
+                content: context,
+                similarity: 1.0, // 增强RAG不提供相似度信息
+              ),
+            )
+            .toList();
+
+        return RagEnhancedPrompt(
+          enhancedPrompt: result.enhancedPrompt,
+          usedContexts: contextItems,
+          originalQuery: request.query,
+        );
+      }
+
+      throw Exception('未知的RAG结果类型: ${result.runtimeType}');
     });
 
 /// RAG提示词请求参数

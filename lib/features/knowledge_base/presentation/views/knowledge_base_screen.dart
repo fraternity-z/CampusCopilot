@@ -745,7 +745,9 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
                 const SizedBox(height: 16),
                 Consumer(
                   builder: (context, ref, child) {
-                    final statsAsync = ref.watch(knowledgeBaseStatsProvider);
+                    final statsAsync = ref.watch(
+                      unifiedKnowledgeBaseStatsProvider,
+                    );
 
                     return statsAsync.when(
                       data: (stats) => _buildStatsGrid(stats),
