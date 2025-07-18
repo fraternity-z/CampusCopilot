@@ -899,6 +899,7 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
             await ref
                 .read(knowledgeBaseProvider.notifier)
                 .uploadDocument(
+                  documentId: documentId, // 传递documentId
                   title: file.name,
                   content: '', // 内容将在处理完成后更新
                   filePath: file.path!,

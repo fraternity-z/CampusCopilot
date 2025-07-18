@@ -53,7 +53,7 @@ class EnhancedRagService {
     required String query,
     required KnowledgeBaseConfig config,
     String? knowledgeBaseId,
-    double similarityThreshold = 0.7,
+    double similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     int maxContexts = 3,
   }) async {
     final startTime = DateTime.now();
@@ -133,7 +133,7 @@ class EnhancedRagService {
     required String userQuery,
     required KnowledgeBaseConfig config,
     String? knowledgeBaseId,
-    double similarityThreshold = 0.7,
+    double similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     int maxContexts = 3,
     String? systemPrompt,
   }) async {

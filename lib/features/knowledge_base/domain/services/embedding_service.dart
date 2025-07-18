@@ -205,10 +205,11 @@ class EmbeddingService {
   List<SimilarityResult> searchSimilarChunks({
     required List<double> queryEmbedding,
     required List<ChunkWithEmbedding> chunks,
-    double threshold = 0.7,
+    double threshold = 0.3, // 降低默认阈值，提高召回率
     int maxResults = 5,
   }) {
     final results = <SimilarityResult>[];
+    final allResults = <SimilarityResult>[]; // 存储所有结果，用于回退策略
 
     for (final chunk in chunks) {
       if (chunk.embedding.isNotEmpty) {
@@ -217,21 +218,40 @@ class EmbeddingService {
           chunk.embedding,
         );
 
+        final resultItem = SimilarityResult(
+          chunkId: chunk.id,
+          content: chunk.content,
+          similarity: similarity,
+          metadata: chunk.metadata,
+        );
+
+        // 添加到所有结果列表
+        allResults.add(resultItem);
+
+        // 如果相似度超过阈值，添加到主结果中
         if (similarity >= threshold) {
-          results.add(
-            SimilarityResult(
-              chunkId: chunk.id,
-              content: chunk.content,
-              similarity: similarity,
-              metadata: chunk.metadata,
-            ),
-          );
+          results.add(resultItem);
         }
       }
     }
 
     // 按相似度降序排序
     results.sort((a, b) => b.similarity.compareTo(a.similarity));
+    allResults.sort((a, b) => b.similarity.compareTo(a.similarity));
+
+    // 回退策略：如果没有找到超过阈值的结果，返回最相似的文本块
+    if (results.isEmpty && allResults.isNotEmpty) {
+      debugPrint('🔄 启用回退策略：没有找到超过阈值的结果，返回最相似的文本块');
+      final fallbackResults = allResults.take(maxResults).toList();
+      debugPrint('📋 回退结果: 返回前${fallbackResults.length}个最相似的文本块');
+      for (int i = 0; i < fallbackResults.length; i++) {
+        final result = fallbackResults[i];
+        debugPrint(
+          '📄 回退结果${i + 1}: 相似度=${result.similarity.toStringAsFixed(3)}',
+        );
+      }
+      return fallbackResults;
+    }
 
     // 返回前N个结果
     return results.take(maxResults).toList();

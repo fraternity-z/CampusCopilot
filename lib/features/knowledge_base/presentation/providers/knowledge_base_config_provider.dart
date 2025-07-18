@@ -310,6 +310,13 @@ class KnowledgeBaseConfigNotifier
     }
   }
 
+  /// 重新加载配置（公开方法）
+  Future<void> reload() async {
+    debugPrint('🔄 手动重新加载知识库配置');
+    await _loadConfigs();
+    await _loadEmbeddingModels();
+  }
+
   /// 重新加载嵌入模型（公开方法，用于调试）
   Future<void> reloadEmbeddingModels() async {
     debugPrint('🔄 手动重新加载嵌入模型');

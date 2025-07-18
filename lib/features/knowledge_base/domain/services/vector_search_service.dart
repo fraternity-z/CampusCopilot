@@ -556,6 +556,7 @@ class VectorSearchService {
     Map<String, String> documentTitles = const {},
   }) async {
     final results = <SearchResultItem>[];
+    final allResults = <SearchResultItem>[]; // 存储所有结果，用于回退策略
     final allSimilarities = <double>[]; // 用于统计相似度分布
     int processedCount = 0;
     int skippedCount = 0;
@@ -598,23 +599,27 @@ class VectorSearchService {
             // 记录所有相似度值用于统计
             allSimilarities.add(similarity);
 
-            // 如果相似度超过阈值，添加到结果中
+            // 创建搜索结果项
+            final resultItem = SearchResultItem(
+              chunkId: chunk.id,
+              documentId: chunk.documentId,
+              content: chunk.content,
+              similarity: similarity,
+              chunkIndex: chunk.chunkIndex,
+              documentTitle: documentTitles[chunk.documentId],
+              metadata: {
+                'characterCount': chunk.characterCount,
+                'tokenCount': chunk.tokenCount,
+                'createdAt': chunk.createdAt.toIso8601String(),
+              },
+            );
+
+            // 添加到所有结果列表
+            allResults.add(resultItem);
+
+            // 如果相似度超过阈值，添加到主结果中
             if (similarity >= similarityThreshold) {
-              results.add(
-                SearchResultItem(
-                  chunkId: chunk.id,
-                  documentId: chunk.documentId,
-                  content: chunk.content,
-                  similarity: similarity,
-                  chunkIndex: chunk.chunkIndex,
-                  documentTitle: documentTitles[chunk.documentId],
-                  metadata: {
-                    'characterCount': chunk.characterCount,
-                    'tokenCount': chunk.tokenCount,
-                    'createdAt': chunk.createdAt.toIso8601String(),
-                  },
-                ),
-              );
+              results.add(resultItem);
             }
             processedCount++;
           } catch (e) {
@@ -660,6 +665,30 @@ class VectorSearchService {
     }
 
     debugPrint('📊 处理了 $processedCount 个文本块，找到 ${results.length} 个匹配结果');
+
+    // 回退策略：如果没有找到超过阈值的结果，返回最相似的文本块
+    if (results.isEmpty && allResults.isNotEmpty) {
+      debugPrint('🔄 启用回退策略：没有找到超过阈值的结果，返回最相似的文本块');
+
+      // 按相似度降序排序所有结果
+      allResults.sort((a, b) => b.similarity.compareTo(a.similarity));
+
+      // 返回配置中指定数量的最相似文本块
+      final fallbackResults = allResults
+          .take(config.maxRetrievedChunks)
+          .toList();
+
+      debugPrint('📋 回退结果: 返回前${fallbackResults.length}个最相似的文本块');
+      for (int i = 0; i < fallbackResults.length; i++) {
+        final result = fallbackResults[i];
+        debugPrint(
+          '📄 回退结果${i + 1}: 相似度=${result.similarity.toStringAsFixed(3)}, 内容长度=${result.content.length}',
+        );
+      }
+
+      return fallbackResults;
+    }
+
     return results;
   }
 }

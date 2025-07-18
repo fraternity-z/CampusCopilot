@@ -27,10 +27,12 @@ class KnowledgeBaseConfigsTable extends Table {
   IntColumn get chunkOverlap => integer().withDefault(const Constant(200))();
 
   /// 最大检索结果数
-  IntColumn get maxRetrievedChunks => integer().withDefault(const Constant(5))();
+  IntColumn get maxRetrievedChunks =>
+      integer().withDefault(const Constant(5))();
 
   /// 相似度阈值
-  RealColumn get similarityThreshold => real().withDefault(const Constant(0.7))();
+  RealColumn get similarityThreshold =>
+      real().withDefault(const Constant(0.3))(); // 降低默认阈值，提高召回率
 
   /// 是否为默认配置
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();

@@ -115,6 +115,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
 
   /// 上传文档
   Future<void> uploadDocument({
+    String? documentId, // 添加可选的documentId参数
     required String title,
     required String content,
     required String filePath,
@@ -125,9 +126,11 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final documentId = DateTime.now().millisecondsSinceEpoch.toString();
+      // 使用传入的documentId或生成新的
+      final finalDocumentId =
+          documentId ?? DateTime.now().millisecondsSinceEpoch.toString();
       final document = KnowledgeDocument(
-        id: documentId,
+        id: finalDocumentId,
         title: title,
         content: content,
         filePath: filePath,

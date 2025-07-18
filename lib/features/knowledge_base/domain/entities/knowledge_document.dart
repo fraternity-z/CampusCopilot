@@ -114,7 +114,7 @@ class KnowledgeBaseConfig {
       chunkOverlap: json['chunkOverlap'] as int? ?? 200,
       maxRetrievedChunks: json['maxRetrievedChunks'] as int? ?? 5,
       similarityThreshold:
-          (json['similarityThreshold'] as num?)?.toDouble() ?? 0.7,
+          (json['similarityThreshold'] as num?)?.toDouble() ?? 0.3, // 与其他地方保持一致
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );

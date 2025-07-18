@@ -92,7 +92,7 @@ class EnhancedRagPromptRequest {
     required this.query,
     required this.config,
     this.knowledgeBaseId,
-    this.similarityThreshold = 0.7,
+    this.similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     this.maxContexts = 3,
     this.systemPrompt,
   });

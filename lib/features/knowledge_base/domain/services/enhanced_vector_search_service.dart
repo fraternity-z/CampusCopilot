@@ -246,12 +246,31 @@ class EnhancedVectorSearchService {
 
       // 3. 执行向量搜索
       debugPrint('🔍 执行向量数据库搜索...');
-      final searchResult = await _vectorDatabase.search(
+      var searchResult = await _vectorDatabase.search(
         collectionName: targetKnowledgeBaseId,
         queryVector: queryEmbedding,
         limit: maxResults,
         scoreThreshold: similarityThreshold,
       );
+
+      // 回退策略：如果没有找到超过阈值的结果，重新搜索不设阈值
+      if (searchResult.isSuccess && searchResult.items.isEmpty) {
+        debugPrint('🔄 启用回退策略：没有找到超过阈值的结果，重新搜索不设阈值');
+        searchResult = await _vectorDatabase.search(
+          collectionName: targetKnowledgeBaseId,
+          queryVector: queryEmbedding,
+          limit: config.maxRetrievedChunks, // 使用配置中的数量
+          scoreThreshold: null, // 不设阈值
+        );
+
+        if (searchResult.isSuccess && searchResult.items.isNotEmpty) {
+          debugPrint('📋 回退结果: 返回前${searchResult.items.length}个最相似的文本块');
+          for (int i = 0; i < searchResult.items.length; i++) {
+            final item = searchResult.items[i];
+            debugPrint('📄 回退结果${i + 1}: 相似度=${item.score.toStringAsFixed(3)}');
+          }
+        }
+      }
 
       if (!searchResult.isSuccess) {
         debugPrint('❌ 向量搜索失败: ${searchResult.error}');

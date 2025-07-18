@@ -14,10 +14,14 @@ import 'document_processing_provider.dart';
 /// 优先使用增强 RAG 服务，如果失败则回退到传统 RAG 服务
 final unifiedRagServiceProvider = FutureProvider<dynamic>((ref) async {
   try {
+    debugPrint('🚀 开始初始化统一RAG服务...');
+
     // 优先尝试使用增强 RAG 服务
     final enhancedRagService = await ref.watch(
       enhancedRagServiceProvider.future,
     );
+
+    // 增强RAG服务创建成功
     debugPrint('✅ 使用增强 RAG 服务（ObjectBox）');
     return enhancedRagService;
   } catch (e) {
@@ -25,9 +29,11 @@ final unifiedRagServiceProvider = FutureProvider<dynamic>((ref) async {
     debugPrint('🔄 回退到传统 RAG 服务...');
 
     try {
-      // 回退到传统 RAG 服务
+      // 获取依赖服务
       final database = ref.read(appDatabaseProvider);
       final embeddingService = ref.read(embeddingServiceProvider);
+
+      // 回退到传统 RAG 服务
       final vectorSearchService = VectorSearchService(
         database,
         embeddingService,
@@ -42,6 +48,7 @@ final unifiedRagServiceProvider = FutureProvider<dynamic>((ref) async {
       return fallbackService;
     } catch (fallbackError) {
       debugPrint('❌ 传统 RAG 服务也创建失败: $fallbackError');
+      debugPrint('💡 请检查：1) 数据库连接 2) 嵌入服务配置 3) 知识库配置');
       rethrow;
     }
   }
@@ -175,7 +182,7 @@ class RagPromptRequest {
     required this.query,
     required this.config,
     this.knowledgeBaseId,
-    this.similarityThreshold = 0.7,
+    this.similarityThreshold = 0.3, // 降低默认阈值，提高召回率
     this.maxContexts = 3,
     this.systemPrompt,
   });

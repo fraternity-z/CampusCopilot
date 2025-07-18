@@ -140,27 +140,35 @@ class ChatService {
       if (ragEnabled && knowledgeConfig == null) {
         debugPrint('⏳ 知识库配置未就绪，尝试加载...');
         try {
-          // 尝试从数据库直接获取兜底配置
-          final database = _ref.read(appDatabaseProvider);
-          final configs = await database.getAllKnowledgeBaseConfigs();
-          if (configs.isNotEmpty) {
-            final dbConfig = configs.first;
-            // 转换为 KnowledgeBaseConfig 类型
-            knowledgeConfig = KnowledgeBaseConfig(
-              id: dbConfig.id,
-              name: dbConfig.name,
-              embeddingModelId: dbConfig.embeddingModelId,
-              embeddingModelName: dbConfig.embeddingModelName,
-              embeddingModelProvider: dbConfig.embeddingModelProvider,
-              chunkSize: dbConfig.chunkSize,
-              chunkOverlap: dbConfig.chunkOverlap,
-              maxRetrievedChunks: dbConfig.maxRetrievedChunks,
-              similarityThreshold: dbConfig.similarityThreshold,
-              isDefault: dbConfig.isDefault,
-              createdAt: dbConfig.createdAt,
-              updatedAt: dbConfig.updatedAt,
-            );
-            debugPrint('🔄 使用兜底配置: ${knowledgeConfig.name}');
+          // 强制重新加载配置
+          await _ref.read(knowledgeBaseConfigProvider.notifier).reload();
+          knowledgeConfig = _ref
+              .read(knowledgeBaseConfigProvider)
+              .currentConfig;
+
+          // 如果仍然没有配置，尝试从数据库直接获取兜底配置
+          if (knowledgeConfig == null) {
+            final database = _ref.read(appDatabaseProvider);
+            final configs = await database.getAllKnowledgeBaseConfigs();
+            if (configs.isNotEmpty) {
+              final dbConfig = configs.first;
+              // 转换为 KnowledgeBaseConfig 类型
+              knowledgeConfig = KnowledgeBaseConfig(
+                id: dbConfig.id,
+                name: dbConfig.name,
+                embeddingModelId: dbConfig.embeddingModelId,
+                embeddingModelName: dbConfig.embeddingModelName,
+                embeddingModelProvider: dbConfig.embeddingModelProvider,
+                chunkSize: dbConfig.chunkSize,
+                chunkOverlap: dbConfig.chunkOverlap,
+                maxRetrievedChunks: dbConfig.maxRetrievedChunks,
+                similarityThreshold: dbConfig.similarityThreshold,
+                isDefault: dbConfig.isDefault,
+                createdAt: dbConfig.createdAt,
+                updatedAt: dbConfig.updatedAt,
+              );
+              debugPrint('🔄 使用兜底配置: ${knowledgeConfig.name}');
+            }
           }
         } catch (e) {
           debugPrint('❌ 加载知识库配置失败: $e');
@@ -168,9 +176,26 @@ class ChatService {
       }
 
       // 获取当前选中的知识库
-      final currentKnowledgeBase = _ref
+      var currentKnowledgeBase = _ref
           .read(multiKnowledgeBaseProvider)
           .currentKnowledgeBase;
+
+      // 如果没有选中的知识库，尝试重新加载并选择默认知识库
+      if (ragEnabled && currentKnowledgeBase == null) {
+        debugPrint('⏳ 没有选中的知识库，尝试加载...');
+        try {
+          await _ref.read(multiKnowledgeBaseProvider.notifier).reload();
+          currentKnowledgeBase = _ref
+              .read(multiKnowledgeBaseProvider)
+              .currentKnowledgeBase;
+
+          if (currentKnowledgeBase != null) {
+            debugPrint('🔄 已自动选择知识库: ${currentKnowledgeBase.name}');
+          }
+        } catch (e) {
+          debugPrint('❌ 加载知识库失败: $e');
+        }
+      }
 
       debugPrint('🔧 RAG状态检查:');
       debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
@@ -206,6 +231,12 @@ class ChatService {
           shouldUseRag) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
+          debugPrint(
+            '📊 知识库: ${currentKnowledgeBase.name} (${currentKnowledgeBase.id})',
+          );
+          debugPrint(
+            '⚙️ 配置: ${knowledgeConfig.name} - ${knowledgeConfig.embeddingModelName}',
+          );
 
           if (ragService is RagService) {
             // 使用传统RAG服务
@@ -213,12 +244,22 @@ class ChatService {
               userQuery: content,
               config: knowledgeConfig,
               knowledgeBaseId: currentKnowledgeBase.id,
+              similarityThreshold:
+                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
             );
 
             if (ragResult.usedContexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
               debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
               debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+
+              // 显示使用的上下文相似度信息
+              for (int i = 0; i < ragResult.usedContexts.length; i++) {
+                final context = ragResult.usedContexts[i];
+                debugPrint(
+                  '📄 上下文${i + 1}: 相似度=${context.similarity.toStringAsFixed(3)}, 长度=${context.content.length}',
+                );
+              }
             } else {
               debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
             }
@@ -228,19 +269,42 @@ class ChatService {
               userQuery: content,
               config: knowledgeConfig,
               knowledgeBaseId: currentKnowledgeBase.id,
+              similarityThreshold:
+                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
             );
 
             if (ragResult.contexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
               debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
               debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+
+              // 显示使用的上下文信息（增强RAG的contexts是字符串列表）
+              for (int i = 0; i < ragResult.contexts.length; i++) {
+                final context = ragResult.contexts[i];
+                debugPrint('📄 上下文${i + 1}: 长度=${context.length}');
+              }
             } else {
               debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+              if (ragResult.error != null) {
+                debugPrint('⚠️ 增强RAG检索错误: ${ragResult.error}');
+              }
             }
+          } else {
+            debugPrint('⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
           }
         } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
-          debugPrint('堆栈跟踪: $stackTrace');
+          debugPrint('📍 错误详情: ${e.toString()}');
+          debugPrint('🔍 堆栈跟踪: ${stackTrace.toString()}');
+
+          // 记录更详细的错误信息以便调试
+          if (e.toString().contains('timeout')) {
+            debugPrint('💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
+          } else if (e.toString().contains('embedding')) {
+            debugPrint('💡 建议: 嵌入服务异常，请检查API配置');
+          } else if (e.toString().contains('database')) {
+            debugPrint('💡 建议: 数据库连接异常，请检查知识库状态');
+          }
         }
       } else {
         if (!ragEnabled) {
@@ -429,6 +493,12 @@ class ChatService {
           shouldUseRag) {
         try {
           debugPrint('🔍 使用RAG增强用户查询');
+          debugPrint(
+            '📊 知识库: ${currentKnowledgeBase.name} (${currentKnowledgeBase.id})',
+          );
+          debugPrint(
+            '⚙️ 配置: ${knowledgeConfig.name} - ${knowledgeConfig.embeddingModelName}',
+          );
 
           if (ragService is RagService) {
             // 使用传统RAG服务
@@ -436,6 +506,8 @@ class ChatService {
               userQuery: content,
               config: knowledgeConfig,
               knowledgeBaseId: currentKnowledgeBase.id,
+              similarityThreshold:
+                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
             );
 
             if (ragResult.usedContexts.isNotEmpty) {
@@ -451,19 +523,42 @@ class ChatService {
               userQuery: content,
               config: knowledgeConfig,
               knowledgeBaseId: currentKnowledgeBase.id,
+              similarityThreshold:
+                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
             );
 
             if (ragResult.contexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
               debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
               debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
+
+              // 显示使用的上下文信息（增强RAG的contexts是字符串列表）
+              for (int i = 0; i < ragResult.contexts.length; i++) {
+                final context = ragResult.contexts[i];
+                debugPrint('📄 上下文${i + 1}: 长度=${context.length}');
+              }
             } else {
               debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+              if (ragResult.error != null) {
+                debugPrint('⚠️ 增强RAG检索错误: ${ragResult.error}');
+              }
             }
+          } else {
+            debugPrint('⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
           }
         } catch (e, stackTrace) {
           debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
-          debugPrint('堆栈跟踪: $stackTrace');
+          debugPrint('📍 错误详情: ${e.toString()}');
+          debugPrint('🔍 堆栈跟踪: ${stackTrace.toString()}');
+
+          // 记录更详细的错误信息以便调试
+          if (e.toString().contains('timeout')) {
+            debugPrint('💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
+          } else if (e.toString().contains('embedding')) {
+            debugPrint('💡 建议: 嵌入服务异常，请检查API配置');
+          } else if (e.toString().contains('database')) {
+            debugPrint('💡 建议: 数据库连接异常，请检查知识库状态');
+          }
         }
       } else {
         if (!ragEnabled) {
@@ -898,6 +993,58 @@ class ChatService {
     }
 
     return params.isNotEmpty ? params : null;
+  }
+
+  /// 验证RAG功能状态
+  Future<Map<String, dynamic>> validateRagStatus() async {
+    final result = <String, dynamic>{};
+
+    try {
+      // 1. 检查RAG开关
+      final settingsState = _ref.read(settingsProvider);
+      final ragEnabled = settingsState.chatSettings.enableRag;
+      result['ragEnabled'] = ragEnabled;
+
+      // 2. 检查RAG服务
+      try {
+        final ragService = await _ref.read(unifiedRagServiceProvider.future);
+        result['ragServiceType'] = ragService.runtimeType.toString();
+        result['ragServiceAvailable'] = true;
+      } catch (e) {
+        result['ragServiceAvailable'] = false;
+        result['ragServiceError'] = e.toString();
+      }
+
+      // 3. 检查知识库配置
+      final knowledgeConfigState = _ref.read(knowledgeBaseConfigProvider);
+      final knowledgeConfig = knowledgeConfigState.currentConfig;
+      result['knowledgeConfigAvailable'] = knowledgeConfig != null;
+      if (knowledgeConfig != null) {
+        result['knowledgeConfigName'] = knowledgeConfig.name;
+        result['embeddingModel'] = knowledgeConfig.embeddingModelName;
+      }
+
+      // 4. 检查知识库选择
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      result['knowledgeBaseSelected'] = currentKnowledgeBase != null;
+      if (currentKnowledgeBase != null) {
+        result['knowledgeBaseName'] = currentKnowledgeBase.name;
+        result['knowledgeBaseId'] = currentKnowledgeBase.id;
+      }
+
+      // 5. 综合状态
+      result['ragFullyFunctional'] =
+          ragEnabled &&
+          result['ragServiceAvailable'] == true &&
+          knowledgeConfig != null &&
+          currentKnowledgeBase != null;
+    } catch (e) {
+      result['error'] = e.toString();
+    }
+
+    return result;
   }
 
   /// 处理思考链标签，实现流式状态管理
