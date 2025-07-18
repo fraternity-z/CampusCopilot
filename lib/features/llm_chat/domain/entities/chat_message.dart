@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'chat_message_defaults.dart';
 
 part 'chat_message.freezed.dart';
 part 'chat_message.g.dart';
@@ -65,10 +66,11 @@ class ChatMessage with _$ChatMessage {
     int? tokenCount,
 
     /// 图片URL列表（用于多模态消息）
-    @Default([]) List<String> imageUrls,
+    @Default(ChatMessageDefaults.emptyStringList) List<String> imageUrls,
 
     /// 附件文件信息列表
-    @Default([]) List<FileAttachment> attachments,
+    @Default(ChatMessageDefaults.emptyAttachmentList)
+    List<FileAttachment> attachments,
 
     /// 思考链内容（AI思考过程）
     String? thinkingContent,
@@ -147,18 +149,21 @@ extension ChatMessageExtensions on ChatMessage {
   bool get isSending => status == MessageStatus.sending;
 
   /// 获取显示时间
-  String get displayTime {
-    final now = DateTime.now();
+  String get displayTime => getDisplayTime();
+
+  /// 获取显示时间（支持传入当前时间参数，用于批量处理优化）
+  String getDisplayTime([DateTime? currentTime]) {
+    final now = currentTime ?? TimeCache.now();
     final difference = now.difference(timestamp);
 
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
+    if (difference.inMinutes < ChatMessageDefaults.minuteThreshold) {
+      return ChatMessageDefaults.justNowText;
+    } else if (difference.inHours < ChatMessageDefaults.hourThreshold) {
+      return '${difference.inMinutes}${ChatMessageDefaults.minutesAgoText}';
+    } else if (difference.inDays < ChatMessageDefaults.dayThreshold) {
+      return '${difference.inHours}${ChatMessageDefaults.hoursAgoText}';
+    } else if (difference.inDays < ChatMessageDefaults.weekThreshold) {
+      return '${difference.inDays}${ChatMessageDefaults.daysAgoText}';
     } else {
       return '${timestamp.month}/${timestamp.day}';
     }
@@ -167,72 +172,115 @@ extension ChatMessageExtensions on ChatMessage {
 
 /// ChatMessage工厂方法
 extension ChatMessageFactory on ChatMessage {
-  /// 创建用户消息
+  /// 通用创建方法（核心方法）
+  static ChatMessage create({
+    required String content,
+    required String chatSessionId,
+    required bool isFromUser,
+    MessageType type = MessageType.text,
+    MessageStatus status = MessageStatus.sent,
+    String? parentMessageId,
+    int? tokenCount,
+    List<String>? imageUrls,
+    List<FileAttachment>? attachments,
+    String? thinkingContent,
+    bool thinkingComplete = false,
+    String? modelName,
+    Map<String, dynamic>? metadata,
+    DateTime? timestamp,
+  }) {
+    final now = timestamp ?? TimeCache.now();
+    return ChatMessage(
+      id: now.millisecondsSinceEpoch.toString(),
+      content: content,
+      isFromUser: isFromUser,
+      timestamp: now,
+      chatSessionId: chatSessionId,
+      type: type,
+      status: status,
+      parentMessageId: parentMessageId,
+      tokenCount: tokenCount,
+      imageUrls: imageUrls ?? ChatMessageDefaults.emptyStringList,
+      attachments: attachments ?? ChatMessageDefaults.emptyAttachmentList,
+      thinkingContent: thinkingContent,
+      thinkingComplete: thinkingComplete,
+      modelName: modelName,
+      metadata: metadata,
+    );
+  }
+
+  /// 创建用户消息（便捷方法）
   static ChatMessage createUserMessage({
     required String content,
     required String chatSessionId,
     String? parentMessageId,
+    DateTime? timestamp,
   }) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    return create(
       content: content,
-      isFromUser: true,
-      timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
+      isFromUser: true,
       parentMessageId: parentMessageId,
+      timestamp: timestamp,
     );
   }
 
-  /// 创建AI消息
+  /// 创建AI消息（便捷方法）
   static ChatMessage createAIMessage({
     required String content,
     required String chatSessionId,
     String? parentMessageId,
     int? tokenCount,
+    String? thinkingContent,
+    bool thinkingComplete = false,
+    String? modelName,
+    DateTime? timestamp,
   }) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    return create(
       content: content,
-      isFromUser: false,
-      timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
+      isFromUser: false,
       parentMessageId: parentMessageId,
       tokenCount: tokenCount,
+      thinkingContent: thinkingContent,
+      thinkingComplete: thinkingComplete,
+      modelName: modelName,
+      timestamp: timestamp,
     );
   }
 
-  /// 创建系统消息
+  /// 创建系统消息（便捷方法）
   static ChatMessage createSystemMessage({
     required String content,
     required String chatSessionId,
+    DateTime? timestamp,
   }) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    return create(
       content: content,
-      isFromUser: false,
-      timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
+      isFromUser: false,
       type: MessageType.system,
+      timestamp: timestamp,
     );
   }
 
-  /// 创建图片消息
+  /// 创建图片消息（便捷方法）
   static ChatMessage createImageMessage({
     required String content,
     required String chatSessionId,
     required List<String> imageUrls,
     String? parentMessageId,
     bool isFromUser = true,
+    DateTime? timestamp,
   }) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    return create(
       content: content,
-      isFromUser: isFromUser,
-      timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
+      isFromUser: isFromUser,
       type: MessageType.image,
       imageUrls: imageUrls,
       parentMessageId: parentMessageId,
+      timestamp: timestamp,
     );
   }
 
@@ -242,6 +290,7 @@ extension ChatMessageFactory on ChatMessage {
     required String chatSessionId,
     required List<String> imageUrls,
     String? parentMessageId,
+    DateTime? timestamp,
   }) {
     return createImageMessage(
       content: content,
@@ -249,24 +298,25 @@ extension ChatMessageFactory on ChatMessage {
       imageUrls: imageUrls,
       parentMessageId: parentMessageId,
       isFromUser: true,
+      timestamp: timestamp,
     );
   }
 
-  /// 创建错误消息
+  /// 创建错误消息（便捷方法）
   static ChatMessage createErrorMessage({
     required String content,
     required String chatSessionId,
     String? parentMessageId,
+    DateTime? timestamp,
   }) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    return create(
       content: content,
-      isFromUser: false,
-      timestamp: DateTime.now(),
       chatSessionId: chatSessionId,
+      isFromUser: false,
       type: MessageType.error,
       status: MessageStatus.failed,
       parentMessageId: parentMessageId,
+      timestamp: timestamp,
     );
   }
 }

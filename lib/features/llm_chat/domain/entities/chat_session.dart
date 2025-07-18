@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
+import 'chat_message_defaults.dart';
 
 part 'chat_session.freezed.dart';
 part 'chat_session.g.dart';
@@ -32,7 +33,7 @@ class ChatSession with _$ChatSession {
     @Default(false) bool isPinned,
 
     /// 会话标签
-    @Default([]) List<String> tags,
+    @Default(ChatMessageDefaults.emptyStringList) List<String> tags,
 
     /// 消息总数
     @Default(0) int messageCount,
@@ -56,13 +57,14 @@ class ChatSession with _$ChatSession {
 class ChatSessionConfig with _$ChatSessionConfig {
   const factory ChatSessionConfig({
     /// 上下文窗口大小
-    @Default(4096) int contextWindowSize,
+    @Default(ChatMessageDefaults.defaultContextWindowSize)
+    int contextWindowSize,
 
     /// 温度参数
-    @Default(0.7) double temperature,
+    @Default(ChatMessageDefaults.defaultTemperature) double temperature,
 
     /// 最大生成token数
-    @Default(2048) int maxTokens,
+    @Default(ChatMessageDefaults.defaultMaxTokens) int maxTokens,
 
     /// 是否启用流式响应
     @Default(true) bool enableStreaming,
@@ -71,7 +73,8 @@ class ChatSessionConfig with _$ChatSessionConfig {
     @Default(false) bool enableRAG,
 
     /// RAG知识库ID列表
-    @Default([]) List<String> knowledgeBaseIds,
+    @Default(ChatMessageDefaults.emptyKnowledgeBaseIds)
+    List<String> knowledgeBaseIds,
 
     /// 系统提示词覆盖（可选）
     String? systemPromptOverride,
@@ -95,105 +98,194 @@ extension ChatSessionExtensions on ChatSession {
   /// 获取显示标题
   String get displayTitle {
     if (title.isNotEmpty) return title;
-    return isNewSession ? '新对话' : '对话 ${id.substring(0, 8)}';
+    return isNewSession
+        ? ChatMessageDefaults.newChatTitle
+        : '${ChatMessageDefaults.chatPrefix}${id.substring(0, ChatMessageDefaults.idSubstringLength)}';
   }
 
   /// 获取最后活动时间描述
-  String get lastActivityDescription {
-    final now = DateTime.now();
+  String get lastActivityDescription => getLastActivityDescription();
+
+  /// 获取最后活动时间描述（支持传入当前时间参数，用于批量处理优化）
+  String getLastActivityDescription([DateTime? currentTime]) {
+    final now = currentTime ?? TimeCache.now();
     final difference = now.difference(updatedAt);
 
-    if (difference.inMinutes < 1) {
-      return '刚刚活跃';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
+    if (difference.inMinutes < ChatMessageDefaults.minuteThreshold) {
+      return ChatMessageDefaults.justActiveText;
+    } else if (difference.inHours < ChatMessageDefaults.hourThreshold) {
+      return '${difference.inMinutes}${ChatMessageDefaults.minutesAgoText}';
+    } else if (difference.inDays < ChatMessageDefaults.dayThreshold) {
+      return '${difference.inHours}${ChatMessageDefaults.hoursAgoText}';
+    } else if (difference.inDays < ChatMessageDefaults.weekThreshold) {
+      return '${difference.inDays}${ChatMessageDefaults.daysAgoText}';
     } else {
       return '${updatedAt.month}/${updatedAt.day}';
     }
   }
 
+  /// 通用更新方法（私有方法，用于减少重复代码）
+  ChatSession _updateWith({
+    String? title,
+    bool? isArchived,
+    bool? isPinned,
+    List<String>? tags,
+    int? messageCount,
+    int? totalTokens,
+    ChatSessionConfig? config,
+    Map<String, dynamic>? metadata,
+    DateTime? timestamp,
+  }) {
+    final now = timestamp ?? TimeCache.now();
+    return copyWith(
+      title: title ?? this.title,
+      isArchived: isArchived ?? this.isArchived,
+      isPinned: isPinned ?? this.isPinned,
+      tags: tags ?? this.tags,
+      messageCount: messageCount ?? this.messageCount,
+      totalTokens: totalTokens ?? this.totalTokens,
+      config: config ?? this.config,
+      metadata: metadata ?? this.metadata,
+      updatedAt: now,
+    );
+  }
+
   /// 更新会话标题
-  ChatSession updateTitle(String newTitle) {
-    return copyWith(title: newTitle, updatedAt: DateTime.now());
+  ChatSession updateTitle(String newTitle, [DateTime? timestamp]) {
+    return _updateWith(title: newTitle, timestamp: timestamp);
   }
 
   /// 增加消息计数
-  ChatSession incrementMessageCount([int count = 1]) {
-    return copyWith(
+  ChatSession incrementMessageCount([int count = 1, DateTime? timestamp]) {
+    return _updateWith(
       messageCount: messageCount + count,
-      updatedAt: DateTime.now(),
+      timestamp: timestamp,
     );
   }
 
   /// 增加token使用量
-  ChatSession addTokenUsage(int tokens) {
-    return copyWith(
-      totalTokens: totalTokens + tokens,
-      updatedAt: DateTime.now(),
-    );
+  ChatSession addTokenUsage(int tokens, [DateTime? timestamp]) {
+    return _updateWith(totalTokens: totalTokens + tokens, timestamp: timestamp);
   }
 
   /// 归档会话
-  ChatSession archive() {
-    return copyWith(isArchived: true, updatedAt: DateTime.now());
+  ChatSession archive([DateTime? timestamp]) {
+    return _updateWith(isArchived: true, timestamp: timestamp);
   }
 
   /// 取消归档
-  ChatSession unarchive() {
-    return copyWith(isArchived: false, updatedAt: DateTime.now());
+  ChatSession unarchive([DateTime? timestamp]) {
+    return _updateWith(isArchived: false, timestamp: timestamp);
   }
 
   /// 置顶会话
-  ChatSession pin() {
-    return copyWith(isPinned: true, updatedAt: DateTime.now());
+  ChatSession pin([DateTime? timestamp]) {
+    return _updateWith(isPinned: true, timestamp: timestamp);
   }
 
   /// 取消置顶
-  ChatSession unpin() {
-    return copyWith(isPinned: false, updatedAt: DateTime.now());
+  ChatSession unpin([DateTime? timestamp]) {
+    return _updateWith(isPinned: false, timestamp: timestamp);
   }
 
-  /// 添加标签
-  ChatSession addTag(String tag) {
+  /// 添加标签（优化版本，带提前返回）
+  ChatSession addTag(String tag, [DateTime? timestamp]) {
+    // 提前返回，避免不必要的操作
     if (tags.contains(tag)) return this;
-    return copyWith(tags: [...tags, tag], updatedAt: DateTime.now());
+
+    // 使用高效的列表操作
+    final newTags = List<String>.unmodifiable([...tags, tag]);
+    return _updateWith(tags: newTags, timestamp: timestamp);
   }
 
-  /// 移除标签
-  ChatSession removeTag(String tag) {
-    return copyWith(
-      tags: tags.where((t) => t != tag).toList(),
-      updatedAt: DateTime.now(),
+  /// 移除标签（优化版本，带提前返回）
+  ChatSession removeTag(String tag, [DateTime? timestamp]) {
+    // 提前返回，避免不必要的操作
+    if (!tags.contains(tag)) return this;
+
+    // 使用高效的列表操作
+    final newTags = List<String>.unmodifiable(
+      tags.where((t) => t != tag).toList(),
     );
+    return _updateWith(tags: newTags, timestamp: timestamp);
+  }
+
+  /// 批量添加标签（性能优化版本）
+  ChatSession addTags(List<String> newTags, [DateTime? timestamp]) {
+    if (newTags.isEmpty) return this;
+
+    // 过滤掉已存在的标签
+    final tagsToAdd = newTags.where((tag) => !tags.contains(tag)).toList();
+    if (tagsToAdd.isEmpty) return this;
+
+    final updatedTags = List<String>.unmodifiable([...tags, ...tagsToAdd]);
+    return _updateWith(tags: updatedTags, timestamp: timestamp);
+  }
+
+  /// 批量移除标签（性能优化版本）
+  ChatSession removeTags(List<String> tagsToRemove, [DateTime? timestamp]) {
+    if (tagsToRemove.isEmpty) return this;
+
+    // 检查是否有标签需要移除
+    final hasTagsToRemove = tagsToRemove.any((tag) => tags.contains(tag));
+    if (!hasTagsToRemove) return this;
+
+    final updatedTags = List<String>.unmodifiable(
+      tags.where((tag) => !tagsToRemove.contains(tag)).toList(),
+    );
+    return _updateWith(tags: updatedTags, timestamp: timestamp);
   }
 
   /// 更新配置
-  ChatSession updateConfig(ChatSessionConfig newConfig) {
-    return copyWith(config: newConfig, updatedAt: DateTime.now());
+  ChatSession updateConfig(ChatSessionConfig newConfig, [DateTime? timestamp]) {
+    return _updateWith(config: newConfig, timestamp: timestamp);
   }
 }
 
 /// ChatSession工厂方法
 extension ChatSessionFactory on ChatSession {
-  /// 创建新会话
+  /// 创建新会话（优化版本，使用缓存时间）
   static ChatSession createNew({
     required String personaId,
     String? title,
     ChatSessionConfig? config,
+    DateTime? timestamp,
   }) {
-    final now = DateTime.now();
+    final now = timestamp ?? TimeCache.now();
     const uuid = Uuid();
     return ChatSession(
       id: uuid.v4(),
-      title: title ?? '新对话',
+      title: title ?? ChatMessageDefaults.newChatTitle,
       personaId: personaId,
       createdAt: now,
       updatedAt: now,
       config: config ?? const ChatSessionConfig(),
     );
+  }
+
+  /// 批量创建会话（性能优化版本）
+  static List<ChatSession> createBatch({
+    required List<String> personaIds,
+    String? titlePrefix,
+    ChatSessionConfig? config,
+    DateTime? timestamp,
+  }) {
+    if (personaIds.isEmpty) return [];
+
+    final now = timestamp ?? TimeCache.now();
+    const uuid = Uuid();
+
+    return personaIds.map((personaId) {
+      return ChatSession(
+        id: uuid.v4(),
+        title: titlePrefix != null
+            ? '$titlePrefix ${personaIds.indexOf(personaId) + 1}'
+            : ChatMessageDefaults.newChatTitle,
+        personaId: personaId,
+        createdAt: now,
+        updatedAt: now,
+        config: config ?? const ChatSessionConfig(),
+      );
+    }).toList();
   }
 }
