@@ -160,12 +160,12 @@ jobs:
           # 尝试使用gradle wrapper命令重新生成
           if command -v gradle >/dev/null 2>&1; then
             echo "📦 使用gradle命令重新生成wrapper..."
-            gradle wrapper --gradle-version 8.15
+            gradle wrapper --gradle-version 8.25
           else
             echo "❌ gradle命令不可用，手动创建gradlew..."
             # 从GitHub下载标准的gradlew文件
-            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.15.0/gradlew"
-            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.15.0/gradlew.bat"
+            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.25.0/gradlew"
+            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.25.0/gradlew.bat"
           fi
         fi
 
@@ -178,7 +178,7 @@ jobs:
           echo "📦 下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.15.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.25.0/gradle/wrapper/gradle-wrapper.jar"
         fi
 
         # 运行初始化脚本（如果存在）
@@ -221,7 +221,7 @@ jobs:
           echo "📦 重新下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.15.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.25.0/gradle/wrapper/gradle-wrapper.jar"
           
           # 再次尝试
           ./gradlew --version
