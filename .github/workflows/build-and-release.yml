@@ -95,14 +95,41 @@ jobs:
     - name: 设置Gradle环境
       run: |
         mkdir -p ~/.gradle
-        echo "org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G -XX:+UseG1GC" > ~/.gradle/gradle.properties
+        # 使用更保守的JVM配置，避免与项目配置冲突
+        echo "org.gradle.jvmargs=-Xmx2G -XX:MaxMetaspaceSize=512m -XX:+UseG1GC" > ~/.gradle/gradle.properties
         echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
         echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
-        echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
+        echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
 
         # 验证Java版本
         java -version
         echo "JAVA_HOME=$JAVA_HOME"
+
+    - name: 诊断构建环境
+      run: |
+        echo "🔍 诊断构建环境..."
+        
+        # 检查Java环境
+        echo "=== Java环境 ==="
+        java -version
+        javac -version
+        echo "JAVA_HOME: $JAVA_HOME"
+        
+        # 检查系统资源
+        echo "=== 系统资源 ==="
+        free -h || echo "无法获取内存信息"
+        df -h || echo "无法获取磁盘信息"
+        nproc || echo "无法获取CPU核心数"
+        
+        # 检查Gradle配置
+        echo "=== Gradle配置 ==="
+        cat ~/.gradle/gradle.properties || echo "未找到全局gradle.properties"
+        cat android/gradle.properties || echo "未找到项目gradle.properties"
+        
+        # 检查Flutter环境
+        echo "=== Flutter环境 ==="
+        flutter doctor -v
+        flutter --version
 
     - name: 安装Flutter依赖
       run: |
@@ -207,6 +234,10 @@ jobs:
         }
 
     - name: 构建Android APK
+      timeout-minutes: 30
+      env:
+        JAVA_OPTS: "-Xmx2G"
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       run: |
         echo "🚀 开始构建Android APK..."
         echo "📊 构建开始时间: $(date)"
@@ -214,9 +245,16 @@ jobs:
         # 显示环境信息
         echo "🔍 环境信息:"
         echo "JAVA_HOME=$JAVA_HOME"
+        echo "JAVA_OPTS=$JAVA_OPTS"
+        echo "GRADLE_OPTS=$GRADLE_OPTS"
         java -version
         echo "Flutter 版本:"
         flutter --version
+        
+        # 显示系统资源信息
+        echo "🔍 系统资源信息:"
+        free -h || echo "无法获取内存信息"
+        df -h || echo "无法获取磁盘信息"
         
         # 显示 Gradle 配置
         echo "🔍 Gradle 配置:"
@@ -231,9 +269,9 @@ jobs:
         echo "📦 重新获取依赖..."
         flutter pub get
 
-        # 使用简化的构建参数
+        # 使用优化的构建参数
         echo "🔨 开始构建..."
-        flutter build apk --release
+        flutter build apk --release --verbose --dart-define=flutter.inspector.structuredErrors=false
 
         echo "✅ Android APK构建完成"
         echo "📊 构建结束时间: $(date)"
