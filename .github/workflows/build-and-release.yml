@@ -95,9 +95,7 @@ jobs:
     - name: 设置Gradle环境
       run: |
         mkdir -p ~/.gradle
-        echo "org.gradle.java.home=$JAVA_HOME" > ~/.gradle/gradle.properties
-        echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+UseG1GC" >> ~/.gradle/gradle.properties
-        echo "org.gradle.java.target=21" >> ~/.gradle/gradle.properties
+        echo "org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G -XX:+UseG1GC" > ~/.gradle/gradle.properties
         echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
         echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
         echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
@@ -135,12 +133,12 @@ jobs:
           # 尝试使用gradle wrapper命令重新生成
           if command -v gradle >/dev/null 2>&1; then
             echo "📦 使用gradle命令重新生成wrapper..."
-            gradle wrapper --gradle-version 8.12
+            gradle wrapper --gradle-version 8.15
           else
             echo "❌ gradle命令不可用，手动创建gradlew..."
             # 从GitHub下载标准的gradlew文件
-            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradlew"
-            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradlew.bat"
+            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.15.0/gradlew"
+            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.15.0/gradlew.bat"
           fi
         fi
 
@@ -153,7 +151,7 @@ jobs:
           echo "📦 下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.15.0/gradle/wrapper/gradle-wrapper.jar"
         fi
 
         # 运行初始化脚本（如果存在）
@@ -196,7 +194,7 @@ jobs:
           echo "📦 重新下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.15.0/gradle/wrapper/gradle-wrapper.jar"
           
           # 再次尝试
           ./gradlew --version
@@ -212,13 +210,30 @@ jobs:
       run: |
         echo "🚀 开始构建Android APK..."
         echo "📊 构建开始时间: $(date)"
+        
+        # 显示环境信息
+        echo "🔍 环境信息:"
+        echo "JAVA_HOME=$JAVA_HOME"
+        java -version
+        echo "Flutter 版本:"
+        flutter --version
+        
+        # 显示 Gradle 配置
+        echo "🔍 Gradle 配置:"
+        cat ~/.gradle/gradle.properties || echo "未找到全局 gradle.properties"
+        cat android/gradle.properties || echo "未找到项目 gradle.properties"
+        
+        # 清理之前的构建
+        echo "🧹 清理之前的构建..."
+        flutter clean
+        
+        # 重新获取依赖
+        echo "📦 重新获取依赖..."
+        flutter pub get
 
-        # 使用优化的构建参数
-        flutter build apk --release \
-          --target-platform android-arm64 \
-          --split-per-abi \
-          --obfuscate \
-          --split-debug-info=build/debug-info
+        # 使用简化的构建参数
+        echo "🔨 开始构建..."
+        flutter build apk --release
 
         echo "✅ Android APK构建完成"
         echo "📊 构建结束时间: $(date)"
