@@ -300,7 +300,7 @@ class _$ChatSessionImpl implements _ChatSession {
       required this.updatedAt,
       this.isArchived = false,
       this.isPinned = false,
-      final List<String> tags = const [],
+      final List<String> tags = ChatMessageDefaults.emptyStringList,
       this.messageCount = 0,
       this.totalTokens = 0,
       this.config,
@@ -718,12 +718,13 @@ class __$$ChatSessionConfigImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ChatSessionConfigImpl implements _ChatSessionConfig {
   const _$ChatSessionConfigImpl(
-      {this.contextWindowSize = 4096,
-      this.temperature = 0.7,
-      this.maxTokens = 2048,
+      {this.contextWindowSize = ChatMessageDefaults.defaultContextWindowSize,
+      this.temperature = ChatMessageDefaults.defaultTemperature,
+      this.maxTokens = ChatMessageDefaults.defaultMaxTokens,
       this.enableStreaming = true,
       this.enableRAG = false,
-      final List<String> knowledgeBaseIds = const [],
+      final List<String> knowledgeBaseIds =
+          ChatMessageDefaults.emptyKnowledgeBaseIds,
       this.systemPromptOverride,
       final Map<String, dynamic>? customParams})
       : _knowledgeBaseIds = knowledgeBaseIds,

@@ -5364,7 +5364,7 @@ class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
       GeneratedColumn<double>('similarity_threshold', aliasedName, false,
           type: DriftSqlType.double,
           requiredDuringInsert: false,
-          defaultValue: const Constant(0.7));
+          defaultValue: const Constant(0.3));
   static const VerificationMeta _isDefaultMeta =
       const VerificationMeta('isDefault');
   @override

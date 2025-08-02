@@ -42,11 +42,11 @@ _$ChatMessageImpl _$$ChatMessageImplFromJson(Map<String, dynamic> json) =>
       imageUrls: (json['imageUrls'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
-          const [],
+          ChatMessageDefaults.emptyStringList,
       attachments: (json['attachments'] as List<dynamic>?)
               ?.map((e) => FileAttachment.fromJson(e as Map<String, dynamic>))
               .toList() ??
-          const [],
+          ChatMessageDefaults.emptyAttachmentList,
       thinkingContent: json['thinkingContent'] as String?,
       thinkingComplete: json['thinkingComplete'] as bool? ?? false,
       modelName: json['modelName'] as String?,

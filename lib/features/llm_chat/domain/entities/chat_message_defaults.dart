@@ -1,5 +1,7 @@
+import 'chat_message.dart';
+
 /// 聊天消息相关的默认值和常量
-/// 
+///
 /// 提供统一的常量定义，避免硬编码值，提高性能和可维护性
 class ChatMessageDefaults {
   // 私有构造函数，防止实例化
@@ -77,25 +79,26 @@ class ChatMessageDefaults {
 }
 
 /// 时间缓存管理器
-/// 
+///
 /// 用于缓存当前时间，避免频繁创建DateTime.now()实例
 class TimeCache {
   static DateTime? _cachedTime;
   static int? _cacheTimestamp;
 
   /// 获取当前时间（带缓存）
-  /// 
+  ///
   /// 在同一毫秒内多次调用会返回相同的DateTime实例
   static DateTime now() {
     final currentMs = DateTime.now().millisecondsSinceEpoch;
-    
-    if (_cachedTime == null || 
-        _cacheTimestamp == null || 
-        currentMs - _cacheTimestamp! > ChatMessageDefaults.timeCacheValidityMs) {
+
+    if (_cachedTime == null ||
+        _cacheTimestamp == null ||
+        currentMs - _cacheTimestamp! >
+            ChatMessageDefaults.timeCacheValidityMs) {
       _cachedTime = DateTime.fromMillisecondsSinceEpoch(currentMs);
       _cacheTimestamp = currentMs;
     }
-    
+
     return _cachedTime!;
   }
 

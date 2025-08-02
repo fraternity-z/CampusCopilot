@@ -17,7 +17,7 @@ _$ChatSessionImpl _$$ChatSessionImplFromJson(Map<String, dynamic> json) =>
       isPinned: json['isPinned'] as bool? ?? false,
       tags:
           (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-              const [],
+              ChatMessageDefaults.emptyStringList,
       messageCount: (json['messageCount'] as num?)?.toInt() ?? 0,
       totalTokens: (json['totalTokens'] as num?)?.toInt() ?? 0,
       config: json['config'] == null
@@ -45,15 +45,18 @@ Map<String, dynamic> _$$ChatSessionImplToJson(_$ChatSessionImpl instance) =>
 _$ChatSessionConfigImpl _$$ChatSessionConfigImplFromJson(
         Map<String, dynamic> json) =>
     _$ChatSessionConfigImpl(
-      contextWindowSize: (json['contextWindowSize'] as num?)?.toInt() ?? 4096,
-      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
-      maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 2048,
+      contextWindowSize: (json['contextWindowSize'] as num?)?.toInt() ??
+          ChatMessageDefaults.defaultContextWindowSize,
+      temperature: (json['temperature'] as num?)?.toDouble() ??
+          ChatMessageDefaults.defaultTemperature,
+      maxTokens: (json['maxTokens'] as num?)?.toInt() ??
+          ChatMessageDefaults.defaultMaxTokens,
       enableStreaming: json['enableStreaming'] as bool? ?? true,
       enableRAG: json['enableRAG'] as bool? ?? false,
       knowledgeBaseIds: (json['knowledgeBaseIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
-          const [],
+          ChatMessageDefaults.emptyKnowledgeBaseIds,
       systemPromptOverride: json['systemPromptOverride'] as String?,
       customParams: json['customParams'] as Map<String, dynamic>?,
     );

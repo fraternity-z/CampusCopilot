@@ -595,8 +595,9 @@ class _$ChatMessageImpl implements _ChatMessage {
       final Map<String, dynamic>? metadata,
       this.parentMessageId,
       this.tokenCount,
-      final List<String> imageUrls = const [],
-      final List<FileAttachment> attachments = const [],
+      final List<String> imageUrls = ChatMessageDefaults.emptyStringList,
+      final List<FileAttachment> attachments =
+          ChatMessageDefaults.emptyAttachmentList,
       this.thinkingContent,
       this.thinkingComplete = false,
       this.modelName})
