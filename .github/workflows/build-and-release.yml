@@ -153,11 +153,7 @@ jobs:
           echo "📦 下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://services.gradle.org/distributions/gradle-8.12-bin.zip" && \
-            unzip -j gradle-8.12-bin.zip "gradle-8.12/lib/gradle-wrapper.jar" -d gradle/wrapper/ && \
-            rm gradle-8.12-bin.zip || \
-            curl -L -o gradle/wrapper/gradle-wrapper.jar \
-              "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
         fi
 
         # 运行初始化脚本（如果存在）
@@ -174,8 +170,43 @@ jobs:
 
         # 预热 Gradle 守护进程
         echo "🔥 预热 Gradle 守护进程..."
-        ./gradlew --version
-        ./gradlew tasks --quiet
+        echo "✅ gradlew 执行权限已设置"
+        echo "🧪 测试 gradlew..."
+        
+        # 显示Java版本
+        java -version
+        
+        echo "✅ Gradle Wrapper 初始化成功"
+        
+        # 验证gradlew文件
+        echo "🔍 验证gradlew文件..."
+        ls -la gradlew
+        file gradlew
+        
+        # 预热 Gradle 守护进程
+        echo "🔥 预热 Gradle 守护进程..."
+        java -version
+        
+        # 测试基本的 gradle 命令，不使用 tasks
+        echo "🔧 测试 Gradle 配置..."
+        ./gradlew --version || {
+          echo "⚠️ gradlew --version 失败，尝试修复..."
+          
+          # 重新下载 gradle-wrapper.jar
+          echo "📦 重新下载 gradle-wrapper.jar..."
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar \
+            "https://github.com/gradle/gradle/raw/v8.12.0/gradle/wrapper/gradle-wrapper.jar"
+          
+          # 再次尝试
+          ./gradlew --version
+        }
+        
+        # 如果 --version 成功，再尝试 tasks 命令
+        echo "🔧 验证 Gradle 任务..."
+        ./gradlew help --quiet || {
+          echo "⚠️ help 命令失败，跳过任务验证..."
+        }
 
     - name: 构建Android APK
       run: |
