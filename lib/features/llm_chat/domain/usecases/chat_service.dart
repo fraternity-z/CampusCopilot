@@ -630,9 +630,36 @@ class ChatService {
           // 通知UI开始搜索
           onSearchStatusChanged?.call(true);
 
+          // 解析黑名单规则为 Pattern 列表
+          List<Pattern> parseBlacklist(String rules) {
+            final lines = rules
+                .split('\n')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty && !e.startsWith('#'))
+                .toList();
+            final patterns = <Pattern>[];
+            for (final line in lines) {
+              if (line.startsWith('/') && line.endsWith('/')) {
+                final pattern = line.substring(1, line.length - 1);
+                patterns.add(RegExp(pattern));
+              } else {
+                patterns.add(line);
+              }
+            }
+            return patterns;
+          }
+
+          final blacklistPatterns = parseBlacklist(searchConfig.blacklistRules);
+
           final searchResult = await aiSearchIntegration.performAISearch(
             userQuery: content,
-            maxResults: 5,
+            maxResults: searchConfig.maxResults,
+            language: searchConfig.language,
+            region: searchConfig.region,
+            engine: searchConfig.defaultEngine,
+            apiKey: searchConfig.apiKey,
+            blacklistEnabled: searchConfig.blacklistEnabled,
+            blacklistPatterns: blacklistPatterns,
           );
 
           // 通知UI搜索结束

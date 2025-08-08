@@ -75,4 +75,10 @@ class GeneralSettingsKeys {
 
   /// 是否启用安全搜索
   static const String searchSafeSearch = 'search_safe_search';
+
+  /// 搜索结果黑名单是否启用
+  static const String searchBlacklistEnabled = 'search_blacklist_enabled';
+
+  /// 搜索结果黑名单规则（按换行分隔，兼容简单域名与正则规则）
+  static const String searchBlacklistRules = 'search_blacklist_rules';
 }

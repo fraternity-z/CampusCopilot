@@ -30,6 +30,12 @@ class SearchConfig {
   /// 自定义搜索引擎配置
   final Map<String, SearchEngineConfig> customEngines;
 
+  /// 是否启用搜索结果黑名单
+  final bool blacklistEnabled;
+
+  /// 黑名单规则（按行分隔；支持简单域名或正则，以 /pattern/ 标识）
+  final String blacklistRules;
+
   const SearchConfig({
     this.searchEnabled = false,
     this.enabledEngines = const ['google'],
@@ -41,6 +47,8 @@ class SearchConfig {
     this.region = 'CN',
     this.safeSearch = true,
     this.customEngines = const {},
+    this.blacklistEnabled = false,
+    this.blacklistRules = '',
   });
 
   SearchConfig copyWith({
@@ -54,6 +62,8 @@ class SearchConfig {
     String? region,
     bool? safeSearch,
     Map<String, SearchEngineConfig>? customEngines,
+    bool? blacklistEnabled,
+    String? blacklistRules,
   }) {
     return SearchConfig(
       searchEnabled: searchEnabled ?? this.searchEnabled,
@@ -66,6 +76,8 @@ class SearchConfig {
       region: region ?? this.region,
       safeSearch: safeSearch ?? this.safeSearch,
       customEngines: customEngines ?? this.customEngines,
+      blacklistEnabled: blacklistEnabled ?? this.blacklistEnabled,
+      blacklistRules: blacklistRules ?? this.blacklistRules,
     );
   }
 
@@ -81,6 +93,8 @@ class SearchConfig {
       'region': region,
       'safeSearch': safeSearch,
       'customEngines': customEngines.map((k, v) => MapEntry(k, v.toJson())),
+      'blacklistEnabled': blacklistEnabled,
+      'blacklistRules': blacklistRules,
     };
   }
 
@@ -98,6 +112,8 @@ class SearchConfig {
       customEngines: (json['customEngines'] as Map<String, dynamic>? ?? {}).map(
         (k, v) => MapEntry(k, SearchEngineConfig.fromJson(v)),
       ),
+      blacklistEnabled: json['blacklistEnabled'] ?? false,
+      blacklistRules: json['blacklistRules'] ?? '',
     );
   }
 }

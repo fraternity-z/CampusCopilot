@@ -60,6 +60,16 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
           await _database.getSetting(GeneralSettingsKeys.searchSafeSearch) ==
           'true';
 
+      // 黑名单设置
+      final blacklistEnabled =
+          await _database.getSetting(
+            GeneralSettingsKeys.searchBlacklistEnabled,
+          ) ==
+          'true';
+      final blacklistRules = await _database.getSetting(
+        GeneralSettingsKeys.searchBlacklistRules,
+      );
+
       List<String> engines = ['duckduckgo']; // 默认引擎
       if (enabledEngines != null && enabledEngines.isNotEmpty) {
         try {
@@ -79,6 +89,8 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
         language: language,
         region: region,
         safeSearch: safeSearch,
+        blacklistEnabled: blacklistEnabled,
+        blacklistRules: blacklistRules ?? '',
       );
 
       debugPrint(
@@ -128,6 +140,34 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
       debugPrint('✅ 默认搜索引擎已更新: $engine');
     } catch (e) {
       debugPrint('❌ 更新默认搜索引擎失败: $e');
+    }
+  }
+
+  /// 更新黑名单开关
+  Future<void> updateBlacklistEnabled(bool enabled) async {
+    try {
+      await _database.setSetting(
+        GeneralSettingsKeys.searchBlacklistEnabled,
+        enabled.toString(),
+      );
+      state = state.copyWith(blacklistEnabled: enabled);
+      debugPrint('✅ 搜索黑名单开关已更新: $enabled');
+    } catch (e) {
+      debugPrint('❌ 更新搜索黑名单开关失败: $e');
+    }
+  }
+
+  /// 更新黑名单规则
+  Future<void> updateBlacklistRules(String rules) async {
+    try {
+      await _database.setSetting(
+        GeneralSettingsKeys.searchBlacklistRules,
+        rules,
+      );
+      state = state.copyWith(blacklistRules: rules);
+      debugPrint('✅ 搜索黑名单规则已更新');
+    } catch (e) {
+      debugPrint('❌ 更新搜索黑名单规则失败: $e');
     }
   }
 

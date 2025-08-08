@@ -18,6 +18,8 @@ class AISearchIntegrationService {
     String? region,
     String engine = 'duckduckgo',
     String? apiKey, // 添加API密钥参数
+    bool blacklistEnabled = false,
+    List<Pattern>? blacklistPatterns,
   }) async {
     final startTime = DateTime.now();
 
@@ -76,19 +78,22 @@ class AISearchIntegrationService {
 
       debugPrint('✅ 搜索成功，找到 ${searchResult.items.length} 个结果');
 
-      // 过滤和排序结果
-      final filteredResults = _filterAndRankResults(
-        searchResult.items,
-        userQuery,
-      );
+      // 过滤与排序（含黑名单）
+      var processed = _filterAndRankResults(searchResult.items, userQuery);
+
+      if (blacklistEnabled &&
+          blacklistPatterns != null &&
+          blacklistPatterns.isNotEmpty) {
+        processed = _applyBlacklist(processed, blacklistPatterns);
+      }
 
       // 提取相关主题
-      final relatedTopics = _extractRelatedTopics(filteredResults);
+      final relatedTopics = _extractRelatedTopics(processed);
 
       return AISearchResult(
         originalQuery: userQuery,
         optimizedQuery: optimizedQuery,
-        results: filteredResults,
+        results: processed,
         relatedTopics: relatedTopics,
         timestamp: startTime,
         engine: engine,
@@ -104,6 +109,26 @@ class AISearchIntegrationService {
         error: e.toString(),
       );
     }
+  }
+
+  /// 应用黑名单过滤
+  List<SearchResultItem> _applyBlacklist(
+    List<SearchResultItem> items,
+    List<Pattern> patterns,
+  ) {
+    bool isBlocked(String url) {
+      for (final p in patterns) {
+        if (p is RegExp) {
+          if (p.hasMatch(url)) return true;
+        } else {
+          final s = p.toString();
+          if (url.contains(s)) return true;
+        }
+      }
+      return false;
+    }
+
+    return items.where((e) => !isBlocked(e.link)).toList();
   }
 
   /// 格式化搜索结果为AI上下文
@@ -254,15 +279,15 @@ class AISearchIntegrationService {
     String? apiKey,
   }) async {
     final startTime = DateTime.now();
-    
+
     try {
       // 检查API密钥是否提供
       if (apiKey == null || apiKey.isEmpty) {
         throw Exception('Tavily API密钥未配置');
       }
-      
+
       debugPrint('🔍 开始Tavily搜索: "$query"');
-      
+
       final url = Uri.parse('https://api.tavily.com/search');
       final requestBody = {
         'query': query,
@@ -273,57 +298,66 @@ class AISearchIntegrationService {
         'include_raw_content': false,
         'format_output': false,
       };
-      
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 15));
-      
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $apiKey',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(const Duration(seconds: 15));
+
       if (response.statusCode != 200) {
-        throw Exception('Tavily API请求失败: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Tavily API请求失败: ${response.statusCode} - ${response.body}',
+        );
       }
-      
+
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final results = <SearchResultItem>[];
-      
+
       // 解析搜索结果
       if (data['results'] is List) {
         final searchResults = data['results'] as List;
         for (final result in searchResults) {
           if (result is Map<String, dynamic>) {
-            results.add(SearchResultItem(
-              title: result['title'] ?? '',
-              link: result['url'] ?? '',
-              snippet: result['content'] ?? '',
-              contentType: 'webpage',
-              relevanceScore: (result['score'] as num?)?.toDouble() ?? 0.0,
-              metadata: {
-                'favicon': result['favicon'],
-                'published_date': result['published_date'],
-                'raw_content': result['raw_content'],
-              },
-            ));
+            results.add(
+              SearchResultItem(
+                title: result['title'] ?? '',
+                link: result['url'] ?? '',
+                snippet: result['content'] ?? '',
+                contentType: 'webpage',
+                relevanceScore: (result['score'] as num?)?.toDouble() ?? 0.0,
+                metadata: {
+                  'favicon': result['favicon'],
+                  'published_date': result['published_date'],
+                  'raw_content': result['raw_content'],
+                },
+              ),
+            );
           }
         }
       }
-      
+
       // 添加AI答案作为特殊结果项
       if (data['answer'] != null && data['answer'].toString().isNotEmpty) {
-        results.insert(0, SearchResultItem(
-          title: 'Tavily AI 摘要',
-          link: 'https://tavily.com',
-          snippet: data['answer'],
-          contentType: 'ai_answer',
-          relevanceScore: 1.0,
-        ));
+        results.insert(
+          0,
+          SearchResultItem(
+            title: 'Tavily AI 摘要',
+            link: 'https://tavily.com',
+            snippet: data['answer'],
+            contentType: 'ai_answer',
+            relevanceScore: 1.0,
+          ),
+        );
       }
-      
+
       debugPrint('✅ Tavily搜索成功，找到 ${results.length} 个结果');
-      
+
       return SearchResult(
         query: query,
         items: results,
@@ -331,7 +365,6 @@ class AISearchIntegrationService {
         engine: 'tavily',
         totalResults: results.length,
       );
-      
     } catch (e) {
       debugPrint('❌ Tavily搜索失败: $e');
       return SearchResult(

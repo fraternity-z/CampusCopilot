@@ -39,6 +39,7 @@ class SearchSettingsSection extends ConsumerWidget {
     final searchConfig = ref.watch(searchConfigProvider);
     final searchNotifier = ref.read(searchConfigProvider.notifier);
     final availableEngines = ref.watch(availableSearchEnginesProvider);
+    // 兼容热重载期间状态结构变化导致的临时类型问题（在具体控件处内联处理）
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -189,42 +190,88 @@ class SearchSettingsSection extends ConsumerWidget {
               Text('搜索配置', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
 
-              // 最大搜索结果数
+              // 最大搜索结果数（更长且对齐）
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('最大搜索结果数'),
                 subtitle: Text('当前: ${searchConfig.maxResults}'),
-                trailing: SizedBox(
-                  width: 100,
-                  child: Slider(
-                    value: searchConfig.maxResults.toDouble(),
-                    min: 3,
-                    max: 10,
-                    divisions: 7,
-                    label: searchConfig.maxResults.toString(),
-                    onChanged: (value) {
-                      searchNotifier.updateMaxResults(value.round());
-                    },
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Slider(
+                  value: searchConfig.maxResults.toDouble(),
+                  min: 3,
+                  max: 10,
+                  divisions: 7,
+                  label: searchConfig.maxResults.toString(),
+                  onChanged: (value) {
+                    searchNotifier.updateMaxResults(value.round());
+                  },
                 ),
               ),
 
-              // 搜索超时时间
+              // 搜索超时时间（更长且对齐，移除多余展示）
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('搜索超时时间'),
                 subtitle: Text('当前: ${searchConfig.timeoutSeconds}秒'),
-                trailing: SizedBox(
-                  width: 100,
-                  child: Slider(
-                    value: searchConfig.timeoutSeconds.toDouble(),
-                    min: 5,
-                    max: 30,
-                    divisions: 5,
-                    label: '${searchConfig.timeoutSeconds}s',
-                    onChanged: (value) {
-                      searchNotifier.updateTimeoutSeconds(value.round());
-                    },
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Slider(
+                  value: searchConfig.timeoutSeconds.toDouble(),
+                  min: 5,
+                  max: 30,
+                  divisions: 5,
+                  label: '${searchConfig.timeoutSeconds}s',
+                  onChanged: (value) {
+                    searchNotifier.updateTimeoutSeconds(value.round());
+                  },
                 ),
+              ),
+
+              const SizedBox(height: 8),
+              Text('结果过滤', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // 黑名单开关（兼容热重载状态变化）
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: (() {
+                  try {
+                    return searchConfig.blacklistEnabled;
+                  } catch (_) {
+                    return false;
+                  }
+                })(),
+                onChanged: (v) => ref
+                    .read(searchConfigProvider.notifier)
+                    .updateBlacklistEnabled(v),
+                title: const Text('启用黑名单'),
+                subtitle: const Text('过滤命中规则的网站，不在搜索结果中展示'),
+                secondary: const Icon(Icons.block),
+              ),
+              const SizedBox(height: 8),
+              // 黑名单规则编辑
+              TextFormField(
+                initialValue: (() {
+                  try {
+                    return searchConfig.blacklistRules;
+                  } catch (_) {
+                    return '';
+                  }
+                })(),
+                decoration: const InputDecoration(
+                  labelText: '黑名单规则（每行一条，可用 /regex/ 表示正则）',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                  hintText:
+                      '示例:\n* 直接写域名：example.com\n* 正则：/.*\\.spam\\.com/\n* 可加#注释说明',
+                ),
+                minLines: 3,
+                maxLines: 6,
+                onChanged: (v) => ref
+                    .read(searchConfigProvider.notifier)
+                    .updateBlacklistRules(v),
               ),
             ],
           ],
