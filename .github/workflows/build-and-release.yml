@@ -76,11 +76,7 @@ jobs:
     - name: 安装 Android SDK 组件
       uses: android-actions/setup-android@v3
       with:
-        packages: |-
-          platform-tools
-          platforms;android-35
-          build-tools;35.0.0
-          cmdline-tools;latest
+        packages: platform-tools, platforms;android-35, build-tools;35.0.0, cmdline-tools;latest
 
     - name: 清理可能冲突的环境变量
       run: |
