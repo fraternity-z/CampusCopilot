@@ -47,4 +47,32 @@ class GeneralSettingsKeys {
 
   /// 代理密码（可选）
   static const String proxyPassword = 'proxy_password';
+
+  // 搜索功能配置
+  /// 搜索功能是否启用
+  static const String searchEnabled = 'search_enabled';
+
+  /// 启用的搜索引擎列表（逗号分隔）
+  static const String searchEnabledEngines = 'search_enabled_engines';
+
+  /// 默认搜索引擎
+  static const String searchDefaultEngine = 'search_default_engine';
+
+  /// 搜索API密钥
+  static const String searchApiKey = 'search_api_key';
+
+  /// 搜索最大结果数
+  static const String searchMaxResults = 'search_max_results';
+
+  /// 搜索超时时间（秒）
+  static const String searchTimeoutSeconds = 'search_timeout_seconds';
+
+  /// 搜索语言偏好
+  static const String searchLanguage = 'search_language';
+
+  /// 搜索地区偏好
+  static const String searchRegion = 'search_region';
+
+  /// 是否启用安全搜索
+  static const String searchSafeSearch = 'search_safe_search';
 }

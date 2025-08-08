@@ -26,6 +26,9 @@ import '../../../knowledge_base/presentation/providers/knowledge_base_config_pro
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 import '../../../knowledge_base/domain/entities/knowledge_document.dart';
 
+// 搜索相关导入
+import '../../presentation/providers/search_providers.dart';
+
 /// 聊天服务
 ///
 /// 管理聊天会话、消息发送和AI响应生成的核心业务逻辑
@@ -36,6 +39,9 @@ class ChatService {
 
   /// 会话标题更新回调
   Function(String sessionId, String newTitle)? onSessionTitleUpdated;
+
+  /// 搜索状态变化回调
+  Function(bool isSearching)? onSearchStatusChanged;
 
   ChatService(this._database, this._ref)
     : _instanceId = DateTime.now().millisecondsSinceEpoch.toString() {
@@ -591,6 +597,73 @@ class ChatService {
             ];
 
       debugPrint('💬 上下文消息数量: ${contextMessages.length}');
+
+      // 6.5. 检查是否需要网络搜索
+      String finalPrompt = enhancedPrompt;
+      try {
+        final aiSearchIntegration = _ref.read(aiSearchIntegrationProvider);
+        final searchConfig = _ref.read(searchConfigProvider);
+
+        // 详细的搜索状态调试
+        debugPrint('🔍 搜索状态检查:');
+        debugPrint('  - 搜索开关: ${searchConfig.searchEnabled ? "启用" : "禁用"}');
+        debugPrint('  - 启用的搜索引擎: ${searchConfig.enabledEngines}');
+        debugPrint('  - 默认搜索引擎: ${searchConfig.defaultEngine}');
+        debugPrint('  - 用户查询: "$content"');
+
+        // 修改逻辑：如果用户主动启用了搜索，就直接搜索，不需要AI判断
+        // 只有在自动搜索模式下才使用shouldSearch判断
+        bool shouldExecuteSearch = false;
+
+        if (searchConfig.searchEnabled &&
+            searchConfig.enabledEngines.isNotEmpty) {
+          // 用户已启用搜索开关，直接执行搜索
+          shouldExecuteSearch = true;
+          debugPrint('  - 用户已启用搜索，将执行搜索');
+        } else {
+          debugPrint('  - 搜索未启用或无可用引擎，跳过搜索');
+        }
+
+        if (shouldExecuteSearch) {
+          debugPrint('🔍 ✅ 开始执行网络搜索...');
+
+          // 通知UI开始搜索
+          onSearchStatusChanged?.call(true);
+
+          final searchResult = await aiSearchIntegration.performAISearch(
+            userQuery: content,
+            maxResults: 5,
+          );
+
+          // 通知UI搜索结束
+          onSearchStatusChanged?.call(false);
+
+          if (searchResult.hasResults) {
+            final searchContext = aiSearchIntegration.formatSearchResultsForAI(
+              searchResult,
+            );
+            finalPrompt = '$enhancedPrompt\n\n$searchContext';
+            debugPrint('✅ 搜索完成，已将搜索结果添加到上下文');
+          } else {
+            debugPrint('⚠️ 搜索未返回有效结果');
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ 搜索过程中出现错误: $e');
+        // 确保搜索状态被重置
+        onSearchStatusChanged?.call(false);
+        // 搜索失败不影响正常对话，继续使用原始提示
+      }
+
+      // 更新上下文消息中的最后一条用户消息
+      if (contextMessages.isNotEmpty && finalPrompt != enhancedPrompt) {
+        final lastMessage = contextMessages.last;
+        if (lastMessage.isFromUser) {
+          contextMessages[contextMessages.length - 1] = lastMessage.copyWith(
+            content: finalPrompt,
+          );
+        }
+      }
 
       // 7. 构建聊天选项 - 使用会话配置和智能体提示词
       final params = _ref.read(modelParametersProvider);
