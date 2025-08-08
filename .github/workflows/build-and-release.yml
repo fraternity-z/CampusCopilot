@@ -73,6 +73,15 @@ jobs:
         distribution: 'zulu'
         java-version: '21'
 
+    - name: 安装 Android SDK 组件
+      uses: android-actions/setup-android@v3
+      with:
+        packages: |-
+          platform-tools
+          platforms;android-35
+          build-tools;35.0.0
+          cmdline-tools;latest
+
     - name: 清理可能冲突的环境变量
       run: |
         # 防止 CI 或上游 action 注入导致 JVM 误读的参数
