@@ -405,31 +405,76 @@ final databaseAvailableModelsProvider =
       if (configs.isEmpty) return [];
 
       final models = <ModelInfoWithProvider>[];
+      // 使用 set 去重：provider + modelId
+      final Set<String> seen = {};
 
       // 获取每个配置下的模型
       for (final config in configs) {
-        final configModels = await database.getCustomModelsByConfig(config.id);
+        // 优先按 configId 关联查找
+        var configModels = await database.getCustomModelsByConfig(config.id);
+
+        // 兼容旧数据或“先刷新模型后保存配置”的情况：
+        // 如果没有绑定 configId 的模型，则按 provider 回退查询
+        if (configModels.isEmpty) {
+          final fallback = await database.getCustomModelsByProvider(
+            config.provider,
+          );
+          configModels = fallback;
+        }
 
         for (final modelData in configModels) {
-          if (modelData.isEnabled) {
-            final provider = _stringToAIProvider(config.provider);
-            if (provider != null) {
-              models.add(
-                ModelInfoWithProvider(
-                  id: modelData.modelId,
-                  name: modelData.name,
-                  provider: provider,
-                  type: modelData.type,
-                  description: modelData.description,
-                  contextWindow: modelData.contextWindow,
-                  maxOutputTokens: modelData.maxOutputTokens,
-                  supportsStreaming: modelData.supportsStreaming,
-                  supportsFunctionCalling: modelData.supportsFunctionCalling,
-                  supportsVision: modelData.supportsVision,
-                ),
-              );
-            }
-          }
+          if (!modelData.isEnabled) continue;
+          final provider = _stringToAIProvider(config.provider);
+          if (provider == null) continue;
+
+          final dedupKey =
+              '${config.provider.toLowerCase()}::${modelData.modelId}';
+          if (seen.contains(dedupKey)) continue;
+          seen.add(dedupKey);
+
+          models.add(
+            ModelInfoWithProvider(
+              id: modelData.modelId,
+              name: modelData.name,
+              provider: provider,
+              type: modelData.type,
+              description: modelData.description,
+              contextWindow: modelData.contextWindow,
+              maxOutputTokens: modelData.maxOutputTokens,
+              supportsStreaming: modelData.supportsStreaming,
+              supportsFunctionCalling: modelData.supportsFunctionCalling,
+              supportsVision: modelData.supportsVision,
+            ),
+          );
+        }
+      }
+
+      // 兜底：若仍为空，直接读取所有启用模型（兼容异常配置或遗留数据）
+      if (models.isEmpty) {
+        final all = await database.getAllCustomModels();
+        for (final m in all) {
+          if (!m.isEnabled) continue;
+          final provider = _stringToAIProvider(m.provider);
+          if (provider == null) continue;
+
+          final dedupKey = '${m.provider.toLowerCase()}::${m.modelId}';
+          if (seen.contains(dedupKey)) continue;
+          seen.add(dedupKey);
+
+          models.add(
+            ModelInfoWithProvider(
+              id: m.modelId,
+              name: m.name,
+              provider: provider,
+              type: m.type,
+              description: m.description,
+              contextWindow: m.contextWindow,
+              maxOutputTokens: m.maxOutputTokens,
+              supportsStreaming: m.supportsStreaming,
+              supportsFunctionCalling: m.supportsFunctionCalling,
+              supportsVision: m.supportsVision,
+            ),
+          );
         }
       }
 

@@ -44,7 +44,15 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.settings,
                 title: '常规设置',
                 subtitle: '话题自动命名、基础功能配置',
-                onTap: () => context.push('/settings/general'),
+                onTap: () => context.pushNamed('general-settings'),
+              ),
+              const SizedBox(height: 12),
+              _buildSettingsModule(
+                context,
+                icon: Icons.travel_explore,
+                title: 'AI 搜索设置',
+                subtitle: '选择搜索服务商并配置 API 密钥',
+                onTap: () => context.pushNamed('search-settings'),
               ),
               const SizedBox(height: 12),
               _buildSettingsModule(

@@ -109,6 +109,7 @@ dependencies:
   logger: ^2.0.2+1
   google_fonts: ^6.2.1
   open_file: ^3.5.10
+  url_launcher: ^6.3.0
 
   # Markdown渲染和代码高亮
   flutter_markdown: ^0.7.3+2

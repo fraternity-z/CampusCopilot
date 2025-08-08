@@ -15,6 +15,7 @@ import 'navigation/settings_tab.dart';
 import '../features/llm_chat/presentation/views/chat_screen.dart';
 import '../features/settings/presentation/views/settings_screen.dart';
 import '../features/settings/presentation/views/general_settings_screen.dart';
+import '../features/settings/presentation/views/search_settings_screen.dart';
 import '../features/settings/presentation/views/appearance_settings_screen.dart';
 import '../features/settings/presentation/views/data_management_screen.dart';
 import '../features/settings/presentation/views/about_screen.dart';
@@ -283,6 +284,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'general',
                 name: 'general-settings',
                 builder: (context, state) => const GeneralSettingsScreen(),
+              ),
+              // AI 搜索设置
+              GoRoute(
+                path: 'search',
+                name: 'search-settings',
+                builder: (context, state) => const SearchSettingsScreen(),
               ),
               // 模型管理
               GoRoute(

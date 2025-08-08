@@ -169,6 +169,23 @@ class AppTheme {
         ),
       ),
 
+      // SnackBar 主题（浮动不遮挡，卡片化样式）
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 8,
+        backgroundColor: _surfaceColor,
+        contentTextStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF1C1B1F),
+        ),
+        actionTextColor: _primaryColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusM),
+          side: const BorderSide(color: Color(0xFFE6E0E9), width: 1),
+        ),
+      ),
+
       // 分割线主题
       dividerTheme: const DividerThemeData(
         color: Color(0xFFE6E0E9),
@@ -254,6 +271,23 @@ class AppTheme {
         ),
         color: const Color(0xFF1C1B1F),
         shadowColor: Colors.transparent,
+      ),
+
+      // SnackBar 主题（暗色）
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 8,
+        backgroundColor: const Color(0xFF1C1B1F),
+        contentTextStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFFE6E0E9),
+        ),
+        actionTextColor: const Color(0xFFD0BCFF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusM),
+          side: const BorderSide(color: Color(0xFF36343B), width: 1),
+        ),
       ),
     );
   }

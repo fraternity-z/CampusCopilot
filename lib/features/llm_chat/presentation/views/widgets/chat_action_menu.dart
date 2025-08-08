@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../shared/widgets/modern_button.dart';
 import '../../providers/chat_provider.dart';
+import '../../providers/search_providers.dart';
 import '../../../../../core/widgets/elegant_notification.dart';
 
 /// 聊天操作菜单组件
@@ -32,6 +33,17 @@ class ChatActionMenu extends ConsumerWidget {
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
       itemBuilder: (context) => [
+        // 快速启用/禁用 AI 搜索
+        PopupMenuItem<String>(
+          value: 'toggle_search',
+          child: _buildMenuItem(
+            icon: Icons.travel_explore,
+            title: 'AI搜索',
+            subtitle: '一键启用/禁用网络搜索',
+            color: Colors.teal,
+          ),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'clear_chat',
           child: _buildMenuItem(
@@ -127,6 +139,16 @@ class ChatActionMenu extends ConsumerWidget {
   /// 处理菜单操作
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
     switch (action) {
+      case 'toggle_search':
+        final notifier = ref.read(searchConfigProvider.notifier);
+        final enabled = ref.read(searchConfigProvider).searchEnabled;
+        notifier.updateSearchEnabled(!enabled);
+        ElegantNotification.info(
+          context,
+          !enabled ? '已启用AI搜索' : '已关闭AI搜索',
+          duration: const Duration(seconds: 2),
+        );
+        break;
       case 'clear_chat':
         _showClearChatDialog(context, ref);
         break;
