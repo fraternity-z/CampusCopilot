@@ -51,6 +51,10 @@ jobs:
   build-android:
     needs: prepare
     runs-on: ubuntu-latest
+    env:
+      # 确保不会把 Gradle CLI 选项当成 JVM 选项传给 Java
+      JAVA_TOOL_OPTIONS: ""
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
     steps:
     - name: 检出代码
@@ -68,6 +72,12 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '21'
+
+    - name: 清理可能冲突的环境变量
+      run: |
+        # 防止 CI 或上游 action 注入导致 JVM 误读的参数
+        echo "JAVA_TOOL_OPTIONS=" >> $GITHUB_ENV
+        echo "GRADLE_OPTS=-Dorg.gradle.daemon=false" >> $GITHUB_ENV
 
     # 缓存Gradle依赖
     - name: 缓存Gradle依赖
@@ -160,12 +170,12 @@ jobs:
           # 尝试使用gradle wrapper命令重新生成
           if command -v gradle >/dev/null 2>&1; then
             echo "📦 使用gradle命令重新生成wrapper..."
-            gradle wrapper --gradle-version 8.25
+            gradle wrapper --gradle-version 8.10.2
           else
             echo "❌ gradle命令不可用，手动创建gradlew..."
-            # 从GitHub下载标准的gradlew文件
-            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.25.0/gradlew"
-            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.25.0/gradlew.bat"
+            # 从GitHub下载标准的gradlew文件（与 Gradle 8.10.2 匹配）
+            curl -L -o gradlew "https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew"
+            curl -L -o gradlew.bat "https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew.bat"
           fi
         fi
 
@@ -178,7 +188,7 @@ jobs:
           echo "📦 下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.25.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar"
         fi
 
         # 运行初始化脚本（如果存在）
@@ -217,11 +227,11 @@ jobs:
         ./gradlew --version || {
           echo "⚠️ gradlew --version 失败，尝试修复..."
           
-          # 重新下载 gradle-wrapper.jar
+          # 重新下载 gradle-wrapper.jar（8.10.2）
           echo "📦 重新下载 gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.25.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar"
           
           # 再次尝试
           ./gradlew --version
