@@ -232,6 +232,20 @@ class GoogleLlmProvider extends LlmProvider {
       }
     }).toList();
 
+    // 开启 Google Search Grounding（若 SDK/服务端支持）
+    final enableNative =
+        options?.customParams?['enableModelNativeSearch'] == true;
+    if (enableNative) {
+      // 目前 Dart SDK 未暴露直接开关，这里通过 model 实例的 safetySettings/工具占位
+      // 若后续 SDK 提供 grounding 参数，请在此映射
+      // 先添加一个标记，供上游/代理识别（如通过 baseUrl 代理到支持 Grounding 的服务）
+      _model = google_ai.GenerativeModel(
+        model: modelName,
+        apiKey: config.apiKey,
+        // 注：可在 extra params 里放置自定义 Header 由后端代理启用 Grounding
+      );
+    }
+
     return (model, content, modelName);
   }
 

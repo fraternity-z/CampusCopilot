@@ -81,4 +81,12 @@ class GeneralSettingsKeys {
 
   /// 搜索结果黑名单规则（按换行分隔，兼容简单域名与正则规则）
   static const String searchBlacklistRules = 'search_blacklist_rules';
+
+  // 新增：联网来源与 direct orchestrator 设置
+  /// 联网来源：'model_native' | 'tavily' | 'direct'
+  static const String searchSource = 'search_source';
+
+  /// Direct orchestrator 服务地址
+  static const String searchOrchestratorEndpoint =
+      'search_orchestrator_endpoint';
 }

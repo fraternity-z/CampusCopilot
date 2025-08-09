@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 import '../../../settings/domain/entities/search_config.dart';
+import 'strategies/lightweight_direct_fetcher.dart';
 
 /// AI搜索集成服务
 ///
@@ -20,6 +21,8 @@ class AISearchIntegrationService {
     String? apiKey, // 添加API密钥参数
     bool blacklistEnabled = false,
     List<Pattern>? blacklistPatterns,
+    List<String>? engines,
+    String? orchestratorEndpoint,
   }) async {
     final startTime = DateTime.now();
 
@@ -33,6 +36,34 @@ class AISearchIntegrationService {
       // 根据引擎执行搜索
       SearchResult searchResult;
       switch (engine.toLowerCase()) {
+        case 'direct':
+        case 'direct_engine':
+          // 通过 orchestrator 进行直接检索（需在上层传入 endpoint），若无配置则走轻量HTTP抓取
+          final endpoint =
+              orchestratorEndpoint ??
+              _getSetting('search_orchestrator_endpoint');
+          final usedEngines = (engines == null || engines.isEmpty)
+              ? _getEngines()
+              : engines;
+          if (endpoint != null && endpoint.isNotEmpty) {
+            searchResult = await _searchDirect(
+              optimizedQuery,
+              engines: usedEngines,
+              endpoint: endpoint,
+              maxResults: maxResults,
+              language: language,
+              region: region,
+            );
+          } else {
+            searchResult = await LightweightDirectFetcher.searchViaHttp(
+              optimizedQuery,
+              engines: usedEngines,
+              maxResults: maxResults,
+              language: language,
+              region: region,
+            );
+          }
+          break;
         case 'tavily':
           searchResult = await _searchTavily(
             optimizedQuery,
@@ -109,6 +140,17 @@ class AISearchIntegrationService {
         error: e.toString(),
       );
     }
+  }
+
+  // 读取 orchestrator 等扩展设置（弱依赖数据库/全局设置，避免强耦合）
+  String? _getSetting(String key) {
+    // 这里保持最小侵入：实际项目应通过 provider 注入，这里返回 null 即使用默认
+    return null;
+  }
+
+  List<String> _getEngines() {
+    // Direct 引擎先包含：Google / Bing / Baidu，后续可扩展
+    return const ['google', 'bing', 'baidu'];
   }
 
   /// 应用黑名单过滤
@@ -496,6 +538,81 @@ class AISearchIntegrationService {
     // TODO: 实现Google Custom Search API
     // 需要配置Google Custom Search Engine ID和API Key
     throw UnimplementedError('Google搜索需要API密钥配置');
+  }
+
+  /// Direct orchestrator 搜索
+  Future<SearchResult> _searchDirect(
+    String query, {
+    required List<String> engines,
+    required String? endpoint,
+    int maxResults = 5,
+    String? language,
+    String? region,
+  }) async {
+    if (endpoint == null || endpoint.isEmpty) {
+      return SearchResult(
+        query: query,
+        items: const [],
+        searchTime: 0,
+        engine: 'direct',
+        error: '未配置 orchestrator 地址',
+      );
+    }
+
+    try {
+      final url = Uri.parse('$endpoint/search');
+      final body = jsonEncode({
+        'query': query,
+        'engines': engines,
+        'maxResults': maxResults,
+        'language': language,
+        'region': region,
+      });
+      final resp = await http
+          .post(url, headers: {'Content-Type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode != 200) {
+        throw Exception('orchestrator 请求失败: ${resp.statusCode}');
+      }
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final List<SearchResultItem> items = [];
+      if (data['results'] is List) {
+        for (final r in (data['results'] as List)) {
+          if (r is Map<String, dynamic>) {
+            items.add(
+              SearchResultItem(
+                title: r['title'] ?? '',
+                link: r['url'] ?? '',
+                snippet: r['snippet'] ?? (r['extracted_text'] ?? ''),
+                displayLink: r['displayLink'],
+                thumbnail: r['favicon'],
+                publishTime: r['publishedAt'] != null
+                    ? DateTime.tryParse(r['publishedAt'])
+                    : null,
+                contentType: r['contentType'] ?? 'webpage',
+                relevanceScore: (r['score'] as num?)?.toDouble() ?? 0.0,
+                metadata: {'engine': r['engine'], 'favicon': r['favicon']},
+              ),
+            );
+          }
+        }
+      }
+      return SearchResult(
+        query: query,
+        items: items,
+        searchTime: 0,
+        engine: 'direct',
+        totalResults: items.length,
+      );
+    } catch (e) {
+      return SearchResult(
+        query: query,
+        items: const [],
+        searchTime: 0,
+        engine: 'direct',
+        error: e.toString(),
+      );
+    }
   }
 
   /// Bing搜索（需要API密钥）

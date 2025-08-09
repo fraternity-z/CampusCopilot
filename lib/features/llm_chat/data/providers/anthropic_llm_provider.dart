@@ -185,6 +185,15 @@ class AnthropicLlmProvider implements LlmProvider {
       request['stream'] = true;
     }
 
+    // 模型内置联网（Web Search）尝试开启（兼容性：服务端未开通则忽略）
+    final enableNative =
+        options?.customParams?['enableModelNativeSearch'] == true;
+    if (enableNative) {
+      request['tools'] = [
+        {'type': 'web_search'},
+      ];
+    }
+
     return request;
   }
 

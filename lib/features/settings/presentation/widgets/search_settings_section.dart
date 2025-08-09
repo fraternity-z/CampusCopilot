@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../llm_chat/presentation/providers/search_providers.dart';
+import '../../../../core/di/database_providers.dart';
+import '../../../../data/local/tables/general_settings_table.dart';
 
 /// 搜索引擎信息类
 class SearchEngine {
@@ -58,6 +62,12 @@ class SearchSettingsSection extends ConsumerWidget {
               subtitle: const Text('此处配置搜索服务商与密钥；是否调用由聊天页输入框的“AI搜索”快捷开关控制'),
               leading: const Icon(Icons.travel_explore),
             ),
+
+            // ====== 联网来源切换（模型内置 / Tavily / 直接检索） ======
+            const Divider(),
+            Text('联网来源', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            _SearchSourceConfig(ref: ref),
 
             ...[
               const Divider(),
@@ -352,6 +362,139 @@ class SearchSettingsSection extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ============ 子组件：联网来源配置 ============
+class _SearchSourceConfig extends ConsumerStatefulWidget {
+  final WidgetRef ref;
+  const _SearchSourceConfig({required this.ref});
+
+  @override
+  ConsumerState<_SearchSourceConfig> createState() =>
+      _SearchSourceConfigState();
+}
+
+class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
+  String? _source;
+  String? _endpoint;
+  List<String> _engines = const ['google', 'bing', 'baidu'];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final db = widget.ref.read(appDatabaseProvider);
+    final s = await db.getSetting(GeneralSettingsKeys.searchSource);
+    final e = await db.getSetting(
+      GeneralSettingsKeys.searchOrchestratorEndpoint,
+    );
+    setState(() {
+      _source = s?.isNotEmpty == true ? s : 'tavily';
+      _endpoint = e ?? '';
+    });
+  }
+
+  Future<void> _saveSource(String v) async {
+    final db = widget.ref.read(appDatabaseProvider);
+    await db.setSetting(GeneralSettingsKeys.searchSource, v);
+    widget.ref.read(searchConfigProvider.notifier); // 触发依赖方按需重载
+    setState(() => _source = v);
+  }
+
+  Future<void> _saveEndpoint(String v) async {
+    final db = widget.ref.read(appDatabaseProvider);
+    await db.setSetting(GeneralSettingsKeys.searchOrchestratorEndpoint, v);
+    setState(() => _endpoint = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _source,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+          items: const [
+            DropdownMenuItem(value: 'model_native', child: Text('模型内置联网（推荐）')),
+            DropdownMenuItem(value: 'tavily', child: Text('Tavily（API密钥）')),
+            DropdownMenuItem(value: 'direct', child: Text('直接检索（实验）')),
+          ],
+          onChanged: (v) {
+            if (v == null) return;
+            _saveSource(v);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        if (_source == 'direct') ...[
+          if (isMobile)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '移动端轻量检索：仅基于HTTP解析公共SERP，易受限、结果可能不完整。建议优先使用“模型内置联网”或 Tavily。',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Direct 引擎多选（仅三项）
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final id in const ['google', 'bing', 'baidu'])
+                FilterChip(
+                  label: Text(id.toUpperCase()),
+                  selected: _engines.contains(id),
+                  onSelected: (sel) {
+                    setState(() {
+                      if (sel) {
+                        _engines = {..._engines, id}.toList();
+                      } else {
+                        _engines = _engines.where((e) => e != id).toList();
+                      }
+                    });
+                    // 这里仅在内存中记录，实际使用时 ChatService 会读 `enabledEngines`
+                    widget.ref
+                        .read(searchConfigProvider.notifier)
+                        .updateEnabledEngines(_engines);
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Orchestrator 地址
+          TextFormField(
+            initialValue: _endpoint,
+            decoration: const InputDecoration(
+              labelText: 'Orchestrator 地址（留空=启用轻量直接检索）',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: _saveEndpoint,
+          ),
+        ],
+      ],
     );
   }
 }

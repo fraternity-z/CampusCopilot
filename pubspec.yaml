@@ -58,6 +58,7 @@ dependencies:
   # 网络请求
   dio: ^5.4.3+1
   http: ^1.2.0
+  html: ^0.15.4
 
   # 加密和哈希
   crypto: ^3.0.3

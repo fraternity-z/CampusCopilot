@@ -28,6 +28,7 @@ import '../../../knowledge_base/domain/entities/knowledge_document.dart';
 
 // 搜索相关导入
 import '../../presentation/providers/search_providers.dart';
+import '../../../settings/domain/entities/search_config.dart';
 
 /// 聊天服务
 ///
@@ -337,16 +338,25 @@ class ChatService {
 
       // 7. 生成AI响应
       final params = _ref.read(modelParametersProvider);
+      final baseCustom =
+          _buildThinkingParams(llmConfig.defaultModel) ?? <String, dynamic>{};
+      final mergedCustom = {...baseCustom};
+
+      // 当来源选择为 model_native 时，给 provider 透传开关，允许其启用内置联网/grounding
+      if (await _database.getSetting(GeneralSettingsKeys.searchSource) ==
+          'model_native') {
+        mergedCustom['enableModelNativeSearch'] = true;
+      }
+
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: persona.systemPrompt,
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
         topP: params.topP,
-        // 思考链相关参数暂时使用默认设置
         reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
         maxReasoningTokens: 2000,
-        customParams: _buildThinkingParams(llmConfig.defaultModel),
+        customParams: mergedCustom.isNotEmpty ? mergedCustom : null,
       );
 
       debugPrint(
@@ -657,30 +667,57 @@ class ChatService {
 
           final int st = searchConfig.timeoutSeconds;
           final int boundedSeconds = st < 3 ? 3 : (st > 10 ? 10 : st);
-          final searchResult = await aiSearchIntegration
-              .performAISearch(
-                userQuery: content,
-                maxResults: searchConfig.maxResults,
-                language: searchConfig.language,
-                region: searchConfig.region,
-                engine: searchConfig.defaultEngine,
-                apiKey: searchConfig.apiKey,
-                blacklistEnabled: searchConfig.blacklistEnabled,
-                blacklistPatterns: blacklistPatterns,
-              )
-              .timeout(Duration(seconds: boundedSeconds));
+          // 读取联网来源与 orchestrator 地址
+          final searchSource =
+              await _database.getSetting(GeneralSettingsKeys.searchSource) ??
+              searchConfig.defaultEngine; // 兼容旧字段
+          final orchestratorEndpoint = await _database.getSetting(
+            GeneralSettingsKeys.searchOrchestratorEndpoint,
+          );
+
+          // 来源选择与回退：若 direct 但未配置 orchestrator 地址，则回退为 tavily(若有 key) 或 duckduckgo
+          String sourceToUse = searchSource;
+          if ((sourceToUse == 'direct' || sourceToUse == 'direct_engine') &&
+              (orchestratorEndpoint == null || orchestratorEndpoint.isEmpty)) {
+            sourceToUse = (searchConfig.apiKey?.isNotEmpty == true)
+                ? 'tavily'
+                : 'duckduckgo';
+            debugPrint('ℹ️ 未配置 orchestrator，direct 回退为: $sourceToUse');
+          }
+
+          // 简化：移动端是否允许 direct 的决策放在设置页；此处仅保留 isModelNative 判断
+          final isModelNative = sourceToUse == 'model_native';
+
+          AISearchResult? searchResult;
+          if (!isModelNative) {
+            searchResult = await aiSearchIntegration
+                .performAISearch(
+                  userQuery: content,
+                  maxResults: searchConfig.maxResults,
+                  language: searchConfig.language,
+                  region: searchConfig.region,
+                  engine: sourceToUse, // 直接用来源作为策略ID
+                  apiKey: searchConfig.apiKey,
+                  blacklistEnabled: searchConfig.blacklistEnabled,
+                  blacklistPatterns: blacklistPatterns,
+                  engines: searchConfig.enabledEngines,
+                  orchestratorEndpoint: orchestratorEndpoint,
+                )
+                .timeout(Duration(seconds: boundedSeconds));
+          }
 
           // 通知UI搜索结束
           onSearchStatusChanged?.call(false);
 
-          if (searchResult.hasResults) {
-            final searchContext = aiSearchIntegration.formatSearchResultsForAI(
-              searchResult,
-            );
-            finalPrompt = '$enhancedPrompt\n\n$searchContext';
-            debugPrint('✅ 搜索完成，已将搜索结果添加到上下文');
-          } else {
-            debugPrint('⚠️ 搜索未返回有效结果');
+          if (searchResult != null) {
+            if (searchResult.hasResults) {
+              final searchContext = aiSearchIntegration
+                  .formatSearchResultsForAI(searchResult);
+              finalPrompt = '$enhancedPrompt\n\n$searchContext';
+              debugPrint('✅ 搜索完成，已将搜索结果添加到上下文');
+            } else {
+              debugPrint('⚠️ 搜索未返回有效结果');
+            }
           }
         }
       } on TimeoutException {

@@ -101,6 +101,30 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
     }
   }
 
+  // ============ 新增：联网来源与 orchestrator、策略相关设置 ============
+  Future<void> updateSearchSource(String source) async {
+    try {
+      await _database.setSetting(GeneralSettingsKeys.searchSource, source);
+      // 维持兼容，默认引擎不变
+      state = state; // 占位，UI 可通过 provider 获取 source
+      debugPrint('✅ 联网来源已更新: $source');
+    } catch (e) {
+      debugPrint('❌ 更新联网来源失败: $e');
+    }
+  }
+
+  Future<void> updateOrchestratorEndpoint(String endpoint) async {
+    try {
+      await _database.setSetting(
+        GeneralSettingsKeys.searchOrchestratorEndpoint,
+        endpoint,
+      );
+      debugPrint('✅ Orchestrator 地址已更新: $endpoint');
+    } catch (e) {
+      debugPrint('❌ 更新 Orchestrator 地址失败: $e');
+    }
+  }
+
   /// 更新搜索启用状态
   Future<void> updateSearchEnabled(bool enabled) async {
     try {
