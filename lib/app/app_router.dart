@@ -41,7 +41,7 @@ class ModelParameters {
     this.temperature = 0.7,
     this.maxTokens = 2048,
     this.topP = 0.9,
-    this.contextLength = 10,
+    this.contextLength = 6, // 降低默认上下文窗口，提升首响应速度
     this.enableMaxTokens = true,
   });
 
@@ -78,7 +78,7 @@ class ModelParameters {
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxTokens: (json['maxTokens'] as num?)?.toDouble() ?? 2048,
       topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
-      contextLength: (json['contextLength'] as num?)?.toDouble() ?? 10,
+      contextLength: (json['contextLength'] as num?)?.toDouble() ?? 6,
       enableMaxTokens: json['enableMaxTokens'] as bool? ?? true,
     );
   }

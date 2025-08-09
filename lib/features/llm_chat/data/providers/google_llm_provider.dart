@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:google_generative_ai/google_generative_ai.dart' as google_ai;
 
@@ -78,7 +79,12 @@ class GoogleLlmProvider extends LlmProvider {
   }) async {
     try {
       final (model, content, modelName) = _prepareRequest(messages, options);
-      final response = await model.generateContent(content);
+      // 顶层请求超时 + 重试兜底，避免偶发网络抖动导致首响应延迟过长
+      final response = await _withRetry(() async {
+        return await model
+            .generateContent(content)
+            .timeout(const Duration(seconds: 20));
+      });
 
       return ChatResult(
         content: response.text ?? '',
@@ -106,6 +112,8 @@ class GoogleLlmProvider extends LlmProvider {
   }) {
     try {
       final (model, content, modelName) = _prepareRequest(messages, options);
+      // 注意：SDK流式API未提供超时参数，这里不包裹整体超时，避免中途断流；
+      // 由上层chat_service已有整体策略控制。
       return model.generateContentStream(content).map((response) {
         return StreamedChatResult(
           delta: response.text ?? '',
@@ -138,7 +146,9 @@ class GoogleLlmProvider extends LlmProvider {
                 google_ai.EmbedContentRequest(google_ai.Content.text(text)),
           )
           .toList();
-      final response = await _getEmbeddingModel().batchEmbedContents(requests);
+      final response = await _withRetry(() async {
+        return await _getEmbeddingModel().batchEmbedContents(requests);
+      });
       return EmbeddingResult(
         embeddings: response.embeddings.map((e) => e.values).toList(),
         model: config.defaultEmbeddingModel ?? 'embedding-001',
@@ -250,5 +260,41 @@ class GoogleLlmProvider extends LlmProvider {
       return ApiException.rateLimitExceeded();
     }
     return ApiException('Google Gemini API error: $errorMessage');
+  }
+
+  // ========== 通用重试封装（针对瞬时网络/服务错误） ==========
+  Future<T> _withRetry<T>(
+    Future<T> Function() action, {
+    int maxRetries = 3,
+  }) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        return await action();
+      } catch (e) {
+        if (attempt >= maxRetries - 1 || !_isRetryable(e)) {
+          rethrow;
+        }
+        final backoffMs = (200 * math.pow(2, attempt)).toInt();
+        final jitter = math.Random().nextInt(150);
+        await Future.delayed(Duration(milliseconds: backoffMs + jitter));
+        attempt++;
+      }
+    }
+  }
+
+  bool _isRetryable(Object error) {
+    final msg = error.toString();
+    return msg.contains('429') ||
+        msg.contains('rate limit') ||
+        msg.contains('TimeoutException') ||
+        msg.contains('SocketException') ||
+        msg.contains('Connection reset') ||
+        msg.contains('Connection closed') ||
+        msg.contains('temporarily unavailable') ||
+        msg.contains('500') ||
+        msg.contains('502') ||
+        msg.contains('503') ||
+        msg.contains('504');
   }
 }

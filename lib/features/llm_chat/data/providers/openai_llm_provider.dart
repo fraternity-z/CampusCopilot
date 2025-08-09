@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
@@ -48,7 +49,9 @@ class OpenAiLlmProvider extends LlmProvider {
 
     try {
       // 调用 OpenAI 列出模型 API
-      final models = await OpenAI.instance.model.list();
+      final models = await _withRetry(() async {
+        return await OpenAI.instance.model.list();
+      });
 
       // 仅取可用的模型 id，生成 ModelInfo（其它字段用默认）
       final List<ModelInfo> result = models.map((m) {
@@ -107,18 +110,20 @@ class OpenAiLlmProvider extends LlmProvider {
       );
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
 
-      final chatCompletion = await OpenAI.instance.chat.create(
-        model: model,
-        messages: openAIMessages,
-        temperature: options?.temperature ?? 0.7,
-        maxTokens: options?.maxTokens ?? 2048,
-        topP: options?.topP ?? 1.0,
-        frequencyPenalty: options?.frequencyPenalty ?? 0.0,
-        presencePenalty: options?.presencePenalty ?? 0.0,
-        stop: options?.stopSequences,
-        // 暂时移除工具调用功能
-        // tools: options?.tools?.map(_convertToOpenAITool).toList(),
-      );
+      final chatCompletion = await _withRetry(() async {
+        return await OpenAI.instance.chat
+            .create(
+              model: model,
+              messages: openAIMessages,
+              temperature: options?.temperature ?? 0.7,
+              maxTokens: options?.maxTokens ?? 2048,
+              topP: options?.topP ?? 1.0,
+              frequencyPenalty: options?.frequencyPenalty ?? 0.0,
+              presencePenalty: options?.presencePenalty ?? 0.0,
+              stop: options?.stopSequences,
+            )
+            .timeout(const Duration(seconds: 20));
+      });
 
       if (chatCompletion.choices.isEmpty) {
         throw ApiException('OpenAI API返回了空的选择列表');
@@ -172,8 +177,6 @@ class OpenAiLlmProvider extends LlmProvider {
         frequencyPenalty: options?.frequencyPenalty ?? 0.0,
         presencePenalty: options?.presencePenalty ?? 0.0,
         stop: options?.stopSequences,
-        // 暂时移除工具调用功能
-        // tools: options?.tools?.map(_convertToOpenAITool).toList(),
       );
 
       String accumulatedContent = ''; // 累积完整原始内容
@@ -230,14 +233,16 @@ class OpenAiLlmProvider extends LlmProvider {
       debugPrint('🔗 OpenAI嵌入请求: 模型=$model, 文本数量=${texts.length}');
       debugPrint('🌐 API端点: ${config.baseUrl ?? 'https://api.openai.com'}');
 
-      final embedding = await OpenAI.instance.embedding
-          .create(model: model, input: texts)
-          .timeout(
-            const Duration(minutes: 2), // 2分钟超时
-            onTimeout: () {
-              throw Exception('OpenAI嵌入请求超时，请检查网络连接或API服务状态');
-            },
-          );
+      final embedding = await _withRetry(() async {
+        return await OpenAI.instance.embedding
+            .create(model: model, input: texts)
+            .timeout(
+              const Duration(minutes: 2), // 2分钟超时
+              onTimeout: () {
+                throw Exception('OpenAI嵌入请求超时，请检查网络连接或API服务状态');
+              },
+            );
+      });
 
       // 检查响应数据是否有效
       if (embedding.data.isEmpty) {
@@ -285,7 +290,9 @@ class OpenAiLlmProvider extends LlmProvider {
   @override
   Future<bool> validateConfig() async {
     try {
-      await OpenAI.instance.model.list();
+      await _withRetry(() async {
+        await OpenAI.instance.model.list();
+      });
       return true;
     } catch (e) {
       return false;
@@ -446,5 +453,41 @@ class OpenAiLlmProvider extends LlmProvider {
     }
 
     return ApiException('OpenAI请求失败: $errorMessage');
+  }
+
+  // ========== 通用重试封装（针对瞬时网络/服务错误） ==========
+  Future<T> _withRetry<T>(
+    Future<T> Function() action, {
+    int maxRetries = 3,
+  }) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        return await action();
+      } catch (e) {
+        if (attempt >= maxRetries - 1 || !_isRetryable(e)) {
+          rethrow;
+        }
+        final backoffMs = (200 * math.pow(2, attempt)).toInt();
+        final jitter = math.Random().nextInt(150);
+        await Future.delayed(Duration(milliseconds: backoffMs + jitter));
+        attempt++;
+      }
+    }
+  }
+
+  bool _isRetryable(Object error) {
+    final msg = error.toString();
+    return msg.contains('429') ||
+        msg.contains('rate limit') ||
+        msg.contains('TimeoutException') ||
+        msg.contains('SocketException') ||
+        msg.contains('Connection reset') ||
+        msg.contains('Connection closed') ||
+        msg.contains('temporarily unavailable') ||
+        msg.contains('500') ||
+        msg.contains('502') ||
+        msg.contains('503') ||
+        msg.contains('504');
   }
 }

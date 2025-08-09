@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:convert';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
@@ -28,6 +29,12 @@ class DioClient {
   ProxyConfig _proxyConfig = const ProxyConfig();
   bool _proxyConfigChanged = false;
   HttpClient? _cachedHttpClient;
+  // 简易性能监控
+  final _performanceMonitor = _PerformanceMonitor();
+  // GET 请求去重
+  final Map<String, Future<Response>> _pendingRequests = {};
+  // 并发控制
+  final _concurrencyController = _ConcurrencyController(maxConcurrent: 10);
 
   DioClient._internal() {
     _dio = Dio();
@@ -45,8 +52,30 @@ class DioClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        // 启用压缩
+        'Accept-Encoding': 'gzip, deflate, br',
         // 启用Keep-Alive
         'Connection': 'keep-alive',
+      },
+      // 优化的编解码器
+      responseDecoder: (bytes, options, responseBody) {
+        try {
+          final enc = responseBody.headers['content-encoding']?.first;
+          if (enc == 'gzip') {
+            bytes = gzip.decode(bytes);
+          } else if (enc == 'deflate') {
+            bytes = zlib.decode(bytes);
+          }
+        } catch (_) {}
+        return utf8.decode(bytes, allowMalformed: true);
+      },
+      requestEncoder: (request, options) {
+        final bytes = utf8.encode(request);
+        if (bytes.length > 1024) {
+          options.headers['Content-Encoding'] = 'gzip';
+          return gzip.encode(bytes);
+        }
+        return bytes;
       },
     );
 
@@ -55,6 +84,8 @@ class DioClient {
 
     // 添加拦截器
     _dio.interceptors.addAll([
+      _PerfMarkInterceptor(_performanceMonitor),
+      _DeduplicationInterceptor(_pendingRequests),
       _LoggingInterceptor(),
       _ErrorInterceptor(),
       _RetryInterceptor(),
@@ -77,6 +108,12 @@ class DioClient {
         // 配置连接池
         client.maxConnectionsPerHost = 5; // 每个主机最大连接数
         client.idleTimeout = Duration(seconds: 15); // 连接空闲超时
+        client.connectionTimeout = Duration(
+          seconds: AppConstants.networkTimeoutSeconds,
+        );
+        client.autoUncompress = true;
+        // 启用 HTTP/2（兼容降级）
+        // Dart HttpClient 不暴露 ALPN 设置，保持默认能力（自动HTTP/2协商由底层实现）
 
         // 配置代理
         _configureProxy(client);
@@ -164,12 +201,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      return await _dio.get<T>(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      return await _concurrencyController.execute(() async {
+        return await _dio.get<T>(
+          path,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      });
     } catch (e) {
       throw _handleError(e);
     }
@@ -184,13 +223,15 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      return await _dio.post<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      return await _concurrencyController.execute(() async {
+        return await _dio.post<T>(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      });
     } catch (e) {
       throw _handleError(e);
     }
@@ -205,13 +246,15 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      return await _dio.put<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      return await _concurrencyController.execute(() async {
+        return await _dio.put<T>(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      });
     } catch (e) {
       throw _handleError(e);
     }
@@ -226,13 +269,15 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      return await _dio.delete<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      return await _concurrencyController.execute(() async {
+        return await _dio.delete<T>(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      });
     } catch (e) {
       throw _handleError(e);
     }
@@ -364,6 +409,38 @@ class _LoggingInterceptor extends Interceptor {
   }
 }
 
+/// 打点性能拦截器
+class _PerfMarkInterceptor extends Interceptor {
+  final _PerformanceMonitor monitor;
+  _PerfMarkInterceptor(this.monitor);
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    options.extra['__start'] = DateTime.now();
+    super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final start = response.requestOptions.extra['__start'] as DateTime?;
+    if (start != null) {
+      final cost = DateTime.now().difference(start).inMilliseconds;
+      monitor.record(response.requestOptions.method, cost);
+    }
+    super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final start = err.requestOptions.extra['__start'] as DateTime?;
+    if (start != null) {
+      final cost = DateTime.now().difference(start).inMilliseconds;
+      monitor.record(err.requestOptions.method, cost);
+    }
+    super.onError(err, handler);
+  }
+}
+
 /// 错误拦截器
 class _ErrorInterceptor extends Interceptor {
   @override
@@ -383,8 +460,11 @@ class _RetryInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (_shouldRetry(err)) {
       final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
+      final maxRetries =
+          err.requestOptions.extra['maxRetries'] ??
+          AppConstants.maxRetryAttempts;
 
-      if (retryCount < AppConstants.maxRetryAttempts) {
+      if (retryCount < maxRetries) {
         err.requestOptions.extra['retryCount'] = retryCount + 1;
 
         // 使用更合理的退避策略：min(2^n * 1000, 16000) ms
@@ -416,6 +496,100 @@ class _RetryInterceptor extends Interceptor {
         err.type == DioExceptionType.connectionError ||
         (err.response?.statusCode != null &&
             _retryableStatusCodes.contains(err.response!.statusCode));
+  }
+}
+
+/// 简易性能监控(均值/计数)
+class _PerformanceMonitor {
+  int _count = 0;
+  int _totalMs = 0;
+
+  void record(String method, int durationMs) {
+    _count++;
+    _totalMs += durationMs;
+    if (kDebugMode && _count % 50 == 0) {
+      final avg = (_totalMs / _count).toStringAsFixed(0);
+      debugPrint('📈 平均接口耗时: ${avg}ms (样本: $_count)');
+    }
+  }
+}
+
+/// GET请求去重拦截器（仅对GET生效）
+class _DeduplicationInterceptor extends Interceptor {
+  final Map<String, Future<Response>> _pending;
+  _DeduplicationInterceptor(this._pending);
+
+  @override
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (options.method.toUpperCase() != 'GET') {
+      return super.onRequest(options, handler);
+    }
+    final key = '${options.method}:${options.uri}';
+    if (_pending.containsKey(key)) {
+      try {
+        final resp = await _pending[key]!;
+        return handler.resolve(resp);
+      } catch (_) {}
+    }
+    final completer = Completer<Response>();
+    _pending[key] = completer.future;
+    options.extra['__dedup_key'] = key;
+    options.extra['__dedup_completer'] = completer;
+    return super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final key = response.requestOptions.extra['__dedup_key'] as String?;
+    final completer =
+        response.requestOptions.extra['__dedup_completer']
+            as Completer<Response>?;
+    if (key != null && completer != null) {
+      if (!completer.isCompleted) completer.complete(response);
+      _pending.remove(key);
+    }
+    super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final key = err.requestOptions.extra['__dedup_key'] as String?;
+    final completer =
+        err.requestOptions.extra['__dedup_completer'] as Completer<Response>?;
+    if (key != null && completer != null) {
+      if (!completer.isCompleted) completer.completeError(err);
+      _pending.remove(key);
+    }
+    super.onError(err, handler);
+  }
+}
+
+/// 简单并发控制（令牌桶）
+class _ConcurrencyController {
+  final int maxConcurrent;
+  int _current = 0;
+  final List<Completer<void>> _queue = [];
+
+  _ConcurrencyController({this.maxConcurrent = 10});
+
+  Future<T> execute<T>(Future<T> Function() task) async {
+    if (_current >= maxConcurrent) {
+      final c = Completer<void>();
+      _queue.add(c);
+      await c.future;
+    }
+    _current++;
+    try {
+      return await task();
+    } finally {
+      _current--;
+      if (_queue.isNotEmpty) {
+        _queue.removeAt(0).complete();
+      }
+    }
   }
 }
 

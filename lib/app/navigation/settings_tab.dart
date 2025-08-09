@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/ui_constants.dart';
+import '../app_router.dart';
 
 /// 设置标签页组件
 class SettingsTab extends ConsumerWidget {
@@ -20,8 +21,8 @@ class SettingsTab extends ConsumerWidget {
           icon: Icons.tune,
           isExpanded: ref.watch(sidebarModelParamsExpandedProvider),
           onToggle: () {
-            ref.read(sidebarModelParamsExpandedProvider.notifier).state = 
-                !ref.read(sidebarModelParamsExpandedProvider);
+            ref.read(sidebarModelParamsExpandedProvider.notifier).state = !ref
+                .read(sidebarModelParamsExpandedProvider);
           },
           content: _buildModelParametersContent(context, ref),
         ),
@@ -36,8 +37,8 @@ class SettingsTab extends ConsumerWidget {
           icon: Icons.code,
           isExpanded: ref.watch(sidebarCodeBlockExpandedProvider),
           onToggle: () {
-            ref.read(sidebarCodeBlockExpandedProvider.notifier).state = 
-                !ref.read(sidebarCodeBlockExpandedProvider);
+            ref.read(sidebarCodeBlockExpandedProvider.notifier).state = !ref
+                .read(sidebarCodeBlockExpandedProvider);
           },
           content: _buildCodeBlockSettingsContent(context, ref),
         ),
@@ -52,8 +53,9 @@ class SettingsTab extends ConsumerWidget {
           icon: Icons.settings,
           isExpanded: ref.watch(sidebarGeneralExpandedProvider),
           onToggle: () {
-            ref.read(sidebarGeneralExpandedProvider.notifier).state = 
-                !ref.read(sidebarGeneralExpandedProvider);
+            ref.read(sidebarGeneralExpandedProvider.notifier).state = !ref.read(
+              sidebarGeneralExpandedProvider,
+            );
           },
           content: _buildGeneralSettingsContent(context, ref),
         ),
@@ -86,10 +88,9 @@ class SettingsTab extends ConsumerWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(UIConstants.smallBorderRadius),
         border: Border.all(
-          color: Theme.of(context)
-              .colorScheme
-              .outline
-              .withValues(alpha: UIConstants.borderOpacity),
+          color: Theme.of(
+            context,
+          ).colorScheme.outline.withValues(alpha: UIConstants.borderOpacity),
         ),
       ),
       child: Column(
@@ -138,7 +139,7 @@ class SettingsTab extends ConsumerWidget {
   /// 构建模型参数内容
   Widget _buildModelParametersContent(BuildContext context, WidgetRef ref) {
     final parameters = ref.watch(modelParametersProvider);
-    
+
     return Column(
       children: [
         _buildParameterSlider(
@@ -183,7 +184,9 @@ class SettingsTab extends ConsumerWidget {
           title: const Text('启用最大Token限制'),
           value: parameters.enableMaxTokens,
           onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).updateEnableMaxTokens(value);
+            ref
+                .read(modelParametersProvider.notifier)
+                .updateEnableMaxTokens(value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -194,7 +197,7 @@ class SettingsTab extends ConsumerWidget {
   /// 构建代码块设置内容
   Widget _buildCodeBlockSettingsContent(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(codeBlockSettingsProvider);
-    
+
     return Column(
       children: [
         SwitchListTile(
@@ -202,8 +205,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('允许编辑代码块内容'),
           value: settings.enableCodeEditing,
           onChanged: (value) {
-            ref.read(codeBlockSettingsProvider.notifier).state = 
-                settings.copyWith(enableCodeEditing: value);
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableCodeEditing: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -212,8 +215,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('在代码块左侧显示行号'),
           value: settings.enableLineNumbers,
           onChanged: (value) {
-            ref.read(codeBlockSettingsProvider.notifier).state = 
-                settings.copyWith(enableLineNumbers: value);
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableLineNumbers: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -222,8 +225,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('长代码块可以折叠显示'),
           value: settings.enableCodeFolding,
           onChanged: (value) {
-            ref.read(codeBlockSettingsProvider.notifier).state = 
-                settings.copyWith(enableCodeFolding: value);
+            ref.read(codeBlockSettingsProvider.notifier).state = settings
+                .copyWith(enableCodeFolding: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -234,7 +237,7 @@ class SettingsTab extends ConsumerWidget {
   /// 构建常规设置内容
   Widget _buildGeneralSettingsContent(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(generalSettingsProvider);
-    
+
     return Column(
       children: [
         SwitchListTile(
@@ -242,8 +245,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('渲染消息中的Markdown格式'),
           value: settings.enableMarkdownRendering,
           onChanged: (value) {
-            ref.read(generalSettingsProvider.notifier).state = 
-                settings.copyWith(enableMarkdownRendering: value);
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableMarkdownRendering: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -252,8 +255,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('自动保存聊天记录'),
           value: settings.enableAutoSave,
           onChanged: (value) {
-            ref.read(generalSettingsProvider.notifier).state = 
-                settings.copyWith(enableAutoSave: value);
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableAutoSave: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -262,8 +265,8 @@ class SettingsTab extends ConsumerWidget {
           subtitle: const Text('接收系统通知'),
           value: settings.enableNotifications,
           onChanged: (value) {
-            ref.read(generalSettingsProvider.notifier).state = 
-                settings.copyWith(enableNotifications: value);
+            ref.read(generalSettingsProvider.notifier).state = settings
+                .copyWith(enableNotifications: value);
           },
           contentPadding: EdgeInsets.zero,
         ),
@@ -289,9 +292,9 @@ class SettingsTab extends ConsumerWidget {
           children: [
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
             Text(
               value.toStringAsFixed(2),
@@ -329,9 +332,9 @@ class SettingsTab extends ConsumerWidget {
               Navigator.of(context).pop();
               // 重置所有设置
               ref.read(modelParametersProvider.notifier).resetParameters();
-              ref.read(codeBlockSettingsProvider.notifier).state = 
+              ref.read(codeBlockSettingsProvider.notifier).state =
                   const CodeBlockSettings();
-              ref.read(generalSettingsProvider.notifier).state = 
+              ref.read(generalSettingsProvider.notifier).state =
                   const GeneralSettings();
             },
             child: const Text('重置'),
@@ -347,147 +350,10 @@ final sidebarModelParamsExpandedProvider = StateProvider<bool>((ref) => false);
 final sidebarCodeBlockExpandedProvider = StateProvider<bool>((ref) => false);
 final sidebarGeneralExpandedProvider = StateProvider<bool>((ref) => false);
 
-final modelParametersProvider = StateNotifierProvider<ModelParametersNotifier, ModelParameters>((ref) {
-  return ModelParametersNotifier();
-});
+// ModelParameters / CodeBlockSettings / GeneralSettings 的 Provider
+// 统一在 app_router.dart 定义并持久化，这里仅使用
 
-final codeBlockSettingsProvider = StateProvider<CodeBlockSettings>((ref) {
-  return const CodeBlockSettings();
-});
+// 这些类从 app_router.dart 导入使用，避免重复定义
+// ModelParametersNotifier 与 CodeBlockSettings 均由 app_router.dart 提供
 
-final generalSettingsProvider = StateProvider<GeneralSettings>((ref) {
-  return const GeneralSettings();
-});
-
-// 这些类需要从 app_router.dart 中导入
-class ModelParameters {
-  final double temperature;
-  final double maxTokens;
-  final double topP;
-  final double contextLength;
-  final bool enableMaxTokens;
-
-  const ModelParameters({
-    this.temperature = 0.7,
-    this.maxTokens = 2048,
-    this.topP = 0.9,
-    this.contextLength = 10,
-    this.enableMaxTokens = true,
-  });
-}
-
-class ModelParametersNotifier extends StateNotifier<ModelParameters> {
-  ModelParametersNotifier() : super(const ModelParameters());
-
-  Future<void> updateTemperature(double temperature) async {
-    state = ModelParameters(
-      temperature: temperature,
-      maxTokens: state.maxTokens,
-      topP: state.topP,
-      contextLength: state.contextLength,
-      enableMaxTokens: state.enableMaxTokens,
-    );
-  }
-
-  Future<void> updateTopP(double topP) async {
-    state = ModelParameters(
-      temperature: state.temperature,
-      maxTokens: state.maxTokens,
-      topP: topP,
-      contextLength: state.contextLength,
-      enableMaxTokens: state.enableMaxTokens,
-    );
-  }
-
-  Future<void> updateMaxTokens(double maxTokens) async {
-    state = ModelParameters(
-      temperature: state.temperature,
-      maxTokens: maxTokens,
-      topP: state.topP,
-      contextLength: state.contextLength,
-      enableMaxTokens: state.enableMaxTokens,
-    );
-  }
-
-  Future<void> updateEnableMaxTokens(bool enableMaxTokens) async {
-    state = ModelParameters(
-      temperature: state.temperature,
-      maxTokens: state.maxTokens,
-      topP: state.topP,
-      contextLength: state.contextLength,
-      enableMaxTokens: enableMaxTokens,
-    );
-  }
-
-  Future<void> resetParameters() async {
-    state = const ModelParameters();
-  }
-}
-
-class CodeBlockSettings {
-  final bool enableCodeEditing;
-  final bool enableLineNumbers;
-  final bool enableCodeFolding;
-  final bool enableCodeWrapping;
-  final bool defaultCollapseCodeBlocks;
-  final bool enableMermaidDiagrams;
-
-  const CodeBlockSettings({
-    this.enableCodeEditing = true,
-    this.enableLineNumbers = true,
-    this.enableCodeFolding = true,
-    this.enableCodeWrapping = true,
-    this.defaultCollapseCodeBlocks = false,
-    this.enableMermaidDiagrams = true,
-  });
-
-  CodeBlockSettings copyWith({
-    bool? enableCodeEditing,
-    bool? enableLineNumbers,
-    bool? enableCodeFolding,
-    bool? enableCodeWrapping,
-    bool? defaultCollapseCodeBlocks,
-    bool? enableMermaidDiagrams,
-  }) {
-    return CodeBlockSettings(
-      enableCodeEditing: enableCodeEditing ?? this.enableCodeEditing,
-      enableLineNumbers: enableLineNumbers ?? this.enableLineNumbers,
-      enableCodeFolding: enableCodeFolding ?? this.enableCodeFolding,
-      enableCodeWrapping: enableCodeWrapping ?? this.enableCodeWrapping,
-      defaultCollapseCodeBlocks: defaultCollapseCodeBlocks ?? this.defaultCollapseCodeBlocks,
-      enableMermaidDiagrams: enableMermaidDiagrams ?? this.enableMermaidDiagrams,
-    );
-  }
-}
-
-class GeneralSettings {
-  final bool enableMarkdownRendering;
-  final bool enableAutoSave;
-  final bool enableNotifications;
-  final String language;
-  final String mathEngine;
-
-  const GeneralSettings({
-    this.enableMarkdownRendering = true,
-    this.enableAutoSave = true,
-    this.enableNotifications = true,
-    this.language = 'zh-CN',
-    this.mathEngine = 'katex',
-  });
-
-  GeneralSettings copyWith({
-    bool? enableMarkdownRendering,
-    bool? enableAutoSave,
-    bool? enableNotifications,
-    String? language,
-    String? mathEngine,
-  }) {
-    return GeneralSettings(
-      enableMarkdownRendering: enableMarkdownRendering ?? this.enableMarkdownRendering,
-      enableAutoSave: enableAutoSave ?? this.enableAutoSave,
-      enableNotifications: enableNotifications ?? this.enableNotifications,
-      language: language ?? this.language,
-      mathEngine: mathEngine ?? this.mathEngine,
-    );
-  }
-}
+// GeneralSettings 从 app_router.dart 导入

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import '../../../../core/network/http_client_pool.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../../domain/providers/llm_provider.dart';
@@ -19,7 +20,11 @@ class AnthropicLlmProvider implements LlmProvider {
     if (config.apiKey.isEmpty) {
       throw ApiException('Anthropic API key is not configured.');
     }
-    _httpClient = _clientPool.putIfAbsent(config.apiKey, () => http.Client());
+    // 使用共享池 + 重试装饰器，按 apiKey 维度复用连接
+    _httpClient = _clientPool.putIfAbsent(
+      config.apiKey,
+      () => RetryClient(HttpClientPool.getClient('anthropic_${config.apiKey}')),
+    );
   }
 
   @override
@@ -121,6 +126,7 @@ class AnthropicLlmProvider implements LlmProvider {
       client.close();
     }
     _clientPool.clear();
+    HttpClientPool.disposeAll();
   }
 
   Map<String, dynamic> _prepareRequest(
@@ -193,18 +199,20 @@ class AnthropicLlmProvider implements LlmProvider {
       'anthropic-version': _anthropicVersion,
     };
 
-    final response = await _httpClient.post(
-      uri,
-      headers: headers,
-      body: json.encode(body),
-    );
+    try {
+      final response = await _httpClient
+          .post(uri, headers: headers, body: json.encode(body))
+          .timeout(const Duration(seconds: 20));
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    } else {
-      throw ApiException(
-        'Anthropic API request failed: ${response.statusCode} - ${response.body}',
-      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw ApiException(
+          'Anthropic API request failed: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } on TimeoutException {
+      throw ApiException('Anthropic API request timeout');
     }
   }
 
@@ -226,7 +234,9 @@ class AnthropicLlmProvider implements LlmProvider {
       request.headers.addAll(headers);
       request.body = json.encode(body);
 
-      final streamedResponse = await _httpClient.send(request);
+      final streamedResponse = await _httpClient
+          .send(request)
+          .timeout(const Duration(seconds: 20));
 
       if (streamedResponse.statusCode == 200) {
         await for (final chunk in streamedResponse.stream.transform(

@@ -245,14 +245,16 @@ class ChatService {
           );
 
           if (ragService is RagService) {
-            // 使用传统RAG服务
-            final ragResult = await ragService.enhancePrompt(
-              userQuery: content,
-              config: knowledgeConfig,
-              knowledgeBaseId: currentKnowledgeBase.id,
-              similarityThreshold:
-                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
-            );
+            // 使用传统RAG服务（整体超时兜底，避免拖慢首响应）
+            final ragResult = await ragService
+                .enhancePrompt(
+                  userQuery: content,
+                  config: knowledgeConfig,
+                  knowledgeBaseId: currentKnowledgeBase.id,
+                  similarityThreshold:
+                      knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
+                )
+                .timeout(const Duration(seconds: 2));
 
             if (ragResult.usedContexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
@@ -270,14 +272,16 @@ class ChatService {
               debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
             }
           } else if (ragService is EnhancedRagService) {
-            // 使用增强RAG服务
-            final ragResult = await ragService.enhancePrompt(
-              userQuery: content,
-              config: knowledgeConfig,
-              knowledgeBaseId: currentKnowledgeBase.id,
-              similarityThreshold:
-                  knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
-            );
+            // 使用增强RAG服务（整体超时兜底）
+            final ragResult = await ragService
+                .enhancePrompt(
+                  userQuery: content,
+                  config: knowledgeConfig,
+                  knowledgeBaseId: currentKnowledgeBase.id,
+                  similarityThreshold:
+                      knowledgeConfig.similarityThreshold, // 使用配置中的相似度阈值
+                )
+                .timeout(const Duration(seconds: 2));
 
             if (ragResult.contexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
@@ -651,16 +655,20 @@ class ChatService {
 
           final blacklistPatterns = parseBlacklist(searchConfig.blacklistRules);
 
-          final searchResult = await aiSearchIntegration.performAISearch(
-            userQuery: content,
-            maxResults: searchConfig.maxResults,
-            language: searchConfig.language,
-            region: searchConfig.region,
-            engine: searchConfig.defaultEngine,
-            apiKey: searchConfig.apiKey,
-            blacklistEnabled: searchConfig.blacklistEnabled,
-            blacklistPatterns: blacklistPatterns,
-          );
+          final int st = searchConfig.timeoutSeconds;
+          final int boundedSeconds = st < 3 ? 3 : (st > 10 ? 10 : st);
+          final searchResult = await aiSearchIntegration
+              .performAISearch(
+                userQuery: content,
+                maxResults: searchConfig.maxResults,
+                language: searchConfig.language,
+                region: searchConfig.region,
+                engine: searchConfig.defaultEngine,
+                apiKey: searchConfig.apiKey,
+                blacklistEnabled: searchConfig.blacklistEnabled,
+                blacklistPatterns: blacklistPatterns,
+              )
+              .timeout(Duration(seconds: boundedSeconds));
 
           // 通知UI搜索结束
           onSearchStatusChanged?.call(false);
@@ -675,6 +683,9 @@ class ChatService {
             debugPrint('⚠️ 搜索未返回有效结果');
           }
         }
+      } on TimeoutException {
+        debugPrint('⏰ 搜索整体超时，跳过网络搜索加持');
+        onSearchStatusChanged?.call(false);
       } catch (e) {
         debugPrint('❌ 搜索过程中出现错误: $e');
         // 确保搜索状态被重置
@@ -791,17 +802,18 @@ class ChatService {
           debugPrint('🔄 当前思考模式: $isInThinkingMode, 部分标签: "$partialTag"');
 
           // 检查是否包含任何可能的思考链标签
-          if (deltaText.contains('<') ||
-              deltaText.contains('>') ||
-              deltaText.contains('think')) {
-            debugPrint('⚠️ 发现可能的标签内容: $deltaText');
-          }
-
-          // 检查是否包含其他可能的思考标记
-          if (deltaText.contains('思考') ||
-              deltaText.contains('thinking') ||
-              deltaText.contains('reason')) {
-            debugPrint('🧠 发现思考相关关键词: $deltaText');
+          if (kDebugMode) {
+            if (deltaText.contains('<') ||
+                deltaText.contains('>') ||
+                deltaText.contains('think')) {
+              debugPrint('⚠️ 发现可能的标签内容: $deltaText');
+            }
+            // 检查是否包含其他可能的思考标记
+            if (deltaText.contains('思考') ||
+                deltaText.contains('thinking') ||
+                deltaText.contains('reason')) {
+              debugPrint('🧠 发现思考相关关键词: $deltaText');
+            }
           }
 
           // 处理可能跨块的标签
@@ -816,24 +828,30 @@ class ChatService {
           final contentDelta = processed['contentDelta'] as String?;
           partialTag = processed['partialTag'] as String;
 
-          debugPrint(
-            '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 正文增量=${contentDelta?.length ?? 0}, 部分标签="$partialTag"',
-          );
+          if (kDebugMode) {
+            debugPrint(
+              '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 正文增量=${contentDelta?.length ?? 0}, 部分标签="$partialTag"',
+            );
+          }
 
           // 累积思考链内容
           if (thinkingDelta != null && thinkingDelta.isNotEmpty) {
             accumulatedThinking += thinkingDelta;
-            debugPrint(
-              '🧠 思考链增量: $thinkingDelta.length 字符, 总长度: $accumulatedThinking.length',
-            );
+            if (kDebugMode) {
+              debugPrint(
+                '🧠 思考链增量: $thinkingDelta.length 字符, 总长度: $accumulatedThinking.length',
+              );
+            }
           }
 
           // 累积正文内容
           if (contentDelta != null && contentDelta.isNotEmpty) {
             accumulatedActualContent += contentDelta;
-            debugPrint(
-              '📝 正文增量: $contentDelta.length 字符, 总长度: $accumulatedActualContent.length',
-            );
+            if (kDebugMode) {
+              debugPrint(
+                '📝 正文增量: $contentDelta.length 字符, 总长度: $accumulatedActualContent.length',
+              );
+            }
           }
         }
 
@@ -1226,29 +1244,33 @@ class ChatService {
         final autoNamingEnabled = await _database.getSetting(
           GeneralSettingsKeys.autoTopicNamingEnabled,
         );
-        debugPrint('🏷️ 自动命名功能启用状态: $autoNamingEnabled');
-        if (autoNamingEnabled != 'true') {
-          debugPrint('🏷️ 自动命名功能未启用，跳过');
+        // 默认启用：仅当显式为 'false' 时才禁用
+        debugPrint('🏷️ 自动命名功能启用状态: ${autoNamingEnabled ?? 'null(按启用处理)'}');
+        if (autoNamingEnabled == 'false') {
+          debugPrint('🏷️ 自动命名功能被关闭，跳过');
           return;
         }
 
-        // 获取命名模型ID
-        final modelId = await _database.getSetting(
-          GeneralSettingsKeys.autoTopicNamingModelId,
-        );
-        debugPrint('🏷️ 配置的命名模型ID: $modelId');
-        if (modelId == null || modelId.isEmpty) {
-          debugPrint('🏷️ 未配置命名模型，跳过');
-          return;
-        }
-
-        // 检查会话是否已经被命名过
+        // 获取会话与默认模型（用于命名的兜底）
         final session = await _getSessionById(sessionId);
         debugPrint('🏷️ 当前会话标题: ${session.title}');
+        // 会话未命名才处理
         if (session.title != '新对话') {
           debugPrint('🏷️ 会话已被命名，跳过');
           return;
         }
+
+        final persona = await _getPersonaById(session.personaId);
+        final sessionLlmConfigData = await _getLlmConfigById(
+          persona.apiConfigId,
+        );
+        final fallbackLlmConfig = sessionLlmConfigData.toLlmConfig();
+
+        // 读取配置的命名模型（可选）
+        final modelId = await _database.getSetting(
+          GeneralSettingsKeys.autoTopicNamingModelId,
+        );
+        debugPrint('🏷️ 配置的命名模型ID: $modelId');
 
         // 检查是否是第一次对话（只有一条用户消息和一条AI回复）
         final messages = await getSessionMessages(sessionId);
@@ -1258,22 +1280,29 @@ class ChatService {
           return;
         }
 
-        // 获取命名模型信息
-        final customModel = await _database.getCustomModelById(modelId);
-        debugPrint('🏷️ 找到的自定义模型: ${customModel?.name}');
-        if (customModel == null || !customModel.isEnabled) {
-          debugPrint('🏷️ 自定义模型不存在或未启用，跳过');
-          return;
-        }
+        // 选择用于命名的Provider与模型：优先用配置的命名模型，否则回退到当前会话模型
+        var namingProviderConfig = fallbackLlmConfig;
+        var namingModelId = fallbackLlmConfig.defaultModel;
 
-        // 获取对应的LLM配置
-        final configId = customModel.configId ?? '';
-        debugPrint('🏷️ 模型关联的配置ID: $configId');
-        final modelConfig = await _database.getLlmConfigById(configId);
-        debugPrint('🏷️ 找到的LLM配置: ${modelConfig?.name}');
-        if (modelConfig == null || !modelConfig.isEnabled) {
-          debugPrint('🏷️ LLM配置不存在或未启用，跳过');
-          return;
+        if (modelId != null && modelId.isNotEmpty) {
+          final customModel = await _database.getCustomModelById(modelId);
+          debugPrint('🏷️ 找到的自定义模型: ${customModel?.name}');
+          if (customModel != null && customModel.isEnabled) {
+            final configId = customModel.configId ?? '';
+            debugPrint('🏷️ 模型关联的配置ID: $configId');
+            final modelConfig = await _database.getLlmConfigById(configId);
+            debugPrint('🏷️ 找到的LLM配置: ${modelConfig?.name}');
+            if (modelConfig != null && modelConfig.isEnabled) {
+              namingProviderConfig = modelConfig.toLlmConfig();
+              namingModelId = customModel.modelId;
+            } else {
+              debugPrint('🏷️ 指定命名模型的配置不可用，回退到会话默认模型');
+            }
+          } else {
+            debugPrint('🏷️ 指定命名模型不可用，回退到会话默认模型');
+          }
+        } else {
+          debugPrint('🏷️ 未配置命名模型，使用会话默认模型命名');
         }
 
         // 创建命名提示词
@@ -1281,9 +1310,9 @@ class ChatService {
         debugPrint('🏷️ 生成的命名提示词长度: ${namingPrompt.length}');
 
         // 创建LLM Provider
-        debugPrint('🏷️ 创建LLM Provider，使用模型: ${customModel.modelId}');
+        debugPrint('🏷️ 创建LLM Provider，使用模型: $namingModelId');
         final provider = LlmProviderFactory.createProvider(
-          modelConfig.toLlmConfig(),
+          namingProviderConfig,
         );
 
         // 生成话题名称
@@ -1299,7 +1328,7 @@ class ChatService {
             ),
           ],
           options: ChatOptions(
-            model: customModel.modelId, // 使用自定义模型的modelId
+            model: namingModelId,
             systemPrompt: '你是一个专业的话题命名助手。请根据对话内容生成简洁、准确的话题标题。',
             temperature: 0.3, // 使用较低的温度以获得更稳定的结果
             maxTokens: 50, // 限制输出长度
