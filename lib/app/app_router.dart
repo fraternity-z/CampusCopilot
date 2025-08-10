@@ -41,7 +41,7 @@ class ModelParameters {
     this.temperature = 0.7,
     this.maxTokens = 2048,
     this.topP = 0.9,
-    this.contextLength = 6, // 降低默认上下文窗口，提升首响应速度
+    this.contextLength = 6, // 初始默认值
     this.enableMaxTokens = true,
   });
 
@@ -169,6 +169,7 @@ class CodeBlockSettings {
   final bool enableCodeWrapping;
   final bool defaultCollapseCodeBlocks;
   final bool enableMermaidDiagrams;
+  final double? maxCodeBlockHeight;
 
   const CodeBlockSettings({
     this.enableCodeEditing = true,
@@ -177,6 +178,7 @@ class CodeBlockSettings {
     this.enableCodeWrapping = true,
     this.defaultCollapseCodeBlocks = false,
     this.enableMermaidDiagrams = true,
+    this.maxCodeBlockHeight = 600,
   });
 
   CodeBlockSettings copyWith({
@@ -186,6 +188,7 @@ class CodeBlockSettings {
     bool? enableCodeWrapping,
     bool? defaultCollapseCodeBlocks,
     bool? enableMermaidDiagrams,
+    double? maxCodeBlockHeight,
   }) {
     return CodeBlockSettings(
       enableCodeEditing: enableCodeEditing ?? this.enableCodeEditing,
@@ -196,6 +199,7 @@ class CodeBlockSettings {
           defaultCollapseCodeBlocks ?? this.defaultCollapseCodeBlocks,
       enableMermaidDiagrams:
           enableMermaidDiagrams ?? this.enableMermaidDiagrams,
+      maxCodeBlockHeight: maxCodeBlockHeight ?? this.maxCodeBlockHeight,
     );
   }
 }

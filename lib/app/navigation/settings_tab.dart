@@ -165,6 +165,21 @@ class SettingsTab extends ConsumerWidget {
             ref.read(modelParametersProvider.notifier).updateTopP(value);
           },
         ),
+        const SizedBox(height: UIConstants.spacingL),
+        // 新增：上下文窗口（影响历史消息条数）
+        _buildParameterSlider(
+          context,
+          label: '上下文窗口（消息数）',
+          value: parameters.contextLength,
+          min: 0,
+          max: 20,
+          divisions: 20,
+          onChanged: (value) {
+            ref
+                .read(modelParametersProvider.notifier)
+                .updateContextLength(value);
+          },
+        ),
         if (parameters.enableMaxTokens) ...[
           const SizedBox(height: UIConstants.spacingL),
           _buildParameterSlider(
@@ -200,6 +215,39 @@ class SettingsTab extends ConsumerWidget {
 
     return Column(
       children: [
+        // 数学引擎选择（KaTeX/MathJax）存到 GeneralSettings
+        Consumer(
+          builder: (context, ref, _) {
+            final general = ref.watch(generalSettingsProvider);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('数学渲染引擎'),
+                    DropdownButton<String>(
+                      value: general.mathEngine,
+                      items: const [
+                        DropdownMenuItem(value: 'katex', child: Text('KaTeX')),
+                        DropdownMenuItem(
+                          value: 'mathjax',
+                          child: Text('MathJax'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        ref.read(generalSettingsProvider.notifier).state =
+                            general.copyWith(mathEngine: v);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: UIConstants.spacingM),
+              ],
+            );
+          },
+        ),
         SwitchListTile(
           title: const Text('启用代码编辑'),
           subtitle: const Text('允许编辑代码块内容'),

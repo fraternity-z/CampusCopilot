@@ -333,6 +333,9 @@ class AnthropicLlmProvider implements LlmProvider {
         totalTokens: inputTokens + outputTokens,
       ),
       model: response['model'] as String? ?? '',
+      metadata: response['citations'] != null
+          ? {'citations': response['citations']}
+          : null,
     );
   }
 

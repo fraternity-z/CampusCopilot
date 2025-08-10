@@ -42,7 +42,6 @@ class SearchSettingsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchConfig = ref.watch(searchConfigProvider);
     final searchNotifier = ref.read(searchConfigProvider.notifier);
-    final availableEngines = ref.watch(availableSearchEnginesProvider);
     // 兼容热重载期间状态结构变化导致的临时类型问题（在具体控件处内联处理）
 
     return Card(
@@ -70,130 +69,6 @@ class SearchSettingsSection extends ConsumerWidget {
             _SearchSourceConfig(ref: ref),
 
             ...[
-              const Divider(),
-
-              // 搜索服务商（单选）
-              Text('搜索服务商', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Builder(
-                builder: (context) {
-                  // 计算当前选择，若无则回退为第一个
-                  final hasDefault = availableEngines.any(
-                    (e) => e['id'] == searchConfig.defaultEngine,
-                  );
-                  final selectedId = hasDefault
-                      ? searchConfig.defaultEngine
-                      : (availableEngines.isNotEmpty
-                            ? availableEngines.first['id']!
-                            : '');
-
-                  Map<String, String> selectedEngine =
-                      availableEngines.isNotEmpty
-                      ? Map<String, String>.from(
-                          availableEngines.firstWhere(
-                            (e) => e['id'] == selectedId,
-                            orElse: () => availableEngines.first,
-                          ),
-                        )
-                      : <String, String>{};
-
-                  String itemLabel(Map<String, String> m) {
-                    final needKey = m['requiresApiKey'] == 'true';
-                    final name = m['name'] ?? '';
-                    return needKey ? '$name（API密钥）' : '$name（免费）';
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        value: selectedId.isEmpty ? null : selectedId,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                        items: [
-                          for (final m in availableEngines)
-                            DropdownMenuItem(
-                              value: m['id'],
-                              child: Text(
-                                itemLabel(Map<String, String>.from(m)),
-                              ),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          searchNotifier.updateDefaultEngine(value);
-                          searchNotifier.updateEnabledEngines([value]);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 当前搜索服务商配置
-                      if (selectedEngine.isNotEmpty)
-                        Card(
-                          elevation: 1,
-                          margin: EdgeInsets.zero,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      selectedEngine['icon'] ?? '🔎',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        selectedEngine['name'] ?? '',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  selectedEngine['description'] ?? '',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                if (selectedEngine['requiresApiKey'] == 'true')
-                                  TextFormField(
-                                    initialValue: searchConfig.apiKey ?? '',
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          '${selectedEngine['name']} API密钥',
-                                      hintText: '请输入API密钥',
-                                      border: const OutlineInputBorder(),
-                                      suffixIcon: IconButton(
-                                        icon: const Icon(Icons.help_outline),
-                                        onPressed: () => _showApiKeyHelp(
-                                          context,
-                                          SearchEngine.fromMap(selectedEngine),
-                                        ),
-                                      ),
-                                    ),
-                                    obscureText: true,
-                                    onChanged: (value) {
-                                      searchNotifier.updateApiKey(
-                                        value.isNotEmpty ? value : null,
-                                      );
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-
               const Divider(),
 
               // 搜索配置
@@ -290,80 +165,7 @@ class SearchSettingsSection extends ConsumerWidget {
     );
   }
 
-  void _showApiKeyHelp(BuildContext context, SearchEngine engine) {
-    String helpText;
-    String? helpUrl;
-
-    switch (engine.id) {
-      case 'tavily':
-        helpText =
-            'Tavily是一个AI驱动的搜索引擎，提供高质量的搜索结果。\n\n'
-            '1. 访问 tavily.com 创建账户\n'
-            '2. 在控制台中获取API密钥\n'
-            '3. 将密钥粘贴到此处';
-        helpUrl = 'https://tavily.com';
-        break;
-      case 'google':
-        helpText =
-            'Google自定义搜索需要设置自定义搜索引擎。\n\n'
-            '1. 访问 Google Custom Search\n'
-            '2. 创建搜索引擎并获取API密钥\n'
-            '3. 将密钥粘贴到此处';
-        helpUrl = 'https://developers.google.com/custom-search/v1/introduction';
-        break;
-      case 'bing':
-        helpText =
-            'Bing搜索API需要Azure订阅。\n\n'
-            '1. 在Azure门户中创建Bing搜索资源\n'
-            '2. 获取订阅密钥\n'
-            '3. 将密钥粘贴到此处';
-        helpUrl = 'https://portal.azure.com';
-        break;
-      default:
-        helpText = '请参考官方文档获取API密钥。';
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${engine.name} API密钥帮助'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(helpText),
-            if (helpUrl != null) ...[
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () async {
-                  // 优先尝试使用默认浏览器打开链接，失败则提示手动访问
-                  final uri = Uri.parse(helpUrl!);
-                  // 预先获取 messenger，避免在 await 之后使用 context
-                  final messenger = ScaffoldMessenger.maybeOf(context);
-                  final launched = await launchUrl(
-                    uri,
-                    mode: LaunchMode.externalApplication,
-                  );
-                  if (!launched && messenger != null) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('请访问: $helpUrl')),
-                    );
-                  }
-                },
-                child: const Text('打开官方网站'),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
+  // 已移除旧的 API Key 帮助对话，直接在来源为 Tavily 时提供外链按钮
 }
 
 // ============ 子组件：联网来源配置 ============
@@ -379,7 +181,7 @@ class _SearchSourceConfig extends ConsumerStatefulWidget {
 class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
   String? _source;
   String? _endpoint;
-  List<String> _engines = const ['google', 'bing', 'baidu'];
+  String _engine = 'google';
 
   @override
   void initState() {
@@ -393,9 +195,16 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
     final e = await db.getSetting(
       GeneralSettingsKeys.searchOrchestratorEndpoint,
     );
+    final enabled = await db.getSetting(
+      GeneralSettingsKeys.searchEnabledEngines,
+    );
     setState(() {
       _source = s?.isNotEmpty == true ? s : 'tavily';
       _endpoint = e ?? '';
+      if (enabled != null && enabled.isNotEmpty) {
+        final parts = enabled.split(',').map((e) => e.trim()).toList();
+        if (parts.isNotEmpty) _engine = parts.first;
+      }
     });
   }
 
@@ -428,7 +237,7 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
             isDense: true,
           ),
           items: const [
-            DropdownMenuItem(value: 'model_native', child: Text('模型内置联网（推荐）')),
+            DropdownMenuItem(value: 'model_native', child: Text('模型内置联网（实验）')),
             DropdownMenuItem(value: 'tavily', child: Text('Tavily（API密钥）')),
             DropdownMenuItem(value: 'direct', child: Text('直接检索（实验）')),
           ],
@@ -457,27 +266,20 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
               ),
             ),
 
-          // Direct 引擎多选（仅三项）
+          // Direct 引擎单选（Google/Bing/Baidu）
           Wrap(
             spacing: 8,
             runSpacing: 4,
             children: [
               for (final id in const ['google', 'bing', 'baidu'])
-                FilterChip(
+                ChoiceChip(
                   label: Text(id.toUpperCase()),
-                  selected: _engines.contains(id),
-                  onSelected: (sel) {
-                    setState(() {
-                      if (sel) {
-                        _engines = {..._engines, id}.toList();
-                      } else {
-                        _engines = _engines.where((e) => e != id).toList();
-                      }
-                    });
-                    // 这里仅在内存中记录，实际使用时 ChatService 会读 `enabledEngines`
+                  selected: _engine == id,
+                  onSelected: (_) {
+                    setState(() => _engine = id);
                     widget.ref
                         .read(searchConfigProvider.notifier)
-                        .updateEnabledEngines(_engines);
+                        .updateEnabledEngines([id]);
                   },
                 ),
             ],
@@ -492,6 +294,32 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
               border: OutlineInputBorder(),
             ),
             onChanged: _saveEndpoint,
+          ),
+        ],
+        if (_source == 'tavily') ...[
+          // Tavily 需要 API Key
+          TextFormField(
+            initialValue: widget.ref.read(searchConfigProvider).apiKey ?? '',
+            decoration: InputDecoration(
+              labelText: 'Tavily API密钥',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.help_outline),
+                onPressed: () async {
+                  final uri = Uri.parse('https://tavily.com');
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+              ),
+            ),
+            obscureText: true,
+            onChanged: (v) => widget.ref
+                .read(searchConfigProvider.notifier)
+                .updateApiKey(v.isNotEmpty ? v : null),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '使用 Tavily 进行联网搜索需要 API 密钥。前往官网申请并粘贴到此处。',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ],

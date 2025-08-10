@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
 import '../../../settings/domain/entities/search_config.dart';
 import '../../domain/services/ai_search_integration_service.dart';
@@ -70,19 +71,43 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
         GeneralSettingsKeys.searchBlacklistRules,
       );
 
-      List<String> engines = ['duckduckgo']; // 默认引擎
-      if (enabledEngines != null && enabledEngines.isNotEmpty) {
-        try {
-          engines = enabledEngines.split(',').map((e) => e.trim()).toList();
-        } catch (e) {
-          debugPrint('解析启用搜索引擎失败: $e');
+      // 仅 direct 模式会用到 enabledEngines；默认不再强塞 duckduckgo
+      List<String> engines = const [];
+      try {
+        final v = enabledEngines;
+        if (v == null) {
+          engines = const [];
+        } else if (v is String) {
+          final s = v.trim();
+          if (s.isEmpty) {
+            engines = const [];
+          } else if (s.startsWith('[') && s.endsWith(']')) {
+            // JSON 数组字符串
+            final decoded = jsonDecode(s);
+            if (decoded is List) {
+              engines = decoded.map((e) => e.toString()).toList();
+            }
+          } else {
+            // 逗号分隔
+            engines = s
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+          }
+        } else if (v is List) {
+          engines = v.map((e) => e.toString()).toList();
         }
+      } catch (e) {
+        debugPrint('解析启用搜索引擎失败: $e');
+        engines = const [];
       }
 
       state = SearchConfig(
         searchEnabled: searchEnabled,
         enabledEngines: engines,
-        defaultEngine: defaultEngine ?? 'duckduckgo',
+        // defaultEngine 仅用于兼容旧字段；真实来源看 searchSource
+        defaultEngine: defaultEngine ?? 'direct',
         apiKey: apiKey,
         maxResults: maxResults,
         timeoutSeconds: timeoutSeconds,
@@ -93,8 +118,15 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
         blacklistRules: blacklistRules ?? '',
       );
 
+      // 统一打印联网来源与启用引擎，避免误解
+      final source = await _database.getSetting(
+        GeneralSettingsKeys.searchSource,
+      );
+      final orchestrator = await _database.getSetting(
+        GeneralSettingsKeys.searchOrchestratorEndpoint,
+      );
       debugPrint(
-        '✅ 搜索配置加载完成: 启用=${state.searchEnabled}, 引擎=${state.enabledEngines}',
+        '✅ 搜索配置加载完成: 启用=${state.searchEnabled}, 来源=${source ?? state.defaultEngine}, 启用引擎=${state.enabledEngines}, 默认=${state.defaultEngine}, orchestrator=${orchestrator ?? ''}',
       );
     } catch (e) {
       debugPrint('❌ 加载搜索配置失败: $e');

@@ -618,19 +618,26 @@ class ChatService {
         final aiSearchIntegration = _ref.read(aiSearchIntegrationProvider);
         final searchConfig = _ref.read(searchConfigProvider);
 
-        // 详细的搜索状态调试
+        // 详细的搜索状态调试（包含来源）
+        final dbgSource = await _database.getSetting(
+          GeneralSettingsKeys.searchSource,
+        );
+        final dbgOrchestrator = await _database.getSetting(
+          GeneralSettingsKeys.searchOrchestratorEndpoint,
+        );
         debugPrint('🔍 搜索状态检查:');
         debugPrint('  - 搜索开关: ${searchConfig.searchEnabled ? "启用" : "禁用"}');
+        debugPrint('  - 来源: ${dbgSource ?? searchConfig.defaultEngine}');
         debugPrint('  - 启用的搜索引擎: ${searchConfig.enabledEngines}');
         debugPrint('  - 默认搜索引擎: ${searchConfig.defaultEngine}');
+        debugPrint('  - orchestrator: ${dbgOrchestrator ?? ''}');
         debugPrint('  - 用户查询: "$content"');
 
         // 修改逻辑：如果用户主动启用了搜索，就直接搜索，不需要AI判断
         // 只有在自动搜索模式下才使用shouldSearch判断
         bool shouldExecuteSearch = false;
 
-        if (searchConfig.searchEnabled &&
-            searchConfig.enabledEngines.isNotEmpty) {
+        if (searchConfig.searchEnabled) {
           // 用户已启用搜索开关，直接执行搜索
           shouldExecuteSearch = true;
           debugPrint('  - 用户已启用搜索，将执行搜索');
@@ -670,20 +677,13 @@ class ChatService {
           // 读取联网来源与 orchestrator 地址
           final searchSource =
               await _database.getSetting(GeneralSettingsKeys.searchSource) ??
-              searchConfig.defaultEngine; // 兼容旧字段
+              'direct';
           final orchestratorEndpoint = await _database.getSetting(
             GeneralSettingsKeys.searchOrchestratorEndpoint,
           );
 
-          // 来源选择与回退：若 direct 但未配置 orchestrator 地址，则回退为 tavily(若有 key) 或 duckduckgo
+          // 来源选择：不再回退到 Tavily；未配置 orchestrator 直接使用轻量HTTP抓取
           String sourceToUse = searchSource;
-          if ((sourceToUse == 'direct' || sourceToUse == 'direct_engine') &&
-              (orchestratorEndpoint == null || orchestratorEndpoint.isEmpty)) {
-            sourceToUse = (searchConfig.apiKey?.isNotEmpty == true)
-                ? 'tavily'
-                : 'duckduckgo';
-            debugPrint('ℹ️ 未配置 orchestrator，direct 回退为: $sourceToUse');
-          }
 
           // 简化：移动端是否允许 direct 的决策放在设置页；此处仅保留 isModelNative 判断
           final isModelNative = sourceToUse == 'model_native';
@@ -700,7 +700,11 @@ class ChatService {
                   apiKey: searchConfig.apiKey,
                   blacklistEnabled: searchConfig.blacklistEnabled,
                   blacklistPatterns: blacklistPatterns,
-                  engines: searchConfig.enabledEngines,
+                  engines: (sourceToUse == 'direct')
+                      ? (searchConfig.enabledEngines.isNotEmpty
+                            ? searchConfig.enabledEngines
+                            : const ['google'])
+                      : const [],
                   orchestratorEndpoint: orchestratorEndpoint,
                 )
                 .timeout(Duration(seconds: boundedSeconds));

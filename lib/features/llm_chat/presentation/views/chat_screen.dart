@@ -520,7 +520,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         return ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           itemCount: messages.length + (error != null ? 1 : 0),
           itemBuilder: (context, index) {
             if (error != null && index == messages.length) {
@@ -577,7 +577,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final textTheme = theme.textTheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
@@ -601,29 +601,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 40, // 预留按钮空间
-                    top: 20, // 顶部留白避免重叠
-                    bottom: 10,
+                    left: 18,
+                    right: 46, // 预留按钮空间
+                    top: 18,
+                    bottom: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser
-                        ? colorScheme.primaryContainer
-                        : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16).copyWith(
+                    gradient: isUser
+                        ? LinearGradient(
+                            colors: [
+                              colorScheme.primary.withAlpha(235),
+                              colorScheme.primary,
+                            ],
+                          )
+                        : null,
+                    color: isUser ? null : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(18).copyWith(
                       bottomLeft: isUser
-                          ? const Radius.circular(16)
-                          : const Radius.circular(4),
+                          ? const Radius.circular(18)
+                          : const Radius.circular(6),
                       bottomRight: isUser
-                          ? const Radius.circular(4)
-                          : const Radius.circular(16),
+                          ? const Radius.circular(6)
+                          : const Radius.circular(18),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       MessageContentWidget(message: message),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         _formatTimestamp(message.timestamp),
                         style: textTheme.bodySmall?.copyWith(
@@ -631,7 +644,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               (isUser
                                       ? colorScheme.onPrimaryContainer
                                       : colorScheme.onSurface)
-                                  .withAlpha(153),
+                                  .withAlpha(140),
                         ),
                       ),
                     ],

@@ -38,8 +38,9 @@ class SearchConfig {
 
   const SearchConfig({
     this.searchEnabled = false,
-    this.enabledEngines = const ['google'],
-    this.defaultEngine = 'google',
+    // 只有 direct 模式会用到引擎列表；默认留空避免误导
+    this.enabledEngines = const [],
+    this.defaultEngine = 'direct',
     this.apiKey,
     this.maxResults = 5,
     this.timeoutSeconds = 10,
@@ -101,8 +102,8 @@ class SearchConfig {
   factory SearchConfig.fromJson(Map<String, dynamic> json) {
     return SearchConfig(
       searchEnabled: json['searchEnabled'] ?? false,
-      enabledEngines: List<String>.from(json['enabledEngines'] ?? ['google']),
-      defaultEngine: json['defaultEngine'] ?? 'google',
+      enabledEngines: List<String>.from(json['enabledEngines'] ?? const []),
+      defaultEngine: json['defaultEngine'] ?? 'direct',
       apiKey: json['apiKey'],
       maxResults: json['maxResults'] ?? 5,
       timeoutSeconds: json['timeoutSeconds'] ?? 10,

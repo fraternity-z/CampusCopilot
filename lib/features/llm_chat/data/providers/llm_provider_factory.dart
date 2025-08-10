@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers/llm_provider.dart';
 import 'openai_llm_provider.dart';
+import 'openai_responses_llm_provider.dart';
 import 'google_llm_provider.dart';
 import 'anthropic_llm_provider.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
@@ -31,6 +32,9 @@ class LlmProviderFactory {
       switch (config.provider.toLowerCase()) {
         case 'openai':
           provider = OpenAiLlmProvider(config);
+          break;
+        case 'openai_responses':
+          provider = OpenAiResponsesLlmProvider(config);
           break;
         case 'google':
           provider = GoogleLlmProvider(config);
@@ -139,6 +143,7 @@ class LlmProviderFactory {
   static List<String> getSupportedProviders() {
     return [
       'openai',
+      'openai_responses',
       'google',
       'anthropic',
       'deepseek',
@@ -168,6 +173,8 @@ class LlmProviderFactory {
     switch (provider.toLowerCase()) {
       case 'openai':
         return 'gpt-3.5-turbo';
+      case 'openai_responses':
+        return 'gpt-4o';
       case 'google':
         return 'gemini-pro';
       case 'anthropic':
@@ -214,6 +221,8 @@ class LlmProviderFactory {
     switch (provider.toLowerCase()) {
       case 'openai':
         return 'OpenAI';
+      case 'openai_responses':
+        return 'OpenAI Responses (新)';
       case 'google':
         return 'Google Gemini';
       case 'anthropic':
@@ -245,6 +254,8 @@ class LlmProviderFactory {
     switch (provider.toLowerCase()) {
       case 'openai':
         return 'OpenAI的GPT系列模型，包括GPT-3.5和GPT-4';
+      case 'openai_responses':
+        return 'OpenAI Responses API（支持工具与 web_search，需端点支持，实验性）';
       case 'google':
         return 'Google的Gemini系列模型，支持多模态输入';
       case 'anthropic':
@@ -276,6 +287,8 @@ class LlmProviderFactory {
     switch (provider.toLowerCase()) {
       case 'openai':
         return ['apiKey'];
+      case 'openai_responses':
+        return ['apiKey'];
       case 'google':
         return ['apiKey'];
       case 'anthropic':
@@ -298,6 +311,8 @@ class LlmProviderFactory {
   static List<String> getProviderOptionalFields(String provider) {
     switch (provider.toLowerCase()) {
       case 'openai':
+        return ['baseUrl', 'organizationId'];
+      case 'openai_responses':
         return ['baseUrl', 'organizationId'];
       case 'google':
         return ['baseUrl'];
@@ -322,6 +337,8 @@ class LlmProviderFactory {
     switch (provider.toLowerCase()) {
       case 'openai':
         return 'https://api.openai.com/v1';
+      case 'openai_responses':
+        return 'https://api.openai.com/v1';
       case 'google':
         return 'https://generativelanguage.googleapis.com/v1beta';
       case 'anthropic':
@@ -344,6 +361,7 @@ class LlmProviderFactory {
   static String getProviderCompatibilityType(String provider) {
     switch (provider.toLowerCase()) {
       case 'openai':
+      case 'openai_responses':
       case 'deepseek':
       case 'qwen':
       case 'openrouter':

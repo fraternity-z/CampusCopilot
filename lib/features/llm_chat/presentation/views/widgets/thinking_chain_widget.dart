@@ -9,7 +9,6 @@ import '../../../../settings/presentation/providers/settings_provider.dart';
 /// 模仿GPT样式的思考链显示，支持：
 /// - 打字机动画效果
 /// - 折叠/展开功能
-/// - Gemini模型特殊处理
 /// - 可配置动画速度
 /// - 渐变背景和阴影效果
 /// - 性能优化

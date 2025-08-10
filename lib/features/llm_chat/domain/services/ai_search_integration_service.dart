@@ -528,16 +528,20 @@ class AISearchIntegrationService {
     );
   }
 
-  /// Google搜索（需要API密钥）
+  /// Google搜索：已弃用独立API实现，统一通过 Direct/Tavily/Model-Native
   Future<SearchResult> _searchGoogle(
     String query, {
     int maxResults = 5,
     String? language,
     String? region,
   }) async {
-    // TODO: 实现Google Custom Search API
-    // 需要配置Google Custom Search Engine ID和API Key
-    throw UnimplementedError('Google搜索需要API密钥配置');
+    return SearchResult(
+      query: query,
+      items: const [],
+      searchTime: 0,
+      engine: 'google',
+      error: 'Google搜索独立API已停用，请使用 Direct/Tavily/模型内置联网',
+    );
   }
 
   /// Direct orchestrator 搜索
@@ -615,11 +619,15 @@ class AISearchIntegrationService {
     }
   }
 
-  /// Bing搜索（需要API密钥）
+  /// Bing搜索：已弃用独立API实现，统一通过 Direct/Tavily/Model-Native
   Future<SearchResult> _searchBing(String query, {int maxResults = 5}) async {
-    // TODO: 实现Bing Search API
-    // 需要配置Bing Search API Key
-    throw UnimplementedError('Bing搜索需要API密钥配置');
+    return SearchResult(
+      query: query,
+      items: const [],
+      searchTime: 0,
+      engine: 'bing',
+      error: 'Bing搜索独立API已停用，请使用 Direct/Tavily/模型内置联网',
+    );
   }
 
   /// 过滤和排序搜索结果
