@@ -38,31 +38,17 @@ class AISearchIntegrationService {
       switch (engine.toLowerCase()) {
         case 'direct':
         case 'direct_engine':
-          // 通过 orchestrator 进行直接检索（需在上层传入 endpoint），若无配置则走轻量HTTP抓取
-          final endpoint =
-              orchestratorEndpoint ??
-              _getSetting('search_orchestrator_endpoint');
+          // 移除 orchestrator 依赖：一律使用轻量HTTP抓取
           final usedEngines = (engines == null || engines.isEmpty)
               ? _getEngines()
               : engines;
-          if (endpoint != null && endpoint.isNotEmpty) {
-            searchResult = await _searchDirect(
-              optimizedQuery,
-              engines: usedEngines,
-              endpoint: endpoint,
-              maxResults: maxResults,
-              language: language,
-              region: region,
-            );
-          } else {
-            searchResult = await LightweightDirectFetcher.searchViaHttp(
-              optimizedQuery,
-              engines: usedEngines,
-              maxResults: maxResults,
-              language: language,
-              region: region,
-            );
-          }
+          searchResult = await LightweightDirectFetcher.searchViaHttp(
+            optimizedQuery,
+            engines: usedEngines,
+            maxResults: maxResults,
+            language: language,
+            region: region,
+          );
           break;
         case 'tavily':
           searchResult = await _searchTavily(
@@ -142,11 +128,7 @@ class AISearchIntegrationService {
     }
   }
 
-  // 读取 orchestrator 等扩展设置（弱依赖数据库/全局设置，避免强耦合）
-  String? _getSetting(String key) {
-    // 这里保持最小侵入：实际项目应通过 provider 注入，这里返回 null 即使用默认
-    return null;
-  }
+  // orchestrator 相关读取已移除
 
   List<String> _getEngines() {
     // Direct 引擎先包含：Google / Bing / Baidu，后续可扩展
@@ -544,80 +526,7 @@ class AISearchIntegrationService {
     );
   }
 
-  /// Direct orchestrator 搜索
-  Future<SearchResult> _searchDirect(
-    String query, {
-    required List<String> engines,
-    required String? endpoint,
-    int maxResults = 5,
-    String? language,
-    String? region,
-  }) async {
-    if (endpoint == null || endpoint.isEmpty) {
-      return SearchResult(
-        query: query,
-        items: const [],
-        searchTime: 0,
-        engine: 'direct',
-        error: '未配置 orchestrator 地址',
-      );
-    }
-
-    try {
-      final url = Uri.parse('$endpoint/search');
-      final body = jsonEncode({
-        'query': query,
-        'engines': engines,
-        'maxResults': maxResults,
-        'language': language,
-        'region': region,
-      });
-      final resp = await http
-          .post(url, headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 15));
-      if (resp.statusCode != 200) {
-        throw Exception('orchestrator 请求失败: ${resp.statusCode}');
-      }
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final List<SearchResultItem> items = [];
-      if (data['results'] is List) {
-        for (final r in (data['results'] as List)) {
-          if (r is Map<String, dynamic>) {
-            items.add(
-              SearchResultItem(
-                title: r['title'] ?? '',
-                link: r['url'] ?? '',
-                snippet: r['snippet'] ?? (r['extracted_text'] ?? ''),
-                displayLink: r['displayLink'],
-                thumbnail: r['favicon'],
-                publishTime: r['publishedAt'] != null
-                    ? DateTime.tryParse(r['publishedAt'])
-                    : null,
-                contentType: r['contentType'] ?? 'webpage',
-                relevanceScore: (r['score'] as num?)?.toDouble() ?? 0.0,
-                metadata: {'engine': r['engine'], 'favicon': r['favicon']},
-              ),
-            );
-          }
-        }
-      }
-      return SearchResult(
-        query: query,
-        items: items,
-        searchTime: 0,
-        engine: 'direct',
-        totalResults: items.length,
-      );
-    } catch (e) {
-      return SearchResult(
-        query: query,
-        items: const [],
-        searchTime: 0,
-        engine: 'direct',
-        error: e.toString(),
-      );
-    }
-  }
+  // 旧的 orchestrator 直连方法已移除
 
   /// Bing搜索：已弃用独立API实现，统一通过 Direct/Tavily/Model-Native
   Future<SearchResult> _searchBing(String query, {int maxResults = 5}) async {

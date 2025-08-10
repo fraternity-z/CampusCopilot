@@ -38,25 +38,36 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulsateAnimation;
 
-  String _displayedContent = '';
+  // 使用 ValueNotifier 替代 setState 减少重建范围
+  late ValueNotifier<String> _displayedContentNotifier;
   bool _isExpanded = false;
-  bool _isAnimating = false;
-  int _currentIndex = 0;
   Timer? _typingTimer;
+
+  // 批量更新相关
+  static const int _charsPerUpdate = 3; // 每次更新显示的字符数
+  static const int _updateInterval = 20; // 更新间隔(ms)
 
   @override
   void initState() {
     super.initState();
+    _displayedContentNotifier = ValueNotifier<String>('');
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
 
-    _pulsateController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
+    _pulsateController =
+        AnimationController(
+          duration: const Duration(milliseconds: 1000),
+          vsync: this,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _pulsateController.reverse();
+          } else if (status == AnimationStatus.dismissed) {
+            _pulsateController.forward();
+          }
+        });
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
@@ -69,10 +80,10 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     _animationController.forward();
 
     if (!widget.isCompleted) {
-      _startTypingAnimation();
-      _pulsateController.repeat(reverse: true);
+      _startOptimizedTypingAnimation();
+      _pulsateController.forward();
     } else {
-      _displayedContent = widget.content;
+      _displayedContentNotifier.value = widget.content;
     }
   }
 
@@ -81,41 +92,47 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     super.didUpdateWidget(oldWidget);
 
     if (widget.content != oldWidget.content && !widget.isCompleted) {
-      _startTypingAnimation();
+      _displayedContentNotifier.value = '';
+      _startOptimizedTypingAnimation();
     }
 
     if (widget.isCompleted && !oldWidget.isCompleted) {
       _pulsateController.stop();
       _typingTimer?.cancel();
-      _displayedContent = widget.content;
-      setState(() {});
+      _displayedContentNotifier.value = widget.content;
     }
   }
 
-  void _startTypingAnimation() {
+  /// 优化的打字动画 - 批量更新字符
+  void _startOptimizedTypingAnimation() {
     final settings = ref.read(settingsProvider).thinkingChainSettings;
     if (!settings.enableAnimation) {
-      _displayedContent = widget.content;
-      setState(() {});
+      _displayedContentNotifier.value = widget.content;
       return;
     }
 
-    _isAnimating = true;
-    _currentIndex = 0;
     _typingTimer?.cancel();
 
-    // 使用 Timer 替代 Future.delayed，减少内存分配
+    int currentIndex = 0;
+    final int contentLength = widget.content.length;
+    final buffer = StringBuffer();
+
     _typingTimer = Timer.periodic(
-      Duration(milliseconds: settings.animationSpeed),
+      const Duration(milliseconds: _updateInterval),
       (timer) {
-        if (_currentIndex < widget.content.length && mounted) {
-          setState(() {
-            _displayedContent = widget.content.substring(0, _currentIndex + 1);
-            _currentIndex++;
-          });
+        if (currentIndex < contentLength && mounted) {
+          int endIndex = currentIndex + _charsPerUpdate;
+          if (endIndex > contentLength) {
+            endIndex = contentLength;
+          }
+          buffer.write(widget.content.substring(currentIndex, endIndex));
+          currentIndex = endIndex;
+          _displayedContentNotifier.value = buffer.toString();
+          if (currentIndex >= contentLength) {
+            timer.cancel();
+          }
         } else {
           timer.cancel();
-          _isAnimating = false;
         }
       },
     );
@@ -126,6 +143,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     _animationController.dispose();
     _pulsateController.dispose();
     _typingTimer?.cancel();
+    _displayedContentNotifier.dispose();
     super.dispose();
   }
 
@@ -145,10 +163,21 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, settings),
-              if (_isExpanded ||
-                  settings.maxDisplayLength > _displayedContent.length)
-                _buildContent(context, settings),
+              _buildOptimizedHeader(context, settings),
+              ValueListenableBuilder<String>(
+                valueListenable: _displayedContentNotifier,
+                builder: (context, displayedContent, child) {
+                  if (_isExpanded ||
+                      settings.maxDisplayLength > displayedContent.length) {
+                    return _buildOptimizedContent(
+                      context,
+                      settings,
+                      displayedContent,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ],
           ),
         ),
@@ -156,16 +185,17 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     );
   }
 
-  Widget _buildHeader(BuildContext context, settings) {
+  /// 优化的头部组件 - 分离动画部分
+  Widget _buildOptimizedHeader(BuildContext context, settings) {
     final isGemini = widget.modelName.toLowerCase().contains('gemini');
     final headerIcon = isGemini && settings.enableGeminiSpecialHandling
-        ? Icons
-              .psychology_alt // Gemini特殊图标
+        ? Icons.psychology_alt
         : Icons.psychology;
 
     return GestureDetector(
       onTap: () {
-        if (_displayedContent.length > settings.maxDisplayLength) {
+        final currentLength = _displayedContentNotifier.value.length;
+        if (currentLength > settings.maxDisplayLength) {
           setState(() {
             _isExpanded = !_isExpanded;
           });
@@ -206,23 +236,32 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           ),
           child: Row(
             children: [
-              AnimatedBuilder(
-                animation: _pulsateAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: widget.isCompleted
-                        ? 1.0
-                        : (0.9 + _pulsateAnimation.value * 0.1),
-                    child: Icon(
-                      headerIcon,
-                      size: 16,
-                      color: isGemini && settings.enableGeminiSpecialHandling
-                          ? Colors.blue.shade600
-                          : Theme.of(context).colorScheme.primary,
-                    ),
-                  );
-                },
-              ),
+              // 只对图标部分使用AnimatedBuilder
+              if (!widget.isCompleted)
+                AnimatedBuilder(
+                  animation: _pulsateAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: 0.9 + _pulsateAnimation.value * 0.1,
+                      child: child,
+                    );
+                  },
+                  child: Icon(
+                    headerIcon,
+                    size: 16,
+                    color: isGemini && settings.enableGeminiSpecialHandling
+                        ? Colors.blue.shade600
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                )
+              else
+                Icon(
+                  headerIcon,
+                  size: 16,
+                  color: isGemini && settings.enableGeminiSpecialHandling
+                      ? Colors.blue.shade600
+                      : Theme.of(context).colorScheme.primary,
+                ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -235,24 +274,26 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
                   ),
                 ),
               ),
-              if (_displayedContent.length > settings.maxDisplayLength)
-                Icon(
-                  _isExpanded ? Icons.expand_less : Icons.expand_more,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              ValueListenableBuilder<String>(
+                valueListenable: _displayedContentNotifier,
+                builder: (context, displayedContent, child) {
+                  if (displayedContent.length > settings.maxDisplayLength) {
+                    return Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               if (!widget.isCompleted)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
-                  child: SizedBox(
+                  child: const SizedBox(
                     width: 12,
                     height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: isGemini && settings.enableGeminiSpecialHandling
-                          ? Colors.blue.shade600
-                          : Theme.of(context).colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
             ],
@@ -262,17 +303,22 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     );
   }
 
-  Widget _buildContent(BuildContext context, settings) {
-    final shouldTruncate =
-        !_isExpanded && _displayedContent.length > settings.maxDisplayLength;
+  /// 优化的内容组件
+  Widget _buildOptimizedContent(
+    BuildContext context,
+    settings,
+    String displayedContent,
+  ) {
+    final bool shouldTruncate =
+        !_isExpanded && displayedContent.length > settings.maxDisplayLength;
 
-    final displayContent = shouldTruncate
-        ? '${_displayedContent.substring(0, settings.maxDisplayLength)}...'
-        : _displayedContent;
+    final String displayContent = shouldTruncate
+        ? '${displayedContent.substring(0, settings.maxDisplayLength)}...'
+        : displayedContent;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOutCubic, // 更平滑的曲线
+      curve: Curves.easeInOutCubic,
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -290,23 +336,28 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            MarkdownBody(
-              data: displayContent,
-              styleSheet: MarkdownStyleSheet(
-                p: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
-                code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontFamily: 'monospace',
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainer,
+            // 使用 RepaintBoundary 包裹 MarkdownBody
+            RepaintBoundary(
+              child: MarkdownBody(
+                data: displayContent,
+                styleSheet: MarkdownStyleSheet(
+                  p: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                  code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainer,
+                  ),
                 ),
               ),
             ),
-            if (_isAnimating && !widget.isCompleted)
+            // 光标动画
+            if (!widget.isCompleted &&
+                displayedContent.length < widget.content.length)
               Container(
                 margin: const EdgeInsets.only(top: 4),
                 child: AnimatedBuilder(

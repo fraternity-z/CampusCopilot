@@ -180,8 +180,10 @@ class _SearchSourceConfig extends ConsumerStatefulWidget {
 
 class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
   String? _source;
-  String? _endpoint;
+  // 已弃用：保留以兼容旧状态（不再使用）
   String _engine = 'google';
+  // ignore: unused_field
+  String? _endpoint; // 兼容旧字段，避免读取时报错
 
   @override
   void initState() {
@@ -215,11 +217,8 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
     setState(() => _source = v);
   }
 
-  Future<void> _saveEndpoint(String v) async {
-    final db = widget.ref.read(appDatabaseProvider);
-    await db.setSetting(GeneralSettingsKeys.searchOrchestratorEndpoint, v);
-    setState(() => _endpoint = v);
-  }
+  // ignore: unused_element
+  Future<void> _saveEndpoint(String v) async {}
 
   @override
   Widget build(BuildContext context) {
@@ -286,14 +285,25 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
           ),
           const SizedBox(height: 8),
 
-          // Orchestrator 地址
-          TextFormField(
-            initialValue: _endpoint,
-            decoration: const InputDecoration(
-              labelText: 'Orchestrator 地址（留空=启用轻量直接检索）',
-              border: OutlineInputBorder(),
+          // Orchestrator 已弃用，给出提示
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
             ),
-            onChanged: _saveEndpoint,
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '已移除 Orchestrator 依赖，Direct 模式将直接使用轻量HTTP抓取，无需额外服务。',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
         if (_source == 'tavily') ...[

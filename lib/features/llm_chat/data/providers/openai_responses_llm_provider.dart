@@ -75,6 +75,15 @@ class OpenAiResponsesLlmProvider extends LlmProvider {
         body['max_output_tokens'] = options!.maxTokens;
       }
 
+      // 思考相关参数（Responses 支持 o3/o4-mini 等）
+      if (options?.reasoningEffort != null) {
+        body['reasoning'] = {
+          'effort': options!.reasoningEffort,
+          if (options.maxReasoningTokens != null)
+            'max_tokens': options.maxReasoningTokens,
+        };
+      }
+
       final enableNative =
           options?.customParams?['enableModelNativeSearch'] == true;
       if (enableNative) {

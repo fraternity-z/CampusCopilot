@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/local/app_database.dart';
+import 'settings_provider.dart';
 import '../../../../data/local/tables/general_settings_table.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/network/proxy_config.dart';
@@ -213,6 +214,8 @@ final generalSettingsProvider =
 final availableChatModelsProvider = FutureProvider<List<CustomModelsTableData>>(
   (ref) async {
     final database = ref.read(appDatabaseProvider);
+    // 监听模型列表刷新触发器，确保无需重启即可同步最新模型
+    ref.watch(modelListRefreshProvider);
 
     // 获取所有启用的LLM配置
     final enabledConfigs = await database.getEnabledLlmConfigs();

@@ -142,6 +142,59 @@ class SettingsTab extends ConsumerWidget {
 
     return Column(
       children: [
+        // 思考强度
+        Row(
+          children: [
+            const Icon(Icons.psychology, size: 18),
+            const SizedBox(width: 8),
+            Text('思考强度', style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+        const SizedBox(height: UIConstants.spacingS),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final level in const ['auto', 'low', 'medium', 'high'])
+              ChoiceChip(
+                label: Text(level.toUpperCase()),
+                selected: parameters.reasoningEffort == level,
+                onSelected: (_) {
+                  ref
+                      .read(modelParametersProvider.notifier)
+                      .updateReasoningEffort(level);
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: UIConstants.spacingM),
+        // 最大思考Tokens
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '最大思考Tokens',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            Text(
+              '${parameters.maxReasoningTokens}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: parameters.maxReasoningTokens.toDouble(),
+          min: 0,
+          max: 8000,
+          divisions: 80,
+          onChanged: (v) => ref
+              .read(modelParametersProvider.notifier)
+              .updateMaxReasoningTokens(v.round()),
+        ),
+        const SizedBox(height: UIConstants.spacingL),
         _buildParameterSlider(
           context,
           label: '温度 (Temperature)',
@@ -204,6 +257,13 @@ class SettingsTab extends ConsumerWidget {
                 .updateEnableMaxTokens(value);
           },
           contentPadding: EdgeInsets.zero,
+        ),
+        const SizedBox(height: UIConstants.spacingS),
+        Text(
+          '提示：开启“AI搜索”按钮可在对话中自动拼接联网结果；思考强度适用于 o1/o3/DeepSeek-R1 等推理模型。',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

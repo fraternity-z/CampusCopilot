@@ -354,8 +354,11 @@ class ChatService {
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
         topP: params.topP,
-        reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
-        maxReasoningTokens: 2000,
+        reasoningEffort: _mapReasoningEffort(
+          params.reasoningEffort,
+          llmConfig.defaultModel,
+        ),
+        maxReasoningTokens: params.maxReasoningTokens,
         customParams: mergedCustom.isNotEmpty ? mergedCustom : null,
       );
 
@@ -754,8 +757,11 @@ class ChatService {
         topP: params.topP,
         stream: true,
         // 思考链相关参数
-        reasoningEffort: _getReasoningEffort(llmConfig.defaultModel),
-        maxReasoningTokens: 2000,
+        reasoningEffort: _mapReasoningEffort(
+          params.reasoningEffort,
+          llmConfig.defaultModel,
+        ),
+        maxReasoningTokens: params.maxReasoningTokens,
         customParams: _buildThinkingParams(llmConfig.defaultModel),
       );
 
@@ -1123,6 +1129,23 @@ class ChatService {
     );
 
     return isThinkingModel ? 'medium' : null;
+  }
+
+  /// 将侧边栏的 effort 值映射到具体模型
+  String? _mapReasoningEffort(String effort, String? model) {
+    if (model == null) return null;
+    final lower = effort.toLowerCase();
+    if (lower == 'auto') {
+      return _getReasoningEffort(model);
+    }
+    // 仅推理模型生效
+    final isThinkingModel = {
+      'o1',
+      'o3',
+      'deepseek-reasoner',
+      'deepseek-r1',
+    }.any((m) => model.toLowerCase().contains(m));
+    return isThinkingModel ? lower : null;
   }
 
   /// 构建思考链参数

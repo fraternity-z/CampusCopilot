@@ -145,16 +145,9 @@ class SearchConfigNotifier extends StateNotifier<SearchConfig> {
     }
   }
 
+  // orchestrator 已弃用；保留空实现以兼容旧调用
   Future<void> updateOrchestratorEndpoint(String endpoint) async {
-    try {
-      await _database.setSetting(
-        GeneralSettingsKeys.searchOrchestratorEndpoint,
-        endpoint,
-      );
-      debugPrint('✅ Orchestrator 地址已更新: $endpoint');
-    } catch (e) {
-      debugPrint('❌ 更新 Orchestrator 地址失败: $e');
-    }
+    debugPrint('ℹ️ orchestrator 已弃用，忽略设置: $endpoint');
   }
 
   /// 更新搜索启用状态

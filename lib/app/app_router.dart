@@ -36,6 +36,10 @@ class ModelParameters {
   final double topP;
   final double contextLength;
   final bool enableMaxTokens;
+  // 新增：思考强度与最大思考token设置
+  // reasoningEffort: 'auto' | 'low' | 'medium' | 'high'
+  final String reasoningEffort;
+  final int maxReasoningTokens;
 
   const ModelParameters({
     this.temperature = 0.7,
@@ -43,6 +47,8 @@ class ModelParameters {
     this.topP = 0.9,
     this.contextLength = 6, // 初始默认值
     this.enableMaxTokens = true,
+    this.reasoningEffort = 'auto',
+    this.maxReasoningTokens = 2000,
   });
 
   ModelParameters copyWith({
@@ -51,6 +57,8 @@ class ModelParameters {
     double? topP,
     double? contextLength,
     bool? enableMaxTokens,
+    String? reasoningEffort,
+    int? maxReasoningTokens,
   }) {
     return ModelParameters(
       temperature: temperature ?? this.temperature,
@@ -58,6 +66,8 @@ class ModelParameters {
       topP: topP ?? this.topP,
       contextLength: contextLength ?? this.contextLength,
       enableMaxTokens: enableMaxTokens ?? this.enableMaxTokens,
+      reasoningEffort: reasoningEffort ?? this.reasoningEffort,
+      maxReasoningTokens: maxReasoningTokens ?? this.maxReasoningTokens,
     );
   }
 
@@ -69,6 +79,8 @@ class ModelParameters {
       'topP': topP,
       'contextLength': contextLength,
       'enableMaxTokens': enableMaxTokens,
+      'reasoningEffort': reasoningEffort,
+      'maxReasoningTokens': maxReasoningTokens,
     };
   }
 
@@ -80,6 +92,8 @@ class ModelParameters {
       topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
       contextLength: (json['contextLength'] as num?)?.toDouble() ?? 6,
       enableMaxTokens: json['enableMaxTokens'] as bool? ?? true,
+      reasoningEffort: (json['reasoningEffort'] as String?) ?? 'auto',
+      maxReasoningTokens: (json['maxReasoningTokens'] as int?) ?? 2000,
     );
   }
 }
@@ -146,6 +160,18 @@ class ModelParametersNotifier extends StateNotifier<ModelParameters> {
   /// 更新是否启用最大Token限制
   Future<void> updateEnableMaxTokens(bool enableMaxTokens) async {
     state = state.copyWith(enableMaxTokens: enableMaxTokens);
+    await _saveParameters();
+  }
+
+  /// 更新思考强度
+  Future<void> updateReasoningEffort(String effort) async {
+    state = state.copyWith(reasoningEffort: effort);
+    await _saveParameters();
+  }
+
+  /// 更新最大思考token
+  Future<void> updateMaxReasoningTokens(int value) async {
+    state = state.copyWith(maxReasoningTokens: value);
     await _saveParameters();
   }
 

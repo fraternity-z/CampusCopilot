@@ -19,6 +19,7 @@ import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
+import '../providers/search_providers.dart';
 
 /// 聊天界面
 ///
@@ -34,7 +35,8 @@ class ChatScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends ConsumerState<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen>
+    with AutomaticKeepAliveClientMixin<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
@@ -76,9 +78,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (animate) {
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: gentle
-                ? const Duration(milliseconds: 150)
-                : const Duration(milliseconds: 300),
+            // 自适应动画时长：长列表使用较短动画
+            duration: Duration(milliseconds: gentle ? 120 : 220),
             curve: gentle ? Curves.easeInOut : Curves.easeOut,
           );
         } else {
@@ -94,10 +95,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        // 使用很短的动画时间，实现平滑的实时滚动
+        // 使用更短动画，降低频繁rebuild卡顿
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 100),
+          duration: const Duration(milliseconds: 80),
           curve: Curves.easeOutQuart,
         );
       }
@@ -115,6 +116,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     // 监听消息变化并自动滚动
     ref.listen<List<ChatMessage>>(chatMessagesProvider, (previous, current) {
       if (previous == null) return;
@@ -145,6 +147,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea()),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   /// 构建应用栏
   PreferredSizeWidget _buildAppBar() {
@@ -519,8 +524,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         });
 
         return ListView.builder(
+          key: const PageStorageKey('chat_message_list'),
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          cacheExtent: 800,
+          addAutomaticKeepAlives: true,
+          addRepaintBoundaries: true,
+          addSemanticIndexes: true,
           itemCount: messages.length + (error != null ? 1 : 0),
           itemBuilder: (context, index) {
             if (error != null && index == messages.length) {
@@ -803,10 +813,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
+                        // RAG + AI搜索并列控制
+                        _buildRagAndSearchControls(),
+                        const SizedBox(width: 12),
                         const ChatActionMenu(),
-                        const SizedBox(width: 16),
-                        // RAG控制
-                        _buildCompactRagControl(),
                         const Spacer(),
                         // 右侧语音和发送按钮组合
                         Row(
@@ -1330,8 +1340,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  /// 构建紧凑的RAG控制
-  Widget _buildCompactRagControl() {
+  /// 构建并列的 RAG 与 AI 搜索控制（紧凑样式）
+  Widget _buildRagAndSearchControls() {
     return Consumer(
       builder: (context, ref, child) {
         // 监听设置变化，同步RAG状态
@@ -1344,6 +1354,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             });
           });
         }
+
+        // 监听搜索开关
+        final searchConfig = ref.watch(searchConfigProvider);
+        final bool searchEnabled = searchConfig.searchEnabled;
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1370,6 +1384,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       size: 20, // 统一图标大小
                       color: _ragEnabled
                           ? Theme.of(context).colorScheme.primary
+                          : const Color(0xFF999999),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // AI 搜索开关按钮（颜色区分）
+            GestureDetector(
+              onTap: () async {
+                final notifier = ref.read(searchConfigProvider.notifier);
+                final newEnabled = !searchEnabled;
+                await notifier.updateSearchEnabled(newEnabled);
+                if (!context.mounted) return; // 防止在组件卸载后使用当前BuildContext
+                ElegantNotification.info(
+                  context,
+                  newEnabled ? '已启用AI搜索' : '已关闭AI搜索',
+                  duration: const Duration(seconds: 2),
+                );
+              },
+              child: Tooltip(
+                message: 'AI搜索（联网）',
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: searchEnabled
+                        ? Colors.teal.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.travel_explore,
+                      size: 20,
+                      color: searchEnabled
+                          ? Colors.teal
                           : const Color(0xFF999999),
                     ),
                   ),

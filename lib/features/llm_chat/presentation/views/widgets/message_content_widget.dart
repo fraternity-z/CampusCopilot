@@ -255,6 +255,8 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       listBullet: theme.textTheme.bodyMedium?.copyWith(color: textColor),
       // 间距优化
       blockSpacing: 16,
+      // 透明化默认代码块装饰，去除可能的白色占位背景
+      codeblockDecoration: const BoxDecoration(color: Colors.transparent),
       // flutter_markdown 0.7.x 不支持这些属性，保留兼容的 blockSpacing 即可
       horizontalRuleDecoration: BoxDecoration(
         border: Border(
@@ -704,23 +706,34 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.08),
-            width: 0.6,
-          ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.08),
+          width: 0.6,
         ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
-            if (_isExpanded) _buildCodeContent(context),
+            Divider(
+              height: 0.5,
+              thickness: 0.5,
+              color: theme.colorScheme.outline.withValues(alpha: 0.10),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: _isExpanded
+                  ? _buildCodeContent(context)
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
@@ -730,141 +743,106 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   /// 构建代码块头部
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
-
     final lang =
         _languageInfoMap[widget.language.toLowerCase()] ??
         _languageInfoMap['text']!;
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(8, 5, 6, 5),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.surface.withValues(alpha: 0.70),
-                theme.colorScheme.surface.withValues(alpha: 0.55),
-              ],
-            ),
-            border: Border(
-              bottom: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.10),
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 5, 6, 5),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: lang.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: lang.color.withValues(alpha: 0.35),
                 width: 0.6,
               ),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getLanguageIcon(widget.language),
+                  size: 12,
+                  color: lang.color,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _getLanguageDisplayName(widget.language),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: lang.color,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                  color: lang.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: lang.color.withValues(alpha: 0.35),
-                    width: 0.6,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _getLanguageIcon(widget.language),
-                      size: 12,
-                      color: lang.color,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _getLanguageDisplayName(widget.language),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: lang.color,
-                      ),
-                    ),
-                  ],
-                ),
+          const Spacer(),
+          if (widget.settings.enableLineNumbers)
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              iconSize: 14,
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                _showLineNumbers
+                    ? Icons.format_list_numbered
+                    : Icons.format_align_left,
               ),
-              const Spacer(),
-              // 行号切换按钮
-              if (widget.settings.enableLineNumbers)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 28,
-                    height: 28,
-                  ),
-                  iconSize: 14,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    _showLineNumbers
-                        ? Icons.format_list_numbered
-                        : Icons.format_align_left,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _showLineNumbers = !_showLineNumbers;
-                    });
-                  },
-                  tooltip: _showLineNumbers ? '隐藏行号' : '显示行号',
-                ),
-              // 折叠/展开按钮
-              if (widget.settings.enableCodeFolding)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 28,
-                    height: 28,
-                  ),
-                  iconSize: 14,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                    });
-                  },
-                  tooltip: _isExpanded ? '折叠代码' : '展开代码',
-                ),
-              // 复制按钮
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 28,
-                  height: 28,
-                ),
-                iconSize: 14,
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  _isCopied ? Icons.check : Icons.copy,
-                  color: _isCopied ? Colors.green : null,
-                ),
-                onPressed: () => _copyCode(context),
-                tooltip: _isCopied ? '已复制' : '复制代码',
+              onPressed: () {
+                setState(() {
+                  _showLineNumbers = !_showLineNumbers;
+                });
+              },
+              tooltip: _showLineNumbers ? '隐藏行号' : '显示行号',
+            ),
+          if (widget.settings.enableCodeFolding)
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              iconSize: 14,
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                _isExpanded
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
               ),
-              if (widget.settings.enableCodeEditing)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 28,
-                    height: 28,
-                  ),
-                  iconSize: 14,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(_isEditing ? Icons.edit_off : Icons.edit),
-                  onPressed: () {
-                    setState(() {
-                      _isEditing = !_isEditing;
-                    });
-                  },
-                  tooltip: _isEditing ? '关闭编辑' : '编辑代码',
-                ),
-            ],
+              onPressed: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              tooltip: _isExpanded ? '折叠代码' : '展开代码',
+            ),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+            iconSize: 14,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              _isCopied ? Icons.check : Icons.copy,
+              color: _isCopied ? Colors.green : null,
+            ),
+            onPressed: () => _copyCode(context),
+            tooltip: _isCopied ? '已复制' : '复制代码',
           ),
-        ),
+          if (widget.settings.enableCodeEditing)
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              iconSize: 14,
+              visualDensity: VisualDensity.compact,
+              icon: Icon(_isEditing ? Icons.edit_off : Icons.edit),
+              onPressed: () {
+                setState(() {
+                  _isEditing = !_isEditing;
+                });
+              },
+              tooltip: _isEditing ? '关闭编辑' : '编辑代码',
+            ),
+        ],
       ),
     );
   }
@@ -877,21 +855,10 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.outline.withValues(alpha: 0.08),
-            width: 0.6,
-          ),
-        ),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 行号
           if (_showLineNumbers) _buildLineNumbers(lines, theme),
-          // 代码内容
           Expanded(
             child: widget.settings.enableCodeEditing && _isEditing
                 ? _buildEditableCode(theme)
