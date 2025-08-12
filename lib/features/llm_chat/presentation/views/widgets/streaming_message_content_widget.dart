@@ -255,51 +255,48 @@ class _OptimizedStreamingMessageWidgetState
   }
 
   Widget _buildStreaming() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ..._streamChunks.map((c) {
-            switch (c.kind) {
-              case _Kind.text:
-                return SelectableText(c.text, style: _textStyle());
-              case _Kind.code:
-                return _ChunkBuilder._code(context, c.text);
-              case _Kind.mermaid:
-                return _ChunkBuilder._mermaid(context, c.text);
-              case _Kind.math:
-                return _ChunkBuilder._math(context, c.text);
-            }
-          }),
-          if (widget.isStreaming)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary,
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._streamChunks.map((c) {
+          switch (c.kind) {
+            case _Kind.text:
+              return SelectableText(c.text, style: _textStyle());
+            case _Kind.code:
+              return _ChunkBuilder._code(context, c.text);
+            case _Kind.mermaid:
+              return _ChunkBuilder._mermaid(context, c.text);
+            case _Kind.math:
+              return _ChunkBuilder._math(context, c.text);
+          }
+        }),
+        if (widget.isStreaming)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '生成中...',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '生成中...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

@@ -335,6 +335,16 @@ class ChatService {
         session.config,
         enhancedUserMessage: enhancedPrompt != content ? enhancedPrompt : null,
       );
+      // 当上下文窗口设置为0时，仍需确保当前用户输入被传递给模型
+      if (contextMessages.isEmpty) {
+        contextMessages.add(
+          ChatMessageFactory.createUserMessage(
+            content: enhancedPrompt,
+            chatSessionId: sessionId,
+            parentMessageId: parentMessageId,
+          ),
+        );
+      }
 
       // 7. 生成AI响应
       final params = _ref.read(modelParametersProvider);
@@ -611,6 +621,15 @@ class ChatService {
                 parentMessageId: parentMessageId,
               ),
             ];
+      if (contextMessages.isEmpty) {
+        contextMessages.add(
+          ChatMessageFactory.createUserMessage(
+            content: enhancedPrompt,
+            chatSessionId: sessionId,
+            parentMessageId: parentMessageId,
+          ),
+        );
+      }
 
       debugPrint('💬 上下文消息数量: ${contextMessages.length}');
 

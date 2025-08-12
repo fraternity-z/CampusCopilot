@@ -340,7 +340,7 @@ class OpenAiLlmProvider extends LlmProvider {
     final openAIMessages = <OpenAIChatCompletionChoiceMessageModel>[];
     bool hasContentMessage = false; // 是否存在至少一条非空内容消息
 
-    // 添加系统提示词
+    // 添加系统提示词（放在最前）
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
       openAIMessages.add(
         OpenAIChatCompletionChoiceMessageModel(
@@ -417,6 +417,31 @@ class OpenAiLlmProvider extends LlmProvider {
               (systemPrompt != null && systemPrompt.isNotEmpty)
                   ? systemPrompt
                   : '请根据系统指令继续回答。',
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 强化保障：确保最后一条是当前用户输入（部分网关更依赖最后一条 user 内容）
+    final ChatMessage lastUserInput = messages.lastWhere(
+      (m) => m.isFromUser,
+      orElse: () => ChatMessage(
+        id: 'fallback',
+        content: '',
+        isFromUser: true,
+        timestamp: DateTime.now(),
+        chatSessionId: 'fallback',
+      ),
+    );
+    final latestUserText = (lastUserInput.content).trim();
+    if (latestUserText.isNotEmpty) {
+      openAIMessages.add(
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              latestUserText,
             ),
           ],
         ),
