@@ -15,6 +15,7 @@ import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'widgets/message_content_widget.dart';
+import 'widgets/streaming_message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
@@ -645,7 +646,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      MessageContentWidget(message: message),
+                      (message.isFromUser ||
+                              message.status != MessageStatus.sending)
+                          ? MessageContentWidget(message: message)
+                          : OptimizedStreamingMessageWidget(
+                              message: message,
+                              isStreaming: true,
+                            ),
                       const SizedBox(height: 8),
                       Text(
                         _formatTimestamp(message.timestamp),

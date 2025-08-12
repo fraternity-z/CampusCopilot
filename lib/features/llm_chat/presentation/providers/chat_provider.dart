@@ -615,19 +615,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         attachedImages: [],
       );
 
-      // 创建AI消息占位符
       final aiMessageId = _uuid.v4();
-      final aiPlaceholder = ChatMessage(
-        id: aiMessageId,
-        chatSessionId: currentSession.id,
-        content: '...',
-        isFromUser: false,
-        timestamp: DateTime.now(),
-        status: MessageStatus.sending,
-      );
-
-      // 添加AI占位符到UI
-      state = state.copyWith(messages: [...state.messages, aiPlaceholder]);
 
       // 开始流式响应
       final stream = _chatService.sendMessageStream(
