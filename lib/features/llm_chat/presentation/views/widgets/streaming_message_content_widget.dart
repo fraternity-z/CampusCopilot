@@ -34,6 +34,11 @@ class _OptimizedStreamingMessageWidgetState
   bool _isInThinkingMode = false;
   String _partialTag = '';
 
+  // 新增：严格顺序控制状态
+  bool _thinkingCompleted = false;
+  bool _contentStarted = false;
+  bool _hasThinkingContent = false;
+
   @override
   void initState() {
     super.initState();
@@ -80,8 +85,8 @@ class _OptimizedStreamingMessageWidgetState
     // 实时检测和处理思考链标签
     _processThinkingTags(processedContent);
 
-    // 更新渲染块（只处理正文内容）
-    if (_streamingContent.isNotEmpty) {
+    // 更新渲染块（只处理正文内容）- 严格控制更新时机
+    if (_streamingContent.isNotEmpty && _shouldUpdateContentChunks()) {
       final renderer = _IncrementalRenderer();
       renderer.reset();
       final chunks = renderer.process(_streamingContent);
@@ -104,25 +109,43 @@ class _OptimizedStreamingMessageWidgetState
           // 找到结束标签，添加剩余的思考内容
           _streamingThinking += text.substring(i, endIndex);
           _isInThinkingMode = false;
+          _thinkingCompleted = true; // 标记思考链完成
+          _hasThinkingContent = _streamingThinking.isNotEmpty;
           i = endIndex + 8; // 跳过 </think> 标签
         } else {
           // 没有找到结束标签，将剩余内容都作为思考内容
           _streamingThinking += text.substring(i);
+          _hasThinkingContent = _streamingThinking.isNotEmpty;
           break;
         }
       } else {
         // 不在思考模式中，寻找开始标签
         final startIndex = text.indexOf('<think>', i);
         if (startIndex != -1) {
-          // 找到开始标签，添加之前的正文内容
+          // 找到开始标签，处理之前的正文内容
           if (startIndex > i) {
-            _streamingContent += text.substring(i, startIndex);
+            final contentBeforeThink = text.substring(i, startIndex);
+            // 只有在没有思考链或思考链已完成时才处理正文
+            if (!_hasThinkingContent || _thinkingCompleted) {
+              _streamingContent += contentBeforeThink;
+              if (!_contentStarted && contentBeforeThink.trim().isNotEmpty) {
+                _contentStarted = true;
+              }
+            }
           }
           _isInThinkingMode = true;
+          _hasThinkingContent = true;
           i = startIndex + 7; // 跳过 <think> 标签
         } else {
           // 没有找到开始标签，剩余内容都是正文
-          _streamingContent += text.substring(i);
+          final remainingContent = text.substring(i);
+          // 只有在没有思考链或思考链已完成时才处理正文
+          if (!_hasThinkingContent || _thinkingCompleted) {
+            _streamingContent += remainingContent;
+            if (!_contentStarted && remainingContent.trim().isNotEmpty) {
+              _contentStarted = true;
+            }
+          }
           break;
         }
       }
@@ -162,9 +185,8 @@ class _OptimizedStreamingMessageWidgetState
   void _finalize() {
     setState(() {
       _finalized = true;
-      _streamChunks.clear();
-      _streamingThinking = '';
-      _streamingContent = '';
+      // 移除清空操作，避免重渲染动画
+      // 保持流式状态的连续性，让 MessageContentWidget 接管渲染
     });
   }
 
@@ -198,7 +220,7 @@ class _OptimizedStreamingMessageWidgetState
             child: ThinkingChainWidget(
               content: _streamingThinking,
               modelName: widget.message.modelName ?? '',
-              isCompleted: false,
+              isCompleted: _thinkingCompleted,
             ),
           ),
 
@@ -207,10 +229,34 @@ class _OptimizedStreamingMessageWidgetState
             widget.message.imageUrls.isNotEmpty)
           _buildAttachments(),
 
-        // 正文内容显示
-        if (_streamChunks.isNotEmpty || widget.isStreaming) _buildStreaming(),
+        // 正文内容显示 - 严格控制显示时机
+        if (_shouldShowContent()) _buildStreaming(),
       ],
     );
+  }
+
+  /// 判断是否应该显示正文内容
+  bool _shouldShowContent() {
+    // 如果没有思考链内容，直接显示正文
+    if (!_hasThinkingContent) {
+      return _streamChunks.isNotEmpty || widget.isStreaming;
+    }
+
+    // 如果有思考链内容，必须等思考链完成且正文开始后才显示
+    return _thinkingCompleted &&
+        _contentStarted &&
+        (_streamChunks.isNotEmpty || widget.isStreaming);
+  }
+
+  /// 判断是否应该更新正文内容的渲染块
+  bool _shouldUpdateContentChunks() {
+    // 如果没有思考链内容，直接更新
+    if (!_hasThinkingContent) {
+      return true;
+    }
+
+    // 如果有思考链内容，必须等思考链完成后才更新正文渲染块
+    return _thinkingCompleted;
   }
 
   Widget _buildAttachments() {
