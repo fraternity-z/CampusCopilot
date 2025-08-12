@@ -338,6 +338,7 @@ class OpenAiLlmProvider extends LlmProvider {
     String? systemPrompt,
   ) {
     final openAIMessages = <OpenAIChatCompletionChoiceMessageModel>[];
+    bool hasContentMessage = false; // 是否存在至少一条非空内容消息
 
     // 添加系统提示词
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
@@ -353,7 +354,7 @@ class OpenAiLlmProvider extends LlmProvider {
       );
     }
 
-    // 转换聊天消息
+    // 转换聊天消息（跳过空内容项）
     for (final message in messages) {
       final contentItems =
           <OpenAIChatCompletionChoiceMessageContentItemModel>[];
@@ -392,12 +393,32 @@ class OpenAiLlmProvider extends LlmProvider {
         }
       }
 
+      // 仅在存在内容项时才追加，避免空 content 触发下游错误
+      if (contentItems.isNotEmpty) {
+        hasContentMessage = true;
+        openAIMessages.add(
+          OpenAIChatCompletionChoiceMessageModel(
+            role: message.isFromUser
+                ? OpenAIChatMessageRole.user
+                : OpenAIChatMessageRole.assistant,
+            content: contentItems,
+          ),
+        );
+      }
+    }
+
+    // 若最终没有任何有效内容消息，补一条最小用户消息作为兜底
+    if (!hasContentMessage) {
       openAIMessages.add(
         OpenAIChatCompletionChoiceMessageModel(
-          role: message.isFromUser
-              ? OpenAIChatMessageRole.user
-              : OpenAIChatMessageRole.assistant,
-          content: contentItems,
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              (systemPrompt != null && systemPrompt.isNotEmpty)
+                  ? systemPrompt
+                  : '请根据系统指令继续回答。',
+            ),
+          ],
         ),
       );
     }

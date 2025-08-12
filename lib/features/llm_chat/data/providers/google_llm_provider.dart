@@ -9,8 +9,6 @@ import '../../../../core/exceptions/app_exceptions.dart';
 
 class GoogleLlmProvider extends LlmProvider {
   // 使用惰性初始化，避免在未使用时提前创建模型实例
-  google_ai.GenerativeModel? _model;
-  google_ai.GenerativeModel? _visionModel;
   google_ai.GenerativeModel? _embeddingModel;
 
   GoogleLlmProvider(super.config) {
@@ -187,17 +185,6 @@ class GoogleLlmProvider extends LlmProvider {
   }
 
   // ========= 惰性获取各类型模型 =========
-  google_ai.GenerativeModel _getChatModel() =>
-      _model ??= google_ai.GenerativeModel(
-        model: config.defaultModel ?? 'gemini-pro',
-        apiKey: config.apiKey,
-      );
-
-  google_ai.GenerativeModel _getVisionModel() =>
-      _visionModel ??= google_ai.GenerativeModel(
-        model: 'gemini-pro-vision',
-        apiKey: config.apiKey,
-      );
 
   google_ai.GenerativeModel _getEmbeddingModel() =>
       _embeddingModel ??= google_ai.GenerativeModel(
