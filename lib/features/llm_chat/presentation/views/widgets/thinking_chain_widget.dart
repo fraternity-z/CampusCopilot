@@ -38,14 +38,13 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulsateAnimation;
 
-  // 使用 ValueNotifier 替代 setState 减少重建范围
   late ValueNotifier<String> _displayedContentNotifier;
   bool _isExpanded = false;
   Timer? _typingTimer;
 
-  // 批量更新相关
-  static const int _charsPerUpdate = 3; // 每次更新显示的字符数
-  static const int _updateInterval = 20; // 更新间隔(ms)
+  // 优化的批量更新参数 (用户需求)
+
+  static const int _updateInterval = 16; // 约60fps的更新频率
 
   @override
   void initState() {
@@ -91,19 +90,32 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
   void didUpdateWidget(ThinkingChainWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // 优化更新逻辑，减少不必要的重置
     if (widget.content != oldWidget.content && !widget.isCompleted) {
-      _displayedContentNotifier.value = '';
-      _startOptimizedTypingAnimation();
+      final currentDisplayed = _displayedContentNotifier.value;
+      if (widget.content.startsWith(currentDisplayed)) {
+        // 追加内容，继续动画
+        _continueTypingAnimation(currentDisplayed.length);
+      } else {
+        // 完全不同，重新开始
+        _displayedContentNotifier.value = '';
+        _startOptimizedTypingAnimation();
+      }
     }
 
     if (widget.isCompleted && !oldWidget.isCompleted) {
       _pulsateController.stop();
       _typingTimer?.cancel();
-      _displayedContentNotifier.value = widget.content;
+      // 微任务中完成更新，避免与当前帧布局冲突
+      scheduleMicrotask(() {
+        if (mounted) {
+          _displayedContentNotifier.value = widget.content;
+        }
+      });
     }
   }
 
-  /// 优化的打字动画 - 批量更新字符
+  /// 优化的打字动画 - 使用帧调度和动态批量更新
   void _startOptimizedTypingAnimation() {
     final settings = ref.read(settingsProvider).thinkingChainSettings;
     if (!settings.enableAnimation) {
@@ -117,14 +129,66 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     final int contentLength = widget.content.length;
     final buffer = StringBuffer();
 
+    // 动态批量大小：内容越长，每批越大（范围 3-10）
+    final dynamicCharsPerUpdate = (contentLength / 100).ceil().clamp(3, 10);
+
+    void scheduleNextUpdate() {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (currentIndex < contentLength && mounted) {
+          final endIndex = (currentIndex + dynamicCharsPerUpdate).clamp(
+            0,
+            contentLength,
+          );
+          buffer.write(widget.content.substring(currentIndex, endIndex));
+          currentIndex = endIndex;
+
+          // 使用微任务减少主线程阻塞 & 避免同步 setState
+          scheduleMicrotask(() {
+            if (mounted) {
+              _displayedContentNotifier.value = buffer.toString();
+            }
+          });
+
+          if (currentIndex < contentLength) {
+            Future.delayed(
+              const Duration(milliseconds: _updateInterval),
+              scheduleNextUpdate,
+            );
+          }
+        }
+      });
+    }
+
+    scheduleNextUpdate();
+  }
+
+  /// 继续打字动画（用于追加内容）
+  void _continueTypingAnimation(int startIndex) {
+    final settings = ref.read(settingsProvider).thinkingChainSettings;
+    if (!settings.enableAnimation) {
+      _displayedContentNotifier.value = widget.content;
+      return;
+    }
+
+    _typingTimer?.cancel();
+
+    int currentIndex = startIndex;
+    final int contentLength = widget.content.length;
+    final buffer = StringBuffer(_displayedContentNotifier.value);
+
+    final dynamicCharsPerUpdate = ((contentLength - startIndex) / 50)
+        .ceil()
+        .clamp(3, 10);
+
     _typingTimer = Timer.periodic(
       const Duration(milliseconds: _updateInterval),
       (timer) {
         if (currentIndex < contentLength && mounted) {
-          int endIndex = currentIndex + _charsPerUpdate;
-          if (endIndex > contentLength) {
-            endIndex = contentLength;
-          }
+          final endIndex = (currentIndex + dynamicCharsPerUpdate).clamp(
+            0,
+            contentLength,
+          );
           buffer.write(widget.content.substring(currentIndex, endIndex));
           currentIndex = endIndex;
           _displayedContentNotifier.value = buffer.toString();
