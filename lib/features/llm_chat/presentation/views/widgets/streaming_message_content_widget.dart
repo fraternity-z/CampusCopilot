@@ -24,86 +24,147 @@ class OptimizedStreamingMessageWidget extends ConsumerStatefulWidget {
 
 class _OptimizedStreamingMessageWidgetState
     extends ConsumerState<OptimizedStreamingMessageWidget> {
-  final _renderer = _IncrementalRenderer();
   final List<_Chunk> _streamChunks = <_Chunk>[];
   bool _finalized = false;
-  String _last = '';
+  String _lastContent = '';
 
-  String? _thinking;
-  String? _content;
+  // 分离的思考链和正文内容（用于流式处理）
+  String _streamingThinking = '';
+  String _streamingContent = '';
+  bool _isInThinkingMode = false;
+  String _partialTag = '';
 
   @override
   void initState() {
     super.initState();
-    _splitThinking();
-    // 避免在 initState 中依赖 InheritedWidget（Theme.of 等），延后到首帧后执行
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.isStreaming) {
-        _appendNew();
+        _processStreamingContent();
       } else {
         _finalize();
       }
-      _last = widget.message.content;
+      _lastContent = widget.message.content;
     });
   }
 
   @override
   void didUpdateWidget(covariant OptimizedStreamingMessageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.message.content != _last) {
-      _splitThinking();
+    if (widget.message.content != _lastContent) {
       if (widget.isStreaming) {
-        _appendNew();
+        _processStreamingContent();
       } else if (!_finalized) {
         _finalize();
       }
-      _last = widget.message.content;
+      _lastContent = widget.message.content;
     }
     if (!widget.isStreaming && oldWidget.isStreaming && !_finalized) {
       _finalize();
     }
   }
 
-  void _splitThinking() {
-    final raw = widget.message.content;
-    if (raw.contains('<think>') && raw.contains('</think>')) {
-      final s = raw.indexOf('<think>');
-      final e = raw.indexOf('</think>');
-      if (s != -1 && e != -1 && e > s) {
-        _thinking = raw.substring(s + 7, e).trim();
-        final before = raw.substring(0, s).trim();
-        final after = raw.substring(e + 8).trim();
-        _content = ('$before $after').trim();
-        return;
-      }
+  /// 处理流式内容，实时分离思考链和正文
+  void _processStreamingContent() {
+    if (_finalized) return;
+
+    final fullContent = widget.message.content;
+    final newContent = fullContent.substring(_lastContent.length);
+
+    if (newContent.isEmpty) return;
+
+    // 处理新增的内容片段
+    String processedContent = _partialTag + newContent;
+    _partialTag = '';
+
+    // 实时检测和处理思考链标签
+    _processThinkingTags(processedContent);
+
+    // 更新渲染块（只处理正文内容）
+    if (_streamingContent.isNotEmpty) {
+      final renderer = _IncrementalRenderer();
+      renderer.reset();
+      final chunks = renderer.process(_streamingContent);
+
+      setState(() {
+        _streamChunks.clear();
+        _streamChunks.addAll(chunks);
+      });
     }
-    _content = raw;
   }
 
-  void _appendNew() {
-    if (_finalized) return;
-    final full = _content ?? widget.message.content;
-    final chunks = _renderer.process(full);
-    if (chunks.isEmpty) return;
-    setState(() {
-      for (final c in chunks) {
-        if (_streamChunks.isNotEmpty &&
-            _streamChunks.last.kind == _Kind.text &&
-            c.kind == _Kind.text) {
-          _streamChunks.last.text += c.text;
+  /// 处理思考链标签，实时分离思考链和正文
+  void _processThinkingTags(String text) {
+    int i = 0;
+    while (i < text.length) {
+      if (_isInThinkingMode) {
+        // 在思考模式中，寻找结束标签
+        final endIndex = text.indexOf('</think>', i);
+        if (endIndex != -1) {
+          // 找到结束标签，添加剩余的思考内容
+          _streamingThinking += text.substring(i, endIndex);
+          _isInThinkingMode = false;
+          i = endIndex + 8; // 跳过 </think> 标签
         } else {
-          _streamChunks.add(_Chunk(c.kind, c.text));
+          // 没有找到结束标签，将剩余内容都作为思考内容
+          _streamingThinking += text.substring(i);
+          break;
+        }
+      } else {
+        // 不在思考模式中，寻找开始标签
+        final startIndex = text.indexOf('<think>', i);
+        if (startIndex != -1) {
+          // 找到开始标签，添加之前的正文内容
+          if (startIndex > i) {
+            _streamingContent += text.substring(i, startIndex);
+          }
+          _isInThinkingMode = true;
+          i = startIndex + 7; // 跳过 <think> 标签
+        } else {
+          // 没有找到开始标签，剩余内容都是正文
+          _streamingContent += text.substring(i);
+          break;
         }
       }
-    });
+    }
+
+    // 处理可能的部分标签（跨块）
+    if (_isInThinkingMode && text.endsWith('<')) {
+      _partialTag = '<';
+      _streamingContent = _streamingContent.substring(
+        0,
+        _streamingContent.length - 1,
+      );
+    } else if (text.endsWith('</') ||
+        text.endsWith('</t') ||
+        text.endsWith('</th') ||
+        text.endsWith('</thi') ||
+        text.endsWith('</thin') ||
+        text.endsWith('</think')) {
+      final lastTagStart = text.lastIndexOf('<');
+      if (lastTagStart != -1) {
+        _partialTag = text.substring(lastTagStart);
+        if (_isInThinkingMode) {
+          _streamingThinking = _streamingThinking.substring(
+            0,
+            _streamingThinking.length - _partialTag.length,
+          );
+        } else {
+          _streamingContent = _streamingContent.substring(
+            0,
+            _streamingContent.length - _partialTag.length,
+          );
+        }
+      }
+    }
   }
 
   void _finalize() {
     setState(() {
       _finalized = true;
-      _renderer.reset();
       _streamChunks.clear();
+      _streamingThinking = '';
+      _streamingContent = '';
     });
   }
 
@@ -130,18 +191,23 @@ class _OptimizedStreamingMessageWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_thinking != null && !widget.message.isFromUser)
+        // 实时显示思考链（流式）
+        if (_streamingThinking.isNotEmpty && !widget.message.isFromUser)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ThinkingChainWidget(
-              content: _thinking!,
+              content: _streamingThinking,
               modelName: widget.message.modelName ?? '',
               isCompleted: false,
             ),
           ),
+
+        // 附件显示
         if (widget.message.attachments.isNotEmpty ||
             widget.message.imageUrls.isNotEmpty)
           _buildAttachments(),
+
+        // 正文内容显示
         if (_streamChunks.isNotEmpty || widget.isStreaming) _buildStreaming(),
       ],
     );
@@ -466,7 +532,7 @@ class _ChunkBuilder {
           const SizedBox(width: 6),
           Expanded(
             child: SelectableText(
-              '44$content44',
+              '\$\$$content\$\$',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
