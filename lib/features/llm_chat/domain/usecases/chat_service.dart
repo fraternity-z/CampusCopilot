@@ -353,7 +353,6 @@ class ChatService {
         systemPrompt: persona.systemPrompt,
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
-        topP: params.topP,
         reasoningEffort: _mapReasoningEffort(
           params.reasoningEffort,
           llmConfig.defaultModel,
@@ -754,7 +753,7 @@ class ChatService {
         systemPrompt: persona.systemPrompt, // 使用智能体的提示词
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
-        topP: params.topP,
+        // 注意：部分模型不支持 top_p，统一不传，以避免 400/500
         stream: true,
         // 思考链相关参数
         reasoningEffort: _mapReasoningEffort(
@@ -770,7 +769,7 @@ class ChatService {
       );
       debugPrint('⚙️ 开始调用AI API');
       debugPrint(
-        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}, TopP=${chatOptions.topP}',
+        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
       );
       debugPrint('📝 上下文消息数量: ${contextMessages.length}');
 

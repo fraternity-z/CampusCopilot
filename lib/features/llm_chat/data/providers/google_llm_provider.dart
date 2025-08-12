@@ -209,40 +209,76 @@ class GoogleLlmProvider extends LlmProvider {
     List<ChatMessage> messages,
     ChatOptions? options,
   ) {
-    var hasImages = messages.any((m) => m.imageUrls.isNotEmpty);
-    final model = hasImages ? _getVisionModel() : _getChatModel();
-    final modelName = hasImages
+    final bool hasImages = messages.any((m) => m.imageUrls.isNotEmpty);
+    final String modelName = hasImages
         ? 'gemini-pro-vision'
         : (options?.model ?? config.defaultModel ?? 'gemini-pro');
 
-    final content = messages.map((m) {
-      if (m.imageUrls.isNotEmpty) {
-        final List<google_ai.Part> parts = m.imageUrls
-            .map(
-              (url) => google_ai.DataPart(
-                'image/jpeg',
-                Uri.parse(url).data!.contentAsBytes(),
-              ),
-            )
-            .toList();
-        parts.add(google_ai.TextPart(m.content));
-        return google_ai.Content.multi(parts);
-      } else {
-        return google_ai.Content.text(m.content);
-      }
-    }).toList();
+    // 为包含 system 指令的场景构建带 systemInstruction 的模型实例
+    google_ai.GenerativeModel model = google_ai.GenerativeModel(
+      model: modelName,
+      apiKey: config.apiKey,
+      systemInstruction:
+          (options?.systemPrompt != null &&
+              options!.systemPrompt!.trim().isNotEmpty)
+          ? google_ai.Content.text(options.systemPrompt!.trim())
+          : null,
+    );
 
-    // 开启 Google Search Grounding（若 SDK/服务端支持）
+    final List<google_ai.Content> content = [];
+    for (final m in messages) {
+      final text = m.content.trim();
+      final images = m.imageUrls;
+      if (images.isNotEmpty) {
+        // 兼容 file:// / http(s):// / data:，无法获取字节时降级为文本占位
+        final parts = <google_ai.Part>[];
+        for (final url in images) {
+          try {
+            final uri = Uri.parse(url);
+            if (uri.scheme == 'data' && uri.data != null) {
+              parts.add(
+                google_ai.DataPart('image/*', uri.data!.contentAsBytes()),
+              );
+            } else {
+              // 无法直接读取字节，降级为文本提示，避免空 contents 触发 400
+              parts.add(
+                google_ai.TextPart(
+                  '[image:${uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'inline'}]',
+                ),
+              );
+            }
+          } catch (_) {
+            parts.add(google_ai.TextPart('[image]'));
+          }
+        }
+        if (text.isNotEmpty) {
+          parts.add(google_ai.TextPart(text));
+        }
+        if (parts.isNotEmpty) {
+          content.add(google_ai.Content.multi(parts));
+        }
+      } else if (text.isNotEmpty) {
+        content.add(google_ai.Content.text(text));
+      }
+    }
+
+    // 防御：若内容为空，填充最少一条文本，避免 "contents is not specified"
+    if (content.isEmpty) {
+      content.add(google_ai.Content.text('请根据以上上下文继续回答。'));
+    }
+
+    // Grounding 标记（若需要）
     final enableNative =
         options?.customParams?['enableModelNativeSearch'] == true;
     if (enableNative) {
-      // 目前 Dart SDK 未暴露直接开关，这里通过 model 实例的 safetySettings/工具占位
-      // 若后续 SDK 提供 grounding 参数，请在此映射
-      // 先添加一个标记，供上游/代理识别（如通过 baseUrl 代理到支持 Grounding 的服务）
-      _model = google_ai.GenerativeModel(
+      model = google_ai.GenerativeModel(
         model: modelName,
         apiKey: config.apiKey,
-        // 注：可在 extra params 里放置自定义 Header 由后端代理启用 Grounding
+        systemInstruction:
+            (options?.systemPrompt != null &&
+                options!.systemPrompt!.trim().isNotEmpty)
+            ? google_ai.Content.text(options.systemPrompt!.trim())
+            : null,
       );
     }
 

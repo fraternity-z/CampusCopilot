@@ -242,7 +242,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final aiPlaceholder = ChatMessage(
         id: aiMessageId,
         chatSessionId: currentSession.id,
-        content: '...',
+        content: '',
         isFromUser: false,
         timestamp: DateTime.now(),
         status: MessageStatus.sending,
@@ -616,6 +616,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       final aiMessageId = _uuid.v4();
+      // 为正常显示新增占位符（空内容）
+      final aiPlaceholderSend = ChatMessage(
+        id: aiMessageId,
+        chatSessionId: currentSession.id,
+        content: '',
+        isFromUser: false,
+        timestamp: DateTime.now(),
+        status: MessageStatus.sending,
+      );
+      state = state.copyWith(messages: [...state.messages, aiPlaceholderSend]);
 
       // 开始流式响应
       final stream = _chatService.sendMessageStream(
@@ -685,9 +695,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
         status: MessageStatus.failed,
       );
 
-      // 移除占位符，添加错误消息
+      // 移除占位符（按ID），添加错误消息
       final messagesWithoutPlaceholder = state.messages
-          .where((m) => !(m.content == '...' && !m.isFromUser))
+          .where(
+            (m) =>
+                !(m.isFromUser == false && m.status == MessageStatus.sending),
+          )
           .toList();
 
       state = state.copyWith(

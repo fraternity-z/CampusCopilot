@@ -33,7 +33,7 @@ final sidebarTabProvider = StateProvider<SidebarTab>(
 class ModelParameters {
   final double temperature;
   final double maxTokens;
-  final double topP;
+  // 移除 Top-P，避免与部分模型不兼容
   final double contextLength;
   final bool enableMaxTokens;
   // 新增：思考强度与最大思考token设置
@@ -44,7 +44,7 @@ class ModelParameters {
   const ModelParameters({
     this.temperature = 0.7,
     this.maxTokens = 2048,
-    this.topP = 0.9,
+    // 移除 Top-P 默认值
     this.contextLength = 6, // 初始默认值
     this.enableMaxTokens = true,
     this.reasoningEffort = 'auto',
@@ -54,7 +54,7 @@ class ModelParameters {
   ModelParameters copyWith({
     double? temperature,
     double? maxTokens,
-    double? topP,
+    // 移除 Top-P 参数
     double? contextLength,
     bool? enableMaxTokens,
     String? reasoningEffort,
@@ -63,7 +63,7 @@ class ModelParameters {
     return ModelParameters(
       temperature: temperature ?? this.temperature,
       maxTokens: maxTokens ?? this.maxTokens,
-      topP: topP ?? this.topP,
+      // 移除 Top-P 写入
       contextLength: contextLength ?? this.contextLength,
       enableMaxTokens: enableMaxTokens ?? this.enableMaxTokens,
       reasoningEffort: reasoningEffort ?? this.reasoningEffort,
@@ -76,7 +76,7 @@ class ModelParameters {
     return {
       'temperature': temperature,
       'maxTokens': maxTokens,
-      'topP': topP,
+      // 移除 Top-P 持久化
       'contextLength': contextLength,
       'enableMaxTokens': enableMaxTokens,
       'reasoningEffort': reasoningEffort,
@@ -89,7 +89,7 @@ class ModelParameters {
     return ModelParameters(
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxTokens: (json['maxTokens'] as num?)?.toDouble() ?? 2048,
-      topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
+      // 移除 Top-P 读取
       contextLength: (json['contextLength'] as num?)?.toDouble() ?? 6,
       enableMaxTokens: json['enableMaxTokens'] as bool? ?? true,
       reasoningEffort: (json['reasoningEffort'] as String?) ?? 'auto',
@@ -146,10 +146,7 @@ class ModelParametersNotifier extends StateNotifier<ModelParameters> {
   }
 
   /// 更新Top-P
-  Future<void> updateTopP(double topP) async {
-    state = state.copyWith(topP: topP);
-    await _saveParameters();
-  }
+  // 移除 Top-P 更新方法
 
   /// 更新上下文长度
   Future<void> updateContextLength(double contextLength) async {

@@ -105,6 +105,21 @@ class OpenAiLlmProvider extends LlmProvider {
         messages,
         options?.systemPrompt,
       );
+      // 防御：如果消息体为空，补一条最小用户消息，避免下游兼容端点报 contents/messages 为空
+      if (openAIMessages.isEmpty) {
+        openAIMessages.add(
+          OpenAIChatCompletionChoiceMessageModel(
+            role: OpenAIChatMessageRole.user,
+            content: [
+              OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                options?.systemPrompt?.isNotEmpty == true
+                    ? options!.systemPrompt!
+                    : '请根据系统指令继续回答。',
+              ),
+            ],
+          ),
+        );
+      }
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
 
       final chatCompletion = await OpenAI.instance.chat.create(
@@ -112,7 +127,7 @@ class OpenAiLlmProvider extends LlmProvider {
         messages: openAIMessages,
         temperature: options?.temperature ?? 0.7,
         maxTokens: options?.maxTokens ?? 2048,
-        topP: options?.topP ?? 1.0,
+        // 不传 topP，避免与部分兼容模型不兼容
         frequencyPenalty: options?.frequencyPenalty ?? 0.0,
         presencePenalty: options?.presencePenalty ?? 0.0,
         stop: options?.stopSequences,
@@ -161,6 +176,20 @@ class OpenAiLlmProvider extends LlmProvider {
         messages,
         options?.systemPrompt,
       );
+      if (openAIMessages.isEmpty) {
+        openAIMessages.add(
+          OpenAIChatCompletionChoiceMessageModel(
+            role: OpenAIChatMessageRole.user,
+            content: [
+              OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                options?.systemPrompt?.isNotEmpty == true
+                    ? options!.systemPrompt!
+                    : '请根据系统指令继续回答。',
+              ),
+            ],
+          ),
+        );
+      }
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
 
       final stream = OpenAI.instance.chat.createStream(
@@ -168,7 +197,7 @@ class OpenAiLlmProvider extends LlmProvider {
         messages: openAIMessages,
         temperature: options?.temperature ?? 0.7,
         maxTokens: options?.maxTokens ?? 2048,
-        topP: options?.topP ?? 1.0,
+        // 不传 topP，避免与部分兼容模型不兼容
         frequencyPenalty: options?.frequencyPenalty ?? 0.0,
         presencePenalty: options?.presencePenalty ?? 0.0,
         stop: options?.stopSequences,

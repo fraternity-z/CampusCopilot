@@ -207,18 +207,7 @@ class SettingsTab extends ConsumerWidget {
           },
         ),
         const SizedBox(height: UIConstants.spacingL),
-        _buildParameterSlider(
-          context,
-          label: 'Top-P',
-          value: parameters.topP,
-          min: 0.0,
-          max: 1.0,
-          divisions: 10,
-          onChanged: (value) {
-            ref.read(modelParametersProvider.notifier).updateTopP(value);
-          },
-        ),
-        const SizedBox(height: UIConstants.spacingL),
+        // 已移除 Top-P，避免与部分模型不兼容
         // 新增：上下文窗口（影响历史消息条数）
         _buildParameterSlider(
           context,
