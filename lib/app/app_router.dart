@@ -79,6 +79,7 @@ class ModelParameters {
       // 移除 Top-P 持久化
       'contextLength': contextLength,
       'enableMaxTokens': enableMaxTokens,
+      // 兼容：持久化 off/auto/low/medium/high
       'reasoningEffort': reasoningEffort,
       'maxReasoningTokens': maxReasoningTokens,
     };
@@ -160,9 +161,12 @@ class ModelParametersNotifier extends StateNotifier<ModelParameters> {
     await _saveParameters();
   }
 
-  /// 更新思考强度
+  /// 更新思考强度（支持 off/auto/low/medium/high）
   Future<void> updateReasoningEffort(String effort) async {
-    state = state.copyWith(reasoningEffort: effort);
+    // 容错：未知值时回退 auto
+    final allowed = {'off', 'auto', 'low', 'medium', 'high'};
+    final next = allowed.contains(effort) ? effort : 'auto';
+    state = state.copyWith(reasoningEffort: next);
     await _saveParameters();
   }
 

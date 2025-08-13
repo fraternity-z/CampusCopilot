@@ -351,6 +351,12 @@ class ChatService {
       final baseCustom =
           _buildThinkingParams(llmConfig.defaultModel) ?? <String, dynamic>{};
       final mergedCustom = {...baseCustom};
+      // 如果用户选择“不启用”思考强度，则移除思考相关自定义参数
+      if ((params.reasoningEffort).toLowerCase() == 'off') {
+        mergedCustom.remove('reasoning_effort');
+        mergedCustom.remove('max_tokens_for_reasoning');
+        mergedCustom.remove('enable_reasoning');
+      }
 
       // 当来源选择为 model_native 时，给 provider 透传开关，允许其启用内置联网/grounding
       if (await _database.getSetting(GeneralSettingsKeys.searchSource) ==
@@ -767,6 +773,15 @@ class ChatService {
 
       // 7. 构建聊天选项 - 使用会话配置和智能体提示词
       final params = _ref.read(modelParametersProvider);
+      final baseCustomStream =
+          _buildThinkingParams(llmConfig.defaultModel) ?? <String, dynamic>{};
+      final mergedCustomStream = {...baseCustomStream};
+      if ((params.reasoningEffort).toLowerCase() == 'off') {
+        mergedCustomStream.remove('reasoning_effort');
+        mergedCustomStream.remove('max_tokens_for_reasoning');
+        mergedCustomStream.remove('enable_reasoning');
+      }
+
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: persona.systemPrompt, // 使用智能体的提示词
@@ -780,7 +795,7 @@ class ChatService {
           llmConfig.defaultModel,
         ),
         maxReasoningTokens: params.maxReasoningTokens,
-        customParams: _buildThinkingParams(llmConfig.defaultModel),
+        customParams: mergedCustomStream,
       );
 
       debugPrint(
@@ -1153,6 +1168,8 @@ class ChatService {
   String? _mapReasoningEffort(String effort, String? model) {
     if (model == null) return null;
     final lower = effort.toLowerCase();
+    // 新增：当为 off 时，明确禁用推理强度
+    if (lower == 'off') return null;
     if (lower == 'auto') {
       return _getReasoningEffort(model);
     }

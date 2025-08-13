@@ -151,20 +151,25 @@ class SettingsTab extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: UIConstants.spacingS),
-        Wrap(
-          spacing: 8,
-          children: [
-            for (final level in const ['auto', 'low', 'medium', 'high'])
-              ChoiceChip(
-                label: Text(level.toUpperCase()),
-                selected: parameters.reasoningEffort == level,
-                onSelected: (_) {
-                  ref
-                      .read(modelParametersProvider.notifier)
-                      .updateReasoningEffort(level);
-                },
-              ),
-          ],
+        // 改为下拉菜单（含“不启用”选项）
+        Align(
+          alignment: Alignment.centerLeft,
+          child: DropdownButton<String>(
+            value: parameters.reasoningEffort,
+            items: const [
+              DropdownMenuItem(value: 'off', child: Text('不启用')),
+              DropdownMenuItem(value: 'auto', child: Text('AUTO')),
+              DropdownMenuItem(value: 'low', child: Text('LOW')),
+              DropdownMenuItem(value: 'medium', child: Text('MEDIUM')),
+              DropdownMenuItem(value: 'high', child: Text('HIGH')),
+            ],
+            onChanged: (v) {
+              if (v == null) return;
+              ref
+                  .read(modelParametersProvider.notifier)
+                  .updateReasoningEffort(v);
+            },
+          ),
         ),
         const SizedBox(height: UIConstants.spacingM),
         // 最大思考Tokens
