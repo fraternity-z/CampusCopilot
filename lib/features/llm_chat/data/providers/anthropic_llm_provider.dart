@@ -70,24 +70,127 @@ class AnthropicLlmProvider implements LlmProvider {
 
   @override
   Future<List<ModelInfo>> listModels() async {
+    try {
+      // Anthropic没有公开的模型列表API，但我们可以通过测试已知模型来验证可用性
+      final knownModels = [
+        {
+          'id': 'claude-3-5-sonnet-20241022',
+          'name': 'Claude 3.5 Sonnet',
+          'contextWindow': 200000,
+          'maxOutputTokens': 8192,
+          'supportsVision': true,
+        },
+        {
+          'id': 'claude-3-5-haiku-20241022',
+          'name': 'Claude 3.5 Haiku',
+          'contextWindow': 200000,
+          'maxOutputTokens': 8192,
+          'supportsVision': true,
+        },
+        {
+          'id': 'claude-3-opus-20240229',
+          'name': 'Claude 3 Opus',
+          'contextWindow': 200000,
+          'maxOutputTokens': 4096,
+          'supportsVision': true,
+        },
+        {
+          'id': 'claude-3-sonnet-20240229',
+          'name': 'Claude 3 Sonnet',
+          'contextWindow': 200000,
+          'maxOutputTokens': 4096,
+          'supportsVision': true,
+        },
+        {
+          'id': 'claude-3-haiku-20240307',
+          'name': 'Claude 3 Haiku',
+          'contextWindow': 200000,
+          'maxOutputTokens': 4096,
+          'supportsVision': true,
+        },
+      ];
+
+      final availableModels = <ModelInfo>[];
+
+      // 测试每个模型的可用性（通过简单的API调用）
+      for (final modelData in knownModels) {
+        try {
+          await _makeRequest('/messages', {
+            'model': modelData['id'],
+            'messages': [
+              {'role': 'user', 'content': 'test'},
+            ],
+            'max_tokens': 1,
+          });
+
+          // 如果没有抛出异常，说明模型可用
+          availableModels.add(
+            ModelInfo(
+              id: modelData['id'] as String,
+              name: modelData['name'] as String,
+              type: ModelType.chat,
+              contextWindow: modelData['contextWindow'] as int?,
+              maxOutputTokens: modelData['maxOutputTokens'] as int?,
+              supportsStreaming: true,
+              supportsVision: modelData['supportsVision'] as bool? ?? false,
+              supportsFunctionCalling: true,
+            ),
+          );
+        } catch (e) {
+          // 模型不可用，跳过
+          continue;
+        }
+      }
+
+      // 如果有可用模型，返回测试结果
+      if (availableModels.isNotEmpty) {
+        return availableModels;
+      }
+    } catch (e) {
+      // 如果测试失败，返回预定义列表
+    }
+
+    // 回退到预定义模型列表
     return [
+      const ModelInfo(
+        id: "claude-3-5-sonnet-20241022",
+        name: "Claude 3.5 Sonnet",
+        type: ModelType.chat,
+        contextWindow: 200000,
+        maxOutputTokens: 8192,
+        supportsStreaming: true,
+        supportsVision: true,
+        supportsFunctionCalling: true,
+      ),
       const ModelInfo(
         id: "claude-3-opus-20240229",
         name: "Claude 3 Opus",
         type: ModelType.chat,
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        supportsStreaming: true,
         supportsVision: true,
+        supportsFunctionCalling: true,
       ),
       const ModelInfo(
         id: "claude-3-sonnet-20240229",
         name: "Claude 3 Sonnet",
         type: ModelType.chat,
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        supportsStreaming: true,
         supportsVision: true,
+        supportsFunctionCalling: true,
       ),
       const ModelInfo(
         id: "claude-3-haiku-20240307",
         name: "Claude 3 Haiku",
         type: ModelType.chat,
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        supportsStreaming: true,
         supportsVision: true,
+        supportsFunctionCalling: true,
       ),
     ];
   }

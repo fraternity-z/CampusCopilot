@@ -98,6 +98,25 @@ class LlmProviderFactory {
         );
         return OpenAiLlmProvider(llmConfig);
 
+      case AIProvider.openaiResponses:
+        final config = settings.openaiResponsesConfig;
+        if (config == null) {
+          throw ApiException('OpenAI Responses configuration not found');
+        }
+        final now = DateTime.now();
+        final llmConfig = LlmConfig(
+          id: 'openai-responses-${now.millisecondsSinceEpoch}',
+          name: 'OpenAI Responses Configuration',
+          provider: 'openai_responses',
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          defaultModel: config.defaultModel,
+          organizationId: config.organizationId,
+          createdAt: now,
+          updatedAt: now,
+        );
+        return OpenAiResponsesLlmProvider(llmConfig);
+
       case AIProvider.gemini:
         final config = settings.geminiConfig;
         if (config == null) {
@@ -131,11 +150,76 @@ class LlmProviderFactory {
         return AnthropicLlmProvider(llmConfig);
 
       case AIProvider.deepseek:
+        final config = settings.deepseekConfig;
+        if (config == null) {
+          throw ApiException('DeepSeek configuration not found');
+        }
+        final now = DateTime.now();
+        final llmConfig = LlmConfig(
+          id: 'deepseek-${now.millisecondsSinceEpoch}',
+          name: 'DeepSeek Configuration',
+          provider: 'deepseek',
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          defaultModel: config.defaultModel,
+          createdAt: now,
+          updatedAt: now,
+        );
+        return OpenAiLlmProvider(llmConfig);
+
       case AIProvider.qwen:
+        final config = settings.qwenConfig;
+        if (config == null) {
+          throw ApiException('Qwen configuration not found');
+        }
+        final now = DateTime.now();
+        final llmConfig = LlmConfig(
+          id: 'qwen-${now.millisecondsSinceEpoch}',
+          name: 'Qwen Configuration',
+          provider: 'qwen',
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          defaultModel: config.defaultModel,
+          createdAt: now,
+          updatedAt: now,
+        );
+        return OpenAiLlmProvider(llmConfig);
+
       case AIProvider.openrouter:
+        final config = settings.openrouterConfig;
+        if (config == null) {
+          throw ApiException('OpenRouter configuration not found');
+        }
+        final now = DateTime.now();
+        final llmConfig = LlmConfig(
+          id: 'openrouter-${now.millisecondsSinceEpoch}',
+          name: 'OpenRouter Configuration',
+          provider: 'openrouter',
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          defaultModel: config.defaultModel,
+          createdAt: now,
+          updatedAt: now,
+        );
+        return OpenAiLlmProvider(llmConfig);
+
       case AIProvider.ollama:
-        // 新的提供商暂时抛出异常，需要通过数据库配置
-        throw ApiException('${provider.toString()} 需要通过模型管理界面进行配置');
+        final config = settings.ollamaConfig;
+        if (config == null) {
+          throw ApiException('Ollama configuration not found');
+        }
+        final now = DateTime.now();
+        final llmConfig = LlmConfig(
+          id: 'ollama-${now.millisecondsSinceEpoch}',
+          name: 'Ollama Configuration',
+          provider: 'ollama',
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          defaultModel: config.defaultModel,
+          createdAt: now,
+          updatedAt: now,
+        );
+        return OpenAiLlmProvider(llmConfig);
     }
   }
 

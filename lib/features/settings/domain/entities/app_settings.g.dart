@@ -11,12 +11,30 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
       openaiConfig: json['openaiConfig'] == null
           ? null
           : OpenAIConfig.fromJson(json['openaiConfig'] as Map<String, dynamic>),
+      openaiResponsesConfig: json['openaiResponsesConfig'] == null
+          ? null
+          : OpenAIResponsesConfig.fromJson(
+              json['openaiResponsesConfig'] as Map<String, dynamic>),
       geminiConfig: json['geminiConfig'] == null
           ? null
           : GeminiConfig.fromJson(json['geminiConfig'] as Map<String, dynamic>),
       claudeConfig: json['claudeConfig'] == null
           ? null
           : ClaudeConfig.fromJson(json['claudeConfig'] as Map<String, dynamic>),
+      deepseekConfig: json['deepseekConfig'] == null
+          ? null
+          : DeepSeekConfig.fromJson(
+              json['deepseekConfig'] as Map<String, dynamic>),
+      qwenConfig: json['qwenConfig'] == null
+          ? null
+          : QwenConfig.fromJson(json['qwenConfig'] as Map<String, dynamic>),
+      openrouterConfig: json['openrouterConfig'] == null
+          ? null
+          : OpenRouterConfig.fromJson(
+              json['openrouterConfig'] as Map<String, dynamic>),
+      ollamaConfig: json['ollamaConfig'] == null
+          ? null
+          : OllamaConfig.fromJson(json['ollamaConfig'] as Map<String, dynamic>),
       themeMode: $enumDecodeNullable(_$ThemeModeEnumMap, json['themeMode']) ??
           ThemeMode.system,
       language: json['language'] as String? ?? 'zh',
@@ -40,8 +58,13 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
     <String, dynamic>{
       'openaiConfig': instance.openaiConfig,
+      'openaiResponsesConfig': instance.openaiResponsesConfig,
       'geminiConfig': instance.geminiConfig,
       'claudeConfig': instance.claudeConfig,
+      'deepseekConfig': instance.deepseekConfig,
+      'qwenConfig': instance.qwenConfig,
+      'openrouterConfig': instance.openrouterConfig,
+      'ollamaConfig': instance.ollamaConfig,
       'themeMode': _$ThemeModeEnumMap[instance.themeMode]!,
       'language': instance.language,
       'defaultProvider': _$AIProviderEnumMap[instance.defaultProvider]!,
@@ -59,6 +82,7 @@ const _$ThemeModeEnumMap = {
 
 const _$AIProviderEnumMap = {
   AIProvider.openai: 'openai',
+  AIProvider.openaiResponses: 'openaiResponses',
   AIProvider.gemini: 'gemini',
   AIProvider.claude: 'claude',
   AIProvider.deepseek: 'deepseek',
@@ -83,6 +107,30 @@ Map<String, dynamic> _$$OpenAIConfigImplToJson(_$OpenAIConfigImpl instance) =>
       'organizationId': instance.organizationId,
     };
 
+_$OpenAIResponsesConfigImpl _$$OpenAIResponsesConfigImplFromJson(
+        Map<String, dynamic> json) =>
+    _$OpenAIResponsesConfigImpl(
+      apiKey: json['apiKey'] as String,
+      baseUrl: json['baseUrl'] as String?,
+      organizationId: json['organizationId'] as String?,
+      defaultModel: json['defaultModel'] as String? ?? 'gpt-4o',
+      enableWebSearch: json['enableWebSearch'] as bool? ?? false,
+      reasoningEffort: json['reasoningEffort'] as String?,
+      maxReasoningTokens: (json['maxReasoningTokens'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$$OpenAIResponsesConfigImplToJson(
+        _$OpenAIResponsesConfigImpl instance) =>
+    <String, dynamic>{
+      'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
+      'organizationId': instance.organizationId,
+      'defaultModel': instance.defaultModel,
+      'enableWebSearch': instance.enableWebSearch,
+      'reasoningEffort': instance.reasoningEffort,
+      'maxReasoningTokens': instance.maxReasoningTokens,
+    };
+
 _$GeminiConfigImpl _$$GeminiConfigImplFromJson(Map<String, dynamic> json) =>
     _$GeminiConfigImpl(
       apiKey: json['apiKey'] as String,
@@ -98,6 +146,7 @@ Map<String, dynamic> _$$GeminiConfigImplToJson(_$GeminiConfigImpl instance) =>
 _$ClaudeConfigImpl _$$ClaudeConfigImplFromJson(Map<String, dynamic> json) =>
     _$ClaudeConfigImpl(
       apiKey: json['apiKey'] as String,
+      baseUrl: json['baseUrl'] as String?,
       defaultModel:
           json['defaultModel'] as String? ?? 'claude-3-sonnet-20240229',
     );
@@ -105,6 +154,67 @@ _$ClaudeConfigImpl _$$ClaudeConfigImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$ClaudeConfigImplToJson(_$ClaudeConfigImpl instance) =>
     <String, dynamic>{
       'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
+      'defaultModel': instance.defaultModel,
+    };
+
+_$DeepSeekConfigImpl _$$DeepSeekConfigImplFromJson(Map<String, dynamic> json) =>
+    _$DeepSeekConfigImpl(
+      apiKey: json['apiKey'] as String,
+      baseUrl: json['baseUrl'] as String?,
+      defaultModel: json['defaultModel'] as String? ?? 'deepseek-chat',
+    );
+
+Map<String, dynamic> _$$DeepSeekConfigImplToJson(
+        _$DeepSeekConfigImpl instance) =>
+    <String, dynamic>{
+      'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
+      'defaultModel': instance.defaultModel,
+    };
+
+_$QwenConfigImpl _$$QwenConfigImplFromJson(Map<String, dynamic> json) =>
+    _$QwenConfigImpl(
+      apiKey: json['apiKey'] as String,
+      baseUrl: json['baseUrl'] as String?,
+      defaultModel: json['defaultModel'] as String? ?? 'qwen-turbo',
+    );
+
+Map<String, dynamic> _$$QwenConfigImplToJson(_$QwenConfigImpl instance) =>
+    <String, dynamic>{
+      'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
+      'defaultModel': instance.defaultModel,
+    };
+
+_$OpenRouterConfigImpl _$$OpenRouterConfigImplFromJson(
+        Map<String, dynamic> json) =>
+    _$OpenRouterConfigImpl(
+      apiKey: json['apiKey'] as String,
+      baseUrl: json['baseUrl'] as String?,
+      defaultModel: json['defaultModel'] as String? ??
+          'meta-llama/llama-3.1-8b-instruct:free',
+    );
+
+Map<String, dynamic> _$$OpenRouterConfigImplToJson(
+        _$OpenRouterConfigImpl instance) =>
+    <String, dynamic>{
+      'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
+      'defaultModel': instance.defaultModel,
+    };
+
+_$OllamaConfigImpl _$$OllamaConfigImplFromJson(Map<String, dynamic> json) =>
+    _$OllamaConfigImpl(
+      apiKey: json['apiKey'] as String? ?? '',
+      baseUrl: json['baseUrl'] as String? ?? 'http://localhost:11434/v1',
+      defaultModel: json['defaultModel'] as String? ?? 'llama3.2',
+    );
+
+Map<String, dynamic> _$$OllamaConfigImplToJson(_$OllamaConfigImpl instance) =>
+    <String, dynamic>{
+      'apiKey': instance.apiKey,
+      'baseUrl': instance.baseUrl,
       'defaultModel': instance.defaultModel,
     };
 

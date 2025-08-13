@@ -23,11 +23,27 @@ mixin _$AppSettings {
   /// OpenAI API配置
   OpenAIConfig? get openaiConfig => throw _privateConstructorUsedError;
 
+  /// OpenAI Responses API配置
+  OpenAIResponsesConfig? get openaiResponsesConfig =>
+      throw _privateConstructorUsedError;
+
   /// Google Gemini API配置
   GeminiConfig? get geminiConfig => throw _privateConstructorUsedError;
 
   /// Anthropic Claude API配置
   ClaudeConfig? get claudeConfig => throw _privateConstructorUsedError;
+
+  /// DeepSeek API配置
+  DeepSeekConfig? get deepseekConfig => throw _privateConstructorUsedError;
+
+  /// 阿里云通义千问 API配置
+  QwenConfig? get qwenConfig => throw _privateConstructorUsedError;
+
+  /// OpenRouter API配置
+  OpenRouterConfig? get openrouterConfig => throw _privateConstructorUsedError;
+
+  /// Ollama API配置
+  OllamaConfig? get ollamaConfig => throw _privateConstructorUsedError;
 
   /// 主题设置
   ThemeMode get themeMode => throw _privateConstructorUsedError;
@@ -69,8 +85,13 @@ abstract class $AppSettingsCopyWith<$Res> {
   @useResult
   $Res call(
       {OpenAIConfig? openaiConfig,
+      OpenAIResponsesConfig? openaiResponsesConfig,
       GeminiConfig? geminiConfig,
       ClaudeConfig? claudeConfig,
+      DeepSeekConfig? deepseekConfig,
+      QwenConfig? qwenConfig,
+      OpenRouterConfig? openrouterConfig,
+      OllamaConfig? ollamaConfig,
       ThemeMode themeMode,
       String language,
       AIProvider defaultProvider,
@@ -80,8 +101,13 @@ abstract class $AppSettingsCopyWith<$Res> {
       ThinkingChainSettings thinkingChainSettings});
 
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
+  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig;
   $GeminiConfigCopyWith<$Res>? get geminiConfig;
   $ClaudeConfigCopyWith<$Res>? get claudeConfig;
+  $DeepSeekConfigCopyWith<$Res>? get deepseekConfig;
+  $QwenConfigCopyWith<$Res>? get qwenConfig;
+  $OpenRouterConfigCopyWith<$Res>? get openrouterConfig;
+  $OllamaConfigCopyWith<$Res>? get ollamaConfig;
   $ChatSettingsCopyWith<$Res> get chatSettings;
   $PrivacySettingsCopyWith<$Res> get privacySettings;
   $ThinkingChainSettingsCopyWith<$Res> get thinkingChainSettings;
@@ -103,8 +129,13 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
   @override
   $Res call({
     Object? openaiConfig = freezed,
+    Object? openaiResponsesConfig = freezed,
     Object? geminiConfig = freezed,
     Object? claudeConfig = freezed,
+    Object? deepseekConfig = freezed,
+    Object? qwenConfig = freezed,
+    Object? openrouterConfig = freezed,
+    Object? ollamaConfig = freezed,
     Object? themeMode = null,
     Object? language = null,
     Object? defaultProvider = null,
@@ -118,6 +149,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.openaiConfig
           : openaiConfig // ignore: cast_nullable_to_non_nullable
               as OpenAIConfig?,
+      openaiResponsesConfig: freezed == openaiResponsesConfig
+          ? _value.openaiResponsesConfig
+          : openaiResponsesConfig // ignore: cast_nullable_to_non_nullable
+              as OpenAIResponsesConfig?,
       geminiConfig: freezed == geminiConfig
           ? _value.geminiConfig
           : geminiConfig // ignore: cast_nullable_to_non_nullable
@@ -126,6 +161,22 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.claudeConfig
           : claudeConfig // ignore: cast_nullable_to_non_nullable
               as ClaudeConfig?,
+      deepseekConfig: freezed == deepseekConfig
+          ? _value.deepseekConfig
+          : deepseekConfig // ignore: cast_nullable_to_non_nullable
+              as DeepSeekConfig?,
+      qwenConfig: freezed == qwenConfig
+          ? _value.qwenConfig
+          : qwenConfig // ignore: cast_nullable_to_non_nullable
+              as QwenConfig?,
+      openrouterConfig: freezed == openrouterConfig
+          ? _value.openrouterConfig
+          : openrouterConfig // ignore: cast_nullable_to_non_nullable
+              as OpenRouterConfig?,
+      ollamaConfig: freezed == ollamaConfig
+          ? _value.ollamaConfig
+          : ollamaConfig // ignore: cast_nullable_to_non_nullable
+              as OllamaConfig?,
       themeMode: null == themeMode
           ? _value.themeMode
           : themeMode // ignore: cast_nullable_to_non_nullable
@@ -175,6 +226,21 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
+  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig {
+    if (_value.openaiResponsesConfig == null) {
+      return null;
+    }
+
+    return $OpenAIResponsesConfigCopyWith<$Res>(_value.openaiResponsesConfig!,
+        (value) {
+      return _then(_value.copyWith(openaiResponsesConfig: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
   $GeminiConfigCopyWith<$Res>? get geminiConfig {
     if (_value.geminiConfig == null) {
       return null;
@@ -196,6 +262,62 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
 
     return $ClaudeConfigCopyWith<$Res>(_value.claudeConfig!, (value) {
       return _then(_value.copyWith(claudeConfig: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $DeepSeekConfigCopyWith<$Res>? get deepseekConfig {
+    if (_value.deepseekConfig == null) {
+      return null;
+    }
+
+    return $DeepSeekConfigCopyWith<$Res>(_value.deepseekConfig!, (value) {
+      return _then(_value.copyWith(deepseekConfig: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $QwenConfigCopyWith<$Res>? get qwenConfig {
+    if (_value.qwenConfig == null) {
+      return null;
+    }
+
+    return $QwenConfigCopyWith<$Res>(_value.qwenConfig!, (value) {
+      return _then(_value.copyWith(qwenConfig: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OpenRouterConfigCopyWith<$Res>? get openrouterConfig {
+    if (_value.openrouterConfig == null) {
+      return null;
+    }
+
+    return $OpenRouterConfigCopyWith<$Res>(_value.openrouterConfig!, (value) {
+      return _then(_value.copyWith(openrouterConfig: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppSettings
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OllamaConfigCopyWith<$Res>? get ollamaConfig {
+    if (_value.ollamaConfig == null) {
+      return null;
+    }
+
+    return $OllamaConfigCopyWith<$Res>(_value.ollamaConfig!, (value) {
+      return _then(_value.copyWith(ollamaConfig: value) as $Val);
     });
   }
 
@@ -241,8 +363,13 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
   @useResult
   $Res call(
       {OpenAIConfig? openaiConfig,
+      OpenAIResponsesConfig? openaiResponsesConfig,
       GeminiConfig? geminiConfig,
       ClaudeConfig? claudeConfig,
+      DeepSeekConfig? deepseekConfig,
+      QwenConfig? qwenConfig,
+      OpenRouterConfig? openrouterConfig,
+      OllamaConfig? ollamaConfig,
       ThemeMode themeMode,
       String language,
       AIProvider defaultProvider,
@@ -254,9 +381,19 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
   @override
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
   @override
+  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig;
+  @override
   $GeminiConfigCopyWith<$Res>? get geminiConfig;
   @override
   $ClaudeConfigCopyWith<$Res>? get claudeConfig;
+  @override
+  $DeepSeekConfigCopyWith<$Res>? get deepseekConfig;
+  @override
+  $QwenConfigCopyWith<$Res>? get qwenConfig;
+  @override
+  $OpenRouterConfigCopyWith<$Res>? get openrouterConfig;
+  @override
+  $OllamaConfigCopyWith<$Res>? get ollamaConfig;
   @override
   $ChatSettingsCopyWith<$Res> get chatSettings;
   @override
@@ -279,8 +416,13 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? openaiConfig = freezed,
+    Object? openaiResponsesConfig = freezed,
     Object? geminiConfig = freezed,
     Object? claudeConfig = freezed,
+    Object? deepseekConfig = freezed,
+    Object? qwenConfig = freezed,
+    Object? openrouterConfig = freezed,
+    Object? ollamaConfig = freezed,
     Object? themeMode = null,
     Object? language = null,
     Object? defaultProvider = null,
@@ -294,6 +436,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.openaiConfig
           : openaiConfig // ignore: cast_nullable_to_non_nullable
               as OpenAIConfig?,
+      openaiResponsesConfig: freezed == openaiResponsesConfig
+          ? _value.openaiResponsesConfig
+          : openaiResponsesConfig // ignore: cast_nullable_to_non_nullable
+              as OpenAIResponsesConfig?,
       geminiConfig: freezed == geminiConfig
           ? _value.geminiConfig
           : geminiConfig // ignore: cast_nullable_to_non_nullable
@@ -302,6 +448,22 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.claudeConfig
           : claudeConfig // ignore: cast_nullable_to_non_nullable
               as ClaudeConfig?,
+      deepseekConfig: freezed == deepseekConfig
+          ? _value.deepseekConfig
+          : deepseekConfig // ignore: cast_nullable_to_non_nullable
+              as DeepSeekConfig?,
+      qwenConfig: freezed == qwenConfig
+          ? _value.qwenConfig
+          : qwenConfig // ignore: cast_nullable_to_non_nullable
+              as QwenConfig?,
+      openrouterConfig: freezed == openrouterConfig
+          ? _value.openrouterConfig
+          : openrouterConfig // ignore: cast_nullable_to_non_nullable
+              as OpenRouterConfig?,
+      ollamaConfig: freezed == ollamaConfig
+          ? _value.ollamaConfig
+          : ollamaConfig // ignore: cast_nullable_to_non_nullable
+              as OllamaConfig?,
       themeMode: null == themeMode
           ? _value.themeMode
           : themeMode // ignore: cast_nullable_to_non_nullable
@@ -339,8 +501,13 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
 class _$AppSettingsImpl implements _AppSettings {
   const _$AppSettingsImpl(
       {this.openaiConfig,
+      this.openaiResponsesConfig,
       this.geminiConfig,
       this.claudeConfig,
+      this.deepseekConfig,
+      this.qwenConfig,
+      this.openrouterConfig,
+      this.ollamaConfig,
       this.themeMode = ThemeMode.system,
       this.language = 'zh',
       this.defaultProvider = AIProvider.openai,
@@ -356,6 +523,10 @@ class _$AppSettingsImpl implements _AppSettings {
   @override
   final OpenAIConfig? openaiConfig;
 
+  /// OpenAI Responses API配置
+  @override
+  final OpenAIResponsesConfig? openaiResponsesConfig;
+
   /// Google Gemini API配置
   @override
   final GeminiConfig? geminiConfig;
@@ -363,6 +534,22 @@ class _$AppSettingsImpl implements _AppSettings {
   /// Anthropic Claude API配置
   @override
   final ClaudeConfig? claudeConfig;
+
+  /// DeepSeek API配置
+  @override
+  final DeepSeekConfig? deepseekConfig;
+
+  /// 阿里云通义千问 API配置
+  @override
+  final QwenConfig? qwenConfig;
+
+  /// OpenRouter API配置
+  @override
+  final OpenRouterConfig? openrouterConfig;
+
+  /// Ollama API配置
+  @override
+  final OllamaConfig? ollamaConfig;
 
   /// 主题设置
   @override
@@ -401,7 +588,7 @@ class _$AppSettingsImpl implements _AppSettings {
 
   @override
   String toString() {
-    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, enableAnimations: $enableAnimations, thinkingChainSettings: $thinkingChainSettings)';
+    return 'AppSettings(openaiConfig: $openaiConfig, openaiResponsesConfig: $openaiResponsesConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, enableAnimations: $enableAnimations, thinkingChainSettings: $thinkingChainSettings)';
   }
 
   @override
@@ -411,10 +598,20 @@ class _$AppSettingsImpl implements _AppSettings {
             other is _$AppSettingsImpl &&
             (identical(other.openaiConfig, openaiConfig) ||
                 other.openaiConfig == openaiConfig) &&
+            (identical(other.openaiResponsesConfig, openaiResponsesConfig) ||
+                other.openaiResponsesConfig == openaiResponsesConfig) &&
             (identical(other.geminiConfig, geminiConfig) ||
                 other.geminiConfig == geminiConfig) &&
             (identical(other.claudeConfig, claudeConfig) ||
                 other.claudeConfig == claudeConfig) &&
+            (identical(other.deepseekConfig, deepseekConfig) ||
+                other.deepseekConfig == deepseekConfig) &&
+            (identical(other.qwenConfig, qwenConfig) ||
+                other.qwenConfig == qwenConfig) &&
+            (identical(other.openrouterConfig, openrouterConfig) ||
+                other.openrouterConfig == openrouterConfig) &&
+            (identical(other.ollamaConfig, ollamaConfig) ||
+                other.ollamaConfig == ollamaConfig) &&
             (identical(other.themeMode, themeMode) ||
                 other.themeMode == themeMode) &&
             (identical(other.language, language) ||
@@ -436,8 +633,13 @@ class _$AppSettingsImpl implements _AppSettings {
   int get hashCode => Object.hash(
       runtimeType,
       openaiConfig,
+      openaiResponsesConfig,
       geminiConfig,
       claudeConfig,
+      deepseekConfig,
+      qwenConfig,
+      openrouterConfig,
+      ollamaConfig,
       themeMode,
       language,
       defaultProvider,
@@ -465,8 +667,13 @@ class _$AppSettingsImpl implements _AppSettings {
 abstract class _AppSettings implements AppSettings {
   const factory _AppSettings(
       {final OpenAIConfig? openaiConfig,
+      final OpenAIResponsesConfig? openaiResponsesConfig,
       final GeminiConfig? geminiConfig,
       final ClaudeConfig? claudeConfig,
+      final DeepSeekConfig? deepseekConfig,
+      final QwenConfig? qwenConfig,
+      final OpenRouterConfig? openrouterConfig,
+      final OllamaConfig? ollamaConfig,
       final ThemeMode themeMode,
       final String language,
       final AIProvider defaultProvider,
@@ -482,6 +689,10 @@ abstract class _AppSettings implements AppSettings {
   @override
   OpenAIConfig? get openaiConfig;
 
+  /// OpenAI Responses API配置
+  @override
+  OpenAIResponsesConfig? get openaiResponsesConfig;
+
   /// Google Gemini API配置
   @override
   GeminiConfig? get geminiConfig;
@@ -489,6 +700,22 @@ abstract class _AppSettings implements AppSettings {
   /// Anthropic Claude API配置
   @override
   ClaudeConfig? get claudeConfig;
+
+  /// DeepSeek API配置
+  @override
+  DeepSeekConfig? get deepseekConfig;
+
+  /// 阿里云通义千问 API配置
+  @override
+  QwenConfig? get qwenConfig;
+
+  /// OpenRouter API配置
+  @override
+  OpenRouterConfig? get openrouterConfig;
+
+  /// Ollama API配置
+  @override
+  OllamaConfig? get ollamaConfig;
 
   /// 主题设置
   @override
@@ -764,6 +991,331 @@ abstract class _OpenAIConfig implements OpenAIConfig {
       throw _privateConstructorUsedError;
 }
 
+OpenAIResponsesConfig _$OpenAIResponsesConfigFromJson(
+    Map<String, dynamic> json) {
+  return _OpenAIResponsesConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$OpenAIResponsesConfig {
+  /// API密钥
+  String get apiKey => throw _privateConstructorUsedError;
+
+  /// 基础URL（可选，用于代理）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
+  /// 组织ID（可选）
+  String? get organizationId => throw _privateConstructorUsedError;
+
+  /// 默认模型
+  String get defaultModel => throw _privateConstructorUsedError;
+
+  /// 是否启用Web搜索工具
+  bool get enableWebSearch => throw _privateConstructorUsedError;
+
+  /// 推理努力程度（用于o3/o4-mini等模型）
+  String? get reasoningEffort => throw _privateConstructorUsedError;
+
+  /// 最大推理令牌数
+  int? get maxReasoningTokens => throw _privateConstructorUsedError;
+
+  /// Serializes this OpenAIResponsesConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of OpenAIResponsesConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $OpenAIResponsesConfigCopyWith<OpenAIResponsesConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $OpenAIResponsesConfigCopyWith<$Res> {
+  factory $OpenAIResponsesConfigCopyWith(OpenAIResponsesConfig value,
+          $Res Function(OpenAIResponsesConfig) then) =
+      _$OpenAIResponsesConfigCopyWithImpl<$Res, OpenAIResponsesConfig>;
+  @useResult
+  $Res call(
+      {String apiKey,
+      String? baseUrl,
+      String? organizationId,
+      String defaultModel,
+      bool enableWebSearch,
+      String? reasoningEffort,
+      int? maxReasoningTokens});
+}
+
+/// @nodoc
+class _$OpenAIResponsesConfigCopyWithImpl<$Res,
+        $Val extends OpenAIResponsesConfig>
+    implements $OpenAIResponsesConfigCopyWith<$Res> {
+  _$OpenAIResponsesConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of OpenAIResponsesConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? organizationId = freezed,
+    Object? defaultModel = null,
+    Object? enableWebSearch = null,
+    Object? reasoningEffort = freezed,
+    Object? maxReasoningTokens = freezed,
+  }) {
+    return _then(_value.copyWith(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      organizationId: freezed == organizationId
+          ? _value.organizationId
+          : organizationId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+      enableWebSearch: null == enableWebSearch
+          ? _value.enableWebSearch
+          : enableWebSearch // ignore: cast_nullable_to_non_nullable
+              as bool,
+      reasoningEffort: freezed == reasoningEffort
+          ? _value.reasoningEffort
+          : reasoningEffort // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxReasoningTokens: freezed == maxReasoningTokens
+          ? _value.maxReasoningTokens
+          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$OpenAIResponsesConfigImplCopyWith<$Res>
+    implements $OpenAIResponsesConfigCopyWith<$Res> {
+  factory _$$OpenAIResponsesConfigImplCopyWith(
+          _$OpenAIResponsesConfigImpl value,
+          $Res Function(_$OpenAIResponsesConfigImpl) then) =
+      __$$OpenAIResponsesConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String apiKey,
+      String? baseUrl,
+      String? organizationId,
+      String defaultModel,
+      bool enableWebSearch,
+      String? reasoningEffort,
+      int? maxReasoningTokens});
+}
+
+/// @nodoc
+class __$$OpenAIResponsesConfigImplCopyWithImpl<$Res>
+    extends _$OpenAIResponsesConfigCopyWithImpl<$Res,
+        _$OpenAIResponsesConfigImpl>
+    implements _$$OpenAIResponsesConfigImplCopyWith<$Res> {
+  __$$OpenAIResponsesConfigImplCopyWithImpl(_$OpenAIResponsesConfigImpl _value,
+      $Res Function(_$OpenAIResponsesConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of OpenAIResponsesConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? organizationId = freezed,
+    Object? defaultModel = null,
+    Object? enableWebSearch = null,
+    Object? reasoningEffort = freezed,
+    Object? maxReasoningTokens = freezed,
+  }) {
+    return _then(_$OpenAIResponsesConfigImpl(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      organizationId: freezed == organizationId
+          ? _value.organizationId
+          : organizationId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+      enableWebSearch: null == enableWebSearch
+          ? _value.enableWebSearch
+          : enableWebSearch // ignore: cast_nullable_to_non_nullable
+              as bool,
+      reasoningEffort: freezed == reasoningEffort
+          ? _value.reasoningEffort
+          : reasoningEffort // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxReasoningTokens: freezed == maxReasoningTokens
+          ? _value.maxReasoningTokens
+          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$OpenAIResponsesConfigImpl implements _OpenAIResponsesConfig {
+  const _$OpenAIResponsesConfigImpl(
+      {required this.apiKey,
+      this.baseUrl,
+      this.organizationId,
+      this.defaultModel = 'gpt-4o',
+      this.enableWebSearch = false,
+      this.reasoningEffort,
+      this.maxReasoningTokens});
+
+  factory _$OpenAIResponsesConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OpenAIResponsesConfigImplFromJson(json);
+
+  /// API密钥
+  @override
+  final String apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  final String? baseUrl;
+
+  /// 组织ID（可选）
+  @override
+  final String? organizationId;
+
+  /// 默认模型
+  @override
+  @JsonKey()
+  final String defaultModel;
+
+  /// 是否启用Web搜索工具
+  @override
+  @JsonKey()
+  final bool enableWebSearch;
+
+  /// 推理努力程度（用于o3/o4-mini等模型）
+  @override
+  final String? reasoningEffort;
+
+  /// 最大推理令牌数
+  @override
+  final int? maxReasoningTokens;
+
+  @override
+  String toString() {
+    return 'OpenAIResponsesConfig(apiKey: $apiKey, baseUrl: $baseUrl, organizationId: $organizationId, defaultModel: $defaultModel, enableWebSearch: $enableWebSearch, reasoningEffort: $reasoningEffort, maxReasoningTokens: $maxReasoningTokens)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$OpenAIResponsesConfigImpl &&
+            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
+            (identical(other.organizationId, organizationId) ||
+                other.organizationId == organizationId) &&
+            (identical(other.defaultModel, defaultModel) ||
+                other.defaultModel == defaultModel) &&
+            (identical(other.enableWebSearch, enableWebSearch) ||
+                other.enableWebSearch == enableWebSearch) &&
+            (identical(other.reasoningEffort, reasoningEffort) ||
+                other.reasoningEffort == reasoningEffort) &&
+            (identical(other.maxReasoningTokens, maxReasoningTokens) ||
+                other.maxReasoningTokens == maxReasoningTokens));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, organizationId,
+      defaultModel, enableWebSearch, reasoningEffort, maxReasoningTokens);
+
+  /// Create a copy of OpenAIResponsesConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
+      get copyWith => __$$OpenAIResponsesConfigImplCopyWithImpl<
+          _$OpenAIResponsesConfigImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$OpenAIResponsesConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _OpenAIResponsesConfig implements OpenAIResponsesConfig {
+  const factory _OpenAIResponsesConfig(
+      {required final String apiKey,
+      final String? baseUrl,
+      final String? organizationId,
+      final String defaultModel,
+      final bool enableWebSearch,
+      final String? reasoningEffort,
+      final int? maxReasoningTokens}) = _$OpenAIResponsesConfigImpl;
+
+  factory _OpenAIResponsesConfig.fromJson(Map<String, dynamic> json) =
+      _$OpenAIResponsesConfigImpl.fromJson;
+
+  /// API密钥
+  @override
+  String get apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  String? get baseUrl;
+
+  /// 组织ID（可选）
+  @override
+  String? get organizationId;
+
+  /// 默认模型
+  @override
+  String get defaultModel;
+
+  /// 是否启用Web搜索工具
+  @override
+  bool get enableWebSearch;
+
+  /// 推理努力程度（用于o3/o4-mini等模型）
+  @override
+  String? get reasoningEffort;
+
+  /// 最大推理令牌数
+  @override
+  int? get maxReasoningTokens;
+
+  /// Create a copy of OpenAIResponsesConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
 GeminiConfig _$GeminiConfigFromJson(Map<String, dynamic> json) {
   return _GeminiConfig.fromJson(json);
 }
@@ -952,6 +1504,9 @@ mixin _$ClaudeConfig {
   /// API密钥
   String get apiKey => throw _privateConstructorUsedError;
 
+  /// 基础URL（可选，用于代理）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
@@ -971,7 +1526,7 @@ abstract class $ClaudeConfigCopyWith<$Res> {
           ClaudeConfig value, $Res Function(ClaudeConfig) then) =
       _$ClaudeConfigCopyWithImpl<$Res, ClaudeConfig>;
   @useResult
-  $Res call({String apiKey, String defaultModel});
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
 }
 
 /// @nodoc
@@ -990,6 +1545,7 @@ class _$ClaudeConfigCopyWithImpl<$Res, $Val extends ClaudeConfig>
   @override
   $Res call({
     Object? apiKey = null,
+    Object? baseUrl = freezed,
     Object? defaultModel = null,
   }) {
     return _then(_value.copyWith(
@@ -997,6 +1553,10 @@ class _$ClaudeConfigCopyWithImpl<$Res, $Val extends ClaudeConfig>
           ? _value.apiKey
           : apiKey // ignore: cast_nullable_to_non_nullable
               as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       defaultModel: null == defaultModel
           ? _value.defaultModel
           : defaultModel // ignore: cast_nullable_to_non_nullable
@@ -1013,7 +1573,7 @@ abstract class _$$ClaudeConfigImplCopyWith<$Res>
       __$$ClaudeConfigImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String apiKey, String defaultModel});
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
 }
 
 /// @nodoc
@@ -1030,6 +1590,7 @@ class __$$ClaudeConfigImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? apiKey = null,
+    Object? baseUrl = freezed,
     Object? defaultModel = null,
   }) {
     return _then(_$ClaudeConfigImpl(
@@ -1037,6 +1598,10 @@ class __$$ClaudeConfigImplCopyWithImpl<$Res>
           ? _value.apiKey
           : apiKey // ignore: cast_nullable_to_non_nullable
               as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       defaultModel: null == defaultModel
           ? _value.defaultModel
           : defaultModel // ignore: cast_nullable_to_non_nullable
@@ -1049,7 +1614,9 @@ class __$$ClaudeConfigImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ClaudeConfigImpl implements _ClaudeConfig {
   const _$ClaudeConfigImpl(
-      {required this.apiKey, this.defaultModel = 'claude-3-sonnet-20240229'});
+      {required this.apiKey,
+      this.baseUrl,
+      this.defaultModel = 'claude-3-sonnet-20240229'});
 
   factory _$ClaudeConfigImpl.fromJson(Map<String, dynamic> json) =>
       _$$ClaudeConfigImplFromJson(json);
@@ -1058,6 +1625,10 @@ class _$ClaudeConfigImpl implements _ClaudeConfig {
   @override
   final String apiKey;
 
+  /// 基础URL（可选，用于代理）
+  @override
+  final String? baseUrl;
+
   /// 默认模型
   @override
   @JsonKey()
@@ -1065,7 +1636,7 @@ class _$ClaudeConfigImpl implements _ClaudeConfig {
 
   @override
   String toString() {
-    return 'ClaudeConfig(apiKey: $apiKey, defaultModel: $defaultModel)';
+    return 'ClaudeConfig(apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel)';
   }
 
   @override
@@ -1074,13 +1645,14 @@ class _$ClaudeConfigImpl implements _ClaudeConfig {
         (other.runtimeType == runtimeType &&
             other is _$ClaudeConfigImpl &&
             (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
             (identical(other.defaultModel, defaultModel) ||
                 other.defaultModel == defaultModel));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, apiKey, defaultModel);
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
   /// Create a copy of ClaudeConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -1101,6 +1673,7 @@ class _$ClaudeConfigImpl implements _ClaudeConfig {
 abstract class _ClaudeConfig implements ClaudeConfig {
   const factory _ClaudeConfig(
       {required final String apiKey,
+      final String? baseUrl,
       final String defaultModel}) = _$ClaudeConfigImpl;
 
   factory _ClaudeConfig.fromJson(Map<String, dynamic> json) =
@@ -1109,6 +1682,10 @@ abstract class _ClaudeConfig implements ClaudeConfig {
   /// API密钥
   @override
   String get apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  String? get baseUrl;
 
   /// 默认模型
   @override
@@ -1119,6 +1696,824 @@ abstract class _ClaudeConfig implements ClaudeConfig {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ClaudeConfigImplCopyWith<_$ClaudeConfigImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+DeepSeekConfig _$DeepSeekConfigFromJson(Map<String, dynamic> json) {
+  return _DeepSeekConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$DeepSeekConfig {
+  /// API密钥
+  String get apiKey => throw _privateConstructorUsedError;
+
+  /// 基础URL（可选，用于代理）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
+  /// 默认模型
+  String get defaultModel => throw _privateConstructorUsedError;
+
+  /// Serializes this DeepSeekConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of DeepSeekConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $DeepSeekConfigCopyWith<DeepSeekConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $DeepSeekConfigCopyWith<$Res> {
+  factory $DeepSeekConfigCopyWith(
+          DeepSeekConfig value, $Res Function(DeepSeekConfig) then) =
+      _$DeepSeekConfigCopyWithImpl<$Res, DeepSeekConfig>;
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class _$DeepSeekConfigCopyWithImpl<$Res, $Val extends DeepSeekConfig>
+    implements $DeepSeekConfigCopyWith<$Res> {
+  _$DeepSeekConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of DeepSeekConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_value.copyWith(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$DeepSeekConfigImplCopyWith<$Res>
+    implements $DeepSeekConfigCopyWith<$Res> {
+  factory _$$DeepSeekConfigImplCopyWith(_$DeepSeekConfigImpl value,
+          $Res Function(_$DeepSeekConfigImpl) then) =
+      __$$DeepSeekConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class __$$DeepSeekConfigImplCopyWithImpl<$Res>
+    extends _$DeepSeekConfigCopyWithImpl<$Res, _$DeepSeekConfigImpl>
+    implements _$$DeepSeekConfigImplCopyWith<$Res> {
+  __$$DeepSeekConfigImplCopyWithImpl(
+      _$DeepSeekConfigImpl _value, $Res Function(_$DeepSeekConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of DeepSeekConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_$DeepSeekConfigImpl(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$DeepSeekConfigImpl implements _DeepSeekConfig {
+  const _$DeepSeekConfigImpl(
+      {required this.apiKey,
+      this.baseUrl,
+      this.defaultModel = 'deepseek-chat'});
+
+  factory _$DeepSeekConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$DeepSeekConfigImplFromJson(json);
+
+  /// API密钥
+  @override
+  final String apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  final String? baseUrl;
+
+  /// 默认模型
+  @override
+  @JsonKey()
+  final String defaultModel;
+
+  @override
+  String toString() {
+    return 'DeepSeekConfig(apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$DeepSeekConfigImpl &&
+            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
+            (identical(other.defaultModel, defaultModel) ||
+                other.defaultModel == defaultModel));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
+
+  /// Create a copy of DeepSeekConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$DeepSeekConfigImplCopyWith<_$DeepSeekConfigImpl> get copyWith =>
+      __$$DeepSeekConfigImplCopyWithImpl<_$DeepSeekConfigImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$DeepSeekConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _DeepSeekConfig implements DeepSeekConfig {
+  const factory _DeepSeekConfig(
+      {required final String apiKey,
+      final String? baseUrl,
+      final String defaultModel}) = _$DeepSeekConfigImpl;
+
+  factory _DeepSeekConfig.fromJson(Map<String, dynamic> json) =
+      _$DeepSeekConfigImpl.fromJson;
+
+  /// API密钥
+  @override
+  String get apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  String? get baseUrl;
+
+  /// 默认模型
+  @override
+  String get defaultModel;
+
+  /// Create a copy of DeepSeekConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$DeepSeekConfigImplCopyWith<_$DeepSeekConfigImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+QwenConfig _$QwenConfigFromJson(Map<String, dynamic> json) {
+  return _QwenConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$QwenConfig {
+  /// API密钥
+  String get apiKey => throw _privateConstructorUsedError;
+
+  /// 基础URL（可选，用于代理）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
+  /// 默认模型
+  String get defaultModel => throw _privateConstructorUsedError;
+
+  /// Serializes this QwenConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of QwenConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $QwenConfigCopyWith<QwenConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $QwenConfigCopyWith<$Res> {
+  factory $QwenConfigCopyWith(
+          QwenConfig value, $Res Function(QwenConfig) then) =
+      _$QwenConfigCopyWithImpl<$Res, QwenConfig>;
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class _$QwenConfigCopyWithImpl<$Res, $Val extends QwenConfig>
+    implements $QwenConfigCopyWith<$Res> {
+  _$QwenConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of QwenConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_value.copyWith(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$QwenConfigImplCopyWith<$Res>
+    implements $QwenConfigCopyWith<$Res> {
+  factory _$$QwenConfigImplCopyWith(
+          _$QwenConfigImpl value, $Res Function(_$QwenConfigImpl) then) =
+      __$$QwenConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class __$$QwenConfigImplCopyWithImpl<$Res>
+    extends _$QwenConfigCopyWithImpl<$Res, _$QwenConfigImpl>
+    implements _$$QwenConfigImplCopyWith<$Res> {
+  __$$QwenConfigImplCopyWithImpl(
+      _$QwenConfigImpl _value, $Res Function(_$QwenConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of QwenConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_$QwenConfigImpl(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$QwenConfigImpl implements _QwenConfig {
+  const _$QwenConfigImpl(
+      {required this.apiKey, this.baseUrl, this.defaultModel = 'qwen-turbo'});
+
+  factory _$QwenConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$QwenConfigImplFromJson(json);
+
+  /// API密钥
+  @override
+  final String apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  final String? baseUrl;
+
+  /// 默认模型
+  @override
+  @JsonKey()
+  final String defaultModel;
+
+  @override
+  String toString() {
+    return 'QwenConfig(apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$QwenConfigImpl &&
+            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
+            (identical(other.defaultModel, defaultModel) ||
+                other.defaultModel == defaultModel));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
+
+  /// Create a copy of QwenConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$QwenConfigImplCopyWith<_$QwenConfigImpl> get copyWith =>
+      __$$QwenConfigImplCopyWithImpl<_$QwenConfigImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$QwenConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _QwenConfig implements QwenConfig {
+  const factory _QwenConfig(
+      {required final String apiKey,
+      final String? baseUrl,
+      final String defaultModel}) = _$QwenConfigImpl;
+
+  factory _QwenConfig.fromJson(Map<String, dynamic> json) =
+      _$QwenConfigImpl.fromJson;
+
+  /// API密钥
+  @override
+  String get apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  String? get baseUrl;
+
+  /// 默认模型
+  @override
+  String get defaultModel;
+
+  /// Create a copy of QwenConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$QwenConfigImplCopyWith<_$QwenConfigImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+OpenRouterConfig _$OpenRouterConfigFromJson(Map<String, dynamic> json) {
+  return _OpenRouterConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$OpenRouterConfig {
+  /// API密钥
+  String get apiKey => throw _privateConstructorUsedError;
+
+  /// 基础URL（可选，用于代理）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
+  /// 默认模型
+  String get defaultModel => throw _privateConstructorUsedError;
+
+  /// Serializes this OpenRouterConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of OpenRouterConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $OpenRouterConfigCopyWith<OpenRouterConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $OpenRouterConfigCopyWith<$Res> {
+  factory $OpenRouterConfigCopyWith(
+          OpenRouterConfig value, $Res Function(OpenRouterConfig) then) =
+      _$OpenRouterConfigCopyWithImpl<$Res, OpenRouterConfig>;
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class _$OpenRouterConfigCopyWithImpl<$Res, $Val extends OpenRouterConfig>
+    implements $OpenRouterConfigCopyWith<$Res> {
+  _$OpenRouterConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of OpenRouterConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_value.copyWith(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$OpenRouterConfigImplCopyWith<$Res>
+    implements $OpenRouterConfigCopyWith<$Res> {
+  factory _$$OpenRouterConfigImplCopyWith(_$OpenRouterConfigImpl value,
+          $Res Function(_$OpenRouterConfigImpl) then) =
+      __$$OpenRouterConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class __$$OpenRouterConfigImplCopyWithImpl<$Res>
+    extends _$OpenRouterConfigCopyWithImpl<$Res, _$OpenRouterConfigImpl>
+    implements _$$OpenRouterConfigImplCopyWith<$Res> {
+  __$$OpenRouterConfigImplCopyWithImpl(_$OpenRouterConfigImpl _value,
+      $Res Function(_$OpenRouterConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of OpenRouterConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_$OpenRouterConfigImpl(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$OpenRouterConfigImpl implements _OpenRouterConfig {
+  const _$OpenRouterConfigImpl(
+      {required this.apiKey,
+      this.baseUrl,
+      this.defaultModel = 'meta-llama/llama-3.1-8b-instruct:free'});
+
+  factory _$OpenRouterConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OpenRouterConfigImplFromJson(json);
+
+  /// API密钥
+  @override
+  final String apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  final String? baseUrl;
+
+  /// 默认模型
+  @override
+  @JsonKey()
+  final String defaultModel;
+
+  @override
+  String toString() {
+    return 'OpenRouterConfig(apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$OpenRouterConfigImpl &&
+            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
+            (identical(other.defaultModel, defaultModel) ||
+                other.defaultModel == defaultModel));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
+
+  /// Create a copy of OpenRouterConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$OpenRouterConfigImplCopyWith<_$OpenRouterConfigImpl> get copyWith =>
+      __$$OpenRouterConfigImplCopyWithImpl<_$OpenRouterConfigImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$OpenRouterConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _OpenRouterConfig implements OpenRouterConfig {
+  const factory _OpenRouterConfig(
+      {required final String apiKey,
+      final String? baseUrl,
+      final String defaultModel}) = _$OpenRouterConfigImpl;
+
+  factory _OpenRouterConfig.fromJson(Map<String, dynamic> json) =
+      _$OpenRouterConfigImpl.fromJson;
+
+  /// API密钥
+  @override
+  String get apiKey;
+
+  /// 基础URL（可选，用于代理）
+  @override
+  String? get baseUrl;
+
+  /// 默认模型
+  @override
+  String get defaultModel;
+
+  /// Create a copy of OpenRouterConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$OpenRouterConfigImplCopyWith<_$OpenRouterConfigImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+OllamaConfig _$OllamaConfigFromJson(Map<String, dynamic> json) {
+  return _OllamaConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$OllamaConfig {
+  /// API密钥（Ollama通常不需要，但保持一致性）
+  String get apiKey => throw _privateConstructorUsedError;
+
+  /// 基础URL（Ollama服务地址）
+  String? get baseUrl => throw _privateConstructorUsedError;
+
+  /// 默认模型
+  String get defaultModel => throw _privateConstructorUsedError;
+
+  /// Serializes this OllamaConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of OllamaConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $OllamaConfigCopyWith<OllamaConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $OllamaConfigCopyWith<$Res> {
+  factory $OllamaConfigCopyWith(
+          OllamaConfig value, $Res Function(OllamaConfig) then) =
+      _$OllamaConfigCopyWithImpl<$Res, OllamaConfig>;
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class _$OllamaConfigCopyWithImpl<$Res, $Val extends OllamaConfig>
+    implements $OllamaConfigCopyWith<$Res> {
+  _$OllamaConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of OllamaConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_value.copyWith(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$OllamaConfigImplCopyWith<$Res>
+    implements $OllamaConfigCopyWith<$Res> {
+  factory _$$OllamaConfigImplCopyWith(
+          _$OllamaConfigImpl value, $Res Function(_$OllamaConfigImpl) then) =
+      __$$OllamaConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String apiKey, String? baseUrl, String defaultModel});
+}
+
+/// @nodoc
+class __$$OllamaConfigImplCopyWithImpl<$Res>
+    extends _$OllamaConfigCopyWithImpl<$Res, _$OllamaConfigImpl>
+    implements _$$OllamaConfigImplCopyWith<$Res> {
+  __$$OllamaConfigImplCopyWithImpl(
+      _$OllamaConfigImpl _value, $Res Function(_$OllamaConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of OllamaConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? apiKey = null,
+    Object? baseUrl = freezed,
+    Object? defaultModel = null,
+  }) {
+    return _then(_$OllamaConfigImpl(
+      apiKey: null == apiKey
+          ? _value.apiKey
+          : apiKey // ignore: cast_nullable_to_non_nullable
+              as String,
+      baseUrl: freezed == baseUrl
+          ? _value.baseUrl
+          : baseUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      defaultModel: null == defaultModel
+          ? _value.defaultModel
+          : defaultModel // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$OllamaConfigImpl implements _OllamaConfig {
+  const _$OllamaConfigImpl(
+      {this.apiKey = '',
+      this.baseUrl = 'http://localhost:11434/v1',
+      this.defaultModel = 'llama3.2'});
+
+  factory _$OllamaConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OllamaConfigImplFromJson(json);
+
+  /// API密钥（Ollama通常不需要，但保持一致性）
+  @override
+  @JsonKey()
+  final String apiKey;
+
+  /// 基础URL（Ollama服务地址）
+  @override
+  @JsonKey()
+  final String? baseUrl;
+
+  /// 默认模型
+  @override
+  @JsonKey()
+  final String defaultModel;
+
+  @override
+  String toString() {
+    return 'OllamaConfig(apiKey: $apiKey, baseUrl: $baseUrl, defaultModel: $defaultModel)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$OllamaConfigImpl &&
+            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
+            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
+            (identical(other.defaultModel, defaultModel) ||
+                other.defaultModel == defaultModel));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
+
+  /// Create a copy of OllamaConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$OllamaConfigImplCopyWith<_$OllamaConfigImpl> get copyWith =>
+      __$$OllamaConfigImplCopyWithImpl<_$OllamaConfigImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$OllamaConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _OllamaConfig implements OllamaConfig {
+  const factory _OllamaConfig(
+      {final String apiKey,
+      final String? baseUrl,
+      final String defaultModel}) = _$OllamaConfigImpl;
+
+  factory _OllamaConfig.fromJson(Map<String, dynamic> json) =
+      _$OllamaConfigImpl.fromJson;
+
+  /// API密钥（Ollama通常不需要，但保持一致性）
+  @override
+  String get apiKey;
+
+  /// 基础URL（Ollama服务地址）
+  @override
+  String? get baseUrl;
+
+  /// 默认模型
+  @override
+  String get defaultModel;
+
+  /// Create a copy of OllamaConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$OllamaConfigImplCopyWith<_$OllamaConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

@@ -12,11 +12,26 @@ class AppSettings with _$AppSettings {
     /// OpenAI API配置
     OpenAIConfig? openaiConfig,
 
+    /// OpenAI Responses API配置
+    OpenAIResponsesConfig? openaiResponsesConfig,
+
     /// Google Gemini API配置
     GeminiConfig? geminiConfig,
 
     /// Anthropic Claude API配置
     ClaudeConfig? claudeConfig,
+
+    /// DeepSeek API配置
+    DeepSeekConfig? deepseekConfig,
+
+    /// 阿里云通义千问 API配置
+    QwenConfig? qwenConfig,
+
+    /// OpenRouter API配置
+    OpenRouterConfig? openrouterConfig,
+
+    /// Ollama API配置
+    OllamaConfig? ollamaConfig,
 
     /// 主题设置
     @Default(ThemeMode.system) ThemeMode themeMode,
@@ -66,6 +81,36 @@ class OpenAIConfig with _$OpenAIConfig {
       _$OpenAIConfigFromJson(json);
 }
 
+/// OpenAI Responses API配置
+@freezed
+class OpenAIResponsesConfig with _$OpenAIResponsesConfig {
+  const factory OpenAIResponsesConfig({
+    /// API密钥
+    required String apiKey,
+
+    /// 基础URL（可选，用于代理）
+    String? baseUrl,
+
+    /// 组织ID（可选）
+    String? organizationId,
+
+    /// 默认模型
+    @Default('gpt-4o') String defaultModel,
+
+    /// 是否启用Web搜索工具
+    @Default(false) bool enableWebSearch,
+
+    /// 推理努力程度（用于o3/o4-mini等模型）
+    String? reasoningEffort,
+
+    /// 最大推理令牌数
+    int? maxReasoningTokens,
+  }) = _OpenAIResponsesConfig;
+
+  factory OpenAIResponsesConfig.fromJson(Map<String, dynamic> json) =>
+      _$OpenAIResponsesConfigFromJson(json);
+}
+
 /// Google Gemini配置
 @freezed
 class GeminiConfig with _$GeminiConfig {
@@ -88,6 +133,9 @@ class ClaudeConfig with _$ClaudeConfig {
     /// API密钥
     required String apiKey,
 
+    /// 基础URL（可选，用于代理）
+    String? baseUrl,
+
     /// 默认模型
     @Default('claude-3-sonnet-20240229') String defaultModel,
   }) = _ClaudeConfig;
@@ -96,8 +144,89 @@ class ClaudeConfig with _$ClaudeConfig {
       _$ClaudeConfigFromJson(json);
 }
 
+/// DeepSeek配置
+@freezed
+class DeepSeekConfig with _$DeepSeekConfig {
+  const factory DeepSeekConfig({
+    /// API密钥
+    required String apiKey,
+
+    /// 基础URL（可选，用于代理）
+    String? baseUrl,
+
+    /// 默认模型
+    @Default('deepseek-chat') String defaultModel,
+  }) = _DeepSeekConfig;
+
+  factory DeepSeekConfig.fromJson(Map<String, dynamic> json) =>
+      _$DeepSeekConfigFromJson(json);
+}
+
+/// 阿里云通义千问配置
+@freezed
+class QwenConfig with _$QwenConfig {
+  const factory QwenConfig({
+    /// API密钥
+    required String apiKey,
+
+    /// 基础URL（可选，用于代理）
+    String? baseUrl,
+
+    /// 默认模型
+    @Default('qwen-turbo') String defaultModel,
+  }) = _QwenConfig;
+
+  factory QwenConfig.fromJson(Map<String, dynamic> json) =>
+      _$QwenConfigFromJson(json);
+}
+
+/// OpenRouter配置
+@freezed
+class OpenRouterConfig with _$OpenRouterConfig {
+  const factory OpenRouterConfig({
+    /// API密钥
+    required String apiKey,
+
+    /// 基础URL（可选，用于代理）
+    String? baseUrl,
+
+    /// 默认模型
+    @Default('meta-llama/llama-3.1-8b-instruct:free') String defaultModel,
+  }) = _OpenRouterConfig;
+
+  factory OpenRouterConfig.fromJson(Map<String, dynamic> json) =>
+      _$OpenRouterConfigFromJson(json);
+}
+
+/// Ollama配置
+@freezed
+class OllamaConfig with _$OllamaConfig {
+  const factory OllamaConfig({
+    /// API密钥（Ollama通常不需要，但保持一致性）
+    @Default('') String apiKey,
+
+    /// 基础URL（Ollama服务地址）
+    @Default('http://localhost:11434/v1') String? baseUrl,
+
+    /// 默认模型
+    @Default('llama3.2') String defaultModel,
+  }) = _OllamaConfig;
+
+  factory OllamaConfig.fromJson(Map<String, dynamic> json) =>
+      _$OllamaConfigFromJson(json);
+}
+
 /// AI提供商枚举
-enum AIProvider { openai, gemini, claude, deepseek, qwen, openrouter, ollama }
+enum AIProvider {
+  openai,
+  openaiResponses,
+  gemini,
+  claude,
+  deepseek,
+  qwen,
+  openrouter,
+  ollama,
+}
 
 /// 主题模式枚举
 enum ThemeMode { system, light, dark }

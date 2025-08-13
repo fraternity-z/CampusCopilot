@@ -357,10 +357,20 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     switch (providerId.toLowerCase()) {
       case 'openai':
         return const Icon(Icons.psychology, color: Colors.green);
+      case 'openai_responses':
+        return const Icon(Icons.psychology_alt, color: Color(0xFF059669));
       case 'google':
         return const Icon(Icons.auto_awesome, color: Colors.blue);
       case 'anthropic':
         return const Icon(Icons.smart_toy, color: Colors.orange);
+      case 'deepseek':
+        return const Icon(Icons.psychology_alt, color: Colors.purple);
+      case 'qwen':
+        return const Icon(Icons.translate, color: Colors.red);
+      case 'openrouter':
+        return const Icon(Icons.router, color: Colors.teal);
+      case 'ollama':
+        return const Icon(Icons.computer, color: Colors.brown);
       default:
         return const Icon(Icons.api);
     }
@@ -529,7 +539,9 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 刷新模型列表
   Future<void> _refreshModels() async {
-    if (_apiKeyController.text.isEmpty) {
+    // Ollama通常不需要API密钥，其他提供商需要
+    if (widget.providerId.toLowerCase() != 'ollama' &&
+        _apiKeyController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请先输入API密钥')));
@@ -734,22 +746,73 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
         updatedAt: DateTime.now(),
       );
 
+      // 首先验证配置格式
+      if (!LlmProviderFactory.validateProviderConfig(config)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('配置格式验证失败，请检查输入信息'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 创建提供商并测试连接
       final provider = LlmProviderFactory.createProvider(config);
       final isValid = await provider.validateConfig();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isValid ? '连接测试成功' : '连接测试失败'),
-            backgroundColor: isValid ? Colors.green : Colors.red,
-          ),
-        );
+        if (isValid) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ 连接测试成功！API配置正确，可以正常使用'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ 连接测试失败\n请检查API密钥、基础URL等配置是否正确'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('连接测试失败: $e')));
+        String errorMessage = '连接测试失败';
+
+        // 根据错误类型提供更具体的提示
+        if (e.toString().contains('401') ||
+            e.toString().contains('Unauthorized')) {
+          errorMessage = '❌ API密钥无效或已过期\n请检查API密钥是否正确';
+        } else if (e.toString().contains('403') ||
+            e.toString().contains('Forbidden')) {
+          errorMessage = '❌ 访问被拒绝\n请检查API密钥权限或账户状态';
+        } else if (e.toString().contains('404') ||
+            e.toString().contains('Not Found')) {
+          errorMessage = '❌ API端点不存在\n请检查基础URL是否正确';
+        } else if (e.toString().contains('timeout') ||
+            e.toString().contains('TimeoutException')) {
+          errorMessage = '❌ 连接超时\n请检查网络连接或基础URL';
+        } else if (e.toString().contains('SocketException') ||
+            e.toString().contains('Connection')) {
+          errorMessage = '❌ 网络连接失败\n请检查网络连接和基础URL';
+        } else {
+          errorMessage = '❌ 连接测试失败\n错误详情: ${e.toString()}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       setState(() => _isLoading = false);

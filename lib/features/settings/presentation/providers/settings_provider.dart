@@ -54,9 +54,45 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  /// 更新OpenAI Responses配置
+  Future<void> updateOpenAIResponsesConfig(OpenAIResponsesConfig config) async {
+    state = state.copyWith(openaiResponsesConfig: config);
+    await _saveSettings();
+  }
+
   /// 更新Claude配置
   Future<void> updateClaudeConfig(ClaudeConfig config) async {
     state = state.copyWith(claudeConfig: config);
+    await _saveSettings();
+  }
+
+  /// 更新Gemini配置
+  Future<void> updateGeminiConfig(GeminiConfig config) async {
+    state = state.copyWith(geminiConfig: config);
+    await _saveSettings();
+  }
+
+  /// 更新DeepSeek配置
+  Future<void> updateDeepSeekConfig(DeepSeekConfig config) async {
+    state = state.copyWith(deepseekConfig: config);
+    await _saveSettings();
+  }
+
+  /// 更新Qwen配置
+  Future<void> updateQwenConfig(QwenConfig config) async {
+    state = state.copyWith(qwenConfig: config);
+    await _saveSettings();
+  }
+
+  /// 更新OpenRouter配置
+  Future<void> updateOpenRouterConfig(OpenRouterConfig config) async {
+    state = state.copyWith(openrouterConfig: config);
+    await _saveSettings();
+  }
+
+  /// 更新Ollama配置
+  Future<void> updateOllamaConfig(OllamaConfig config) async {
+    state = state.copyWith(ollamaConfig: config);
     await _saveSettings();
   }
 
@@ -141,10 +177,46 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     return config != null && config.apiKey.isNotEmpty;
   }
 
+  /// 验证OpenAI Responses配置
+  bool validateOpenAIResponsesConfig() {
+    final config = state.openaiResponsesConfig;
+    return config != null && config.apiKey.isNotEmpty;
+  }
+
   /// 验证Claude配置
   bool validateClaudeConfig() {
     final config = state.claudeConfig;
     return config != null && config.apiKey.isNotEmpty;
+  }
+
+  /// 验证Gemini配置
+  bool validateGeminiConfig() {
+    final config = state.geminiConfig;
+    return config != null && config.apiKey.isNotEmpty;
+  }
+
+  /// 验证DeepSeek配置
+  bool validateDeepSeekConfig() {
+    final config = state.deepseekConfig;
+    return config != null && config.apiKey.isNotEmpty;
+  }
+
+  /// 验证Qwen配置
+  bool validateQwenConfig() {
+    final config = state.qwenConfig;
+    return config != null && config.apiKey.isNotEmpty;
+  }
+
+  /// 验证OpenRouter配置
+  bool validateOpenRouterConfig() {
+    final config = state.openrouterConfig;
+    return config != null && config.apiKey.isNotEmpty;
+  }
+
+  /// 验证Ollama配置
+  bool validateOllamaConfig() {
+    final config = state.ollamaConfig;
+    return config != null; // Ollama不一定需要API密钥
   }
 
   /// 获取当前可用的AI提供商
@@ -154,8 +226,26 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     if (validateOpenAIConfig()) {
       providers.add(AIProvider.openai);
     }
+    if (validateOpenAIResponsesConfig()) {
+      providers.add(AIProvider.openaiResponses);
+    }
+    if (validateGeminiConfig()) {
+      providers.add(AIProvider.gemini);
+    }
     if (validateClaudeConfig()) {
       providers.add(AIProvider.claude);
+    }
+    if (validateDeepSeekConfig()) {
+      providers.add(AIProvider.deepseek);
+    }
+    if (validateQwenConfig()) {
+      providers.add(AIProvider.qwen);
+    }
+    if (validateOpenRouterConfig()) {
+      providers.add(AIProvider.openrouter);
+    }
+    if (validateOllamaConfig()) {
+      providers.add(AIProvider.ollama);
     }
 
     return providers;
@@ -248,6 +338,28 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
             );
           }
           break;
+        case AIProvider.openaiResponses:
+          if (state.openaiResponsesConfig != null) {
+            await updateOpenAIResponsesConfig(
+              state.openaiResponsesConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateOpenAIResponsesConfig(
+              OpenAIResponsesConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.gemini:
+          if (state.geminiConfig != null) {
+            await updateGeminiConfig(
+              state.geminiConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateGeminiConfig(
+              GeminiConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
         case AIProvider.claude:
           if (state.claudeConfig != null) {
             await updateClaudeConfig(
@@ -259,7 +371,47 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
             );
           }
           break;
-        default:
+        case AIProvider.deepseek:
+          if (state.deepseekConfig != null) {
+            await updateDeepSeekConfig(
+              state.deepseekConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateDeepSeekConfig(
+              DeepSeekConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.qwen:
+          if (state.qwenConfig != null) {
+            await updateQwenConfig(
+              state.qwenConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateQwenConfig(
+              QwenConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.openrouter:
+          if (state.openrouterConfig != null) {
+            await updateOpenRouterConfig(
+              state.openrouterConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateOpenRouterConfig(
+              OpenRouterConfig(apiKey: '', defaultModel: modelId),
+            );
+          }
+          break;
+        case AIProvider.ollama:
+          if (state.ollamaConfig != null) {
+            await updateOllamaConfig(
+              state.ollamaConfig!.copyWith(defaultModel: modelId),
+            );
+          } else {
+            await updateOllamaConfig(OllamaConfig(defaultModel: modelId));
+          }
           break;
       }
 
@@ -314,10 +466,46 @@ final openaiConfigValidProvider = Provider<bool>((ref) {
   return notifier.validateOpenAIConfig();
 });
 
+/// OpenAI Responses配置有效性Provider
+final openaiResponsesConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateOpenAIResponsesConfig();
+});
+
 /// Claude配置有效性Provider
 final claudeConfigValidProvider = Provider<bool>((ref) {
   final notifier = ref.read(settingsProvider.notifier);
   return notifier.validateClaudeConfig();
+});
+
+/// Gemini配置有效性Provider
+final geminiConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateGeminiConfig();
+});
+
+/// DeepSeek配置有效性Provider
+final deepseekConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateDeepSeekConfig();
+});
+
+/// Qwen配置有效性Provider
+final qwenConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateQwenConfig();
+});
+
+/// OpenRouter配置有效性Provider
+final openrouterConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateOpenRouterConfig();
+});
+
+/// Ollama配置有效性Provider
+final ollamaConfigValidProvider = Provider<bool>((ref) {
+  final notifier = ref.read(settingsProvider.notifier);
+  return notifier.validateOllamaConfig();
 });
 
 /// 从数据库检查可用AI提供商Provider
@@ -563,6 +751,8 @@ class ModelInfoWithProvider {
     switch (provider) {
       case AIProvider.openai:
         return 'OpenAI';
+      case AIProvider.openaiResponses:
+        return 'OpenAI Responses';
       case AIProvider.claude:
         return 'Anthropic';
       case AIProvider.gemini:
@@ -613,11 +803,27 @@ final databaseCurrentModelProvider = FutureProvider<ModelInfoWithProvider?>((
     case AIProvider.openai:
       defaultModel = settings.openaiConfig?.defaultModel;
       break;
+    case AIProvider.openaiResponses:
+      defaultModel = settings.openaiResponsesConfig?.defaultModel;
+      break;
+    case AIProvider.gemini:
+      defaultModel = settings.geminiConfig?.defaultModel;
+      break;
     case AIProvider.claude:
       defaultModel = settings.claudeConfig?.defaultModel;
       break;
-    default:
-      defaultModel = 'unknown';
+    case AIProvider.deepseek:
+      defaultModel = settings.deepseekConfig?.defaultModel;
+      break;
+    case AIProvider.qwen:
+      defaultModel = settings.qwenConfig?.defaultModel;
+      break;
+    case AIProvider.openrouter:
+      defaultModel = settings.openrouterConfig?.defaultModel;
+      break;
+    case AIProvider.ollama:
+      defaultModel = settings.ollamaConfig?.defaultModel;
+      break;
   }
 
   if (defaultModel != null) {

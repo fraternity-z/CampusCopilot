@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 import 'package:google_generative_ai/google_generative_ai.dart' as google_ai;
 
@@ -11,10 +14,14 @@ class GoogleLlmProvider extends LlmProvider {
   // 使用惰性初始化，避免在未使用时提前创建模型实例
   google_ai.GenerativeModel? _embeddingModel;
 
+  late final String _baseUrl;
+
   GoogleLlmProvider(super.config) {
     if (config.apiKey.isEmpty) {
       throw ApiException('Google API key is not configured.');
     }
+    _baseUrl =
+        config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta';
   }
 
   @override
@@ -22,8 +29,51 @@ class GoogleLlmProvider extends LlmProvider {
 
   @override
   Future<List<ModelInfo>> listModels() async {
-    // Google AI for Dart SDK does not support listing models yet.
-    // Return a predefined list of common models.
+    try {
+      // 尝试通过REST API获取模型列表
+      final response = await http.get(
+        Uri.parse('$_baseUrl/models?key=${config.apiKey}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final models = <ModelInfo>[];
+
+        if (data['models'] != null) {
+          for (final model in data['models']) {
+            final modelName = model['name'] as String? ?? '';
+            final displayName = model['displayName'] as String? ?? modelName;
+
+            // 只包含生成模型，排除嵌入模型
+            if (modelName.contains('generateContent') ||
+                modelName.contains('models/gemini')) {
+              final modelId = modelName.replaceAll('models/', '');
+              models.add(
+                ModelInfo(
+                  id: modelId,
+                  name: displayName.isNotEmpty ? displayName : modelId,
+                  type: ModelType.chat,
+                  supportsStreaming: true,
+                  supportsVision:
+                      modelId.contains('vision') || modelId.contains('1.5'),
+                  supportsFunctionCalling: true,
+                ),
+              );
+            }
+          }
+        }
+
+        // 如果API返回的模型列表不为空，返回API结果
+        if (models.isNotEmpty) {
+          return models;
+        }
+      }
+    } catch (e) {
+      debugPrint('获取Gemini模型列表失败，使用预定义列表: $e');
+    }
+
+    // 回退到预定义模型列表
     return [
       const ModelInfo(
         id: 'gemini-pro',
@@ -46,6 +96,16 @@ class GoogleLlmProvider extends LlmProvider {
         supportsFunctionCalling: true,
       ),
       const ModelInfo(
+        id: 'gemini-1.5-flash-latest',
+        name: 'Gemini 1.5 Flash',
+        type: ModelType.chat,
+        contextWindow: 1000000,
+        maxOutputTokens: 8192,
+        supportsStreaming: true,
+        supportsVision: true,
+        supportsFunctionCalling: true,
+      ),
+      const ModelInfo(
         id: 'gemini-pro-vision',
         name: 'Gemini Pro Vision',
         type: ModelType.multimodal,
@@ -54,18 +114,6 @@ class GoogleLlmProvider extends LlmProvider {
         supportsStreaming: true,
         supportsVision: true,
         supportsFunctionCalling: false,
-      ),
-      const ModelInfo(
-        id: 'embedding-001',
-        name: 'Embedding 001',
-        type: ModelType.embedding,
-        contextWindow: 8192,
-      ),
-      const ModelInfo(
-        id: 'text-embedding-004',
-        name: 'Text Embedding 004',
-        type: ModelType.embedding,
-        contextWindow: 8192,
       ),
     ];
   }
