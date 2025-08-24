@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 import 'package:image_picker/image_picker.dart';
@@ -524,21 +525,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           }
         });
 
-        return ListView.builder(
-          key: const PageStorageKey('chat_message_list'),
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          cacheExtent: 800,
-          addAutomaticKeepAlives: true,
-          addRepaintBoundaries: true,
-          addSemanticIndexes: true,
-          itemCount: messages.length + (error != null ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (error != null && index == messages.length) {
-              return _buildErrorMessage(error);
-            }
-            return _buildMessageBubble(messages[index]);
-          },
+        return AnimationLimiter(
+          child: ListView.builder(
+            key: const PageStorageKey('chat_message_list'),
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            cacheExtent: 800,
+            addAutomaticKeepAlives: true,
+            addRepaintBoundaries: true,
+            addSemanticIndexes: true,
+            itemCount: messages.length + (error != null ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (error != null && index == messages.length) {
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 375),
+                  child: SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(
+                      child: _buildErrorMessage(error),
+                    ),
+                  ),
+                );
+              }
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 375),
+                child: SlideAnimation(
+                  verticalOffset: messages[index].isFromUser ? -30.0 : 30.0,
+                  horizontalOffset: messages[index].isFromUser ? 30.0 : -30.0,
+                  child: FadeInAnimation(
+                    child: _buildMessageBubble(messages[index]),
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -596,13 +618,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.primary.withAlpha(26),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.8),
+                    colorScheme.primary,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Icon(
-                Icons.smart_toy_outlined,
-                size: 18,
-                color: colorScheme.primary,
+                Icons.auto_awesome,
+                size: 16,
+                color: colorScheme.onPrimary,
               ),
             ),
             const SizedBox(width: 10),
@@ -620,26 +660,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   decoration: BoxDecoration(
                     gradient: isUser
                         ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                             colors: [
-                              colorScheme.primary.withAlpha(235),
+                              colorScheme.primary.withValues(alpha: 0.95),
                               colorScheme.primary,
+                              colorScheme.primary.withValues(alpha: 0.85),
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           )
-                        : null,
-                    color: isUser ? null : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(18).copyWith(
+                        : LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colorScheme.surfaceContainerHighest,
+                              colorScheme.surfaceContainerHighest.withValues(alpha: 0.95),
+                            ],
+                          ),
+                    borderRadius: BorderRadius.circular(20).copyWith(
                       bottomLeft: isUser
-                          ? const Radius.circular(18)
-                          : const Radius.circular(6),
+                          ? const Radius.circular(20)
+                          : const Radius.circular(4),
                       bottomRight: isUser
-                          ? const Radius.circular(6)
-                          : const Radius.circular(18),
+                          ? const Radius.circular(4)
+                          : const Radius.circular(20),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: isUser 
+                            ? colorScheme.primary.withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 2),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                        spreadRadius: 0,
                       ),
                     ],
                   ),
@@ -677,13 +736,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           ),
           if (isUser) ...[
             const SizedBox(width: 10),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.secondary.withAlpha(26),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.secondary.withValues(alpha: 0.8),
+                    colorScheme.secondary,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.secondary.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Icon(
-                Icons.person_outline,
-                size: 18,
-                color: colorScheme.secondary,
+                Icons.person,
+                size: 16,
+                color: colorScheme.onSecondary,
               ),
             ),
           ],
@@ -857,76 +934,84 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                       cursor: canSend || isStopButton
                                           ? SystemMouseCursors.click
                                           : SystemMouseCursors.basic,
-                                      child: GestureDetector(
-                                        onTap: canSend || isStopButton
-                                            ? () => isStopButton
-                                                  ? _stopResponse(ref)
-                                                  : _sendMessage(ref)
-                                            : null,
-                                        child: Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            gradient: canSend || isStopButton
-                                                ? LinearGradient(
-                                                    colors: isStopButton
-                                                        ? [
-                                                            const Color(
-                                                              0xFFFF6B6B,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 150),
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          gradient: canSend || isStopButton
+                                              ? LinearGradient(
+                                                  colors: isStopButton
+                                                      ? [
+                                                          const Color(
+                                                            0xFFFF6B6B,
+                                                          ),
+                                                          const Color(
+                                                            0xFFE53E3E,
+                                                          ),
+                                                        ]
+                                                      : [
+                                                          const Color(
+                                                            0xFF2684FF,
+                                                          ),
+                                                          const Color(
+                                                            0xFF0052CC,
+                                                          ),
+                                                        ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                )
+                                              : null,
+                                          color: canSend || isStopButton
+                                              ? null
+                                              : const Color(0xFFE2E8F0),
+                                          borderRadius: BorderRadius.circular(18),
+                                          boxShadow: canSend || isStopButton
+                                              ? [
+                                                  BoxShadow(
+                                                    color:
+                                                        (isStopButton
+                                                                ? const Color(
+                                                                    0xFFFF6B6B,
+                                                                  )
+                                                                : const Color(
+                                                                    0xFF2684FF,
+                                                                  ))
+                                                            .withValues(
+                                                              alpha: 0.3,
                                                             ),
-                                                            const Color(
-                                                              0xFFE53E3E,
-                                                            ),
-                                                          ]
-                                                        : [
-                                                            const Color(
-                                                              0xFF2684FF,
-                                                            ),
-                                                            const Color(
-                                                              0xFF0052CC,
-                                                            ),
-                                                          ],
-                                                    begin: Alignment.topLeft,
-                                                    end: Alignment.bottomRight,
-                                                  )
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ]
+                                              : null,
+                                        ),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(18),
+                                            onTap: canSend || isStopButton
+                                                ? () => isStopButton
+                                                      ? _stopResponse(ref)
+                                                      : _sendMessage(ref)
                                                 : null,
-                                            color: canSend || isStopButton
-                                                ? null
-                                                : const Color(0xFFE2E8F0),
-                                            borderRadius: BorderRadius.circular(
-                                              18,
+                                            splashColor: Colors.white.withValues(alpha: 0.3),
+                                            highlightColor: Colors.white.withValues(alpha: 0.1),
+                                            child: Center(
+                                              child: AnimatedSwitcher(
+                                                duration: const Duration(milliseconds: 200),
+                                                child: Icon(
+                                                  isStopButton
+                                                      ? Icons.stop_rounded
+                                                      : Icons.send_rounded,
+                                                  key: ValueKey(isStopButton),
+                                                  color: canSend || isStopButton
+                                                      ? Colors.white
+                                                      : const Color(0xFF94A3B8),
+                                                  size: 18,
+                                                ),
+                                              ),
                                             ),
-                                            boxShadow: canSend || isStopButton
-                                                ? [
-                                                    BoxShadow(
-                                                      color:
-                                                          (isStopButton
-                                                                  ? const Color(
-                                                                      0xFFFF6B6B,
-                                                                    )
-                                                                  : const Color(
-                                                                      0xFF2684FF,
-                                                                    ))
-                                                              .withValues(
-                                                                alpha: 0.3,
-                                                              ),
-                                                      blurRadius: 8,
-                                                      offset: const Offset(
-                                                        0,
-                                                        2,
-                                                      ),
-                                                    ),
-                                                  ]
-                                                : null,
-                                          ),
-                                          child: Icon(
-                                            isStopButton
-                                                ? Icons.stop_rounded
-                                                : Icons.send_rounded,
-                                            color: canSend || isStopButton
-                                                ? Colors.white
-                                                : const Color(0xFF94A3B8),
-                                            size: 18,
                                           ),
                                         ),
                                       ),

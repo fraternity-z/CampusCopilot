@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../domain/entities/chat_message.dart';
 import 'message_content_widget.dart';
@@ -388,21 +389,27 @@ class _OptimizedStreamingMessageWidgetState
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
+                Shimmer.fromColors(
+                  baseColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '生成中...',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Shimmer.fromColors(
+                  baseColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  highlightColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  child: Text(
+                    '生成中...',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
