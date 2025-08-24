@@ -119,7 +119,7 @@ class _KnowledgeBaseConfigCreateDialogState
                   ),
                 ] else ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedModelId,
+                    initialValue: _selectedModelId,
                     decoration: const InputDecoration(
                       labelText: '嵌入模型',
                       hintText: '选择嵌入模型',

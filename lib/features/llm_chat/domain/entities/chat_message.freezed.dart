@@ -35,12 +35,8 @@ mixin _$FileAttachment {
   /// 文件内容（用于传递给AI，但不在UI中显示）
   String? get content => throw _privateConstructorUsedError;
 
-  /// Serializes this FileAttachment to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of FileAttachment
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $FileAttachmentCopyWith<FileAttachment> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -69,8 +65,6 @@ class _$FileAttachmentCopyWithImpl<$Res, $Val extends FileAttachment>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of FileAttachment
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -129,8 +123,6 @@ class __$$FileAttachmentImplCopyWithImpl<$Res>
       _$FileAttachmentImpl _value, $Res Function(_$FileAttachmentImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of FileAttachment
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -219,14 +211,12 @@ class _$FileAttachmentImpl implements _FileAttachment {
             (identical(other.content, content) || other.content == content));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, fileName, fileSize, fileType, filePath, content);
 
-  /// Create a copy of FileAttachment
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$FileAttachmentImplCopyWith<_$FileAttachmentImpl> get copyWith =>
@@ -252,30 +242,28 @@ abstract class _FileAttachment implements FileAttachment {
   factory _FileAttachment.fromJson(Map<String, dynamic> json) =
       _$FileAttachmentImpl.fromJson;
 
-  /// 文件名
   @override
+
+  /// 文件名
   String get fileName;
+  @override
 
   /// 文件大小（字节）
-  @override
   int get fileSize;
+  @override
 
   /// 文件类型/扩展名
-  @override
   String get fileType;
+  @override
 
   /// 文件路径（可选，用于本地文件）
-  @override
   String? get filePath;
+  @override
 
   /// 文件内容（用于传递给AI，但不在UI中显示）
-  @override
   String? get content;
-
-  /// Create a copy of FileAttachment
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$FileAttachmentImplCopyWith<_$FileAttachmentImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -331,12 +319,8 @@ mixin _$ChatMessage {
   /// 使用的模型名称（用于特殊处理）
   String? get modelName => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatMessage to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatMessage
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatMessageCopyWith<ChatMessage> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -375,8 +359,6 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatMessage
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -495,8 +477,6 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
       _$ChatMessageImpl _value, $Res Function(_$ChatMessageImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatMessage
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -733,7 +713,7 @@ class _$ChatMessageImpl implements _ChatMessage {
                 other.modelName == modelName));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -753,9 +733,7 @@ class _$ChatMessageImpl implements _ChatMessage {
       thinkingComplete,
       modelName);
 
-  /// Create a copy of ChatMessage
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatMessageImplCopyWith<_$ChatMessageImpl> get copyWith =>
@@ -790,70 +768,68 @@ abstract class _ChatMessage implements ChatMessage {
   factory _ChatMessage.fromJson(Map<String, dynamic> json) =
       _$ChatMessageImpl.fromJson;
 
-  /// 消息唯一标识符
   @override
+
+  /// 消息唯一标识符
   String get id;
+  @override
 
   /// 消息内容
-  @override
   String get content;
+  @override
 
   /// 是否来自用户（false表示来自AI）
-  @override
   bool get isFromUser;
+  @override
 
   /// 消息创建时间
-  @override
   DateTime get timestamp;
+  @override
 
   /// 关联的聊天会话ID
-  @override
   String get chatSessionId;
+  @override
 
   /// 消息类型（文本、图片、文件等）
-  @override
   MessageType get type;
+  @override
 
   /// 消息状态（发送中、已发送、失败等）
-  @override
   MessageStatus get status;
+  @override
 
   /// 消息元数据（可选）
-  @override
   Map<String, dynamic>? get metadata;
+  @override
 
   /// 父消息ID（用于回复功能）
-  @override
   String? get parentMessageId;
+  @override
 
   /// 消息使用的token数量
-  @override
   int? get tokenCount;
+  @override
 
   /// 图片URL列表（用于多模态消息）
-  @override
   List<String> get imageUrls;
+  @override
 
   /// 附件文件信息列表
-  @override
   List<FileAttachment> get attachments;
+  @override
 
   /// 思考链内容（AI思考过程）
-  @override
   String? get thinkingContent;
+  @override
 
   /// 思考链是否完整
-  @override
   bool get thinkingComplete;
+  @override
 
   /// 使用的模型名称（用于特殊处理）
-  @override
   String? get modelName;
-
-  /// Create a copy of ChatMessage
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatMessageImplCopyWith<_$ChatMessageImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

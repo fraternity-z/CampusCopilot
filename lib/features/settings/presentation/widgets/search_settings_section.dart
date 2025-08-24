@@ -230,7 +230,7 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          value: _source,
+          initialValue: _source,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             isDense: true,

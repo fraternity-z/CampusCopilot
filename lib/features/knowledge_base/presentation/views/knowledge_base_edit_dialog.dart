@@ -110,7 +110,7 @@ class _KnowledgeBaseEditDialogState
 
               // 配置选择
               DropdownButtonFormField<String>(
-                value: _selectedConfigId,
+                initialValue: _selectedConfigId,
                 decoration: const InputDecoration(labelText: '知识库配置'),
                 items: configState.configs.map((config) {
                   return DropdownMenuItem(

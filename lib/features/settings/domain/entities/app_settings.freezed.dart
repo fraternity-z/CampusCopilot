@@ -67,12 +67,8 @@ mixin _$AppSettings {
   ThinkingChainSettings get thinkingChainSettings =>
       throw _privateConstructorUsedError;
 
-  /// Serializes this AppSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $AppSettingsCopyWith<AppSettings> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -123,8 +119,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -208,8 +202,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     ) as $Val);
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $OpenAIConfigCopyWith<$Res>? get openaiConfig {
@@ -222,8 +214,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig {
@@ -237,8 +227,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $GeminiConfigCopyWith<$Res>? get geminiConfig {
@@ -251,8 +239,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ClaudeConfigCopyWith<$Res>? get claudeConfig {
@@ -265,8 +251,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $DeepSeekConfigCopyWith<$Res>? get deepseekConfig {
@@ -279,8 +263,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $QwenConfigCopyWith<$Res>? get qwenConfig {
@@ -293,8 +275,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $OpenRouterConfigCopyWith<$Res>? get openrouterConfig {
@@ -307,8 +287,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $OllamaConfigCopyWith<$Res>? get ollamaConfig {
@@ -321,8 +299,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ChatSettingsCopyWith<$Res> get chatSettings {
@@ -331,8 +307,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $PrivacySettingsCopyWith<$Res> get privacySettings {
@@ -341,8 +315,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     });
   }
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ThinkingChainSettingsCopyWith<$Res> get thinkingChainSettings {
@@ -410,8 +382,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
       _$AppSettingsImpl _value, $Res Function(_$AppSettingsImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -628,7 +598,7 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.thinkingChainSettings == thinkingChainSettings));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -648,9 +618,7 @@ class _$AppSettingsImpl implements _AppSettings {
       enableAnimations,
       thinkingChainSettings);
 
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$AppSettingsImplCopyWith<_$AppSettingsImpl> get copyWith =>
@@ -685,70 +653,68 @@ abstract class _AppSettings implements AppSettings {
   factory _AppSettings.fromJson(Map<String, dynamic> json) =
       _$AppSettingsImpl.fromJson;
 
-  /// OpenAI API配置
   @override
+
+  /// OpenAI API配置
   OpenAIConfig? get openaiConfig;
+  @override
 
   /// OpenAI Responses API配置
-  @override
   OpenAIResponsesConfig? get openaiResponsesConfig;
+  @override
 
   /// Google Gemini API配置
-  @override
   GeminiConfig? get geminiConfig;
+  @override
 
   /// Anthropic Claude API配置
-  @override
   ClaudeConfig? get claudeConfig;
+  @override
 
   /// DeepSeek API配置
-  @override
   DeepSeekConfig? get deepseekConfig;
+  @override
 
   /// 阿里云通义千问 API配置
-  @override
   QwenConfig? get qwenConfig;
+  @override
 
   /// OpenRouter API配置
-  @override
   OpenRouterConfig? get openrouterConfig;
+  @override
 
   /// Ollama API配置
-  @override
   OllamaConfig? get ollamaConfig;
+  @override
 
   /// 主题设置
-  @override
   ThemeMode get themeMode;
+  @override
 
   /// 语言设置
-  @override
   String get language;
+  @override
 
   /// 默认AI提供商
-  @override
   AIProvider get defaultProvider;
+  @override
 
   /// 聊天设置
-  @override
   ChatSettings get chatSettings;
+  @override
 
   /// 隐私设置
-  @override
   PrivacySettings get privacySettings;
+  @override
 
   /// 动画设置
-  @override
   bool get enableAnimations;
+  @override
 
   /// 思考链设置
-  @override
   ThinkingChainSettings get thinkingChainSettings;
-
-  /// Create a copy of AppSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$AppSettingsImplCopyWith<_$AppSettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -771,12 +737,8 @@ mixin _$OpenAIConfig {
   /// 组织ID（可选）
   String? get organizationId => throw _privateConstructorUsedError;
 
-  /// Serializes this OpenAIConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of OpenAIConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $OpenAIConfigCopyWith<OpenAIConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -804,8 +766,6 @@ class _$OpenAIConfigCopyWithImpl<$Res, $Val extends OpenAIConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of OpenAIConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -858,8 +818,6 @@ class __$$OpenAIConfigImplCopyWithImpl<$Res>
       _$OpenAIConfigImpl _value, $Res Function(_$OpenAIConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of OpenAIConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -936,14 +894,12 @@ class _$OpenAIConfigImpl implements _OpenAIConfig {
                 other.organizationId == organizationId));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, apiKey, baseUrl, defaultModel, organizationId);
 
-  /// Create a copy of OpenAIConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$OpenAIConfigImplCopyWith<_$OpenAIConfigImpl> get copyWith =>
@@ -967,26 +923,24 @@ abstract class _OpenAIConfig implements OpenAIConfig {
   factory _OpenAIConfig.fromJson(Map<String, dynamic> json) =
       _$OpenAIConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
+  @override
 
   /// 组织ID（可选）
-  @override
   String? get organizationId;
-
-  /// Create a copy of OpenAIConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$OpenAIConfigImplCopyWith<_$OpenAIConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1019,12 +973,8 @@ mixin _$OpenAIResponsesConfig {
   /// 最大推理令牌数
   int? get maxReasoningTokens => throw _privateConstructorUsedError;
 
-  /// Serializes this OpenAIResponsesConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of OpenAIResponsesConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $OpenAIResponsesConfigCopyWith<OpenAIResponsesConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1056,8 +1006,6 @@ class _$OpenAIResponsesConfigCopyWithImpl<$Res,
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of OpenAIResponsesConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1130,8 +1078,6 @@ class __$$OpenAIResponsesConfigImplCopyWithImpl<$Res>
       $Res Function(_$OpenAIResponsesConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of OpenAIResponsesConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1245,14 +1191,12 @@ class _$OpenAIResponsesConfigImpl implements _OpenAIResponsesConfig {
                 other.maxReasoningTokens == maxReasoningTokens));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, organizationId,
       defaultModel, enableWebSearch, reasoningEffort, maxReasoningTokens);
 
-  /// Create a copy of OpenAIResponsesConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
@@ -1280,38 +1224,36 @@ abstract class _OpenAIResponsesConfig implements OpenAIResponsesConfig {
   factory _OpenAIResponsesConfig.fromJson(Map<String, dynamic> json) =
       _$OpenAIResponsesConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 组织ID（可选）
-  @override
   String? get organizationId;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
+  @override
 
   /// 是否启用Web搜索工具
-  @override
   bool get enableWebSearch;
+  @override
 
   /// 推理努力程度（用于o3/o4-mini等模型）
-  @override
   String? get reasoningEffort;
+  @override
 
   /// 最大推理令牌数
-  @override
   int? get maxReasoningTokens;
-
-  /// Create a copy of OpenAIResponsesConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -1328,12 +1270,8 @@ mixin _$GeminiConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this GeminiConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of GeminiConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $GeminiConfigCopyWith<GeminiConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1357,8 +1295,6 @@ class _$GeminiConfigCopyWithImpl<$Res, $Val extends GeminiConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of GeminiConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1397,8 +1333,6 @@ class __$$GeminiConfigImplCopyWithImpl<$Res>
       _$GeminiConfigImpl _value, $Res Function(_$GeminiConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of GeminiConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1451,13 +1385,11 @@ class _$GeminiConfigImpl implements _GeminiConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, defaultModel);
 
-  /// Create a copy of GeminiConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$GeminiConfigImplCopyWith<_$GeminiConfigImpl> get copyWith =>
@@ -1479,18 +1411,16 @@ abstract class _GeminiConfig implements GeminiConfig {
   factory _GeminiConfig.fromJson(Map<String, dynamic> json) =
       _$GeminiConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of GeminiConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$GeminiConfigImplCopyWith<_$GeminiConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1510,12 +1440,8 @@ mixin _$ClaudeConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this ClaudeConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ClaudeConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ClaudeConfigCopyWith<ClaudeConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1539,8 +1465,6 @@ class _$ClaudeConfigCopyWithImpl<$Res, $Val extends ClaudeConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ClaudeConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1584,8 +1508,6 @@ class __$$ClaudeConfigImplCopyWithImpl<$Res>
       _$ClaudeConfigImpl _value, $Res Function(_$ClaudeConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ClaudeConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1650,13 +1572,11 @@ class _$ClaudeConfigImpl implements _ClaudeConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
-  /// Create a copy of ClaudeConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ClaudeConfigImplCopyWith<_$ClaudeConfigImpl> get copyWith =>
@@ -1679,22 +1599,20 @@ abstract class _ClaudeConfig implements ClaudeConfig {
   factory _ClaudeConfig.fromJson(Map<String, dynamic> json) =
       _$ClaudeConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of ClaudeConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ClaudeConfigImplCopyWith<_$ClaudeConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1714,12 +1632,8 @@ mixin _$DeepSeekConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this DeepSeekConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of DeepSeekConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $DeepSeekConfigCopyWith<DeepSeekConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1743,8 +1657,6 @@ class _$DeepSeekConfigCopyWithImpl<$Res, $Val extends DeepSeekConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of DeepSeekConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1788,8 +1700,6 @@ class __$$DeepSeekConfigImplCopyWithImpl<$Res>
       _$DeepSeekConfigImpl _value, $Res Function(_$DeepSeekConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of DeepSeekConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1854,13 +1764,11 @@ class _$DeepSeekConfigImpl implements _DeepSeekConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
-  /// Create a copy of DeepSeekConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$DeepSeekConfigImplCopyWith<_$DeepSeekConfigImpl> get copyWith =>
@@ -1884,22 +1792,20 @@ abstract class _DeepSeekConfig implements DeepSeekConfig {
   factory _DeepSeekConfig.fromJson(Map<String, dynamic> json) =
       _$DeepSeekConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of DeepSeekConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$DeepSeekConfigImplCopyWith<_$DeepSeekConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1919,12 +1825,8 @@ mixin _$QwenConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this QwenConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of QwenConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $QwenConfigCopyWith<QwenConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1948,8 +1850,6 @@ class _$QwenConfigCopyWithImpl<$Res, $Val extends QwenConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of QwenConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1993,8 +1893,6 @@ class __$$QwenConfigImplCopyWithImpl<$Res>
       _$QwenConfigImpl _value, $Res Function(_$QwenConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of QwenConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2057,13 +1955,11 @@ class _$QwenConfigImpl implements _QwenConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
-  /// Create a copy of QwenConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$QwenConfigImplCopyWith<_$QwenConfigImpl> get copyWith =>
@@ -2086,22 +1982,20 @@ abstract class _QwenConfig implements QwenConfig {
   factory _QwenConfig.fromJson(Map<String, dynamic> json) =
       _$QwenConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of QwenConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$QwenConfigImplCopyWith<_$QwenConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2121,12 +2015,8 @@ mixin _$OpenRouterConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this OpenRouterConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of OpenRouterConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $OpenRouterConfigCopyWith<OpenRouterConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2150,8 +2040,6 @@ class _$OpenRouterConfigCopyWithImpl<$Res, $Val extends OpenRouterConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of OpenRouterConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2195,8 +2083,6 @@ class __$$OpenRouterConfigImplCopyWithImpl<$Res>
       $Res Function(_$OpenRouterConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of OpenRouterConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2261,13 +2147,11 @@ class _$OpenRouterConfigImpl implements _OpenRouterConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
-  /// Create a copy of OpenRouterConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$OpenRouterConfigImplCopyWith<_$OpenRouterConfigImpl> get copyWith =>
@@ -2291,22 +2175,20 @@ abstract class _OpenRouterConfig implements OpenRouterConfig {
   factory _OpenRouterConfig.fromJson(Map<String, dynamic> json) =
       _$OpenRouterConfigImpl.fromJson;
 
-  /// API密钥
   @override
+
+  /// API密钥
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of OpenRouterConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$OpenRouterConfigImplCopyWith<_$OpenRouterConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2326,12 +2208,8 @@ mixin _$OllamaConfig {
   /// 默认模型
   String get defaultModel => throw _privateConstructorUsedError;
 
-  /// Serializes this OllamaConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of OllamaConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $OllamaConfigCopyWith<OllamaConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2355,8 +2233,6 @@ class _$OllamaConfigCopyWithImpl<$Res, $Val extends OllamaConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of OllamaConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2400,8 +2276,6 @@ class __$$OllamaConfigImplCopyWithImpl<$Res>
       _$OllamaConfigImpl _value, $Res Function(_$OllamaConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of OllamaConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2468,13 +2342,11 @@ class _$OllamaConfigImpl implements _OllamaConfig {
                 other.defaultModel == defaultModel));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, defaultModel);
 
-  /// Create a copy of OllamaConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$OllamaConfigImplCopyWith<_$OllamaConfigImpl> get copyWith =>
@@ -2497,22 +2369,20 @@ abstract class _OllamaConfig implements OllamaConfig {
   factory _OllamaConfig.fromJson(Map<String, dynamic> json) =
       _$OllamaConfigImpl.fromJson;
 
-  /// API密钥（Ollama通常不需要，但保持一致性）
   @override
+
+  /// API密钥（Ollama通常不需要，但保持一致性）
   String get apiKey;
+  @override
 
   /// 基础URL（Ollama服务地址）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String get defaultModel;
-
-  /// Create a copy of OllamaConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$OllamaConfigImplCopyWith<_$OllamaConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2541,12 +2411,8 @@ mixin _$ChatSettings {
   /// 是否启用RAG知识库增强
   bool get enableRag => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatSettingsCopyWith<ChatSettings> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2576,8 +2442,6 @@ class _$ChatSettingsCopyWithImpl<$Res, $Val extends ChatSettings>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2642,8 +2506,6 @@ class __$$ChatSettingsImplCopyWithImpl<$Res>
       _$ChatSettingsImpl _value, $Res Function(_$ChatSettingsImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2751,14 +2613,12 @@ class _$ChatSettingsImpl implements _ChatSettings {
                 other.enableRag == enableRag));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, maxHistoryLength, temperature,
       maxTokens, enableStreaming, autoSaveChat, enableRag);
 
-  /// Create a copy of ChatSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatSettingsImplCopyWith<_$ChatSettingsImpl> get copyWith =>
@@ -2784,34 +2644,32 @@ abstract class _ChatSettings implements ChatSettings {
   factory _ChatSettings.fromJson(Map<String, dynamic> json) =
       _$ChatSettingsImpl.fromJson;
 
-  /// 最大历史消息数
   @override
+
+  /// 最大历史消息数
   int get maxHistoryLength;
+  @override
 
   /// 默认温度
-  @override
   double get temperature;
+  @override
 
   /// 最大token数
-  @override
   int get maxTokens;
+  @override
 
   /// 是否启用流式响应
-  @override
   bool get enableStreaming;
+  @override
 
   /// 是否自动保存聊天
-  @override
   bool get autoSaveChat;
+  @override
 
   /// 是否启用RAG知识库增强
-  @override
   bool get enableRag;
-
-  /// Create a copy of ChatSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatSettingsImplCopyWith<_$ChatSettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2834,12 +2692,8 @@ mixin _$PrivacySettings {
   /// 数据保留天数
   int get dataRetentionDays => throw _privateConstructorUsedError;
 
-  /// Serializes this PrivacySettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of PrivacySettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $PrivacySettingsCopyWith<PrivacySettings> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2867,8 +2721,6 @@ class _$PrivacySettingsCopyWithImpl<$Res, $Val extends PrivacySettings>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of PrivacySettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2921,8 +2773,6 @@ class __$$PrivacySettingsImplCopyWithImpl<$Res>
       _$PrivacySettingsImpl _value, $Res Function(_$PrivacySettingsImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of PrivacySettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3004,14 +2854,12 @@ class _$PrivacySettingsImpl implements _PrivacySettings {
                 other.dataRetentionDays == dataRetentionDays));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, enableDataCollection,
       enableCrashReporting, enableUsageStats, dataRetentionDays);
 
-  /// Create a copy of PrivacySettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$PrivacySettingsImplCopyWith<_$PrivacySettingsImpl> get copyWith =>
@@ -3036,26 +2884,24 @@ abstract class _PrivacySettings implements PrivacySettings {
   factory _PrivacySettings.fromJson(Map<String, dynamic> json) =
       _$PrivacySettingsImpl.fromJson;
 
-  /// 是否启用数据收集
   @override
+
+  /// 是否启用数据收集
   bool get enableDataCollection;
+  @override
 
   /// 是否启用崩溃报告
-  @override
   bool get enableCrashReporting;
+  @override
 
   /// 是否启用使用统计
-  @override
   bool get enableUsageStats;
+  @override
 
   /// 数据保留天数
-  @override
   int get dataRetentionDays;
-
-  /// Create a copy of PrivacySettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$PrivacySettingsImplCopyWith<_$PrivacySettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3085,12 +2931,8 @@ mixin _$ThinkingChainSettings {
   /// 是否为Gemini模型特殊处理
   bool get enableGeminiSpecialHandling => throw _privateConstructorUsedError;
 
-  /// Serializes this ThinkingChainSettings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ThinkingChainSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ThinkingChainSettingsCopyWith<ThinkingChainSettings> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3121,8 +2963,6 @@ class _$ThinkingChainSettingsCopyWithImpl<$Res,
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ThinkingChainSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3189,8 +3029,6 @@ class __$$ThinkingChainSettingsImplCopyWithImpl<$Res>
       $Res Function(_$ThinkingChainSettingsImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ThinkingChainSettings
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3301,7 +3139,7 @@ class _$ThinkingChainSettingsImpl implements _ThinkingChainSettings {
                     enableGeminiSpecialHandling));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -3312,9 +3150,7 @@ class _$ThinkingChainSettingsImpl implements _ThinkingChainSettings {
       autoCollapseOnLongContent,
       enableGeminiSpecialHandling);
 
-  /// Create a copy of ThinkingChainSettings
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ThinkingChainSettingsImplCopyWith<_$ThinkingChainSettingsImpl>
@@ -3341,34 +3177,32 @@ abstract class _ThinkingChainSettings implements ThinkingChainSettings {
   factory _ThinkingChainSettings.fromJson(Map<String, dynamic> json) =
       _$ThinkingChainSettingsImpl.fromJson;
 
-  /// 是否显示思考链
   @override
+
+  /// 是否显示思考链
   bool get showThinkingChain;
+  @override
 
   /// 思考链动画速度（毫秒）
-  @override
   int get animationSpeed;
+  @override
 
   /// 是否启用思考链动画
-  @override
   bool get enableAnimation;
+  @override
 
   /// 思考链最大显示长度
-  @override
   int get maxDisplayLength;
+  @override
 
   /// 是否自动折叠长思考链
-  @override
   bool get autoCollapseOnLongContent;
+  @override
 
   /// 是否为Gemini模型特殊处理
-  @override
   bool get enableGeminiSpecialHandling;
-
-  /// Create a copy of ThinkingChainSettings
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ThinkingChainSettingsImplCopyWith<_$ThinkingChainSettingsImpl>
       get copyWith => throw _privateConstructorUsedError;
 }

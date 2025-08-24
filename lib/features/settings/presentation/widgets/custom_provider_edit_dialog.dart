@@ -77,7 +77,7 @@ class _CustomProviderEditDialogState
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedCompatibilityType,
+                  initialValue: _selectedCompatibilityType,
                   decoration: const InputDecoration(labelText: 'API兼容性类型'),
                   items: LlmProviderFactory.getSupportedCompatibilityTypes()
                       .map(

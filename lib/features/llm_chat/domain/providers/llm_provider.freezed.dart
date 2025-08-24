@@ -74,12 +74,8 @@ mixin _$LlmConfig {
   /// 自定义提供商图标（可选）
   String? get customProviderIcon => throw _privateConstructorUsedError;
 
-  /// Serializes this LlmConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of LlmConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $LlmConfigCopyWith<LlmConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -120,8 +116,6 @@ class _$LlmConfigCopyWithImpl<$Res, $Val extends LlmConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of LlmConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -258,8 +252,6 @@ class __$$LlmConfigImplCopyWithImpl<$Res>
       _$LlmConfigImpl _value, $Res Function(_$LlmConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of LlmConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -515,7 +507,7 @@ class _$LlmConfigImpl implements _LlmConfig {
                 other.customProviderIcon == customProviderIcon));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -538,9 +530,7 @@ class _$LlmConfigImpl implements _LlmConfig {
       customProviderDescription,
       customProviderIcon);
 
-  /// Create a copy of LlmConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$LlmConfigImplCopyWith<_$LlmConfigImpl> get copyWith =>
@@ -578,82 +568,80 @@ abstract class _LlmConfig implements LlmConfig {
   factory _LlmConfig.fromJson(Map<String, dynamic> json) =
       _$LlmConfigImpl.fromJson;
 
-  /// 配置ID
   @override
+
+  /// 配置ID
   String get id;
+  @override
 
   /// 配置名称
-  @override
   String get name;
+  @override
 
   /// 提供商类型
-  @override
   String get provider;
+  @override
 
   /// API密钥
-  @override
   String get apiKey;
+  @override
 
   /// 基础URL（可选，用于代理）
-  @override
   String? get baseUrl;
+  @override
 
   /// 默认模型
-  @override
   String? get defaultModel;
+  @override
 
   /// 默认嵌入模型
-  @override
   String? get defaultEmbeddingModel;
+  @override
 
   /// 组织ID（OpenAI）
-  @override
   String? get organizationId;
+  @override
 
   /// 项目ID（某些供应商）
-  @override
   String? get projectId;
+  @override
 
   /// 额外配置参数
-  @override
   Map<String, dynamic>? get extraParams;
+  @override
 
   /// 创建时间
-  @override
   DateTime get createdAt;
+  @override
 
   /// 最后更新时间
-  @override
   DateTime get updatedAt;
+  @override
 
   /// 是否启用
-  @override
   bool get isEnabled;
+  @override
 
   /// 是否为自定义提供商
-  @override
   bool get isCustomProvider;
+  @override
 
   /// API兼容性类型 (openai, gemini, anthropic, custom)
-  @override
   String get apiCompatibilityType;
+  @override
 
   /// 自定义提供商显示名称
-  @override
   String? get customProviderName;
+  @override
 
   /// 自定义提供商描述
-  @override
   String? get customProviderDescription;
+  @override
 
   /// 自定义提供商图标（可选）
-  @override
   String? get customProviderIcon;
-
-  /// Create a copy of LlmConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$LlmConfigImplCopyWith<_$LlmConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -697,12 +685,8 @@ mixin _$ModelInfo {
   /// 模型能力标签
   List<String> get capabilities => throw _privateConstructorUsedError;
 
-  /// Serializes this ModelInfo to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ModelInfoCopyWith<ModelInfo> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -738,8 +722,6 @@ class _$ModelInfoCopyWithImpl<$Res, $Val extends ModelInfo>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -803,8 +785,6 @@ class _$ModelInfoCopyWithImpl<$Res, $Val extends ModelInfo>
     ) as $Val);
   }
 
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $PricingInfoCopyWith<$Res>? get pricing {
@@ -851,8 +831,6 @@ class __$$ModelInfoImplCopyWithImpl<$Res>
       _$ModelInfoImpl _value, $Res Function(_$ModelInfoImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1023,7 +1001,7 @@ class _$ModelInfoImpl implements _ModelInfo {
                 .equals(other._capabilities, _capabilities));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -1039,9 +1017,7 @@ class _$ModelInfoImpl implements _ModelInfo {
       pricing,
       const DeepCollectionEquality().hash(_capabilities));
 
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ModelInfoImplCopyWith<_$ModelInfoImpl> get copyWith =>
@@ -1072,54 +1048,52 @@ abstract class _ModelInfo implements ModelInfo {
   factory _ModelInfo.fromJson(Map<String, dynamic> json) =
       _$ModelInfoImpl.fromJson;
 
-  /// 模型ID
   @override
+
+  /// 模型ID
   String get id;
+  @override
 
   /// 模型名称
-  @override
   String get name;
+  @override
 
   /// 模型描述
-  @override
   String? get description;
+  @override
 
   /// 模型类型
-  @override
   ModelType get type;
+  @override
 
   /// 上下文窗口大小
-  @override
   int? get contextWindow;
+  @override
 
   /// 最大输出token数
-  @override
   int? get maxOutputTokens;
+  @override
 
   /// 是否支持流式响应
-  @override
   bool get supportsStreaming;
+  @override
 
   /// 是否支持函数调用
-  @override
   bool get supportsFunctionCalling;
+  @override
 
   /// 是否支持视觉输入
-  @override
   bool get supportsVision;
+  @override
 
   /// 定价信息
-  @override
   PricingInfo? get pricing;
+  @override
 
   /// 模型能力标签
-  @override
   List<String> get capabilities;
-
-  /// Create a copy of ModelInfo
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ModelInfoImplCopyWith<_$ModelInfoImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1139,12 +1113,8 @@ mixin _$PricingInfo {
   /// 货币单位
   String get currency => throw _privateConstructorUsedError;
 
-  /// Serializes this PricingInfo to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of PricingInfo
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $PricingInfoCopyWith<PricingInfo> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1168,8 +1138,6 @@ class _$PricingInfoCopyWithImpl<$Res, $Val extends PricingInfo>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of PricingInfo
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1213,8 +1181,6 @@ class __$$PricingInfoImplCopyWithImpl<$Res>
       _$PricingInfoImpl _value, $Res Function(_$PricingInfoImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of PricingInfo
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1279,14 +1245,12 @@ class _$PricingInfoImpl implements _PricingInfo {
                 other.currency == currency));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, inputPrice, outputPrice, currency);
 
-  /// Create a copy of PricingInfo
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$PricingInfoImplCopyWith<_$PricingInfoImpl> get copyWith =>
@@ -1309,22 +1273,20 @@ abstract class _PricingInfo implements PricingInfo {
   factory _PricingInfo.fromJson(Map<String, dynamic> json) =
       _$PricingInfoImpl.fromJson;
 
-  /// 输入token价格（每1K token）
   @override
+
+  /// 输入token价格（每1K token）
   double? get inputPrice;
+  @override
 
   /// 输出token价格（每1K token）
-  @override
   double? get outputPrice;
+  @override
 
   /// 货币单位
-  @override
   String get currency;
-
-  /// Create a copy of PricingInfo
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$PricingInfoImplCopyWith<_$PricingInfoImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1375,12 +1337,8 @@ mixin _$ChatOptions {
   /// 自定义参数
   Map<String, dynamic>? get customParams => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatOptions to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatOptions
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatOptionsCopyWith<ChatOptions> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1417,8 +1375,6 @@ class _$ChatOptionsCopyWithImpl<$Res, $Val extends ChatOptions>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatOptions
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1525,8 +1481,6 @@ class __$$ChatOptionsImplCopyWithImpl<$Res>
       _$ChatOptionsImpl _value, $Res Function(_$ChatOptionsImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatOptions
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1739,7 +1693,7 @@ class _$ChatOptionsImpl implements _ChatOptions {
                 .equals(other._customParams, _customParams));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -1757,9 +1711,7 @@ class _$ChatOptionsImpl implements _ChatOptions {
       maxReasoningTokens,
       const DeepCollectionEquality().hash(_customParams));
 
-  /// Create a copy of ChatOptions
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatOptionsImplCopyWith<_$ChatOptionsImpl> get copyWith =>
@@ -1792,63 +1744,61 @@ abstract class _ChatOptions implements ChatOptions {
   factory _ChatOptions.fromJson(Map<String, dynamic> json) =
       _$ChatOptionsImpl.fromJson;
 
-  /// 使用的模型
   @override
+
+  /// 使用的模型
   String? get model;
+  @override
 
   /// 温度参数
-  @override
   double? get temperature;
+  @override
 
   /// 最大生成token数
-  @override
   int? get maxTokens;
+  @override
 
   /// Top-p参数
-  @override
   double? get topP;
+  @override
 
   /// 频率惩罚
-  @override
   double? get frequencyPenalty;
+  @override
 
   /// 存在惩罚
-  @override
   double? get presencePenalty;
+  @override
 
   /// 停止词
-  @override
   List<String>? get stopSequences;
+  @override
 
   /// 是否启用流式响应
-  @override
   bool? get stream;
+  @override
 
   /// 系统提示词
-  @override
   String? get systemPrompt;
+  @override
 
   /// 工具列表（函数调用）
-  @override
   List<ToolDefinition>? get tools;
+  @override
 
   /// 思考努力程度（用于o1/o3等模型）
   /// 可选值：'low', 'medium', 'high'
-  @override
   String? get reasoningEffort;
+  @override
 
   /// 最大思考token数（用于Gemini等模型）
-  @override
   int? get maxReasoningTokens;
+  @override
 
   /// 自定义参数
-  @override
   Map<String, dynamic>? get customParams;
-
-  /// Create a copy of ChatOptions
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatOptionsImplCopyWith<_$ChatOptionsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1868,12 +1818,8 @@ mixin _$ToolDefinition {
   /// 参数定义
   Map<String, dynamic> get parameters => throw _privateConstructorUsedError;
 
-  /// Serializes this ToolDefinition to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ToolDefinition
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ToolDefinitionCopyWith<ToolDefinition> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -1897,8 +1843,6 @@ class _$ToolDefinitionCopyWithImpl<$Res, $Val extends ToolDefinition>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ToolDefinition
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1942,8 +1886,6 @@ class __$$ToolDefinitionImplCopyWithImpl<$Res>
       _$ToolDefinitionImpl _value, $Res Function(_$ToolDefinitionImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ToolDefinition
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2016,14 +1958,12 @@ class _$ToolDefinitionImpl implements _ToolDefinition {
                 .equals(other._parameters, _parameters));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, name, description,
       const DeepCollectionEquality().hash(_parameters));
 
-  /// Create a copy of ToolDefinition
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ToolDefinitionImplCopyWith<_$ToolDefinitionImpl> get copyWith =>
@@ -2047,22 +1987,20 @@ abstract class _ToolDefinition implements ToolDefinition {
   factory _ToolDefinition.fromJson(Map<String, dynamic> json) =
       _$ToolDefinitionImpl.fromJson;
 
-  /// 工具名称
   @override
+
+  /// 工具名称
   String get name;
+  @override
 
   /// 工具描述
-  @override
   String get description;
+  @override
 
   /// 参数定义
-  @override
   Map<String, dynamic> get parameters;
-
-  /// Create a copy of ToolDefinition
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ToolDefinitionImplCopyWith<_$ToolDefinitionImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2097,12 +2035,8 @@ mixin _$ChatResult {
   /// 思考链内容（AI思考过程）
   String? get thinkingContent => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatResultCopyWith<ChatResult> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2136,8 +2070,6 @@ class _$ChatResultCopyWithImpl<$Res, $Val extends ChatResult>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2186,8 +2118,6 @@ class _$ChatResultCopyWithImpl<$Res, $Val extends ChatResult>
     ) as $Val);
   }
 
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $TokenUsageCopyWith<$Res> get tokenUsage {
@@ -2227,8 +2157,6 @@ class __$$ChatResultImplCopyWithImpl<$Res>
       _$ChatResultImpl _value, $Res Function(_$ChatResultImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2371,7 +2299,7 @@ class _$ChatResultImpl implements _ChatResult {
                 other.thinkingContent == thinkingContent));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -2384,9 +2312,7 @@ class _$ChatResultImpl implements _ChatResult {
       const DeepCollectionEquality().hash(_metadata),
       thinkingContent);
 
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatResultImplCopyWith<_$ChatResultImpl> get copyWith =>
@@ -2414,42 +2340,40 @@ abstract class _ChatResult implements ChatResult {
   factory _ChatResult.fromJson(Map<String, dynamic> json) =
       _$ChatResultImpl.fromJson;
 
-  /// 生成的内容
   @override
+
+  /// 生成的内容
   String get content;
+  @override
 
   /// 使用的模型
-  @override
   String get model;
+  @override
 
   /// token使用情况
-  @override
   TokenUsage get tokenUsage;
+  @override
 
   /// 完成原因
-  @override
   FinishReason get finishReason;
+  @override
 
   /// 工具调用（如果有）
-  @override
   List<ToolCall>? get toolCalls;
+  @override
 
   /// 响应时间（毫秒）
-  @override
   int? get responseTimeMs;
+  @override
 
   /// 额外元数据
-  @override
   Map<String, dynamic>? get metadata;
+  @override
 
   /// 思考链内容（AI思考过程）
-  @override
   String? get thinkingContent;
-
-  /// Create a copy of ChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatResultImplCopyWith<_$ChatResultImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2490,12 +2414,8 @@ mixin _$StreamedChatResult {
   /// 思考链是否完成
   bool get thinkingComplete => throw _privateConstructorUsedError;
 
-  /// Serializes this StreamedChatResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $StreamedChatResultCopyWith<StreamedChatResult> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2531,8 +2451,6 @@ class _$StreamedChatResultCopyWithImpl<$Res, $Val extends StreamedChatResult>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2591,8 +2509,6 @@ class _$StreamedChatResultCopyWithImpl<$Res, $Val extends StreamedChatResult>
     ) as $Val);
   }
 
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $TokenUsageCopyWith<$Res>? get tokenUsage {
@@ -2638,8 +2554,6 @@ class __$$StreamedChatResultImplCopyWithImpl<$Res>
       $Res Function(_$StreamedChatResultImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2797,7 +2711,7 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
                 other.thinkingComplete == thinkingComplete));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -2812,9 +2726,7 @@ class _$StreamedChatResultImpl implements _StreamedChatResult {
       thinkingContent,
       thinkingComplete);
 
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$StreamedChatResultImplCopyWith<_$StreamedChatResultImpl> get copyWith =>
@@ -2845,50 +2757,48 @@ abstract class _StreamedChatResult implements StreamedChatResult {
   factory _StreamedChatResult.fromJson(Map<String, dynamic> json) =
       _$StreamedChatResultImpl.fromJson;
 
-  /// 增量内容
   @override
+
+  /// 增量内容
   String? get delta;
+  @override
 
   /// 累积内容
-  @override
   String? get content;
+  @override
 
   /// 是否完成
-  @override
   bool get isDone;
+  @override
 
   /// 使用的模型
-  @override
   String? get model;
+  @override
 
   /// token使用情况（仅在完成时）
-  @override
   TokenUsage? get tokenUsage;
+  @override
 
   /// 完成原因（仅在完成时）
-  @override
   FinishReason? get finishReason;
+  @override
 
   /// 工具调用（如果有）
-  @override
   List<ToolCall>? get toolCalls;
+  @override
 
   /// 思考链增量内容
-  @override
   String? get thinkingDelta;
+  @override
 
   /// 思考链累积内容
-  @override
   String? get thinkingContent;
+  @override
 
   /// 思考链是否完成
-  @override
   bool get thinkingComplete;
-
-  /// Create a copy of StreamedChatResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$StreamedChatResultImplCopyWith<_$StreamedChatResultImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2908,12 +2818,8 @@ mixin _$TokenUsage {
   /// 总token数
   int get totalTokens => throw _privateConstructorUsedError;
 
-  /// Serializes this TokenUsage to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of TokenUsage
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $TokenUsageCopyWith<TokenUsage> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -2937,8 +2843,6 @@ class _$TokenUsageCopyWithImpl<$Res, $Val extends TokenUsage>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of TokenUsage
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2982,8 +2886,6 @@ class __$$TokenUsageImplCopyWithImpl<$Res>
       _$TokenUsageImpl _value, $Res Function(_$TokenUsageImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of TokenUsage
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3049,14 +2951,12 @@ class _$TokenUsageImpl implements _TokenUsage {
                 other.totalTokens == totalTokens));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, inputTokens, outputTokens, totalTokens);
 
-  /// Create a copy of TokenUsage
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$TokenUsageImplCopyWith<_$TokenUsageImpl> get copyWith =>
@@ -3079,22 +2979,20 @@ abstract class _TokenUsage implements TokenUsage {
   factory _TokenUsage.fromJson(Map<String, dynamic> json) =
       _$TokenUsageImpl.fromJson;
 
-  /// 输入token数
   @override
+
+  /// 输入token数
   int get inputTokens;
+  @override
 
   /// 输出token数
-  @override
   int get outputTokens;
+  @override
 
   /// 总token数
-  @override
   int get totalTokens;
-
-  /// Create a copy of TokenUsage
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$TokenUsageImplCopyWith<_$TokenUsageImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3114,12 +3012,8 @@ mixin _$ToolCall {
   /// 调用参数
   Map<String, dynamic> get arguments => throw _privateConstructorUsedError;
 
-  /// Serializes this ToolCall to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ToolCall
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ToolCallCopyWith<ToolCall> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3142,8 +3036,6 @@ class _$ToolCallCopyWithImpl<$Res, $Val extends ToolCall>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ToolCall
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3187,8 +3079,6 @@ class __$$ToolCallImplCopyWithImpl<$Res>
       _$ToolCallImpl _value, $Res Function(_$ToolCallImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ToolCall
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3260,14 +3150,12 @@ class _$ToolCallImpl implements _ToolCall {
                 .equals(other._arguments, _arguments));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType, id, name, const DeepCollectionEquality().hash(_arguments));
 
-  /// Create a copy of ToolCall
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ToolCallImplCopyWith<_$ToolCallImpl> get copyWith =>
@@ -3290,22 +3178,20 @@ abstract class _ToolCall implements ToolCall {
   factory _ToolCall.fromJson(Map<String, dynamic> json) =
       _$ToolCallImpl.fromJson;
 
-  /// 调用ID
   @override
+
+  /// 调用ID
   String get id;
+  @override
 
   /// 工具名称
-  @override
   String get name;
+  @override
 
   /// 调用参数
-  @override
   Map<String, dynamic> get arguments;
-
-  /// Create a copy of ToolCall
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ToolCallImplCopyWith<_$ToolCallImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3325,12 +3211,8 @@ mixin _$EmbeddingResult {
   /// token使用情况
   TokenUsage get tokenUsage => throw _privateConstructorUsedError;
 
-  /// Serializes this EmbeddingResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $EmbeddingResultCopyWith<EmbeddingResult> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -3357,8 +3239,6 @@ class _$EmbeddingResultCopyWithImpl<$Res, $Val extends EmbeddingResult>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3382,8 +3262,6 @@ class _$EmbeddingResultCopyWithImpl<$Res, $Val extends EmbeddingResult>
     ) as $Val);
   }
 
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $TokenUsageCopyWith<$Res> get tokenUsage {
@@ -3416,8 +3294,6 @@ class __$$EmbeddingResultImplCopyWithImpl<$Res>
       _$EmbeddingResultImpl _value, $Res Function(_$EmbeddingResultImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -3490,14 +3366,12 @@ class _$EmbeddingResultImpl implements _EmbeddingResult {
                 other.tokenUsage == tokenUsage));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType,
       const DeepCollectionEquality().hash(_embeddings), model, tokenUsage);
 
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$EmbeddingResultImplCopyWith<_$EmbeddingResultImpl> get copyWith =>
@@ -3521,22 +3395,20 @@ abstract class _EmbeddingResult implements EmbeddingResult {
   factory _EmbeddingResult.fromJson(Map<String, dynamic> json) =
       _$EmbeddingResultImpl.fromJson;
 
-  /// 嵌入向量列表
   @override
+
+  /// 嵌入向量列表
   List<List<double>> get embeddings;
+  @override
 
   /// 使用的模型
-  @override
   String get model;
+  @override
 
   /// token使用情况
-  @override
   TokenUsage get tokenUsage;
-
-  /// Create a copy of EmbeddingResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$EmbeddingResultImplCopyWith<_$EmbeddingResultImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

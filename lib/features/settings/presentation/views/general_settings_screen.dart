@@ -209,7 +209,7 @@ class GeneralSettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: settingsState.autoTopicNamingModelId,
+              initialValue: settingsState.autoTopicNamingModelId,
               decoration: const InputDecoration(
                 hintText: '选择用于生成话题名称的模型',
                 border: OutlineInputBorder(),
@@ -369,26 +369,30 @@ class GeneralSettingsScreen extends ConsumerWidget {
           ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        ...ProxyMode.values.map(
-          (mode) => RadioListTile<ProxyMode>(
-            title: Text(mode.displayName),
-            subtitle: Text(
-              mode.description,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+        RadioGroup<ProxyMode>(
+          groupValue: proxyConfig.mode,
+          onChanged: (value) {
+            if (value != null) {
+              final newConfig = proxyConfig.copyWith(mode: value);
+              ref
+                  .read(generalSettingsProvider.notifier)
+                  .setProxyConfig(newConfig);
+            }
+          },
+          child: Column(
+            children: ProxyMode.values.map(
+              (mode) => RadioListTile<ProxyMode>(
+                title: Text(mode.displayName),
+                subtitle: Text(
+                  mode.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                value: mode,
+                contentPadding: EdgeInsets.zero,
               ),
-            ),
-            value: mode,
-            groupValue: proxyConfig.mode,
-            onChanged: (value) {
-              if (value != null) {
-                final newConfig = proxyConfig.copyWith(mode: value);
-                ref
-                    .read(generalSettingsProvider.notifier)
-                    .setProxyConfig(newConfig);
-              }
-            },
-            contentPadding: EdgeInsets.zero,
+            ).toList(),
           ),
         ),
       ],
@@ -413,7 +417,7 @@ class GeneralSettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<ProxyType>(
-          value: proxyConfig.type,
+          initialValue: proxyConfig.type,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

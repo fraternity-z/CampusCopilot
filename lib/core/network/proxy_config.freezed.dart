@@ -38,12 +38,8 @@ mixin _$ProxyConfig {
   /// 密码（可选，用于需要认证的代理）
   String get password => throw _privateConstructorUsedError;
 
-  /// Serializes this ProxyConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ProxyConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ProxyConfigCopyWith<ProxyConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -73,8 +69,6 @@ class _$ProxyConfigCopyWithImpl<$Res, $Val extends ProxyConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ProxyConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -139,8 +133,6 @@ class __$$ProxyConfigImplCopyWithImpl<$Res>
       _$ProxyConfigImpl _value, $Res Function(_$ProxyConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ProxyConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -244,14 +236,12 @@ class _$ProxyConfigImpl implements _ProxyConfig {
                 other.password == password));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, mode, type, host, port, username, password);
 
-  /// Create a copy of ProxyConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ProxyConfigImplCopyWith<_$ProxyConfigImpl> get copyWith =>
@@ -277,34 +267,32 @@ abstract class _ProxyConfig implements ProxyConfig {
   factory _ProxyConfig.fromJson(Map<String, dynamic> json) =
       _$ProxyConfigImpl.fromJson;
 
-  /// 代理模式
   @override
+
+  /// 代理模式
   ProxyMode get mode;
+  @override
 
   /// 代理类型（仅在自定义模式下使用）
-  @override
   ProxyType get type;
+  @override
 
   /// 代理服务器地址
-  @override
   String get host;
+  @override
 
   /// 代理服务器端口
-  @override
   int get port;
+  @override
 
   /// 用户名（可选，用于需要认证的代理）
-  @override
   String get username;
+  @override
 
   /// 密码（可选，用于需要认证的代理）
-  @override
   String get password;
-
-  /// Create a copy of ProxyConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ProxyConfigImplCopyWith<_$ProxyConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

@@ -945,7 +945,7 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ModelType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(labelText: '模型类型'),
                   items: ModelType.values.map((type) {
                     return DropdownMenuItem(

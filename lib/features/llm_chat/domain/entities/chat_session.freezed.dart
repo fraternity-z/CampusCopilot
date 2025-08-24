@@ -56,12 +56,8 @@ mixin _$ChatSession {
   /// 会话元数据
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatSession to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatSessionCopyWith<ChatSession> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -99,8 +95,6 @@ class _$ChatSessionCopyWithImpl<$Res, $Val extends ChatSession>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -169,8 +163,6 @@ class _$ChatSessionCopyWithImpl<$Res, $Val extends ChatSession>
     ) as $Val);
   }
 
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ChatSessionConfigCopyWith<$Res>? get config {
@@ -218,8 +210,6 @@ class __$$ChatSessionImplCopyWithImpl<$Res>
       _$ChatSessionImpl _value, $Res Function(_$ChatSessionImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -411,7 +401,7 @@ class _$ChatSessionImpl implements _ChatSession {
             const DeepCollectionEquality().equals(other._metadata, _metadata));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -428,9 +418,7 @@ class _$ChatSessionImpl implements _ChatSession {
       config,
       const DeepCollectionEquality().hash(_metadata));
 
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatSessionImplCopyWith<_$ChatSessionImpl> get copyWith =>
@@ -462,58 +450,56 @@ abstract class _ChatSession implements ChatSession {
   factory _ChatSession.fromJson(Map<String, dynamic> json) =
       _$ChatSessionImpl.fromJson;
 
-  /// 会话唯一标识符
   @override
+
+  /// 会话唯一标识符
   String get id;
+  @override
 
   /// 会话标题
-  @override
   String get title;
+  @override
 
   /// 关联的智能体ID
-  @override
   String get personaId;
+  @override
 
   /// 会话创建时间
-  @override
   DateTime get createdAt;
+  @override
 
   /// 最后更新时间
-  @override
   DateTime get updatedAt;
+  @override
 
   /// 会话是否已归档
-  @override
   bool get isArchived;
+  @override
 
   /// 会话是否置顶
-  @override
   bool get isPinned;
+  @override
 
   /// 会话标签
-  @override
   List<String> get tags;
+  @override
 
   /// 消息总数
-  @override
   int get messageCount;
+  @override
 
   /// 总token使用量
-  @override
   int get totalTokens;
+  @override
 
   /// 会话配置
-  @override
   ChatSessionConfig? get config;
+  @override
 
   /// 会话元数据
-  @override
   Map<String, dynamic>? get metadata;
-
-  /// Create a copy of ChatSession
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatSessionImplCopyWith<_$ChatSessionImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -548,12 +534,8 @@ mixin _$ChatSessionConfig {
   /// 自定义参数
   Map<String, dynamic>? get customParams => throw _privateConstructorUsedError;
 
-  /// Serializes this ChatSessionConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ChatSessionConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ChatSessionConfigCopyWith<ChatSessionConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -585,8 +567,6 @@ class _$ChatSessionConfigCopyWithImpl<$Res, $Val extends ChatSessionConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ChatSessionConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -663,8 +643,6 @@ class __$$ChatSessionConfigImplCopyWithImpl<$Res>
       $Res Function(_$ChatSessionConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ChatSessionConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -816,7 +794,7 @@ class _$ChatSessionConfigImpl implements _ChatSessionConfig {
                 .equals(other._customParams, _customParams));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -829,9 +807,7 @@ class _$ChatSessionConfigImpl implements _ChatSessionConfig {
       systemPromptOverride,
       const DeepCollectionEquality().hash(_customParams));
 
-  /// Create a copy of ChatSessionConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ChatSessionConfigImplCopyWith<_$ChatSessionConfigImpl> get copyWith =>
@@ -860,42 +836,40 @@ abstract class _ChatSessionConfig implements ChatSessionConfig {
   factory _ChatSessionConfig.fromJson(Map<String, dynamic> json) =
       _$ChatSessionConfigImpl.fromJson;
 
-  /// 上下文窗口大小
   @override
+
+  /// 上下文窗口大小
   int get contextWindowSize;
+  @override
 
   /// 温度参数
-  @override
   double get temperature;
+  @override
 
   /// 最大生成token数
-  @override
   int get maxTokens;
+  @override
 
   /// 是否启用流式响应
-  @override
   bool get enableStreaming;
+  @override
 
   /// 是否启用RAG
-  @override
   bool get enableRAG;
+  @override
 
   /// RAG知识库ID列表
-  @override
   List<String> get knowledgeBaseIds;
+  @override
 
   /// 系统提示词覆盖（可选）
-  @override
   String? get systemPromptOverride;
+  @override
 
   /// 自定义参数
-  @override
   Map<String, dynamic>? get customParams;
-
-  /// Create a copy of ChatSessionConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ChatSessionConfigImplCopyWith<_$ChatSessionConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

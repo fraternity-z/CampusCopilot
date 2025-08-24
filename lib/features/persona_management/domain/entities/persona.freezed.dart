@@ -68,12 +68,8 @@ mixin _$Persona {
   /// 元数据
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
 
-  /// Serializes this Persona to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of Persona
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $PersonaCopyWith<Persona> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -111,8 +107,6 @@ class _$PersonaCopyWithImpl<$Res, $Val extends Persona>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of Persona
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -236,8 +230,6 @@ class __$$PersonaImplCopyWithImpl<$Res>
       _$PersonaImpl _value, $Res Function(_$PersonaImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of Persona
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -477,7 +469,7 @@ class _$PersonaImpl implements _Persona {
             const DeepCollectionEquality().equals(other._metadata, _metadata));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -498,9 +490,7 @@ class _$PersonaImpl implements _Persona {
       const DeepCollectionEquality().hash(_tags),
       const DeepCollectionEquality().hash(_metadata));
 
-  /// Create a copy of Persona
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$PersonaImplCopyWith<_$PersonaImpl> get copyWith =>
@@ -535,74 +525,72 @@ abstract class _Persona implements Persona {
 
   factory _Persona.fromJson(Map<String, dynamic> json) = _$PersonaImpl.fromJson;
 
-  /// 智能体唯一标识符
   @override
+
+  /// 智能体唯一标识符
   String get id;
+  @override
 
   /// 智能体名称
-  @override
   String get name;
+  @override
 
   /// 系统提示词（角色设定）
-  @override
   String get systemPrompt;
+  @override
 
   /// 创建时间
-  @override
   DateTime get createdAt;
+  @override
 
   /// 最后更新时间
-  @override
   DateTime get updatedAt;
+  @override
 
   /// 最后使用时间
-  @override
   DateTime? get lastUsedAt;
+  @override
 
   /// 智能体头像图片路径（本地文件路径）
-  @override
   String? get avatarImagePath;
+  @override
 
   /// 智能体头像emoji（当没有图片时使用）
-  @override
   String get avatarEmoji;
+  @override
 
   /// 智能体头像 (兼容性字段)
-  @override
   String? get avatar;
+  @override
 
   /// API配置ID
-  @override
   String? get apiConfigId;
+  @override
 
   /// 是否为默认智能体
-  @override
   bool get isDefault;
+  @override
 
   /// 是否启用
-  @override
   bool get isEnabled;
+  @override
 
   /// 使用次数统计
-  @override
   int get usageCount;
+  @override
 
   /// 智能体简短描述（可选）
-  @override
   String? get description;
+  @override
 
   /// 智能体标签
-  @override
   List<String> get tags;
+  @override
 
   /// 元数据
-  @override
   Map<String, dynamic>? get metadata;
-
-  /// Create a copy of Persona
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$PersonaImplCopyWith<_$PersonaImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
