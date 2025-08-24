@@ -17,7 +17,6 @@ import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'widgets/message_content_widget.dart';
-import 'widgets/streaming_message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
@@ -650,80 +649,220 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final isUser = message.isFromUser;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        crossAxisAlignment: isUser 
+            ? CrossAxisAlignment.end 
+            : CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.8),
-                    colorScheme.primary,
+          if (isUser) ...[
+            // 用户消息
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 时间和气泡列
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                    // 时间紧贴气泡
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        _formatTimestamp(message.timestamp),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                    // 消息气泡
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20).copyWith(
+                            topLeft: const Radius.circular(20),
+                            topRight: const Radius.circular(4),
+                            bottomLeft: const Radius.circular(20),
+                            bottomRight: const Radius.circular(20),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.only(
+                                left: 18,
+                                right: 46,
+                                top: 18,
+                                bottom: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                    const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                    const Color(0xFF7C3AED).withValues(alpha: 0.18),
+                                  ],
+                                  stops: const [0.0, 0.5, 1.0],
+                                ),
+                                border: Border.all(
+                                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(20).copyWith(
+                                  topLeft: const Radius.circular(20),
+                                  topRight: const Radius.circular(4),
+                                  bottomLeft: const Radius.circular(20),
+                                  bottomRight: const Radius.circular(20),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 8),
+                                    spreadRadius: -2,
+                                  ),
+                                  BoxShadow(
+                                    color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                    spreadRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: MessageContentWidget(message: message),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 4,
+                          child: MessageOptionsButton(message: message),
+                        ),
+                      ],
+                    ),
+                  ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 用户头像
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colorScheme.surface,
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.person,
+                    size: 16,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // 助手消息：头像和信息在上，气泡在下
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 头像和文字信息行
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 助手头像
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.8),
+                            colorScheme.primary,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        size: 16,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 助手信息
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'gpt-4o',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                            color: colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        Text(
+                          _formatTimestamp(message.timestamp),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 10,
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 16,
-                color: colorScheme.onPrimary,
-              ),
-            ),
-            const SizedBox(width: 10),
-          ],
-          Flexible(
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20).copyWith(
-                    bottomLeft: isUser
-                        ? const Radius.circular(20)
-                        : const Radius.circular(4),
-                    bottomRight: isUser
-                        ? const Radius.circular(4)
-                        : const Radius.circular(20),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      padding: const EdgeInsets.only(
-                        left: 18,
-                        right: 46, // 预留按钮空间
-                        top: 18,
-                        bottom: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: isUser
-                            ? LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  const Color(0xFF6366F1).withValues(alpha: 0.15),
-                                  const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                                  const Color(0xFF7C3AED).withValues(alpha: 0.18),
-                                ],
-                                stops: const [0.0, 0.5, 1.0],
-                              )
-                            : LinearGradient(
+                const SizedBox(height: 4),
+                // 消息气泡
+                Container(
+                  margin: const EdgeInsets.only(left: 40),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20).copyWith(
+                          topLeft: const Radius.circular(4),
+                          topRight: const Radius.circular(20),
+                          bottomLeft: const Radius.circular(20),
+                          bottomRight: const Radius.circular(20),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            padding: const EdgeInsets.only(
+                              left: 18,
+                              right: 46,
+                              top: 18,
+                              bottom: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
@@ -733,106 +872,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                 ],
                                 stops: const [0.0, 0.5, 1.0],
                               ),
-                        border: Border.all(
-                          color: isUser 
-                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(20).copyWith(
-                          bottomLeft: isUser
-                              ? const Radius.circular(20)
-                              : const Radius.circular(4),
-                          bottomRight: isUser
-                              ? const Radius.circular(4)
-                              : const Radius.circular(20),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isUser 
-                                ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
-                                : const Color(0xFF64748B).withValues(alpha: 0.06),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                            spreadRadius: -2,
-                          ),
-                          BoxShadow(
-                            color: isUser
-                                ? const Color(0xFF6366F1).withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          (message.isFromUser ||
-                                  message.status != MessageStatus.sending)
-                              ? MessageContentWidget(message: message)
-                              : OptimizedStreamingMessageWidget(
-                                  message: message,
-                                  isStreaming: true,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(20).copyWith(
+                                topLeft: const Radius.circular(4),
+                                topRight: const Radius.circular(20),
+                                bottomLeft: const Radius.circular(20),
+                                bottomRight: const Radius.circular(20),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF64748B).withValues(alpha: 0.06),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                  spreadRadius: -2,
                                 ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _formatTimestamp(message.timestamp),
-                            style: textTheme.bodySmall?.copyWith(
-                              color: isUser
-                                  ? const Color(0xFF4C1D95).withValues(alpha: 0.8)
-                                  : const Color(0xFF374151).withValues(alpha: 0.7),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: 0,
+                                ),
+                              ],
                             ),
+                            child: MessageContentWidget(message: message),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        right: 8,
+                        top: 4,
+                        child: MessageOptionsButton(message: message),
+                      ),
+                    ],
                   ),
-                ),
-                Positioned(
-                  right: 8,
-                  top: 4,
-                  child: MessageOptionsButton(message: message),
                 ),
               ],
-            ),
-          ),
-          if (isUser) ...[
-            const SizedBox(width: 10),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.secondary.withValues(alpha: 0.8),
-                    colorScheme.secondary,
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.secondary.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.person,
-                size: 16,
-                color: colorScheme.onSecondary,
-              ),
             ),
           ],
         ],
       ),
     );
   }
-
   /// 构建输入区域
   Widget _buildInputArea() {
     final attachedFiles = ref.watch(
@@ -1603,20 +1686,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
-  /// 格式化时间戳
+  /// 格式化时间戳为月日时分格式
   String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时前';
-    } else {
-      return '${timestamp.month}/${timestamp.day} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}';
-    }
+    final month = timestamp.month.toString().padLeft(2, '0');
+    final day = timestamp.day.toString().padLeft(2, '0');
+    final hour = timestamp.hour.toString().padLeft(2, '0');
+    final minute = timestamp.minute.toString().padLeft(2, '0');
+    return '$month/$day $hour:$minute';
   }
 
   /// 构建并列的 RAG 与 AI 搜索控制（紧凑样式）
