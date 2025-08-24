@@ -31,6 +31,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     // 设置会话标题更新回调
     _chatService.onSessionTitleUpdated = _onSessionTitleUpdated;
+    
+    // 设置搜索状态回调
+    _chatService.onSearchStatusChanged = _onSearchStatusChanged;
     debugPrint('🔗 ChatNotifier: 已设置会话标题更新回调');
   }
 
@@ -58,6 +61,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
         sessions: <ChatSession>[], // 明确指定类型
       );
     }
+  }
+
+  /// 处理搜索状态变化回调
+  void _onSearchStatusChanged(bool isSearching) {
+    debugPrint('🔍 搜索状态变化: $isSearching');
+    state = state.copyWith(isSearching: isSearching);
   }
 
   /// 处理会话标题更新（自动命名回调）
@@ -280,6 +289,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
                   ? m.copyWith(
                       content: fullResponse,
                       status: messageChunk.status,
+                      modelName: messageChunk.modelName,
                     )
                   : m;
             }).toList();
@@ -657,6 +667,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
                   ? m.copyWith(
                       content: fullResponse,
                       status: messageChunk.status,
+                      modelName: messageChunk.modelName,
                     )
                   : m;
             }).toList();
@@ -738,6 +749,7 @@ class ChatState {
   final List<ChatMessage> messages;
   final ChatSession? currentSession;
   final bool isLoading;
+  final bool isSearching; // 新增：搜索状态
   final String? error;
   final List<ChatSession> sessions;
   final List<PlatformFile> attachedFiles;
@@ -748,6 +760,7 @@ class ChatState {
     this.messages = const [],
     this.currentSession,
     this.isLoading = false,
+    this.isSearching = false, // 新增
     this.error,
     this.sessions = const [],
     this.attachedFiles = const [],
@@ -759,6 +772,7 @@ class ChatState {
     List<ChatMessage>? messages,
     ChatSession? currentSession,
     bool? isLoading,
+    bool? isSearching, // 新增
     String? error,
     List<ChatSession>? sessions,
     List<PlatformFile>? attachedFiles,
@@ -769,6 +783,7 @@ class ChatState {
       messages: messages ?? this.messages,
       currentSession: currentSession ?? this.currentSession,
       isLoading: isLoading ?? this.isLoading,
+      isSearching: isSearching ?? this.isSearching, // 新增
       error: error,
       sessions: sessions ?? this.sessions,
       attachedFiles: attachedFiles ?? this.attachedFiles,
@@ -779,7 +794,7 @@ class ChatState {
 
   @override
   String toString() {
-    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, error: $error, sessions: ${sessions.length})';
+    return 'ChatState(messages: ${messages.length}, currentSession: ${currentSession?.id}, isLoading: $isLoading, isSearching: $isSearching, error: $error, sessions: ${sessions.length})';
   }
 }
 
@@ -809,6 +824,11 @@ final chatMessagesProvider = Provider<List<ChatMessage>>((ref) {
 /// 聊天加载状态Provider
 final chatLoadingProvider = Provider<bool>((ref) {
   return ref.watch(chatProvider).isLoading;
+});
+
+/// 聊天搜索状态Provider
+final chatSearchingProvider = Provider<bool>((ref) {
+  return ref.watch(chatProvider).isSearching;
 });
 
 /// 聊天错误Provider

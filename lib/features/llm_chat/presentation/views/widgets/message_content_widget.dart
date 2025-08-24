@@ -234,7 +234,6 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       h6: headingFont.copyWith(color: textColor, fontSize: 14),
       blockquote: theme.textTheme.bodyMedium?.copyWith(
         color: textColor.withValues(alpha: 0.85),
-        fontStyle: FontStyle.italic,
       ),
       strong: theme.textTheme.bodyMedium?.copyWith(
         color: textColor,
@@ -242,7 +241,6 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       ),
       em: theme.textTheme.bodyMedium?.copyWith(
         color: textColor,
-        fontStyle: FontStyle.italic,
       ),
       code: theme.textTheme.bodyMedium?.copyWith(
         color: textColor,

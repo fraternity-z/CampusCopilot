@@ -491,15 +491,14 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
               final navigator = Navigator.of(context);
               final messenger = ScaffoldMessenger.of(context);
 
+              // 先关闭弹窗，避免等待异步操作时UI卡顿
+              navigator.pop();
+
               try {
                 await ref.read(settingsProvider.notifier).switchModel(model.id);
-                // 移除不必要的Future.delayed
               } catch (e) {
                 messenger.showSnackBar(SnackBar(content: Text('切换模型失败: $e')));
               }
-
-              // 使用提前获取的navigator引用
-              navigator.pop();
             } else {
               // 如果已选中，直接关闭弹窗
               Navigator.pop(context);

@@ -510,33 +510,106 @@ class AISearchIntegrationService {
     );
   }
 
-  /// Google搜索：已弃用独立API实现，统一通过 Direct/Tavily/Model-Native
+  /// Google搜索：使用增强型直接爬取
   Future<SearchResult> _searchGoogle(
     String query, {
     int maxResults = 5,
     String? language,
     String? region,
   }) async {
-    return SearchResult(
-      query: query,
-      items: const [],
-      searchTime: 0,
-      engine: 'google',
-      error: 'Google搜索独立API已停用，请使用 Direct/Tavily/模型内置联网',
-    );
+    final startTime = DateTime.now();
+
+    try {
+      debugPrint('🔍 开始Google搜索: "$query"');
+
+      // 使用增强型轻量直接爬取器
+      final result = await LightweightDirectFetcher.searchViaHttp(
+        query,
+        engines: ['google'],
+        maxResults: maxResults,
+        language: language,
+        region: region,
+      );
+
+      if (!result.isSuccess) {
+        debugPrint('❌ Google搜索失败: ${result.error}');
+        return SearchResult(
+          query: query,
+          items: [],
+          searchTime: DateTime.now().difference(startTime).inMilliseconds,
+          engine: 'google',
+          error: result.error,
+        );
+      }
+
+      debugPrint('✅ Google搜索成功，找到 ${result.items.length} 个结果');
+
+      return SearchResult(
+        query: query,
+        items: result.items,
+        searchTime: DateTime.now().difference(startTime).inMilliseconds,
+        engine: 'google',
+        totalResults: result.totalResults,
+      );
+    } catch (e) {
+      debugPrint('❌ Google搜索异常: $e');
+      return SearchResult(
+        query: query,
+        items: [],
+        searchTime: DateTime.now().difference(startTime).inMilliseconds,
+        engine: 'google',
+        error: e.toString(),
+      );
+    }
   }
 
   // 旧的 orchestrator 直连方法已移除
 
-  /// Bing搜索：已弃用独立API实现，统一通过 Direct/Tavily/Model-Native
+  /// Bing搜索：使用增强型直接爬取
   Future<SearchResult> _searchBing(String query, {int maxResults = 5}) async {
-    return SearchResult(
-      query: query,
-      items: const [],
-      searchTime: 0,
-      engine: 'bing',
-      error: 'Bing搜索独立API已停用，请使用 Direct/Tavily/模型内置联网',
-    );
+    final startTime = DateTime.now();
+
+    try {
+      debugPrint('🔍 开始Bing搜索: "$query"');
+
+      // 使用增强型轻量直接爬取器
+      final result = await LightweightDirectFetcher.searchViaHttp(
+        query,
+        engines: ['bing'],
+        maxResults: maxResults,
+        language: 'zh',
+      );
+
+      if (!result.isSuccess) {
+        debugPrint('❌ Bing搜索失败: ${result.error}');
+        return SearchResult(
+          query: query,
+          items: [],
+          searchTime: DateTime.now().difference(startTime).inMilliseconds,
+          engine: 'bing',
+          error: result.error,
+        );
+      }
+
+      debugPrint('✅ Bing搜索成功，找到 ${result.items.length} 个结果');
+
+      return SearchResult(
+        query: query,
+        items: result.items,
+        searchTime: DateTime.now().difference(startTime).inMilliseconds,
+        engine: 'bing',
+        totalResults: result.totalResults,
+      );
+    } catch (e) {
+      debugPrint('❌ Bing搜索异常: $e');
+      return SearchResult(
+        query: query,
+        items: [],
+        searchTime: DateTime.now().difference(startTime).inMilliseconds,
+        engine: 'bing',
+        error: e.toString(),
+      );
+    }
   }
 
   /// 过滤和排序搜索结果

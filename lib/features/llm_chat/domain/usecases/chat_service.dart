@@ -364,6 +364,9 @@ class ChatService {
         mergedCustom['enableModelNativeSearch'] = true;
       }
 
+      debugPrint('🔍 llmConfig.defaultModel 实际值: "${llmConfig.defaultModel}"');
+      debugPrint('🔍 llmConfig.defaultModel 是否为空: ${llmConfig.defaultModel?.isEmpty ?? true}');
+      
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: persona.systemPrompt,
@@ -394,7 +397,7 @@ class ChatService {
             parentMessageId: userMessage.id,
             tokenCount: result.tokenUsage.totalTokens,
           ).copyWith(
-            modelName: llmConfig.defaultModel,
+            modelName: chatOptions.model,
             thinkingContent: result.thinkingContent,
             thinkingComplete: result.thinkingContent != null,
           );
@@ -799,14 +802,11 @@ class ChatService {
       );
 
       debugPrint(
-        '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
-      );
-      debugPrint('⚙️ 开始调用AI API');
-      debugPrint(
-        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}',
+        '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}, 最大推理Token=${chatOptions.maxReasoningTokens}',
       );
       debugPrint('📝 上下文消息数量: ${contextMessages.length}');
 
+      // 8. 开始流式生成
       String accumulatedRawContent = ''; // 完整原始内容
       String accumulatedThinking = ''; // 思考链内容
       String accumulatedActualContent = ''; // 正文内容
@@ -833,7 +833,7 @@ class ChatService {
                   tokenCount: chunk.tokenUsage?.totalTokens ?? 0,
                 ).copyWith(
                   id: aiMessageId,
-                  modelName: llmConfig.defaultModel,
+                  modelName: chatOptions.model,
                   thinkingContent: accumulatedThinking.isNotEmpty
                       ? accumulatedThinking
                       : null,
@@ -910,7 +910,7 @@ class ChatService {
 
           if (kDebugMode) {
             debugPrint(
-              '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 正文增量=${contentDelta?.length ?? 0}, 部分标签="$partialTag"',
+              '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 部分标签="$partialTag"',
             );
           }
 
@@ -929,21 +929,19 @@ class ChatService {
             accumulatedActualContent += contentDelta;
             if (kDebugMode) {
               debugPrint(
-                '📝 正文增量: $contentDelta.length 字符, 总长度: $accumulatedActualContent.length',
+                '📝 正文总长度: $accumulatedActualContent.length',
               );
             }
           }
         }
 
         // 创建或更新AI消息
-        if (aiMessageId == null) {
-          aiMessageId = ChatMessageFactory.createAIMessage(
+        aiMessageId ??= ChatMessageFactory.createAIMessage(
             content: accumulatedRawContent,
             chatSessionId: sessionId,
             parentMessageId: userMessage.id,
+            modelName: chatOptions.model,
           ).id;
-          debugPrint('🆔 创建AI消息ID: $aiMessageId');
-        }
 
         yield ChatMessage(
           id: aiMessageId,
@@ -952,7 +950,7 @@ class ChatService {
           timestamp: DateTime.now(),
           chatSessionId: sessionId,
           status: MessageStatus.sending,
-          modelName: llmConfig.defaultModel,
+          modelName: chatOptions.model,
           thinkingContent: accumulatedThinking.isNotEmpty
               ? accumulatedThinking
               : null,

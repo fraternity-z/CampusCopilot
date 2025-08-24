@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,6 +18,7 @@ import '../providers/chat_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'widgets/message_content_widget.dart';
+import 'widgets/streaming_message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
@@ -210,9 +212,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
+                    // 阻止滚动传播
                     showDialog(
                       context: context,
-                      builder: (context) => ModelSelectorDialog(
+                      barrierDismissible: true,
+                      builder: (dialogContext) => ModelSelectorDialog(
                         allModels: allModels,
                         currentModel: currentModel,
                       ),
@@ -484,6 +488,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       builder: (context, ref, child) {
         final messages = ref.watch(chatMessagesProvider);
         final error = ref.watch(chatErrorProvider);
+        final isSearching = ref.watch(chatSearchingProvider);
 
         if (messages.isEmpty) {
           return Center(
@@ -525,6 +530,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           }
         });
 
+        // 计算itemCount：消息数量 + 搜索状态消息 + 错误消息
+        int extraItems = 0;
+        if (isSearching) extraItems++;
+        if (error != null) extraItems++;
+
         return AnimationLimiter(
           child: ListView.builder(
             key: const PageStorageKey('chat_message_list'),
@@ -534,9 +544,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             addAutomaticKeepAlives: true,
             addRepaintBoundaries: true,
             addSemanticIndexes: true,
-            itemCount: messages.length + (error != null ? 1 : 0),
+            itemCount: messages.length + extraItems,
             itemBuilder: (context, index) {
-              if (error != null && index == messages.length) {
+              // 显示搜索状态消息（在消息列表末尾，错误消息之前）
+              if (isSearching && index == messages.length) {
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 375),
+                  child: SlideAnimation(
+                    verticalOffset: 30.0,
+                    horizontalOffset: -30.0,
+                    child: FadeInAnimation(
+                      child: _buildSearchingMessage(),
+                    ),
+                  ),
+                );
+              }
+
+              // 显示错误消息（在最后）
+              if (error != null && index == messages.length + (isSearching ? 1 : 0)) {
                 return AnimationConfiguration.staggeredList(
                   position: index,
                   duration: const Duration(milliseconds: 375),
@@ -548,6 +574,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   ),
                 );
               }
+
+              // 显示普通消息
               return AnimationConfiguration.staggeredList(
                 position: index,
                 duration: const Duration(milliseconds: 375),
@@ -563,6 +591,135 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           ),
         );
       },
+    );
+  }
+
+  /// 构建搜索状态消息
+  Widget _buildSearchingMessage() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.85,
+                minWidth: 120,
+              ),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.surfaceContainer,
+                    Theme.of(context).colorScheme.surfaceContainerHigh,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(20),
+                ),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.cyan.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: Colors.cyan.shade600,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Shimmer.fromColors(
+                          baseColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                          highlightColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                          child: Text(
+                            '正在搜索网络资源...',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Shimmer.fromColors(
+                              baseColor: Colors.cyan.shade300.withValues(alpha: 0.3),
+                              highlightColor: Colors.cyan.shade300.withValues(alpha: 0.8),
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.cyan.shade300,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Shimmer.fromColors(
+                              baseColor: Colors.cyan.shade300.withValues(alpha: 0.3),
+                              highlightColor: Colors.cyan.shade300.withValues(alpha: 0.8),
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.cyan.shade300,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Shimmer.fromColors(
+                              baseColor: Colors.cyan.shade300.withValues(alpha: 0.3),
+                              highlightColor: Colors.cyan.shade300.withValues(alpha: 0.8),
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.cyan.shade300,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -735,7 +892,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                   ),
                                 ],
                               ),
-                              child: MessageContentWidget(message: message),
+                              child: message.status == MessageStatus.sending && message.isFromAI
+                                  ? OptimizedStreamingMessageWidget(
+                                      message: message,
+                                      isStreaming: true,
+                                    )
+                                  : MessageContentWidget(message: message),
                             ),
                           ),
                         ),
@@ -821,7 +983,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'gpt-4o',
+                          message.modelName?.isNotEmpty == true ? message.modelName! : 'AI助手',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w500,
                             fontSize: 11,
@@ -897,7 +1059,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                 ),
                               ],
                             ),
-                            child: MessageContentWidget(message: message),
+                            child: message.status == MessageStatus.sending && message.isFromAI
+                                ? OptimizedStreamingMessageWidget(
+                                    message: message,
+                                    isStreaming: true,
+                                  )
+                                : MessageContentWidget(message: message),
                           ),
                         ),
                       ),
@@ -1079,20 +1246,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                     final isLoading = ref.watch(
                                       chatLoadingProvider,
                                     );
+                                    final isSearching = ref.watch(
+                                      chatSearchingProvider,
+                                    );
                                     final attachedFiles = ref.watch(
                                       chatProvider.select(
                                         (s) => s.attachedFiles,
                                       ),
                                     );
 
-                                    // 计算按钮是否可用
+                                    // 计算按钮是否可用和状态
                                     final hasText = textValue.text
                                         .trim()
                                         .isNotEmpty;
+                                    final isBusy = isLoading || isSearching;
                                     final canSend =
-                                        !isLoading &&
+                                        !isBusy &&
                                         (hasText || attachedFiles.isNotEmpty);
-                                    final isStopButton = isLoading;
+                                    
+                                    // 确定按钮状态和样式
+                                    String buttonState = 'normal';
+                                    if (isSearching) {
+                                      buttonState = 'searching';
+                                    } else if (isLoading) {
+                                      buttonState = 'generating';
+                                    }
+                                    
+                                    final isStopButton = isBusy;
 
                                     return MouseRegion(
                                       cursor: canSend || isStopButton
@@ -1105,22 +1285,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                         decoration: BoxDecoration(
                                           gradient: canSend || isStopButton
                                               ? LinearGradient(
-                                                  colors: isStopButton
+                                                  colors: buttonState == 'searching'
                                                       ? [
-                                                          const Color(
-                                                            0xFFFF6B6B,
-                                                          ),
-                                                          const Color(
-                                                            0xFFE53E3E,
-                                                          ),
+                                                          const Color(0xFF00BCD4), // 青色：搜索中
+                                                          const Color(0xFF0097A7),
+                                                        ]
+                                                      : buttonState == 'generating'
+                                                      ? [
+                                                          const Color(0xFFFF6B6B), // 红色：生成中（停止）
+                                                          const Color(0xFFE53E3E),
                                                         ]
                                                       : [
-                                                          const Color(
-                                                            0xFF2684FF,
-                                                          ),
-                                                          const Color(
-                                                            0xFF0052CC,
-                                                          ),
+                                                          const Color(0xFF2684FF), // 蓝色：发送
+                                                          const Color(0xFF0052CC),
                                                         ],
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
@@ -1133,17 +1310,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                           boxShadow: canSend || isStopButton
                                               ? [
                                                   BoxShadow(
-                                                    color:
-                                                        (isStopButton
-                                                                ? const Color(
-                                                                    0xFFFF6B6B,
-                                                                  )
-                                                                : const Color(
-                                                                    0xFF2684FF,
-                                                                  ))
-                                                            .withValues(
-                                                              alpha: 0.3,
-                                                            ),
+                                                    color: (buttonState == 'searching'
+                                                            ? const Color(0xFF00BCD4)
+                                                            : buttonState == 'generating'
+                                                            ? const Color(0xFFFF6B6B)
+                                                            : const Color(0xFF2684FF))
+                                                        .withValues(alpha: 0.3),
                                                     blurRadius: 8,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -1164,16 +1336,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                             child: Center(
                                               child: AnimatedSwitcher(
                                                 duration: const Duration(milliseconds: 200),
-                                                child: Icon(
-                                                  isStopButton
-                                                      ? Icons.stop_rounded
-                                                      : Icons.send_rounded,
-                                                  key: ValueKey(isStopButton),
-                                                  color: canSend || isStopButton
-                                                      ? Colors.white
-                                                      : const Color(0xFF94A3B8),
-                                                  size: 18,
-                                                ),
+                                                child: buttonState == 'searching'
+                                                    ? SizedBox(
+                                                        width: 16,
+                                                        height: 16,
+                                                        child: CircularProgressIndicator(
+                                                          key: const ValueKey('searching'),
+                                                          strokeWidth: 2,
+                                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                                        ),
+                                                      )
+                                                    : Icon(
+                                                        buttonState == 'generating'
+                                                            ? Icons.stop_rounded
+                                                            : Icons.send_rounded,
+                                                        key: ValueKey(buttonState),
+                                                        color: canSend || isStopButton
+                                                            ? Colors.white
+                                                            : const Color(0xFF94A3B8),
+                                                        size: 18,
+                                                      ),
                                               ),
                                             ),
                                           ),

@@ -299,8 +299,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       final provider = _stringToAIProvider(config.provider);
       if (provider == null) continue;
 
-      // 更新默认提供商
-      await updateDefaultProvider(provider);
+      // 直接更新状态，避免触发额外的state更新
+      state = state.copyWith(defaultProvider: provider);
 
       // 更新数据库中的默认模型
       final updatedConfig = LlmConfigsTableCompanion(
