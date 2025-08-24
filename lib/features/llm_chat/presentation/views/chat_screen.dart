@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -573,28 +574,70 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: Theme.of(context).colorScheme.onErrorContainer,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              error,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onErrorContainer,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.warning_rounded,
+              color: Theme.of(context).colorScheme.error,
+              size: 20,
             ),
           ),
-          IconButton(
-            onPressed: () => ref.read(chatProvider.notifier).clearError(),
-            icon: Icon(
-              Icons.close,
-              color: Theme.of(context).colorScheme.onErrorContainer,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '发生错误',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  error,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => ref.read(chatProvider.notifier).clearError(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Theme.of(context).colorScheme.onErrorContainer.withValues(alpha: 0.7),
+                  size: 18,
+                ),
+              ),
             ),
           ),
         ],
@@ -650,80 +693,101 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           Flexible(
             child: Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.only(
-                    left: 18,
-                    right: 46, // 预留按钮空间
-                    top: 18,
-                    bottom: 14,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20).copyWith(
+                    bottomLeft: isUser
+                        ? const Radius.circular(20)
+                        : const Radius.circular(4),
+                    bottomRight: isUser
+                        ? const Radius.circular(4)
+                        : const Radius.circular(20),
                   ),
-                  decoration: BoxDecoration(
-                    gradient: isUser
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.primary.withValues(alpha: 0.95),
-                              colorScheme.primary,
-                              colorScheme.primary.withValues(alpha: 0.85),
-                            ],
-                            stops: const [0.0, 0.5, 1.0],
-                          )
-                        : LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.surfaceContainerHighest,
-                              colorScheme.surfaceContainerHighest.withValues(alpha: 0.95),
-                            ],
-                          ),
-                    borderRadius: BorderRadius.circular(20).copyWith(
-                      bottomLeft: isUser
-                          ? const Radius.circular(20)
-                          : const Radius.circular(4),
-                      bottomRight: isUser
-                          ? const Radius.circular(4)
-                          : const Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isUser 
-                            ? colorScheme.primary.withValues(alpha: 0.15)
-                            : Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 2),
-                        spreadRadius: 0,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                        left: 18,
+                        right: 46, // 预留按钮空间
+                        top: 18,
+                        bottom: 14,
                       ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 1),
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      (message.isFromUser ||
-                              message.status != MessageStatus.sending)
-                          ? MessageContentWidget(message: message)
-                          : OptimizedStreamingMessageWidget(
-                              message: message,
-                              isStreaming: true,
-                            ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _formatTimestamp(message.timestamp),
-                        style: textTheme.bodySmall?.copyWith(
-                          color:
-                              (isUser
-                                      ? colorScheme.onPrimaryContainer
-                                      : colorScheme.onSurface)
-                                  .withAlpha(140),
+                      decoration: BoxDecoration(
+                        gradient: isUser
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                  const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                  const Color(0xFF7C3AED).withValues(alpha: 0.18),
+                                ],
+                                stops: const [0.0, 0.5, 1.0],
+                              )
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.3),
+                                  Colors.white.withValues(alpha: 0.2),
+                                  const Color(0xFFF8FAFC).withValues(alpha: 0.4),
+                                ],
+                                stops: const [0.0, 0.5, 1.0],
+                              ),
+                        border: Border.all(
+                          color: isUser 
+                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.2)
+                              : Colors.white.withValues(alpha: 0.3),
+                          width: 1,
                         ),
+                        borderRadius: BorderRadius.circular(20).copyWith(
+                          bottomLeft: isUser
+                              ? const Radius.circular(20)
+                              : const Radius.circular(4),
+                          bottomRight: isUser
+                              ? const Radius.circular(4)
+                              : const Radius.circular(20),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isUser 
+                                ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
+                                : const Color(0xFF64748B).withValues(alpha: 0.06),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                            spreadRadius: -2,
+                          ),
+                          BoxShadow(
+                            color: isUser
+                                ? const Color(0xFF6366F1).withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                            spreadRadius: 0,
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          (message.isFromUser ||
+                                  message.status != MessageStatus.sending)
+                              ? MessageContentWidget(message: message)
+                              : OptimizedStreamingMessageWidget(
+                                  message: message,
+                                  isStreaming: true,
+                                ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _formatTimestamp(message.timestamp),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: isUser
+                                  ? const Color(0xFF4C1D95).withValues(alpha: 0.8)
+                                  : const Color(0xFF374151).withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -801,13 +865,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: _isInputFocused
-                    ? Border.all(color: const Color(0xFF2684FF), width: 1)
-                    : null,
+                    ? Border.all(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                        width: 1.5,
+                      )
+                    : Border.all(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                        width: 1,
+                      ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: _isInputFocused
+                        ? const Color(0xFF8B5CF6).withValues(alpha: 0.08)
+                        : const Color(0xFF64748B).withValues(alpha: 0.04),
+                    blurRadius: _isInputFocused ? 16 : 8,
+                    offset: const Offset(0, 4),
+                    spreadRadius: _isInputFocused ? 0 : 0,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -830,11 +909,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                             child: TextField(
                               controller: _messageController,
                               focusNode: _inputFocusNode,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: '输入消息...',
                                 hintStyle: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF999999),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w400,
                                 ),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -842,10 +922,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                 filled: false,
                                 contentPadding: EdgeInsets.zero,
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                color: Color(0xFF333333),
+                                color: Theme.of(context).colorScheme.onSurface,
                                 height: 1.5,
+                                fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
                               keyboardType: TextInputType.text,
@@ -1041,54 +1122,160 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     List<PlatformFile> files,
   ) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 8),
-      height: 80, // 固定高度以便滚动
+      padding: const EdgeInsets.only(bottom: 12),
+      height: 88,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: files.length,
         itemBuilder: (context, index) {
           final file = files[index];
           return Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            margin: const EdgeInsets.only(right: 12),
+            constraints: const BoxConstraints(maxWidth: 200),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.insert_drive_file,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  file.name,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                  onPressed: () {
-                    ref.read(chatProvider.notifier).removeFile(file);
-                  },
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _getFileIcon(file.extension),
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            file.name,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatFileSize(file.size),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          ref.read(chatProvider.notifier).removeFile(file);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
         },
       ),
     );
+  }
+
+  /// 根据文件扩展名获取图标
+  IconData _getFileIcon(String? extension) {
+    if (extension == null) return Icons.insert_drive_file;
+    
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow;
+      case 'txt':
+        return Icons.text_snippet;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return Icons.image;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+        return Icons.video_file;
+      case 'mp3':
+      case 'wav':
+      case 'flac':
+        return Icons.audio_file;
+      case 'zip':
+      case 'rar':
+      case '7z':
+        return Icons.folder_zip;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  /// 格式化文件大小
+  String _formatFileSize(int? bytes) {
+    if (bytes == null || bytes == 0) return '0 B';
+    
+    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    int i = 0;
+    double size = bytes.toDouble();
+    
+    while (size >= 1024 && i < suffixes.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    
+    return '${size.toStringAsFixed(i == 0 ? 0 : 1)} ${suffixes[i]}';
   }
 
   /// 构建已附加图片列表
