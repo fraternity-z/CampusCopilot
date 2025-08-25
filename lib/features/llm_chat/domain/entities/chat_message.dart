@@ -102,6 +102,9 @@ enum MessageType {
 
   /// 错误消息
   error,
+
+  /// 生成中（加载占位符）
+  generating,
 }
 
 /// 消息状态枚举

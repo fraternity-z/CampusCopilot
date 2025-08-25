@@ -8,7 +8,7 @@ import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart' as highlight;
 import 'package:markdown/markdown.dart' as md;
 import 'package:markdown/markdown.dart' show InlineSyntax;
-import '../../../../../app/app_router.dart';
+import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, generalSettingsProvider, CodeBlockSettings;
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
@@ -17,6 +17,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
 import 'dart:ui' as ui;
+import 'package:shimmer/shimmer.dart';
 
 /// 消息内容渲染组件
 ///
@@ -46,7 +47,12 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final generalSettings = ref.watch(generalSettingsProvider);
+    // 处理图像生成占位符
+    if (widget.message.type == MessageType.generating) {
+      return _buildImageGenerationPlaceholder(context);
+    }
+    
+    // 获取设置
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
 
     // 仅在内容变化时重新分离思考链与正文
@@ -61,30 +67,6 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final thinkingContent = separated['thinking'];
     final actualContent = separated['content'] ?? widget.message.content;
 
-    // 如果不启用Markdown渲染，直接返回纯文本
-    if (!generalSettings.enableMarkdownRendering) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 思考链显示
-          if (thinkingContent != null && !widget.message.isFromUser)
-            ThinkingChainWidget(
-              content: thinkingContent,
-              modelName: widget.message.modelName ?? '',
-              isCompleted: true, // UI层面分离时总是完整的
-            ),
-          // 主要内容
-          SelectableText(
-            actualContent,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: widget.message.isFromUser
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      );
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,6 +164,140 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     } catch (_) {
       return const SizedBox.shrink();
     }
+  }
+
+  /// 构建图像生成占位符
+  Widget _buildImageGenerationPlaceholder(BuildContext context) {
+    final theme = Theme.of(context);
+    final metadata = widget.message.metadata;
+    final prompt = metadata?['prompt'] ?? '未知提示词';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题行
+          Row(
+            children: [
+              // 动画图标
+              Shimmer.fromColors(
+                baseColor: theme.colorScheme.primary.withValues(alpha: 0.3),
+                highlightColor: theme.colorScheme.primary.withValues(alpha: 0.8),
+                child: Icon(
+                  Icons.image,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // 生成中文字
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Shimmer.fromColors(
+                      baseColor: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      highlightColor: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                      child: Text(
+                        '正在生成图片...',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '请稍候，AI正在根据您的描述创作图片',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // 提示词显示
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '生成提示词：',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  prompt,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // 进度指示器
+          Row(
+            children: [
+              // 跳动的圆点动画
+              ...List.generate(3, (index) {
+                return Shimmer.fromColors(
+                  baseColor: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  highlightColor: theme.colorScheme.primary.withValues(alpha: 0.8),
+                  period: Duration(milliseconds: 800 + index * 200),
+                  child: Container(
+                    margin: EdgeInsets.only(right: index < 2 ? 8 : 0),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(width: 12),
+              
+              // 提示文字
+              Text(
+                '创作中，这可能需要几秒钟...',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   /// 获取缓存的Markdown样式表

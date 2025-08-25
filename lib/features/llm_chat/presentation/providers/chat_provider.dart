@@ -445,9 +445,35 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return false;
   }
 
-  /// 生成AI图片
+  /// 带占位符的图像生成（内部使用）
+  Future<void> _generateImageWithPlaceholder(String prompt, String placeholderId) async {
+    await _generateImageInternal(
+      prompt: prompt,
+      placeholderId: placeholderId,
+    );
+  }
+
+  /// 生成AI图片（公共接口）
   Future<void> generateImage({
     required String prompt,
+    int count = 1,
+    ImageSize size = ImageSize.size1024x1024,
+    ImageQuality quality = ImageQuality.standard,
+    ImageStyle style = ImageStyle.vivid,
+  }) async {
+    await _generateImageInternal(
+      prompt: prompt,
+      count: count,
+      size: size,
+      quality: quality,
+      style: style,
+    );
+  }
+
+  /// 内部图像生成方法
+  Future<void> _generateImageInternal({
+    required String prompt,
+    String? placeholderId,
     int count = 1,
     ImageSize size = ImageSize.size1024x1024,
     ImageQuality quality = ImageQuality.standard,
@@ -456,11 +482,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 检查是否有当前会话
     ChatSession? currentSession = state.currentSession;
     if (currentSession == null) {
-      state = state.copyWith(error: '无法找到当前对话会话');
+      if (placeholderId != null) {
+        // 如果有占位符，移除它并显示错误
+        final messagesWithoutPlaceholder = state.messages.where((m) => m.id != placeholderId).toList();
+        state = state.copyWith(
+          messages: messagesWithoutPlaceholder,
+          error: '无法找到当前对话会话',
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(error: '无法找到当前对话会话');
+      }
       return;
     }
 
-    state = state.copyWith(isLoading: true, error: null);
+    // 只有在没有占位符时才设置全局加载状态
+    if (placeholderId == null) {
+      state = state.copyWith(isLoading: true, error: null);
+    }
 
     try {
       // 使用和聊天相同的配置获取逻辑：通过会话 → 智能体 → API配置
@@ -493,9 +532,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       if (results.isNotEmpty) {
         // 创建包含生成图片的消息
         final imageUrls = results.map((r) => 'file://${r.localPath}').toList();
-        final imageMessageId = '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}';
+        
         final imageMessage = ChatMessage(
-          id: imageMessageId,
+          id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
           chatSessionId: currentSession.id,
           content: '生成了${results.length}张图片：$prompt',
           isFromUser: false,
@@ -516,19 +555,28 @@ class ChatNotifier extends StateNotifier<ChatState> {
         // 保存到数据库
         await _chatService.insertMessage(imageMessage);
 
-        // 更新UI
-        state = state.copyWith(
-          messages: [...state.messages, imageMessage],
-          isLoading: false,
-        );
+        // 更新UI - 如果有占位符则替换，否则添加
+        if (placeholderId != null) {
+          final updatedMessages = state.messages.map((m) {
+            return m.id == placeholderId ? imageMessage : m;
+          }).toList();
+          state = state.copyWith(
+            messages: updatedMessages,
+            isLoading: false,
+          );
+        } else {
+          state = state.copyWith(
+            messages: [...state.messages, imageMessage],
+            isLoading: false,
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ 图片生成失败: $e');
       
-      // 创建错误消息而不是重新抛出异常，避免重复处理
-      final errorMessageId = '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}';
+      // 创建错误消息
       final errorMessage = ChatMessage(
-        id: errorMessageId,
+        id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
         chatSessionId: currentSession.id,
         content: '图片生成失败: $e',
         isFromUser: false,
@@ -546,19 +594,39 @@ class ChatNotifier extends StateNotifier<ChatState> {
         // 保存错误消息到数据库
         await _chatService.insertMessage(errorMessage);
         
-        // 更新UI显示错误消息
-        state = state.copyWith(
-          messages: [...state.messages, errorMessage],
-          isLoading: false,
-          error: null, // 清除全局错误状态，因为已经创建了错误消息
-        );
+        // 更新UI显示错误消息 - 如果有占位符则替换，否则添加
+        if (placeholderId != null) {
+          final updatedMessages = state.messages.map((m) {
+            return m.id == placeholderId ? errorMessage : m;
+          }).toList();
+          state = state.copyWith(
+            messages: updatedMessages,
+            isLoading: false,
+            error: null,
+          );
+        } else {
+          state = state.copyWith(
+            messages: [...state.messages, errorMessage],
+            isLoading: false,
+            error: null,
+          );
+        }
       } catch (dbError) {
         debugPrint('❌ 保存错误消息失败: $dbError');
-        // 如果数据库操作也失败，则设置全局错误状态
-        state = state.copyWith(
-          error: '图片生成失败: $e',
-          isLoading: false,
-        );
+        // 如果数据库操作也失败，处理占位符并设置全局错误状态
+        if (placeholderId != null) {
+          final messagesWithoutPlaceholder = state.messages.where((m) => m.id != placeholderId).toList();
+          state = state.copyWith(
+            messages: messagesWithoutPlaceholder,
+            error: '图片生成失败: $e',
+            isLoading: false,
+          );
+        } else {
+          state = state.copyWith(
+            error: '图片生成失败: $e',
+            isLoading: false,
+          );
+        }
       }
     }
   }
@@ -739,12 +807,26 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 检查是否是图像生成指令
       if (isImageGeneration) {
         debugPrint('🎨 开始图像生成流程');
-        // 移除AI占位符，因为图像生成有自己的处理逻辑
-        final messagesWithoutPlaceholder = state.messages.where((m) => m.id != aiMessageId).toList();
-        state = state.copyWith(messages: messagesWithoutPlaceholder, isLoading: false);
         
-        // 直接调用图像生成
-        await generateImage(prompt: text);
+        // 为图像生成创建特殊的AI占位符消息
+        final imageAiPlaceholder = aiPlaceholderSend.copyWith(
+          content: '正在生成图片...',
+          type: MessageType.generating,
+          metadata: {
+            'isImageGeneration': true,
+            'prompt': text,
+          },
+        );
+        
+        // 更新AI占位符为图像生成占位符
+        final updatedMessages = state.messages.map((m) {
+          return m.id == aiMessageId ? imageAiPlaceholder : m;
+        }).toList();
+        
+        state = state.copyWith(messages: updatedMessages, isLoading: true);
+        
+        // 调用图像生成，传递占位符ID以便替换
+        await _generateImageWithPlaceholder(text, aiMessageId);
         return;
       }
 

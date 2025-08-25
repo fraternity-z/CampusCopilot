@@ -77,6 +77,7 @@ const _$MessageTypeEnumMap = {
   MessageType.file: 'file',
   MessageType.system: 'system',
   MessageType.error: 'error',
+  MessageType.generating: 'generating',
 };
 
 const _$MessageStatusEnumMap = {
