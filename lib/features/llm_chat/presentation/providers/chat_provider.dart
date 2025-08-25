@@ -11,7 +11,6 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
 
 /// 聊天状态管理
@@ -396,6 +395,56 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(attachedImages: [...state.attachedImages, image]);
   }
 
+  /// 判断是否应该使用图像生成服务
+  bool _shouldUseImageGeneration(String text) {
+    // 1. 首先检查文本是否包含明确的图像生成指令
+    if (_isImageGenerationPrompt(text)) {
+      debugPrint('🔍 检测到图像生成指令: $text');
+      return true;
+    }
+    
+    // 2. 未来可以添加更多检测逻辑，比如：
+    // - 检查当前选择的模型是否为图像模型
+    // - 检查用户偏好设置
+    // - 检查上下文信息等
+    
+    return false;
+  }
+
+
+  /// 判断是否为图像生成指令
+  bool _isImageGenerationPrompt(String text) {
+    final lowerText = text.toLowerCase().trim();
+    
+    // 中文图像生成指令
+    final chineseKeywords = [
+      '画', '绘制', '绘画', '画一', '画个', '画出', '生成图', '创建图', '制作图', 
+      '图像', '图片', '插画', '素描', '水彩', '油画', '漫画', '卡通',
+    ];
+    
+    // 英文图像生成指令
+    final englishKeywords = [
+      'draw', 'paint', 'create', 'generate', 'make', 'design', 'sketch', 
+      'illustrate', 'render', 'produce', 'image of', 'picture of', 'art of',
+      'painting of', 'drawing of', 'illustration of',
+    ];
+    
+    // 检查是否以这些关键词开头或包含这些关键词
+    for (final keyword in chineseKeywords) {
+      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
+        return true;
+      }
+    }
+    
+    for (final keyword in englishKeywords) {
+      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   /// 生成AI图片
   Future<void> generateImage({
     required String prompt,
@@ -414,14 +463,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 获取 OpenAI 配置
-      final settings = _ref.read(settingsProvider);
-      final openaiConfig = settings.openaiConfig;
+      // 使用和聊天相同的配置获取逻辑：通过会话 → 智能体 → API配置
+      final llmConfig = await _chatService.getSessionLlmConfig(currentSession.id);
+      debugPrint('🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
-      if (openaiConfig == null || openaiConfig.apiKey.isEmpty) {
-        throw Exception('请先配置 OpenAI API 密钥');
+      // 直接使用LLM配置的信息
+      String? apiKey = llmConfig.apiKey;
+      String? baseUrl = llmConfig.baseUrl;
+      String configType = '${llmConfig.name} (${llmConfig.provider})';
+
+      if (apiKey.isEmpty) {
+        throw Exception('配置 "${llmConfig.name}" 的API密钥为空，请检查配置');
       }
 
+      debugPrint('🎨 使用 $configType 配置生成图片');
+      debugPrint('🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
+      
       // 生成图片
       final results = await _imageGenerationService.generateImages(
         prompt: prompt,
@@ -429,15 +486,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
         size: size,
         quality: quality,
         style: style,
-        apiKey: openaiConfig.apiKey,
-        baseUrl: openaiConfig.baseUrl,
+        apiKey: apiKey,
+        baseUrl: baseUrl,
       );
 
       if (results.isNotEmpty) {
         // 创建包含生成图片的消息
         final imageUrls = results.map((r) => 'file://${r.localPath}').toList();
+        final imageMessageId = '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}';
         final imageMessage = ChatMessage(
-          id: _uuid.v4(),
+          id: imageMessageId,
           chatSessionId: currentSession.id,
           content: '生成了${results.length}张图片：$prompt',
           isFromUser: false,
@@ -465,13 +523,54 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(error: '图片生成失败: $e', isLoading: false);
-      rethrow; // 重新抛出异常，让调用者能够捕获
+      debugPrint('❌ 图片生成失败: $e');
+      
+      // 创建错误消息而不是重新抛出异常，避免重复处理
+      final errorMessageId = '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}';
+      final errorMessage = ChatMessage(
+        id: errorMessageId,
+        chatSessionId: currentSession.id,
+        content: '图片生成失败: $e',
+        isFromUser: false,
+        timestamp: DateTime.now(),
+        type: MessageType.error,
+        status: MessageStatus.failed,
+        metadata: {
+          'error': true,
+          'errorType': 'image_generation_failed',
+          'originalPrompt': prompt,
+        },
+      );
+
+      try {
+        // 保存错误消息到数据库
+        await _chatService.insertMessage(errorMessage);
+        
+        // 更新UI显示错误消息
+        state = state.copyWith(
+          messages: [...state.messages, errorMessage],
+          isLoading: false,
+          error: null, // 清除全局错误状态，因为已经创建了错误消息
+        );
+      } catch (dbError) {
+        debugPrint('❌ 保存错误消息失败: $dbError');
+        // 如果数据库操作也失败，则设置全局错误状态
+        state = state.copyWith(
+          error: '图片生成失败: $e',
+          isLoading: false,
+        );
+      }
     }
   }
 
   /// 发送消息
   Future<void> sendMessage(String text) async {
+    // 智能路由：检查是否应该使用图像生成
+    final isImageGeneration = _shouldUseImageGeneration(text);
+    if (isImageGeneration) {
+      debugPrint('🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
+    }
+    
     // 检查是否有当前会话，如果没有则创建新会话
     ChatSession? currentSession = state.currentSession;
     if (currentSession == null) {
@@ -636,6 +735,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
         status: MessageStatus.sending,
       );
       state = state.copyWith(messages: [...state.messages, aiPlaceholderSend]);
+
+      // 检查是否是图像生成指令
+      if (isImageGeneration) {
+        debugPrint('🎨 开始图像生成流程');
+        // 移除AI占位符，因为图像生成有自己的处理逻辑
+        final messagesWithoutPlaceholder = state.messages.where((m) => m.id != aiMessageId).toList();
+        state = state.copyWith(messages: messagesWithoutPlaceholder, isLoading: false);
+        
+        // 直接调用图像生成
+        await generateImage(prompt: text);
+        return;
+      }
 
       // 开始流式响应
       final stream = _chatService.sendMessageStream(

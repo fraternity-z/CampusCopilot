@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:spring_button/spring_button.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 
@@ -146,13 +148,24 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
           onRefresh: () async {
             ref.invalidate(knowledgeBaseProvider);
           },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: documents.length,
-            itemBuilder: (context, index) {
-              final document = documents[index];
-              return _buildDocumentCard(document);
-            },
+          child: AnimationLimiter(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: documents.length,
+              itemBuilder: (context, index) {
+                final document = documents[index];
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 600),
+                  child: SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(
+                      child: _buildDocumentCard(document),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
@@ -162,35 +175,114 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
   /// 构建空文档状态
   Widget _buildEmptyDocumentsState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.description_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '还没有文档',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
+      child: AnimationConfiguration.synchronized(
+        duration: const Duration(milliseconds: 800),
+        child: FadeInAnimation(
+          child: SlideAnimation(
+            verticalOffset: 30.0,
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.library_books_outlined,
+                      size: 72,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    '知识库为空',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Text(
+                      '上传您的第一个文档，开始构建智能知识库。支持PDF、Word、PowerPoint等多种格式。',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SpringButton(
+                    SpringButtonType.OnlyScale,
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _uploadDocument,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.upload_file_outlined,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '上传文档',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    onTap: () {},
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '上传文档来构建你的知识库',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _uploadDocument,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('上传文档'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -204,160 +296,321 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
         );
         final processingError = ref.watch(documentErrorProvider(document.id));
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        return SpringButton(
+          SpringButtonType.OnlyScale,
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Card(
+              margin: EdgeInsets.zero,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      document.fileTypeIcon,
-                      color: _getDocumentColor(document.fileType),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            document.title,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _getDocumentColor(document.fileType).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${document.formattedFileSize} • ${document.formattedStatus}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
+                          child: Icon(
+                            document.fileTypeIcon,
+                            color: _getDocumentColor(document.fileType),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                document.title,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.2,
                                 ),
-                          ),
-
-                          // 显示处理进度
-                          if (processingProgress != null) ...[
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: processingProgress,
-                              backgroundColor: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '处理中... ${(processingProgress * 100).toInt()}%',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
-                            ),
-                          ],
-
-                          // 显示处理错误
-                          if (processingError != null) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.red[200]!),
                               ),
-                              child: Row(
+                              const SizedBox(height: 6),
+                              Row(
                                 children: [
-                                  Icon(
-                                    Icons.error,
-                                    size: 16,
-                                    color: Colors.red[700],
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      document.formattedFileSize,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      '处理失败: $processingError',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.red[700],
-                                      ),
+                                  Text(
+                                    '•',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    document.formattedStatus,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) =>
-                          _handleDocumentAction(value, document),
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'reindex',
-                          child: ListTile(
-                            leading: Icon(Icons.refresh),
-                            title: Text('重新索引'),
-                            contentPadding: EdgeInsets.zero,
+
+                              // 显示处理进度
+                              if (processingProgress != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.autorenew,
+                                            size: 16,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '处理中... ${(processingProgress * 100).toInt()}%',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: processingProgress,
+                                          backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              // 显示处理错误
+                              if (processingError != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline,
+                                        size: 18,
+                                        color: Theme.of(context).colorScheme.error,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          '处理失败: $processingError',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context).colorScheme.error,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete, color: Colors.red),
-                            title: Text(
-                              '删除',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                            contentPadding: EdgeInsets.zero,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          child: PopupMenuButton<String>(
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            onSelected: (value) => _handleDocumentAction(value, document),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 8,
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'reindex',
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Icon(
+                                          Icons.refresh,
+                                          size: 16,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        '重新索引',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Icon(
+                                          Icons.delete_outline,
+                                          size: 16,
+                                          color: Theme.of(context).colorScheme.error,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        '删除',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: Theme.of(context).colorScheme.error,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // 状态和时间信息
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(document.status).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _getStatusColor(document.status).withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(document.status),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                document.formattedStatus,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: _getStatusColor(document.status),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDate(document.uploadedAt),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                // 显示状态标签
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(document.status),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    document.formattedStatus,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      document.status,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: _getStatusColor(document.status),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '上传于 ${_formatDate(document.uploadedAt)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -406,14 +659,58 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
         final searchTime = knowledgeState.searchTime;
 
         if (searchQuery.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('输入关键词开始搜索'),
-              ],
+          return Center(
+            child: AnimationConfiguration.synchronized(
+              duration: const Duration(milliseconds: 600),
+              child: FadeInAnimation(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                              Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.manage_search_rounded,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        '智能搜索',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 300),
+                        child: Text(
+                          '输入关键词，使用先进的向量搜索技术在您的知识库中找到最相关的内容',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           );
         }
@@ -433,12 +730,23 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
               // 向量搜索结果
               Expanded(
-                child: ListView.builder(
-                  itemCount: vectorSearchResults.length,
-                  itemBuilder: (context, index) {
-                    final result = vectorSearchResults[index];
-                    return _buildVectorSearchResultCard(result, searchQuery);
-                  },
+                child: AnimationLimiter(
+                  child: ListView.builder(
+                    itemCount: vectorSearchResults.length,
+                    itemBuilder: (context, index) {
+                      final result = vectorSearchResults[index];
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 500),
+                        child: SlideAnimation(
+                          verticalOffset: 30.0,
+                          child: FadeInAnimation(
+                            child: _buildVectorSearchResultCard(result, searchQuery),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -454,12 +762,23 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
               const SizedBox(height: 16),
 
               Expanded(
-                child: ListView.builder(
-                  itemCount: searchResults.length,
-                  itemBuilder: (context, index) {
-                    final document = searchResults[index];
-                    return _buildSearchResultCard(document, searchQuery);
-                  },
+                child: AnimationLimiter(
+                  child: ListView.builder(
+                    itemCount: searchResults.length,
+                    itemBuilder: (context, index) {
+                      final document = searchResults[index];
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 500),
+                        child: SlideAnimation(
+                          verticalOffset: 30.0,
+                          child: FadeInAnimation(
+                            child: _buildSearchResultCard(document, searchQuery),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -468,18 +787,62 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
         // 无结果
         return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text('未找到包含 "$searchQuery" 的内容'),
-              const SizedBox(height: 8),
-              Text(
-                '尝试使用不同的关键词或检查拼写',
-                style: TextStyle(color: Colors.grey[600]),
+          child: AnimationConfiguration.synchronized(
+            duration: const Duration(milliseconds: 600),
+            child: FadeInAnimation(
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.search_off_rounded,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      '未找到相关内容',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 280),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                          children: [
+                            const TextSpan(text: '没有找到包含 '),
+                            TextSpan(
+                              text: '"$searchQuery"',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const TextSpan(text: ' 的文档\n\n尝试使用不同的关键词或检查拼写'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         );
       },
@@ -488,60 +851,118 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
 
   /// 构建搜索结果卡片
   Widget _buildSearchResultCard(KnowledgeDocument document, String query) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  document.fileTypeIcon,
-                  color: _getDocumentColor(document.fileType),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    document.title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _getContentPreview(document.content, query),
-              style: Theme.of(context).textTheme.bodySmall,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  document.formattedFileSize,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  document.formattedStatus,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _getStatusColor(document.status),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+    return SpringButton(
+      SpringButtonType.OnlyScale,
+      Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
+        child: Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _getDocumentColor(document.fileType).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        document.fileTypeIcon,
+                        color: _getDocumentColor(document.fileType),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        document.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _getContentPreview(document.content, query),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      height: 1.4,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        document.formattedFileSize,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(document.status),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      document.formattedStatus,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _getStatusColor(document.status),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
+      onTap: () {},
     );
   }
 

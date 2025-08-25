@@ -997,6 +997,13 @@ class ChatService {
     await _database.insertMessage(_messageToCompanion(message));
   }
 
+  /// 获取会话的LLM配置信息（用于图像生成等功能）
+  Future<LlmConfigsTableData> getSessionLlmConfig(String sessionId) async {
+    final session = await _getSessionById(sessionId);
+    final persona = await _getPersonaById(session.personaId);
+    return await _getLlmConfigById(persona.apiConfigId);
+  }
+
   /// 构建上下文消息
   Future<List<ChatMessage>> _buildContextMessages(
     String sessionId,

@@ -23,7 +23,21 @@ class OpenAiLlmProvider extends LlmProvider {
     OpenAI.apiKey = config.apiKey;
 
     if (config.baseUrl != null) {
-      OpenAI.baseUrl = config.baseUrl!;
+      // 修复baseUrl重复/v1的问题
+      String cleanBaseUrl = config.baseUrl!.trim();
+      
+      // 移除末尾的斜杠
+      if (cleanBaseUrl.endsWith('/')) {
+        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
+      }
+      
+      // 如果用户已经配置了/v1，则移除它，因为dart_openai会自动添加
+      if (cleanBaseUrl.endsWith('/v1')) {
+        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 3);
+      }
+      
+      OpenAI.baseUrl = cleanBaseUrl;
+      debugPrint('🔧 设置OpenAI baseUrl: $cleanBaseUrl (原始: ${config.baseUrl})');
     }
 
     if (config.organizationId != null) {
@@ -509,7 +523,10 @@ class OpenAiLlmProvider extends LlmProvider {
 
     // 404错误 - API端点不存在
     if (errorMessage.contains('404')) {
-      return ApiException('API端点不存在，请检查baseUrl配置是否正确');
+      return ApiException(
+        'API端点不存在，请检查baseUrl配置是否正确。\n'
+        '提示：NewAPI等第三方网关的baseUrl应该类似：http://your-host（不要包含/v1）'
+      );
     }
 
     // 500系列服务器错误

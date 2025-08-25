@@ -31,6 +31,8 @@ class ImageGenerationService {
   }) async {
     try {
       debugPrint('🎨 开始生成图片: $prompt');
+      debugPrint('🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
+      debugPrint('🤖 模型: $model');
 
       // 验证参数
       if (prompt.trim().isEmpty) {
@@ -52,18 +54,38 @@ class ImageGenerationService {
         OpenAI.apiKey = apiKey;
       }
       if (baseUrl != null) {
-        OpenAI.baseUrl = baseUrl;
+        // 修复baseUrl重复/v1的问题
+        String cleanBaseUrl = baseUrl.trim();
+        
+        // 移除末尾的斜杠
+        if (cleanBaseUrl.endsWith('/')) {
+          cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
+        }
+        
+        // 如果用户已经配置了/v1，则移除它，因为dart_openai会自动添加
+        if (cleanBaseUrl.endsWith('/v1')) {
+          cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 3);
+        }
+        
+        OpenAI.baseUrl = cleanBaseUrl;
+        debugPrint('🔧 设置图像生成 baseUrl: $cleanBaseUrl (原始: $baseUrl)');
       }
 
-      // 调用 OpenAI API
+      // 调用 OpenAI API - 兼容NewAPI等第三方端点
       final response = await OpenAI.instance.image.create(
         prompt: prompt,
         n: count,
         size: _mapImageSize(size),
         responseFormat: OpenAIImageResponseFormat.url,
         model: model,
-        // quality: quality == ImageQuality.hd ? 'hd' : 'standard',
-        // style: style == ImageStyle.vivid ? 'vivid' : 'natural',
+        // 根据模型和端点决定是否添加这些参数，以提高NewAPI兼容性
+        // 注意：某些dart_openai版本可能不支持这些参数，暂时注释掉以确保兼容性
+        // quality: _shouldUseAdvancedParams(model, baseUrl) 
+        //     ? (quality == ImageQuality.hd ? 'hd' : 'standard')
+        //     : null,
+        // style: _shouldUseAdvancedParams(model, baseUrl) 
+        //     ? (style == ImageStyle.vivid ? 'vivid' : 'natural')
+        //     : null,
       );
 
       debugPrint('✅ 图片生成成功，共${response.data.length}张');
@@ -100,10 +122,88 @@ class ImageGenerationService {
       return results;
     } catch (e) {
       debugPrint('❌ 图片生成失败: $e');
+      
+      // 特殊处理NewAPI兼容性错误
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('unsupported') || 
+          errorMsg.contains('not supported') ||
+          errorMsg.contains('invalid parameter') ||
+          errorMsg.contains('bad request')) {
+        
+        // 如果使用了高级参数且出现错误，尝试使用基础参数重试
+        if (_shouldUseAdvancedParams(model, baseUrl)) {
+          debugPrint('🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
+          try {
+            final retryResponse = await OpenAI.instance.image.create(
+              prompt: prompt,
+              n: count,
+              size: _mapImageSize(size),
+              responseFormat: OpenAIImageResponseFormat.url,
+              model: model,
+              // 不使用高级参数重试
+            );
+            
+            debugPrint('✅ 使用基础参数重试成功，共${retryResponse.data.length}张');
+            
+            // 处理重试成功的响应
+            final results = <GeneratedImageResult>[];
+            for (int i = 0; i < retryResponse.data.length; i++) {
+              final imageData = retryResponse.data[i];
+
+              if (imageData.url != null) {
+                final cachedImage = await _downloadAndCacheImage(
+                  imageData.url!,
+                  prompt,
+                  i,
+                );
+
+                results.add(
+                  GeneratedImageResult(
+                    url: imageData.url!,
+                    localPath: cachedImage.path,
+                    prompt: prompt,
+                    revisedPrompt: imageData.revisedPrompt,
+                    size: size,
+                    quality: ImageQuality.standard, // 使用默认质量
+                    style: ImageStyle.natural, // 使用默认风格
+                    model: model,
+                    createdAt: DateTime.now(),
+                  ),
+                );
+              }
+            }
+            return results;
+          } catch (retryError) {
+            debugPrint('❌ 重试也失败了: $retryError');
+            throw ImageGenerationException('图片生成失败，NewAPI端点可能不支持此模型或参数: $retryError');
+          }
+        }
+      }
+      
       if (e is ImageGenerationException) {
         rethrow;
       }
-      throw ImageGenerationException('图片生成失败: $e');
+      
+      // 提供更详细的错误信息
+      if (errorMsg.contains('network') || errorMsg.contains('connection')) {
+        throw ImageGenerationException('网络连接失败，请检查网络设置或API端点配置');
+      } else if (errorMsg.contains('unauthorized') || errorMsg.contains('401')) {
+        throw ImageGenerationException('API密钥无效或权限不足');
+      } else if (errorMsg.contains('quota') || errorMsg.contains('limit')) {
+        throw ImageGenerationException('API配额不足或达到使用限制');
+      } else if (errorMsg.contains('404') || errorMsg.contains('api端点不存在')) {
+        final endpointInfo = baseUrl != null ? "当前端点: $baseUrl" : "使用默认OpenAI端点";
+        throw ImageGenerationException(
+          '图片生成API端点不存在，请检查配置。\n'
+          '$endpointInfo\n'
+          '如使用NewAPI等第三方网关，请确认：\n'
+          '1. 端点地址正确（如：http://your-host/v1）\n'
+          '2. 网关支持图片生成功能\n'
+          '3. 配置了支持图片生成的模型'
+        );
+      } else {
+        throw ImageGenerationException('图片生成失败: $e');
+      }
     }
   }
 
@@ -278,6 +378,37 @@ class ImageGenerationService {
       debugPrint('❌ 缓存图片失败: $e');
       throw ImageGenerationException('缓存图片失败: $e');
     }
+  }
+
+  /// 判断是否应该使用高级参数（quality、style）
+  /// NewAPI网关和某些第三方实现可能不支持这些参数
+  bool _shouldUseAdvancedParams(String model, String? baseUrl) {
+    // 如果是官方OpenAI API，支持所有参数
+    if (baseUrl == null || 
+        baseUrl.contains('api.openai.com') ||
+        baseUrl.contains('openai.azure.com')) {
+      return true;
+    }
+    
+    // DALL-E 3模型通常支持这些参数（即使通过NewAPI代理）
+    if (model.toLowerCase().contains('dall-e-3') || 
+        model.toLowerCase().contains('dalle-3')) {
+      return true;
+    }
+    
+    // 对于NewAPI网关和其他第三方端点，根据模型类型判断
+    final modelLower = model.toLowerCase();
+    
+    // 已知支持高级参数的模型
+    if (modelLower.contains('dall-e') || 
+        modelLower.contains('dalle') ||
+        modelLower.contains('midjourney')) {
+      return true;
+    }
+    
+    // 对于未知模型或第三方端点，默认不使用高级参数以提高兼容性
+    debugPrint('🔧 第三方端点检测到，禁用高级参数以提高兼容性: $baseUrl');
+    return false;
   }
 
   /// 映射图片尺寸
