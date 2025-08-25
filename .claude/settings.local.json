@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(dart analyze:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

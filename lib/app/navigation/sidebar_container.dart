@@ -39,20 +39,43 @@ class SidebarContainer extends ConsumerWidget {
           curve: UIConstants.defaultCurve,
           width: sidebarWidth,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+              ],
+            ),
             borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(UIConstants.borderRadius),
-              bottomRight: Radius.circular(UIConstants.borderRadius),
+              topRight: Radius.circular(UIConstants.borderRadius * 1.5),
+              bottomRight: Radius.circular(UIConstants.borderRadius * 1.5),
+            ),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: UIConstants.shadowOpacity),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                blurRadius: UIConstants.shadowBlurRadius * 1.5,
+                offset: const Offset(2, 0),
+                spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: UIConstants.shadowOpacity * 0.3),
                 blurRadius: UIConstants.shadowBlurRadius,
                 offset: UIConstants.shadowOffset,
               ),
             ],
           ),
-          child: child,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(UIConstants.borderRadius * 1.5),
+              bottomRight: Radius.circular(UIConstants.borderRadius * 1.5),
+            ),
+            child: child,
+          ),
         ),
       ),
     );
@@ -72,37 +95,90 @@ class SidebarHeader extends ConsumerWidget {
         vertical: UIConstants.spacingS,
       ),
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.03),
+            Theme.of(context).colorScheme.surface,
+          ],
+        ),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.smart_toy,
-            color: Theme.of(context).colorScheme.primary,
-            size: UIConstants.iconSizeXL,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.smart_toy,
+              color: Colors.white,
+              size: UIConstants.iconSizeXL - 4,
+            ),
           ),
           const SizedBox(width: UIConstants.spacingM),
           Expanded(
-            child: Text(
-              'Anywherechat',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Anywherechat',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '智能对话助手',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           // 关闭侧边栏按钮
-          IconButton(
-            icon: const Icon(Icons.close, size: UIConstants.iconSizeLarge),
-            onPressed: () {
-              ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(true);
-            },
-            tooltip: '关闭侧边栏',
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.close_rounded,
+                size: UIConstants.iconSizeLarge,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () {
+                ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(true);
+              },
+              tooltip: '关闭侧边栏',
+            ),
           ),
         ],
       ),
@@ -156,39 +232,74 @@ class _SidebarTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final config = SidebarTabConfig.getConfig(tab);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(UIConstants.smallBorderRadius),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: UIConstants.spacingS),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(UIConstants.smallBorderRadius),
-          color: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              config.icon,
-              size: UIConstants.iconSizeMedium,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(UIConstants.smallBorderRadius * 1.5),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.symmetric(
+              vertical: UIConstants.spacingS + 2,
+              horizontal: UIConstants.spacingXS,
             ),
-            const SizedBox(height: UIConstants.spacingXS),
-            Text(
-              config.label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimaryContainer
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(UIConstants.smallBorderRadius * 1.5),
+              gradient: isSelected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                      ],
+                    )
+                  : null,
+              border: isSelected
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1,
+                    )
+                  : null,
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    config.icon,
+                    size: UIConstants.iconSizeMedium,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: UIConstants.spacingXS + 2),
+                Text(
+                  config.label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                    letterSpacing: -0.1,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -205,8 +316,21 @@ class SidebarOverlay extends ConsumerWidget {
       onTap: () {
         ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(true);
       },
-      child: Container(
-        color: Colors.black.withValues(alpha: UIConstants.overlayOpacity),
+      child: AnimatedContainer(
+        duration: UIConstants.animationDuration,
+        curve: UIConstants.defaultCurve,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.black.withValues(alpha: UIConstants.overlayOpacity * 1.2),
+              Colors.black.withValues(alpha: UIConstants.overlayOpacity * 0.6),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.3, 1.0],
+          ),
+        ),
         width: double.infinity,
         height: double.infinity,
       ),
@@ -226,31 +350,52 @@ class SidebarExpandButton extends ConsumerWidget {
         left: UIConstants.spacingS,
       ),
       child: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(UIConstants.borderRadius),
-        color: Theme.of(context).colorScheme.surface,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(UIConstants.borderRadius),
-          onTap: () {
-            ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(false);
-          },
-          child: Container(
-            width: UIConstants.avatarSizeSmall,
-            height: UIConstants.avatarSizeSmall,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(UIConstants.borderRadius),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: UIConstants.borderOpacity),
-                width: 1,
-              ),
+        elevation: 8,
+        borderRadius: BorderRadius.circular(UIConstants.borderRadius * 1.5),
+        shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+              ],
             ),
-            child: Icon(
-              Icons.menu,
-              size: UIConstants.iconSizeSmall + 2,
-              color: Theme.of(context).colorScheme.onSurface,
+            borderRadius: BorderRadius.circular(UIConstants.borderRadius * 1.5),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(UIConstants.borderRadius * 1.5),
+            onTap: () {
+              ref.read(uiSettingsProvider.notifier).setSidebarCollapsed(false);
+            },
+            child: Container(
+              width: UIConstants.avatarSizeSmall + 4,
+              height: UIConstants.avatarSizeSmall + 4,
+              padding: const EdgeInsets.all(2),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(UIConstants.borderRadius),
+                ),
+                child: Icon(
+                  Icons.menu_rounded,
+                  size: UIConstants.iconSizeSmall + 2,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../core/widgets/elegant_notification.dart';
 import 'package:drift/drift.dart' as drift;
@@ -74,20 +75,58 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildBasicConfigCard(providerInfo),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _buildAdvancedConfigCard(providerInfo),
-                  const SizedBox(height: 16),
-                  _buildModelManagementCard(),
-                  const SizedBox(height: 16),
-                  _buildTestConnectionCard(),
+                  Text(
+                    '加载配置中...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
+              ),
+            )
+          : AnimationLimiter(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: AnimationConfiguration.toStaggeredList(
+                    duration: const Duration(milliseconds: 375),
+                    childAnimationBuilder: (widget) => SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(
+                        child: widget,
+                      ),
+                    ),
+                    children: [
+                      _buildBasicConfigCard(providerInfo),
+                      const SizedBox(height: 16),
+                      _buildAdvancedConfigCard(providerInfo),
+                      const SizedBox(height: 16),
+                      _buildModelManagementCard(),
+                      const SizedBox(height: 16),
+                      _buildTestConnectionCard(),
+                    ],
+                  ),
+                ),
               ),
             ),
     );
@@ -95,76 +134,159 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 构建基础配置卡片
   Widget _buildBasicConfigCard(ProviderInfo providerInfo) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _getProviderIcon(widget.providerId),
-                const SizedBox(width: 8),
-                Text(
-                  '基础配置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _getProviderIcon(widget.providerId),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '基础配置',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // 配置名称
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 配置名称
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: '配置名称',
-                border: OutlineInputBorder(),
-                helperText: '为此配置设置一个易识别的名称',
+                child: TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: '配置名称',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    helperText: '为此配置设置一个易识别的名称',
+                    prefixIcon: Icon(
+                      Icons.edit_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请输入配置名称';
+                    }
+                    return null;
+                  },
+                ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入配置名称';
-                }
-                return null;
-              },
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-            // API密钥
-            TextFormField(
-              controller: _apiKeyController,
-              decoration: const InputDecoration(
-                labelText: 'API密钥',
-                border: OutlineInputBorder(),
-                helperText: '从提供商官网获取的API密钥',
+              // API密钥
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: TextFormField(
+                  controller: _apiKeyController,
+                  decoration: InputDecoration(
+                    labelText: 'API密钥',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    helperText: '从提供商官网获取的API密钥',
+                    prefixIcon: Icon(
+                      Icons.key_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请输入API密钥';
+                    }
+                    return null;
+                  },
+                ),
               ),
-              obscureText: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入API密钥';
-                }
-                return null;
-              },
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-            // 启用状态
-            SwitchListTile(
-              title: const Text('启用此配置'),
-              subtitle: const Text('关闭后此配置将不会出现在选择列表中'),
-              value: _isEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _isEnabled = value;
-                });
-              },
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
+              // 启用状态
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: SwitchListTile(
+                  title: Text(
+                    '启用此配置',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '关闭后此配置将不会出现在选择列表中',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  value: _isEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _isEnabled = value;
+                    });
+                  },
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -325,28 +447,109 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 构建测试连接卡片
   Widget _buildTestConnectionCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '连接测试',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _testConnection,
-                icon: const Icon(Icons.wifi_protected_setup),
-                label: const Text('测试连接'),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.network_check_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '连接测试',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _testConnection,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.wifi_protected_setup,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '测试连接',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
