@@ -90,6 +90,9 @@ dependencies:
   google_generative_ai: ^0.4.3
   anthropic_sdk_dart: ^0.2.1
 
+  # Model Context Protocol 客户端
+  mcp_client: ^1.0.1
+
   # 文件处理 (知识库)
   file_picker: ^10.2.0
   

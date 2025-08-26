@@ -7,7 +7,11 @@
       "Bash(dart run build_runner build:*)",
       "Bash(flutter analyze:*)",
       "Bash(dart:*)",
-      "Bash(flutter doctor:*)"
+      "Bash(flutter doctor:*)",
+      "Bash(claude mcp add:*)",
+      "WebSearch",
+      "WebFetch(domain:pub.dev)",
+      "Bash(flutter pub:*)"
     ],
     "deny": [],
     "ask": []
