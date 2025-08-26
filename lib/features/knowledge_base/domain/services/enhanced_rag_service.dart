@@ -1,10 +1,10 @@
+
+import 'package:ai_assistant/features/knowledge_base/domain/services/embedding_service.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/local/app_database.dart';
 import '../entities/knowledge_document.dart';
 import 'enhanced_vector_search_service.dart';
-import 'intelligent_retrieval_service.dart';
-import 'embedding_service.dart';
 
 /// 增强 RAG 提示词结果
 class EnhancedRagPrompt {
@@ -37,11 +37,10 @@ class EnhancedRagPrompt {
 
 /// 增强 RAG 服务
 ///
-/// 使用智能检索服务提供更高精度的检索增强生成功能
+/// 使用增强向量搜索服务提供更高性能的检索增强生成功能
 class EnhancedRagService {
   final AppDatabase _database;
   final EnhancedVectorSearchService _enhancedVectorSearchService;
-  final IntelligentRetrievalService _intelligentRetrievalService;
 
   // 上下文缓存
   final Map<String, List<String>> _contextCache = {};
@@ -49,11 +48,7 @@ class EnhancedRagService {
   static const Duration _cacheExpiry = Duration(minutes: 15);
   static const int _maxCacheSize = 100;
 
-  EnhancedRagService(
-    this._database, 
-    this._enhancedVectorSearchService,
-    EmbeddingService embeddingService,
-  ) : _intelligentRetrievalService = IntelligentRetrievalService(_database, embeddingService);
+  EnhancedRagService(this._database, this._enhancedVectorSearchService, EmbeddingService embeddingService);
 
   /// 检索相关上下文
   Future<EnhancedRagRetrievalResult> retrieveContext({
@@ -88,74 +83,40 @@ class EnhancedRagService {
         );
       }
 
-      // 执行智能检索
-      final searchResult = await _intelligentRetrievalService.retrieve(
+      // 执行向量搜索
+      final searchResult = await _enhancedVectorSearchService.search(
         query: query,
         config: config,
         knowledgeBaseId: knowledgeBaseId,
+        similarityThreshold: similarityThreshold,
         maxResults: maxContexts,
-        customThreshold: similarityThreshold,
       );
 
       if (!searchResult.isSuccess) {
-        debugPrint('❌ 智能检索失败: ${searchResult.error}');
-        
-        // 回退到传统向量搜索
-        debugPrint('🔄 回退到传统向量搜索...');
-        final fallbackResult = await _enhancedVectorSearchService.search(
-          query: query,
-          config: config,
-          knowledgeBaseId: knowledgeBaseId,
-          similarityThreshold: similarityThreshold,
-          maxResults: maxContexts,
-        );
-        
-        if (!fallbackResult.isSuccess) {
-          return EnhancedRagRetrievalResult(
-            contexts: [],
-            retrievalTime: _calculateRetrievalTime(startTime),
-            totalResults: 0,
-            error: '智能检索和向量搜索都失败: ${searchResult.error}',
-          );
-        }
-        
-        final fallbackContexts = fallbackResult.items.map((item) => item.content).toList();
-        _cacheContexts(cacheKey, fallbackContexts);
-        
+        debugPrint('❌ 向量搜索失败: ${searchResult.error}');
         return EnhancedRagRetrievalResult(
-          contexts: fallbackContexts,
+          contexts: [],
           retrievalTime: _calculateRetrievalTime(startTime),
-          totalResults: fallbackResult.items.length,
+          totalResults: 0,
+          error: searchResult.error,
         );
       }
 
       // 提取上下文内容
-      final contexts = searchResult.chunks.map((chunk) => chunk.content).toList();
-
-      debugPrint('🎯 智能检索找到 ${contexts.length} 个高质量上下文');
-      debugPrint('📊 检索策略: ${searchResult.searchStrategy}');
-
-      // 输出检索结果的评分详情（前3个结果）
-      for (int i = 0; i < searchResult.chunks.length && i < 3; i++) {
-        final chunk = searchResult.chunks[i];
-        debugPrint('   ${i + 1}. 最终分数: ${chunk.finalScore.toStringAsFixed(3)} '
-                   '(向量: ${chunk.vectorScore.toStringAsFixed(3)}, '
-                   '关键词: ${chunk.keywordScore.toStringAsFixed(3)}, '
-                   '语义: ${chunk.semanticScore.toStringAsFixed(3)})');
-      }
+      final contexts = searchResult.items.map((item) => item.content).toList();
 
       // 缓存结果
       _cacheContexts(cacheKey, contexts);
 
       final retrievalTime = _calculateRetrievalTime(startTime);
       debugPrint(
-        '✅ 智能检索完成，找到 ${contexts.length} 个高质量片段，耗时: ${retrievalTime}ms',
+        '✅ 上下文检索完成，找到 ${contexts.length} 个相关片段，耗时: ${retrievalTime}ms',
       );
 
       return EnhancedRagRetrievalResult(
         contexts: contexts,
         retrievalTime: retrievalTime,
-        totalResults: searchResult.totalCandidates,
+        totalResults: searchResult.totalResults,
       );
     } catch (e) {
       final retrievalTime = _calculateRetrievalTime(startTime);
