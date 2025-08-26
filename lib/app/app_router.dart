@@ -399,15 +399,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isCollapsed = ref.watch(sidebarCollapsedProvider);
-    final currentRoute = GoRouterState.of(context).uri.path;
-    final isChatPage = currentRoute.startsWith('/chat');
 
     return KeyboardSafeWrapper(
       child: Scaffold(
-        floatingActionButton: (isCollapsed && isChatPage && !_hasModalRoute)
-            ? const SidebarExpandButton()
-            : null,
-        floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         body: Stack(
           children: [
             widget.child,

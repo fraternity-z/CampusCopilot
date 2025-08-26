@@ -29,6 +29,8 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
   late PageController _pageController;
   late int _currentIndex;
   bool _isVisible = true;
+  bool _isZoomed = false;
+  final TransformationController _transformationController = TransformationController();
 
   @override
   void initState() {
@@ -43,6 +45,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _transformationController.dispose();
 
     // 恢复系统UI
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -73,16 +76,34 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 return GestureDetector(
                   onTap: _toggleUI,
                   child: InteractiveViewer(
+                    transformationController: _transformationController,
                     minScale: 0.5,
-                    maxScale: 3.0,
+                    maxScale: 5.0,
+                    onInteractionUpdate: (details) {
+                      final scale = _transformationController.value.getMaxScaleOnAxis();
+                      final isCurrentlyZoomed = scale > 1.1; // 阈值1.1，避免浮点误差
+                      
+                      if (isCurrentlyZoomed != _isZoomed) {
+                        setState(() {
+                          _isZoomed = isCurrentlyZoomed;
+                          // 如果放大了，自动隐藏UI控制按钮
+                          if (_isZoomed) {
+                            _isVisible = false;
+                          } else {
+                            // 如果缩小回正常尺寸，重新显示UI
+                            _isVisible = true;
+                          }
+                        });
+                      }
+                    },
                     child: Center(child: _buildImage(widget.imageUrls[index])),
                   ),
                 );
               },
             ),
 
-            // 顶部工具栏
-            if (_isVisible)
+            // 顶部工具栏 - 只在未缩放且可见时显示
+            if (_isVisible && !_isZoomed)
               Positioned(
                 top: 0,
                 left: 0,
@@ -93,67 +114,77 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.7),
+                        Colors.black.withValues(alpha: 0.8),
+                        Colors.black.withValues(alpha: 0.4),
                         Colors.transparent,
                       ],
+                      stops: const [0.0, 0.3, 1.0],
                     ),
                   ),
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: 20,
+                        vertical: 12,
                       ),
                       child: Row(
                         children: [
-                          // 返回按钮 - 增加背景以提高可见性
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                              ),
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
+                          // 返回按钮 - 现代化设计
+                          _buildModernButton(
+                            icon: Icons.arrow_back_ios_new,
+                            onPressed: () => Navigator.of(context).pop(),
+                            tooltip: '返回',
                           ),
                           const Spacer(),
-                          // 页面指示器
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${_currentIndex + 1} / ${widget.imageUrls.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                          // 页面指示器 - 更现代的设计
+                          if (widget.imageUrls.length > 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.image,
+                                    size: 16,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.95),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
                           const Spacer(),
                           // 更多选项按钮
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.more_vert,
-                                color: Colors.white,
-                              ),
-                              onPressed: _showMoreOptions,
-                            ),
+                          _buildModernButton(
+                            icon: Icons.more_horiz,
+                            onPressed: _showMoreOptions,
+                            tooltip: '更多选项',
                           ),
                         ],
                       ),
@@ -162,8 +193,8 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 ),
               ),
 
-            // 底部指示器
-            if (_isVisible && widget.imageUrls.length > 1)
+            // 底部指示器 - 只在未缩放且可见时显示
+            if (_isVisible && !_isZoomed && widget.imageUrls.length > 1)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -174,27 +205,67 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.7),
+                        Colors.black.withValues(alpha: 0.8),
+                        Colors.black.withValues(alpha: 0.4),
                         Colors.transparent,
                       ],
+                      stops: const [0.0, 0.3, 1.0],
                     ),
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          widget.imageUrls.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: index == _currentIndex
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              widget.imageUrls.length,
+                              (index) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: EdgeInsets.symmetric(
+                                  horizontal: index == _currentIndex ? 6 : 3,
+                                ),
+                                width: index == _currentIndex ? 12 : 8,
+                                height: index == _currentIndex ? 12 : 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: index == _currentIndex
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  boxShadow: index == _currentIndex
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.white.withValues(alpha: 0.5),
+                                            blurRadius: 4,
+                                            spreadRadius: 1,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -276,8 +347,55 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     );
   }
 
+  /// 构建现代化按钮
+  Widget _buildModernButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required String tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: onPressed,
+            child: Icon(
+              icon,
+              color: Colors.white.withValues(alpha: 0.95),
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 切换UI显示状态
   void _toggleUI() {
+    // 如果图片被放大了，只有缩小到正常大小才能显示UI
+    if (_isZoomed) {
+      return; // 放大时不响应点击切换UI
+    }
+    
     setState(() {
       _isVisible = !_isVisible;
     });
@@ -288,23 +406,73 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.save_alt),
-                title: const Text('保存图片'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _saveImage();
-                },
+              // 拖拽指示器
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
+              // 标题
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(
+                  '图片选项',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              // 选项列表
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.download,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text('保存到相册'),
+                  subtitle: const Text('将图片保存到设备'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _saveImage();
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -392,10 +560,10 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('图片已保存到: $filePath'),
+          const SnackBar(
+            content: Text('图片已保存'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: Duration(seconds: 2),
           ),
         );
       }

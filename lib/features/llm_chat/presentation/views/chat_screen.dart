@@ -24,6 +24,7 @@ import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 import '../providers/search_providers.dart';
+import '../../../../features/settings/presentation/providers/ui_settings_provider.dart';
 
 /// 聊天界面
 ///
@@ -157,15 +158,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   /// 构建应用栏
   PreferredSizeWidget _buildAppBar() {
+    final isCollapsed = ref.watch(sidebarCollapsedProvider);
+    final session = ref.watch(currentChatSessionProvider);
+
     return AppBar(
-      title: Consumer(
-        builder: (context, ref, child) {
-          final session = ref.watch(currentChatSessionProvider);
-          return AnimatedTitleWidget(
-            title: session?.title ?? 'AI 助手',
-            style: Theme.of(context).appBarTheme.titleTextStyle,
-          );
-        },
+      leading: isCollapsed
+          ? IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                ref
+                    .read(uiSettingsProvider.notifier)
+                    .setSidebarCollapsed(false);
+              },
+              tooltip: '打开侧边栏',
+            )
+          : null,
+      automaticallyImplyLeading: false,
+      title: AnimatedTitleWidget(
+        title: session?.title ?? 'AI 助手',
+        style: Theme.of(context).appBarTheme.titleTextStyle,
       ),
       actions: [
         _buildModelSelector(),

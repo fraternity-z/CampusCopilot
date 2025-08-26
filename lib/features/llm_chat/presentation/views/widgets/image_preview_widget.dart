@@ -278,62 +278,43 @@ class MessageImageCard extends StatelessWidget {
                 ),
               ),
 
-              // 文件信息区域
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 文件名
-                    Text(
-                      fileName ?? _getImageFileName(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+              // 文件信息区域 - 仅显示文件大小和类型标签，不显示文件名
+              if (fileSize != null)
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatFileSize(fileSize!),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 10,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-
-                    // 文件大小和类型标签
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (fileSize != null)
-                          Text(
-                            _formatFileSize(fileSize!),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.6,
-                              ),
-                              fontSize: 10,
-                            ),
-                          )
-                        else
-                          const SizedBox.shrink(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.pink.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'IMAGE',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.pink,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.pink.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'IMAGE',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.pink,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -435,15 +416,6 @@ class MessageImageCard extends StatelessWidget {
     );
   }
 
-  String _getImageFileName() {
-    if (imageUrl.startsWith('data:image/')) {
-      return '图片.jpg';
-    } else if (imageUrl.contains('/')) {
-      return imageUrl.split('/').last;
-    } else {
-      return '图片';
-    }
-  }
 
   String _formatFileSize(int bytes) {
     if (bytes < 1024) {
