@@ -20,6 +20,10 @@ class KnowledgeBaseConfigsTable extends Table {
   /// 嵌入模型提供商
   TextColumn get embeddingModelProvider => text()();
 
+  /// 嵌入向量维度
+  IntColumn get embeddingDimension => 
+      integer().nullable()(); // 可选字段，null表示使用模型默认维度
+
   /// 分块大小
   IntColumn get chunkSize => integer().withDefault(const Constant(1000))();
 

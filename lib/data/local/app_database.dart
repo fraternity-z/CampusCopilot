@@ -1061,6 +1061,11 @@ class AppDatabase extends _$AppDatabase {
     )..where((t) => t.embedding.isNotNull())).get();
   }
 
+  /// 获取所有有嵌入向量的文本块（别名方法，用于智能检索）
+  Future<List<KnowledgeChunksTableData>> getAllChunksWithEmbeddings() {
+    return getChunksWithEmbeddings();
+  }
+
   /// 搜索相似文本块（基于内容的简单搜索，后续会被向量搜索替换）
   Future<List<KnowledgeChunksTableData>> searchChunks(String query) {
     final lowerQuery = query.toLowerCase();

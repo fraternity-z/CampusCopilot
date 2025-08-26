@@ -177,13 +177,17 @@ class ConcurrentDocumentProcessingNotifier
         .getTaskStream(taskId)
         .listen(
           (task) async {
+            // 实时更新状态
+            _updateState();
+            
+            // 立即刷新文档列表以显示实时状态
+            _ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
+
             // 当任务完成时，处理嵌入向量生成
             if (task.status == ConcurrentProcessingTaskStatus.completed &&
                 task.result != null) {
               await _handleTaskCompletion(task);
             }
-
-            _updateState();
           },
           onError: (error) {
             debugPrint('❌ 任务状态监听错误: $error');
@@ -449,10 +453,12 @@ class ConcurrentDocumentProcessingNotifier
 
       debugPrint('🧠 开始生成嵌入向量，总共 ${chunks.length} 个文本块');
 
-      // 分批处理，避免一次性处理太多文本块导致超时
-      const batchSize = 50;
+      // 使用优化的批处理，提高处理性能
+      const batchSize = 100; // 增加批处理大小
       int processedCount = 0;
       int failedCount = 0;
+
+      debugPrint('🚀 开始高性能嵌入向量生成，总共 ${chunks.length} 个文本块');
 
       for (int i = 0; i < chunks.length; i += batchSize) {
         final endIndex = (i + batchSize < chunks.length)
@@ -643,9 +649,11 @@ class ConcurrentDocumentProcessingNotifier
 
   /// 开始定期更新
   void _startPeriodicUpdate() {
-    // 每5秒更新一次状态
-    Stream.periodic(const Duration(seconds: 5)).listen((_) {
+    // 每2秒更新一次状态，提高响应性
+    Stream.periodic(const Duration(seconds: 2)).listen((_) {
       _updateState();
+      // 定期刷新文档列表
+      _ref.read(knowledgeBaseProvider.notifier).reloadDocuments();
     });
   }
 }

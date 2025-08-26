@@ -5,6 +5,7 @@ import '../../domain/services/enhanced_rag_service.dart';
 import '../../domain/entities/knowledge_document.dart';
 import '../../../../core/di/database_providers.dart';
 import 'enhanced_vector_search_provider.dart';
+import 'embedding_service_provider.dart';
 
 /// 增强 RAG 服务提供者
 ///
@@ -20,9 +21,10 @@ final enhancedRagServiceProvider = FutureProvider<EnhancedRagService>((
     final enhancedVectorSearchService = await ref.watch(
       enhancedVectorSearchServiceProvider.future,
     );
+    final embeddingService = ref.read(embeddingServiceProvider);
 
     // 创建服务实例
-    final service = EnhancedRagService(database, enhancedVectorSearchService);
+    final service = EnhancedRagService(database, enhancedVectorSearchService, embeddingService);
 
     debugPrint('✅ 增强 RAG 服务创建成功');
     return service;

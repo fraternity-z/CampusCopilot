@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'dart:collection';
 
 import '../../../llm_chat/domain/providers/llm_provider.dart';
 import '../../../llm_chat/data/providers/llm_provider_factory.dart';
 import '../../domain/entities/knowledge_document.dart';
+import '../../data/models/embedding_model_config.dart';
 import '../../../../data/local/app_database.dart';
 import 'dart:math' as math;
 
@@ -56,6 +59,7 @@ class EmbeddingService {
       final provider = _getOrCreateProvider(llmConfig);
 
       // 生成嵌入向量（添加超时处理）
+      // 注意：维度配置目前需要在LLM配置层面设置，这里暂时不传递dimensions参数
       final result = await provider
           .generateEmbeddings(texts)
           .timeout(
@@ -95,11 +99,13 @@ class EmbeddingService {
     return generateEmbeddings(texts: [text], config: config);
   }
 
-  /// 批量为文本块生成嵌入向量
+  /// 批量为文本块生成嵌入向量（性能优化版）
   Future<EmbeddingGenerationResult> generateEmbeddingsForChunks({
     required List<String> chunks,
     required KnowledgeBaseConfig config,
-    int batchSize = 10, // 批处理大小
+    int batchSize = 32, // 增加批处理大小以提高性能
+    int maxConcurrency = 3, // 最大并发批次数
+    int maxRetries = 2, // 最大重试次数
   }) async {
     try {
       final allEmbeddings = <List<double>>[];
@@ -107,48 +113,54 @@ class EmbeddingService {
       int successCount = 0;
       int failedCount = 0;
 
-      // 分批处理以避免API限制
-      for (int i = 0; i < chunks.length; i += batchSize) {
-        final end = (i + batchSize < chunks.length)
-            ? i + batchSize
+      // 获取模型配置以优化批处理大小
+      final modelConfig = EmbeddingModelConfigs.getConfig(config.embeddingModelId);
+      final optimizedBatchSize = _getOptimizedBatchSize(modelConfig, batchSize);
+
+      debugPrint('🚀 开始批量嵌入向量生成：'
+          '总数=${chunks.length}, '
+          '批次大小=$optimizedBatchSize, '
+          '并发数=$maxConcurrency');
+
+      // 创建批次任务列表
+      final batchTasks = <Future<BatchResult>>[];
+      final semaphore = Semaphore(maxConcurrency);
+
+      for (int i = 0; i < chunks.length; i += optimizedBatchSize) {
+        final end = (i + optimizedBatchSize < chunks.length)
+            ? i + optimizedBatchSize
             : chunks.length;
         final batch = chunks.sublist(i, end);
+        final batchIndex = (i / optimizedBatchSize).floor() + 1;
 
-        try {
-          final result = await generateEmbeddings(texts: batch, config: config);
-
-          if (result.isSuccess) {
-            allEmbeddings.addAll(result.embeddings);
-            successCount += batch.length;
-            debugPrint(
-              '✅ 嵌入服务批次 ${(i / batchSize).floor() + 1} 成功处理 ${batch.length} 个文本块',
+        // 创建带信号量的批次处理任务
+        final batchTask = semaphore.acquire().then((_) async {
+          try {
+            final result = await _processBatchWithRetry(
+              batch: batch,
+              config: config,
+              batchIndex: batchIndex,
+              maxRetries: maxRetries,
             );
-          } else {
-            // 批次失败，为每个文本块添加空向量占位
-            for (int j = 0; j < batch.length; j++) {
-              allEmbeddings.add([]); // 空向量表示失败
-            }
-            failedCount += batch.length;
-            errors.add('批次 ${(i / batchSize).floor() + 1}: ${result.error}');
-            debugPrint(
-              '⚠️ 嵌入服务批次 ${(i / batchSize).floor() + 1} 失败: ${result.error}，跳过继续处理',
-            );
+            return result;
+          } finally {
+            semaphore.release();
           }
-        } catch (batchError) {
-          // 批次异常，为每个文本块添加空向量占位
-          for (int j = 0; j < batch.length; j++) {
-            allEmbeddings.add([]); // 空向量表示失败
-          }
-          failedCount += batch.length;
-          errors.add('批次 ${(i / batchSize).floor() + 1} 异常: $batchError');
-          debugPrint(
-            '⚠️ 嵌入服务批次 ${(i / batchSize).floor() + 1} 异常: $batchError，跳过继续处理',
-          );
-        }
+        });
 
-        // 添加延迟以避免API速率限制
-        if (i + batchSize < chunks.length) {
-          await Future.delayed(const Duration(milliseconds: 100));
+        batchTasks.add(batchTask);
+      }
+
+      // 等待所有批次完成
+      final batchResults = await Future.wait(batchTasks);
+
+      // 合并结果
+      for (final result in batchResults) {
+        allEmbeddings.addAll(result.embeddings);
+        successCount += result.successCount;
+        failedCount += result.failedCount;
+        if (result.error != null) {
+          errors.add(result.error!);
         }
       }
 
@@ -157,10 +169,11 @@ class EmbeddingService {
 
       if (successCount > 0) {
         debugPrint(
-          '✅ 嵌入服务批量处理完成：成功 $successCount，失败 $failedCount，成功率 ${(successRate * 100).toStringAsFixed(1)}%',
+          '✅ 嵌入服务高性能批量处理完成：'
+          '成功 $successCount，失败 $failedCount，'
+          '成功率 ${(successRate * 100).toStringAsFixed(1)}%',
         );
 
-        // 即使有部分失败，只要有成功的就返回成功结果
         return EmbeddingGenerationResult(
           embeddings: allEmbeddings,
           error: errors.isNotEmpty ? '部分失败: ${errors.join('; ')}' : null,
@@ -176,6 +189,79 @@ class EmbeddingService {
       debugPrint('❌ 嵌入服务批量生成异常: $e');
       return EmbeddingGenerationResult(embeddings: [], error: e.toString());
     }
+  }
+
+  /// 获取优化的批处理大小
+  int _getOptimizedBatchSize(EmbeddingModelConfig? modelConfig, int defaultSize) {
+    if (modelConfig == null) return defaultSize;
+    
+    // 根据不同提供商优化批处理大小
+    switch (modelConfig.provider.toLowerCase()) {
+      case 'openai':
+        return math.min(64, defaultSize); // OpenAI支持较大批次
+      case 'qwen':
+      case 'doubao':
+      case 'baidu':
+        return math.min(32, defaultSize); // 国内厂商适中批次
+      case 'jina':
+      case 'voyageai':
+        return math.min(48, defaultSize); // 专业嵌入服务可以较大批次
+      case 'cohere':
+        return math.min(96, defaultSize); // Cohere支持大批次
+      default:
+        return defaultSize;
+    }
+  }
+
+  /// 带重试机制的批次处理
+  Future<BatchResult> _processBatchWithRetry({
+    required List<String> batch,
+    required KnowledgeBaseConfig config,
+    required int batchIndex,
+    required int maxRetries,
+  }) async {
+    Exception? lastError;
+    
+    for (int retry = 0; retry <= maxRetries; retry++) {
+      try {
+        if (retry > 0) {
+          // 重试前等待，使用指数退避
+          final delay = Duration(milliseconds: 200 * math.pow(2, retry - 1).toInt());
+          await Future.delayed(delay);
+          debugPrint('🔄 批次 $batchIndex 重试第 $retry 次');
+        }
+
+        final result = await generateEmbeddings(texts: batch, config: config);
+
+        if (result.isSuccess) {
+          debugPrint('✅ 批次 $batchIndex 成功处理 ${batch.length} 个文本块');
+          return BatchResult(
+            embeddings: result.embeddings,
+            successCount: batch.length,
+            failedCount: 0,
+          );
+        } else {
+          lastError = Exception(result.error);
+          if (retry == maxRetries) {
+            debugPrint('❌ 批次 $batchIndex 重试次数耗尽: ${result.error}');
+          }
+        }
+      } catch (e) {
+        lastError = e is Exception ? e : Exception(e.toString());
+        if (retry == maxRetries) {
+          debugPrint('❌ 批次 $batchIndex 重试次数耗尽，异常: $e');
+        }
+      }
+    }
+
+    // 所有重试都失败，返回空向量占位
+    final emptyEmbeddings = List.generate(batch.length, (_) => <double>[]);
+    return BatchResult(
+      embeddings: emptyEmbeddings,
+      successCount: 0,
+      failedCount: batch.length,
+      error: '批次 $batchIndex: ${lastError?.toString() ?? "未知错误"}',
+    );
   }
 
   /// 计算向量相似度（余弦相似度）
@@ -370,6 +456,50 @@ class EmbeddingService {
   }
 
   // 自定义 sqrt 已删除，统一使用 math.sqrt
+}
+
+/// 信号量类，用于控制并发数量
+class Semaphore {
+  final int maxCount;
+  int _currentCount;
+  final Queue<Completer<void>> _waitQueue = Queue<Completer<void>>();
+
+  Semaphore(this.maxCount) : _currentCount = maxCount;
+
+  Future<void> acquire() async {
+    if (_currentCount > 0) {
+      _currentCount--;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _waitQueue.add(completer);
+    return completer.future;
+  }
+
+  void release() {
+    if (_waitQueue.isNotEmpty) {
+      final completer = _waitQueue.removeFirst();
+      completer.complete();
+    } else {
+      _currentCount++;
+    }
+  }
+}
+
+/// 批次处理结果
+class BatchResult {
+  final List<List<double>> embeddings;
+  final int successCount;
+  final int failedCount;
+  final String? error;
+
+  const BatchResult({
+    required this.embeddings,
+    required this.successCount,
+    required this.failedCount,
+    this.error,
+  });
 }
 
 /// 带嵌入向量的文本块

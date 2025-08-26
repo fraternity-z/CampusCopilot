@@ -5,7 +5,9 @@
       "Bash(find:*)",
       "Bash(dart analyze:*)",
       "Bash(dart run build_runner build:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(dart:*)",
+      "Bash(flutter doctor:*)"
     ],
     "deny": [],
     "ask": []

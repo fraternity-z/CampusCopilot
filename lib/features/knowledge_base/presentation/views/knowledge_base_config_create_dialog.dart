@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/knowledge_base_config_provider.dart';
+import '../../data/models/embedding_model_config.dart';
 
 /// 知识库配置创建对话框
 class KnowledgeBaseConfigCreateDialog extends ConsumerStatefulWidget {
@@ -16,10 +17,13 @@ class _KnowledgeBaseConfigCreateDialogState
     extends ConsumerState<KnowledgeBaseConfigCreateDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _dimensionController = TextEditingController();
 
   String? _selectedModelId;
   String? _selectedModelName;
   String? _selectedModelProvider;
+  int? _embeddingDimension; // null表示使用模型默认维度
+  bool _useDefaultDimension = true; // 默认使用模型推荐维度
 
   int _chunkSize = 1000;
   int _chunkOverlap = 200;
@@ -29,7 +33,32 @@ class _KnowledgeBaseConfigCreateDialogState
   @override
   void dispose() {
     _nameController.dispose();
+    _dimensionController.dispose();
     super.dispose();
+  }
+
+  /// 更新模型选择时自动填充默认维度
+  void _updateModelSelection(String modelId, String modelName, String modelProvider) {
+    setState(() {
+      _selectedModelId = modelId;
+      _selectedModelName = modelName;
+      _selectedModelProvider = modelProvider;
+      
+      // 自动设置推荐维度
+      final recommendedDimension = EmbeddingModelConfigs.getRecommendedDimension(modelId);
+      if (_useDefaultDimension) {
+        _embeddingDimension = null; // 使用默认维度
+        _dimensionController.text = recommendedDimension.toString();
+      }
+    });
+  }
+
+  /// 获取当前有效维度（用于显示）
+  int _getEffectiveDimension() {
+    if (_useDefaultDimension && _selectedModelId != null) {
+      return EmbeddingModelConfigs.getRecommendedDimension(_selectedModelId!);
+    }
+    return _embeddingDimension ?? 1536;
   }
 
   @override
@@ -44,17 +73,13 @@ class _KnowledgeBaseConfigCreateDialogState
         (model) => model.id == 'text-embedding-3-small',
         orElse: () => availableModels.first,
       );
-      _selectedModelId = preferredModel.id;
-      _selectedModelName = preferredModel.name;
-      _selectedModelProvider = preferredModel.provider;
+      _updateModelSelection(preferredModel.id, preferredModel.name, preferredModel.provider);
     } else if (_selectedModelId != null &&
         !availableModels.any((model) => model.id == _selectedModelId)) {
       // 如果当前选中的模型不在可用列表中，重置为第一个可用模型
       if (availableModels.isNotEmpty) {
         final firstModel = availableModels.first;
-        _selectedModelId = firstModel.id;
-        _selectedModelName = firstModel.name;
-        _selectedModelProvider = firstModel.provider;
+        _updateModelSelection(firstModel.id, firstModel.name, firstModel.provider);
       }
     }
 
@@ -149,11 +174,7 @@ class _KnowledgeBaseConfigCreateDialogState
                         final model = availableModels.firstWhere(
                           (m) => m.id == value,
                         );
-                        setState(() {
-                          _selectedModelId = value;
-                          _selectedModelName = model.name;
-                          _selectedModelProvider = model.provider;
-                        });
+                        _updateModelSelection(value, model.name, model.provider);
                       }
                     },
                     validator: (value) {
@@ -170,6 +191,137 @@ class _KnowledgeBaseConfigCreateDialogState
                 ExpansionTile(
                   title: const Text('高级设置'),
                   children: [
+                    // 向量维度设置
+                    Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '向量维度设置',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ),
+                                if (_selectedModelId != null) ...[
+                                  Chip(
+                                    label: Text('推荐: ${_getEffectiveDimension()}'),
+                                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                    labelStyle: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            
+                            // 使用默认维度选项
+                            CheckboxListTile(
+                              title: Text('使用模型推荐维度 (${_selectedModelId != null ? _getEffectiveDimension() : '1536'})'),
+                              subtitle: Text(_selectedModelId != null 
+                                  ? '根据模型特性自动选择最佳维度'
+                                  : '推荐维度将在选择模型后显示'),
+                              value: _useDefaultDimension,
+                              onChanged: (value) {
+                                setState(() {
+                                  _useDefaultDimension = value ?? true;
+                                  if (_useDefaultDimension && _selectedModelId != null) {
+                                    _embeddingDimension = null;
+                                    _dimensionController.text = _getEffectiveDimension().toString();
+                                  }
+                                });
+                              },
+                            ),
+                            
+                            // 自定义维度设置
+                            if (!_useDefaultDimension) ...[
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _dimensionController,
+                                decoration: InputDecoration(
+                                  labelText: '自定义维度',
+                                  hintText: '请输入向量维度',
+                                  helperText: _selectedModelId != null && 
+                                      EmbeddingModelConfigs.supportsDynamicDimension(_selectedModelId!)
+                                      ? '此模型支持动态维度调整'
+                                      : '请确保维度与模型兼容',
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  final dimension = int.tryParse(value);
+                                  if (dimension != null && dimension > 0) {
+                                    _embeddingDimension = dimension;
+                                  }
+                                },
+                                validator: (value) {
+                                  if (!_useDefaultDimension) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return '请输入维度值';
+                                    }
+                                    final dimension = int.tryParse(value);
+                                    if (dimension == null || dimension <= 0) {
+                                      return '维度必须为正整数';
+                                    }
+                                    if (dimension > 4096) {
+                                      return '维度不能超过4096';
+                                    }
+                                  }
+                                  return null;
+                                },
+                              ),
+                              
+                              // 支持的维度提示
+                              if (_selectedModelId != null) ...[
+                                const SizedBox(height: 8),
+                                Builder(
+                                  builder: (context) {
+                                    final supportedDimensions = EmbeddingModelConfigs.getSupportedDimensions(_selectedModelId!);
+                                    if (supportedDimensions != null && supportedDimensions.isNotEmpty) {
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '支持的维度:',
+                                              style: Theme.of(context).textTheme.bodySmall,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Wrap(
+                                              spacing: 4,
+                                              children: supportedDimensions.map((dim) => 
+                                                ActionChip(
+                                                  label: Text(dim.toString()),
+                                                  onPressed: () {
+                                                    _dimensionController.text = dim.toString();
+                                                    _embeddingDimension = dim;
+                                                  },
+                                                ),
+                                              ).toList(),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+
                     // 分块大小
                     TextFormField(
                       initialValue: _chunkSize.toString(),
@@ -275,6 +427,13 @@ class _KnowledgeBaseConfigCreateDialogState
     }
 
     try {
+      // 确定最终使用的维度
+      int? finalDimension;
+      if (!_useDefaultDimension && _embeddingDimension != null) {
+        finalDimension = _embeddingDimension;
+      }
+      // 如果使用默认维度，则传递null，让系统自动处理
+
       await ref
           .read(knowledgeBaseConfigProvider.notifier)
           .createConfig(
@@ -282,6 +441,7 @@ class _KnowledgeBaseConfigCreateDialogState
             embeddingModelId: _selectedModelId!,
             embeddingModelName: _selectedModelName!,
             embeddingModelProvider: _selectedModelProvider!,
+            embeddingDimension: finalDimension,
             chunkSize: _chunkSize,
             chunkOverlap: _chunkOverlap,
             maxRetrievedChunks: _maxRetrievedChunks,

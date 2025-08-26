@@ -239,6 +239,7 @@ class KnowledgeBaseConfigNotifier
     required String embeddingModelId,
     required String embeddingModelName,
     required String embeddingModelProvider,
+    int? embeddingDimension, // 新增维度参数，null表示使用模型默认维度
     int chunkSize = 1000,
     int chunkOverlap = 200,
     int maxRetrievedChunks = 5,
@@ -256,6 +257,7 @@ class KnowledgeBaseConfigNotifier
         embeddingModelId: embeddingModelId,
         embeddingModelName: embeddingModelName,
         embeddingModelProvider: embeddingModelProvider,
+        embeddingDimension: embeddingDimension != null ? Value(embeddingDimension) : const Value.absent(),
         chunkSize: Value(chunkSize),
         chunkOverlap: Value(chunkOverlap),
         maxRetrievedChunks: Value(maxRetrievedChunks),
@@ -283,6 +285,8 @@ class KnowledgeBaseConfigNotifier
         embeddingModelId: Value(config.embeddingModelId),
         embeddingModelName: Value(config.embeddingModelName),
         embeddingModelProvider: Value(config.embeddingModelProvider),
+        embeddingDimension: config.embeddingDimension != null ? 
+            Value(config.embeddingDimension!) : const Value.absent(),
         chunkSize: Value(config.chunkSize),
         chunkOverlap: Value(config.chunkOverlap),
         maxRetrievedChunks: Value(config.maxRetrievedChunks),
@@ -420,6 +424,7 @@ class KnowledgeBaseConfigNotifier
       embeddingModelId: data.embeddingModelId,
       embeddingModelName: data.embeddingModelName,
       embeddingModelProvider: data.embeddingModelProvider,
+      embeddingDimension: data.embeddingDimension, // 新增维度字段
       chunkSize: data.chunkSize,
       chunkOverlap: data.chunkOverlap,
       maxRetrievedChunks: data.maxRetrievedChunks,

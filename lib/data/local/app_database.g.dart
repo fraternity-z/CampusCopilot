@@ -5333,6 +5333,12 @@ class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
   late final GeneratedColumn<String> embeddingModelProvider =
       GeneratedColumn<String>('embedding_model_provider', aliasedName, false,
           type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _embeddingDimensionMeta =
+      const VerificationMeta('embeddingDimension');
+  @override
+  late final GeneratedColumn<int> embeddingDimension = GeneratedColumn<int>(
+      'embedding_dimension', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _chunkSizeMeta =
       const VerificationMeta('chunkSize');
   @override
@@ -5394,6 +5400,7 @@ class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
         embeddingModelId,
         embeddingModelName,
         embeddingModelProvider,
+        embeddingDimension,
         chunkSize,
         chunkOverlap,
         maxRetrievedChunks,
@@ -5447,6 +5454,12 @@ class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
               data['embedding_model_provider']!, _embeddingModelProviderMeta));
     } else if (isInserting) {
       context.missing(_embeddingModelProviderMeta);
+    }
+    if (data.containsKey('embedding_dimension')) {
+      context.handle(
+          _embeddingDimensionMeta,
+          embeddingDimension.isAcceptableOrUnknown(
+              data['embedding_dimension']!, _embeddingDimensionMeta));
     }
     if (data.containsKey('chunk_size')) {
       context.handle(_chunkSizeMeta,
@@ -5507,6 +5520,8 @@ class $KnowledgeBaseConfigsTableTable extends KnowledgeBaseConfigsTable
       embeddingModelProvider: attachedDatabase.typeMapping.read(
           DriftSqlType.string,
           data['${effectivePrefix}embedding_model_provider'])!,
+      embeddingDimension: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}embedding_dimension']),
       chunkSize: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}chunk_size'])!,
       chunkOverlap: attachedDatabase.typeMapping
@@ -5547,6 +5562,9 @@ class KnowledgeBaseConfigsTableData extends DataClass
   /// 嵌入模型提供商
   final String embeddingModelProvider;
 
+  /// 嵌入向量维度
+  final int? embeddingDimension;
+
   /// 分块大小
   final int chunkSize;
 
@@ -5573,6 +5591,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
       required this.embeddingModelId,
       required this.embeddingModelName,
       required this.embeddingModelProvider,
+      this.embeddingDimension,
       required this.chunkSize,
       required this.chunkOverlap,
       required this.maxRetrievedChunks,
@@ -5588,6 +5607,9 @@ class KnowledgeBaseConfigsTableData extends DataClass
     map['embedding_model_id'] = Variable<String>(embeddingModelId);
     map['embedding_model_name'] = Variable<String>(embeddingModelName);
     map['embedding_model_provider'] = Variable<String>(embeddingModelProvider);
+    if (!nullToAbsent || embeddingDimension != null) {
+      map['embedding_dimension'] = Variable<int>(embeddingDimension);
+    }
     map['chunk_size'] = Variable<int>(chunkSize);
     map['chunk_overlap'] = Variable<int>(chunkOverlap);
     map['max_retrieved_chunks'] = Variable<int>(maxRetrievedChunks);
@@ -5605,6 +5627,9 @@ class KnowledgeBaseConfigsTableData extends DataClass
       embeddingModelId: Value(embeddingModelId),
       embeddingModelName: Value(embeddingModelName),
       embeddingModelProvider: Value(embeddingModelProvider),
+      embeddingDimension: embeddingDimension == null && nullToAbsent
+          ? const Value.absent()
+          : Value(embeddingDimension),
       chunkSize: Value(chunkSize),
       chunkOverlap: Value(chunkOverlap),
       maxRetrievedChunks: Value(maxRetrievedChunks),
@@ -5626,6 +5651,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
           serializer.fromJson<String>(json['embeddingModelName']),
       embeddingModelProvider:
           serializer.fromJson<String>(json['embeddingModelProvider']),
+      embeddingDimension: serializer.fromJson<int?>(json['embeddingDimension']),
       chunkSize: serializer.fromJson<int>(json['chunkSize']),
       chunkOverlap: serializer.fromJson<int>(json['chunkOverlap']),
       maxRetrievedChunks: serializer.fromJson<int>(json['maxRetrievedChunks']),
@@ -5646,6 +5672,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
       'embeddingModelName': serializer.toJson<String>(embeddingModelName),
       'embeddingModelProvider':
           serializer.toJson<String>(embeddingModelProvider),
+      'embeddingDimension': serializer.toJson<int?>(embeddingDimension),
       'chunkSize': serializer.toJson<int>(chunkSize),
       'chunkOverlap': serializer.toJson<int>(chunkOverlap),
       'maxRetrievedChunks': serializer.toJson<int>(maxRetrievedChunks),
@@ -5662,6 +5689,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
           String? embeddingModelId,
           String? embeddingModelName,
           String? embeddingModelProvider,
+          Value<int?> embeddingDimension = const Value.absent(),
           int? chunkSize,
           int? chunkOverlap,
           int? maxRetrievedChunks,
@@ -5676,6 +5704,9 @@ class KnowledgeBaseConfigsTableData extends DataClass
         embeddingModelName: embeddingModelName ?? this.embeddingModelName,
         embeddingModelProvider:
             embeddingModelProvider ?? this.embeddingModelProvider,
+        embeddingDimension: embeddingDimension.present
+            ? embeddingDimension.value
+            : this.embeddingDimension,
         chunkSize: chunkSize ?? this.chunkSize,
         chunkOverlap: chunkOverlap ?? this.chunkOverlap,
         maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
@@ -5698,6 +5729,9 @@ class KnowledgeBaseConfigsTableData extends DataClass
       embeddingModelProvider: data.embeddingModelProvider.present
           ? data.embeddingModelProvider.value
           : this.embeddingModelProvider,
+      embeddingDimension: data.embeddingDimension.present
+          ? data.embeddingDimension.value
+          : this.embeddingDimension,
       chunkSize: data.chunkSize.present ? data.chunkSize.value : this.chunkSize,
       chunkOverlap: data.chunkOverlap.present
           ? data.chunkOverlap.value
@@ -5722,6 +5756,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
           ..write('embeddingModelId: $embeddingModelId, ')
           ..write('embeddingModelName: $embeddingModelName, ')
           ..write('embeddingModelProvider: $embeddingModelProvider, ')
+          ..write('embeddingDimension: $embeddingDimension, ')
           ..write('chunkSize: $chunkSize, ')
           ..write('chunkOverlap: $chunkOverlap, ')
           ..write('maxRetrievedChunks: $maxRetrievedChunks, ')
@@ -5740,6 +5775,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
       embeddingModelId,
       embeddingModelName,
       embeddingModelProvider,
+      embeddingDimension,
       chunkSize,
       chunkOverlap,
       maxRetrievedChunks,
@@ -5756,6 +5792,7 @@ class KnowledgeBaseConfigsTableData extends DataClass
           other.embeddingModelId == this.embeddingModelId &&
           other.embeddingModelName == this.embeddingModelName &&
           other.embeddingModelProvider == this.embeddingModelProvider &&
+          other.embeddingDimension == this.embeddingDimension &&
           other.chunkSize == this.chunkSize &&
           other.chunkOverlap == this.chunkOverlap &&
           other.maxRetrievedChunks == this.maxRetrievedChunks &&
@@ -5772,6 +5809,7 @@ class KnowledgeBaseConfigsTableCompanion
   final Value<String> embeddingModelId;
   final Value<String> embeddingModelName;
   final Value<String> embeddingModelProvider;
+  final Value<int?> embeddingDimension;
   final Value<int> chunkSize;
   final Value<int> chunkOverlap;
   final Value<int> maxRetrievedChunks;
@@ -5786,6 +5824,7 @@ class KnowledgeBaseConfigsTableCompanion
     this.embeddingModelId = const Value.absent(),
     this.embeddingModelName = const Value.absent(),
     this.embeddingModelProvider = const Value.absent(),
+    this.embeddingDimension = const Value.absent(),
     this.chunkSize = const Value.absent(),
     this.chunkOverlap = const Value.absent(),
     this.maxRetrievedChunks = const Value.absent(),
@@ -5801,6 +5840,7 @@ class KnowledgeBaseConfigsTableCompanion
     required String embeddingModelId,
     required String embeddingModelName,
     required String embeddingModelProvider,
+    this.embeddingDimension = const Value.absent(),
     this.chunkSize = const Value.absent(),
     this.chunkOverlap = const Value.absent(),
     this.maxRetrievedChunks = const Value.absent(),
@@ -5822,6 +5862,7 @@ class KnowledgeBaseConfigsTableCompanion
     Expression<String>? embeddingModelId,
     Expression<String>? embeddingModelName,
     Expression<String>? embeddingModelProvider,
+    Expression<int>? embeddingDimension,
     Expression<int>? chunkSize,
     Expression<int>? chunkOverlap,
     Expression<int>? maxRetrievedChunks,
@@ -5839,6 +5880,7 @@ class KnowledgeBaseConfigsTableCompanion
         'embedding_model_name': embeddingModelName,
       if (embeddingModelProvider != null)
         'embedding_model_provider': embeddingModelProvider,
+      if (embeddingDimension != null) 'embedding_dimension': embeddingDimension,
       if (chunkSize != null) 'chunk_size': chunkSize,
       if (chunkOverlap != null) 'chunk_overlap': chunkOverlap,
       if (maxRetrievedChunks != null)
@@ -5858,6 +5900,7 @@ class KnowledgeBaseConfigsTableCompanion
       Value<String>? embeddingModelId,
       Value<String>? embeddingModelName,
       Value<String>? embeddingModelProvider,
+      Value<int?>? embeddingDimension,
       Value<int>? chunkSize,
       Value<int>? chunkOverlap,
       Value<int>? maxRetrievedChunks,
@@ -5873,6 +5916,7 @@ class KnowledgeBaseConfigsTableCompanion
       embeddingModelName: embeddingModelName ?? this.embeddingModelName,
       embeddingModelProvider:
           embeddingModelProvider ?? this.embeddingModelProvider,
+      embeddingDimension: embeddingDimension ?? this.embeddingDimension,
       chunkSize: chunkSize ?? this.chunkSize,
       chunkOverlap: chunkOverlap ?? this.chunkOverlap,
       maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
@@ -5902,6 +5946,9 @@ class KnowledgeBaseConfigsTableCompanion
     if (embeddingModelProvider.present) {
       map['embedding_model_provider'] =
           Variable<String>(embeddingModelProvider.value);
+    }
+    if (embeddingDimension.present) {
+      map['embedding_dimension'] = Variable<int>(embeddingDimension.value);
     }
     if (chunkSize.present) {
       map['chunk_size'] = Variable<int>(chunkSize.value);
@@ -5938,6 +5985,7 @@ class KnowledgeBaseConfigsTableCompanion
           ..write('embeddingModelId: $embeddingModelId, ')
           ..write('embeddingModelName: $embeddingModelName, ')
           ..write('embeddingModelProvider: $embeddingModelProvider, ')
+          ..write('embeddingDimension: $embeddingDimension, ')
           ..write('chunkSize: $chunkSize, ')
           ..write('chunkOverlap: $chunkOverlap, ')
           ..write('maxRetrievedChunks: $maxRetrievedChunks, ')
@@ -9649,6 +9697,7 @@ typedef $$KnowledgeBaseConfigsTableTableCreateCompanionBuilder
   required String embeddingModelId,
   required String embeddingModelName,
   required String embeddingModelProvider,
+  Value<int?> embeddingDimension,
   Value<int> chunkSize,
   Value<int> chunkOverlap,
   Value<int> maxRetrievedChunks,
@@ -9665,6 +9714,7 @@ typedef $$KnowledgeBaseConfigsTableTableUpdateCompanionBuilder
   Value<String> embeddingModelId,
   Value<String> embeddingModelName,
   Value<String> embeddingModelProvider,
+  Value<int?> embeddingDimension,
   Value<int> chunkSize,
   Value<int> chunkOverlap,
   Value<int> maxRetrievedChunks,
@@ -9700,6 +9750,10 @@ class $$KnowledgeBaseConfigsTableTableFilterComposer
 
   ColumnFilters<String> get embeddingModelProvider => $composableBuilder(
       column: $table.embeddingModelProvider,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get embeddingDimension => $composableBuilder(
+      column: $table.embeddingDimension,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get chunkSize => $composableBuilder(
@@ -9753,6 +9807,10 @@ class $$KnowledgeBaseConfigsTableTableOrderingComposer
       column: $table.embeddingModelProvider,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get embeddingDimension => $composableBuilder(
+      column: $table.embeddingDimension,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get chunkSize => $composableBuilder(
       column: $table.chunkSize, builder: (column) => ColumnOrderings(column));
 
@@ -9801,6 +9859,9 @@ class $$KnowledgeBaseConfigsTableTableAnnotationComposer
 
   GeneratedColumn<String> get embeddingModelProvider => $composableBuilder(
       column: $table.embeddingModelProvider, builder: (column) => column);
+
+  GeneratedColumn<int> get embeddingDimension => $composableBuilder(
+      column: $table.embeddingDimension, builder: (column) => column);
 
   GeneratedColumn<int> get chunkSize =>
       $composableBuilder(column: $table.chunkSize, builder: (column) => column);
@@ -9860,6 +9921,7 @@ class $$KnowledgeBaseConfigsTableTableTableManager extends RootTableManager<
             Value<String> embeddingModelId = const Value.absent(),
             Value<String> embeddingModelName = const Value.absent(),
             Value<String> embeddingModelProvider = const Value.absent(),
+            Value<int?> embeddingDimension = const Value.absent(),
             Value<int> chunkSize = const Value.absent(),
             Value<int> chunkOverlap = const Value.absent(),
             Value<int> maxRetrievedChunks = const Value.absent(),
@@ -9875,6 +9937,7 @@ class $$KnowledgeBaseConfigsTableTableTableManager extends RootTableManager<
             embeddingModelId: embeddingModelId,
             embeddingModelName: embeddingModelName,
             embeddingModelProvider: embeddingModelProvider,
+            embeddingDimension: embeddingDimension,
             chunkSize: chunkSize,
             chunkOverlap: chunkOverlap,
             maxRetrievedChunks: maxRetrievedChunks,
@@ -9890,6 +9953,7 @@ class $$KnowledgeBaseConfigsTableTableTableManager extends RootTableManager<
             required String embeddingModelId,
             required String embeddingModelName,
             required String embeddingModelProvider,
+            Value<int?> embeddingDimension = const Value.absent(),
             Value<int> chunkSize = const Value.absent(),
             Value<int> chunkOverlap = const Value.absent(),
             Value<int> maxRetrievedChunks = const Value.absent(),
@@ -9905,6 +9969,7 @@ class $$KnowledgeBaseConfigsTableTableTableManager extends RootTableManager<
             embeddingModelId: embeddingModelId,
             embeddingModelName: embeddingModelName,
             embeddingModelProvider: embeddingModelProvider,
+            embeddingDimension: embeddingDimension,
             chunkSize: chunkSize,
             chunkOverlap: chunkOverlap,
             maxRetrievedChunks: maxRetrievedChunks,

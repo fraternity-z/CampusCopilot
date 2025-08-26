@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/models/embedding_model_config.dart';
 
 /// 知识库配置实体
 class KnowledgeBaseConfig {
@@ -16,6 +17,9 @@ class KnowledgeBaseConfig {
 
   /// 嵌入模型提供商
   final String embeddingModelProvider;
+
+  /// 嵌入向量维度（可选，null表示使用模型默认维度）
+  final int? embeddingDimension;
 
   /// 分块大小
   final int chunkSize;
@@ -44,6 +48,7 @@ class KnowledgeBaseConfig {
     required this.embeddingModelId,
     required this.embeddingModelName,
     required this.embeddingModelProvider,
+    this.embeddingDimension,
     this.chunkSize = 1000,
     this.chunkOverlap = 200,
     this.maxRetrievedChunks = 5,
@@ -60,6 +65,7 @@ class KnowledgeBaseConfig {
     String? embeddingModelId,
     String? embeddingModelName,
     String? embeddingModelProvider,
+    int? embeddingDimension,
     int? chunkSize,
     int? chunkOverlap,
     int? maxRetrievedChunks,
@@ -75,6 +81,7 @@ class KnowledgeBaseConfig {
       embeddingModelName: embeddingModelName ?? this.embeddingModelName,
       embeddingModelProvider:
           embeddingModelProvider ?? this.embeddingModelProvider,
+      embeddingDimension: embeddingDimension ?? this.embeddingDimension,
       chunkSize: chunkSize ?? this.chunkSize,
       chunkOverlap: chunkOverlap ?? this.chunkOverlap,
       maxRetrievedChunks: maxRetrievedChunks ?? this.maxRetrievedChunks,
@@ -93,6 +100,7 @@ class KnowledgeBaseConfig {
       'embeddingModelId': embeddingModelId,
       'embeddingModelName': embeddingModelName,
       'embeddingModelProvider': embeddingModelProvider,
+      'embeddingDimension': embeddingDimension,
       'chunkSize': chunkSize,
       'chunkOverlap': chunkOverlap,
       'maxRetrievedChunks': maxRetrievedChunks,
@@ -110,6 +118,7 @@ class KnowledgeBaseConfig {
       embeddingModelId: json['embeddingModelId'] as String,
       embeddingModelName: json['embeddingModelName'] as String,
       embeddingModelProvider: json['embeddingModelProvider'] as String,
+      embeddingDimension: json['embeddingDimension'] as int?,
       chunkSize: json['chunkSize'] as int? ?? 1000,
       chunkOverlap: json['chunkOverlap'] as int? ?? 200,
       maxRetrievedChunks: json['maxRetrievedChunks'] as int? ?? 5,
@@ -118,6 +127,43 @@ class KnowledgeBaseConfig {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
+  }
+
+  /// 获取有效的嵌入向量维度
+  /// 如果设置了自定义维度则使用自定义维度，否则使用模型默认维度
+  int getEffectiveDimension() {
+    if (embeddingDimension != null && embeddingDimension! > 0) {
+      return embeddingDimension!;
+    }
+    
+    // 使用模型默认维度
+    final modelConfig = EmbeddingModelConfigs.getConfig(embeddingModelId);
+    if (modelConfig != null) {
+      return modelConfig.defaultDimension;
+    }
+    
+    // 最后的兜底维度
+    return 1536; // OpenAI兼容维度
+  }
+
+  /// 获取推荐的嵌入向量维度
+  /// 考虑性能和兼容性，可能与默认维度不同
+  int getRecommendedDimension() {
+    if (embeddingDimension != null && embeddingDimension! > 0) {
+      return embeddingDimension!;
+    }
+    
+    return EmbeddingModelConfigs.getRecommendedDimension(embeddingModelId);
+  }
+
+  /// 检查模型是否支持动态维度调整
+  bool supportsDynamicDimension() {
+    return EmbeddingModelConfigs.supportsDynamicDimension(embeddingModelId);
+  }
+
+  /// 获取模型支持的维度列表
+  List<int>? getSupportedDimensions() {
+    return EmbeddingModelConfigs.getSupportedDimensions(embeddingModelId);
   }
 }
 
