@@ -286,7 +286,7 @@ jobs:
 
         # 使用优化的构建参数
         echo "🔨 开始构建..."
-        flutter build apk --release --verbose --dart-define=flutter.inspector.structuredErrors=false
+        flutter build apk --release --dart-define=flutter.inspector.structuredErrors=false --target-platform android-arm64,android-arm
 
         echo "✅ Android APK构建完成"
         echo "📊 构建结束时间: $(date)"
@@ -356,8 +356,31 @@ jobs:
     - name: 生成代码
       run: dart run build_runner build --delete-conflicting-outputs
 
+    - name: 设置iOS构建环境
+      run: |
+        # 尝试选择一个可用的iOS SDK版本
+        if xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | grep -q "17"; then
+          echo "使用 iOS 17 SDK"
+          export IOS_SDK_VERSION="17.0"
+        elif xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | grep -q "16"; then
+          echo "使用 iOS 16 SDK" 
+          export IOS_SDK_VERSION="16.0"
+        else
+          echo "使用默认 iOS SDK"
+          export IOS_SDK_VERSION="15.0"
+        fi
+        
+        echo "IOS_SDK_VERSION=$IOS_SDK_VERSION" >> $GITHUB_ENV
+        
+        # 显示Xcode和iOS SDK信息
+        xcrun --sdk iphoneos --show-sdk-version || echo "无法获取iOS SDK版本"
+        xcodebuild -showsdks | grep -i ios || echo "无法列出iOS SDK"
+
     - name: 构建iOS应用（无签名）
-      run: flutter build ios --release --no-codesign
+      run: |
+        flutter build ios --release --no-codesign \
+          --dart-define=flutter.inspector.structuredErrors=false \
+          --target-platform ios-arm64
       continue-on-error: true
 
     - name: 创建IPA文件
@@ -446,7 +469,7 @@ jobs:
           - ✅ **iOS IPA**: 未签名IPA文件，需要使用第三方工具或Xcode签名后安装
 
           ### 桌面端
-          - ❌ **Windows**: 暂时移除（文件锁定问题）
+          - ❌ **Windows**: 暂时移除
 
           ## 🔧 技术信息
 
