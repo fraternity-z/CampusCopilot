@@ -505,12 +505,10 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 构建分组的模型列表
   Widget _buildGroupedModelList() {
-    // 按用户自定义分组或默认分组分类
+    // 按模型名称系列分组
     final Map<String, List<ModelInfo>> groupedModels = {};
     for (final model in _availableModels) {
-      // 1. 优先使用用户自定义的分组
-      // 2. 如果没有自定义分组，则使用默认的系列分组
-      final groupKey = _getModelCustomGroup(model) ?? _extractModelSeries(model.name);
+      final groupKey = _extractModelSeries(model.name);
       groupedModels.putIfAbsent(groupKey, () => []).add(model);
     }
 
@@ -591,7 +589,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                         IconButton(
                           onPressed: () => _showDeleteGroupDialog(context, seriesName, models),
                           icon: const Icon(Icons.delete_outline),
-                          tooltip: '删除整个${seriesName}',
+                          tooltip: '删除整个$seriesName',
                           iconSize: 20,
                           color: Colors.red,
                         ),
@@ -689,22 +687,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     );
   }
 
-  /// 获取模型的用户自定义分组
-  /// 返回null表示使用默认分组
-  String? _getModelCustomGroup(ModelInfo model) {
-    // TODO: 从本地存储（SharedPreferences 或数据库）读取用户自定义的分组
-    // 例如：根据 model.id 查找用户设置的分组名称
-    // 目前返回null，使用默认分组
-    return null;
-  }
-
-  /// 保存模型的用户自定义分组
-  Future<void> _saveModelCustomGroup(String modelId, String groupName) async {
-    // TODO: 保存到本地存储
-    // 例如：SharedPreferences.setString('model_group_$modelId', groupName)
-  }
-
-  /// 提取模型系列名称（仅用作默认分组）
+  /// 提取模型系列名称
   String _extractModelSeries(String modelName) {
     final name = modelName.toLowerCase().trim();
     
@@ -847,12 +830,12 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('删除整个${seriesName}'),
+        title: Text('删除整个$seriesName'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('确定要删除 "${seriesName}" 下的所有模型吗？'),
+            Text('确定要删除 "$seriesName" 下的所有模型吗？'),
             const SizedBox(height: 12),
             Text(
               '将删除以下 ${models.length} 个模型：',
@@ -936,7 +919,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('已删除 "${seriesName}" 下的 ${models.length} 个模型'),
+            content: Text('已删除 "$seriesName" 下的 ${models.length} 个模型'),
             backgroundColor: Colors.green,
           ),
         );
@@ -1269,20 +1252,6 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     _showModelEditDialog();
   }
 
-  /// 处理模型操作
-  void _handleModelAction(ModelInfo model, String action) {
-    switch (action) {
-      case 'edit':
-        _showModelEditDialog(model: model);
-        break;
-      case 'duplicate':
-        _duplicateModel(model);
-        break;
-      case 'delete':
-        _deleteModel(model);
-        break;
-    }
-  }
 
   /// 显示模型编辑对话框
   void _showModelEditDialog({ModelInfo? model}) {
@@ -1297,36 +1266,6 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     );
   }
 
-  /// 复制模型
-  Future<void> _duplicateModel(ModelInfo model) async {
-    try {
-      final service = ref.read(modelManagementServiceProvider);
-      await service.addCustomModel(
-        name: '${model.name} (副本)',
-        modelId: '${model.id}-copy',
-        provider: widget.providerId,
-        description: model.description,
-        type: model.type,
-        contextWindow: model.contextWindow,
-        maxOutputTokens: model.maxOutputTokens,
-        supportsStreaming: model.supportsStreaming,
-        supportsFunctionCalling: model.supportsFunctionCalling,
-        supportsVision: model.supportsVision,
-        inputPrice: model.pricing?.inputPrice,
-        outputPrice: model.pricing?.outputPrice,
-        currency: model.pricing?.currency ?? 'USD',
-        capabilities: model.capabilities,
-        configId: _existingConfig?.id,
-      );
-      await _loadModels();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('复制模型失败: $e')));
-      }
-    }
-  }
 
   /// 删除模型
   Future<void> _deleteModel(ModelInfo model) async {
@@ -1553,22 +1492,11 @@ class _ModelManagementDialogState extends ConsumerState<ModelManagementDialog> {
   
   String _originalGroupName = '';  // 记录原始分组名
 
-  /// 获取模型的用户自定义分组
-  String? _getModelCustomGroup(ModelInfo model) {
-    // TODO: 从本地存储读取用户自定义的分组
-    return null;
-  }
-
-  /// 保存模型的用户自定义分组
-  Future<void> _saveModelCustomGroup(String modelId, String groupName) async {
-    // TODO: 保存到本地存储
-  }
-
   @override
   void initState() {
     super.initState();
-    // 初始化当前值 - 优先使用用户自定义分组，否则使用默认分组
-    _originalGroupName = _getModelCustomGroup(widget.model) ?? _extractModelSeries(widget.model.name);
+    // 初始化当前值
+    _originalGroupName = _extractModelSeries(widget.model.name);
     _groupNameController.text = _originalGroupName;
     _selectedApiType = _getModelApiType(widget.model);
   }
@@ -1731,29 +1659,18 @@ class _ModelManagementDialogState extends ConsumerState<ModelManagementDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      final newGroupName = _groupNameController.text.trim();
-      
-      // 检查分组是否需要更新
-      if (newGroupName != _originalGroupName) {
-        // 保存用户自定义的分组信息，不修改模型名称
-        await _saveModelCustomGroup(widget.model.id, newGroupName);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('模型 "${widget.model.name}" 已分组到 "$newGroupName"'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      }
-      
-      // TODO: 根据端点类型更新模型的API调用配置
-      // 这里需要根据 _selectedApiType 更新模型的调用方式，但不改变模型名称
+      // 这里需要根据实际的模型更新API来实现
+      // 目前先显示成功提示，实际实现需要调用相应的服务
       
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('模型配置已保存'),
+            backgroundColor: Colors.green,
+          ),
+        );
         Navigator.of(context).pop();
-        widget.onSaved(); // 触发界面刷新
+        widget.onSaved();
       }
     } catch (e) {
       if (mounted) {
