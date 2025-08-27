@@ -7,7 +7,9 @@ import '../../../llm_chat/data/providers/llm_provider_factory.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
 import '../providers/custom_provider_notifier.dart';
+import '../providers/provider_group_provider.dart';
 import '../widgets/custom_provider_edit_dialog.dart';
+import '../widgets/provider_group_widget.dart';
 
 /// 自定义提供商列表Provider
 final customProvidersProvider = FutureProvider<List<LlmConfigsTableData>>((
@@ -46,6 +48,7 @@ class ModelManagementScreen extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // 顶部信息
             Text(
               'AI 提供商配置',
               style: Theme.of(
@@ -54,26 +57,69 @@ class ModelManagementScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '点击配置各个AI提供商的API密钥、模型列表等设置',
+              '按名称分组管理各个AI提供商的配置，支持折叠展开和批量删除',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
 
-            // 内置提供商
-            ...supportedProviders.map((providerId) {
-              return _buildProviderCard(context, providerId);
-            }),
+            // 内置提供商（未分组显示）
+            if (supportedProviders.isNotEmpty) ...[
+              Text(
+                '内置提供商',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...supportedProviders.map((providerId) {
+                return _buildProviderCard(context, providerId);
+              }),
+              const SizedBox(height: 24),
+            ],
 
-            // 自定义提供商
+            // 自定义提供商（分组显示）
             Consumer(
               builder: (context, ref, child) {
-                final customProviders = ref.watch(customProvidersListProvider);
+                final groups = ref.watch(providerGroupsProvider);
+                if (groups.isEmpty) {
+                  return const SizedBox.shrink();
+                }
                 return Column(
-                  children: customProviders.map((provider) {
-                    return _buildCustomProviderCard(context, provider);
-                  }).toList(),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '自定义提供商',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => _expandAllGroups(ref, true),
+                              icon: const Icon(Icons.expand_more, size: 18),
+                              label: const Text('全部展开'),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              onPressed: () => _expandAllGroups(ref, false),
+                              icon: const Icon(Icons.expand_less, size: 18),
+                              label: const Text('全部折叠'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...groups.map((group) {
+                      return ProviderGroupWidget(group: group);
+                    }),
+                  ],
                 );
               },
             ),
@@ -251,144 +297,16 @@ class ModelManagementScreen extends ConsumerWidget {
     }
   }
 
-  /// 构建自定义提供商卡片
-  Widget _buildCustomProviderCard(
-    BuildContext context,
-    LlmConfigsTableData provider,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () {
-          context.push('/settings/models/provider/${provider.id}');
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              // 提供商图标
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: _getCustomProviderColor(
-                    provider.apiCompatibilityType,
-                  ).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getCustomProviderIcon(provider.apiCompatibilityType),
-                  size: 28,
-                  color: _getCustomProviderColor(provider.apiCompatibilityType),
-                ),
-              ),
-              const SizedBox(width: 16),
 
-              // 提供商信息
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      provider.customProviderName ?? provider.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        // API兼容性类型标签
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getCustomProviderColor(
-                              provider.apiCompatibilityType,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            LlmProviderFactory.getCompatibilityTypeDisplayName(
-                              provider.apiCompatibilityType,
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: _getCustomProviderColor(
-                                    provider.apiCompatibilityType,
-                                  ),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // 状态指示器
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: provider.isEnabled
-                                ? Colors.green
-                                : Colors.grey,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          provider.isEnabled ? '已启用' : '已禁用',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: provider.isEnabled
-                                    ? Colors.green
-                                    : Colors.grey,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
 
-              // 箭头图标
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  /// 获取自定义提供商图标
-  IconData _getCustomProviderIcon(String compatibilityType) {
-    switch (compatibilityType.toLowerCase()) {
-      case 'openai':
-        return Icons.psychology;
-      case 'gemini':
-        return Icons.auto_awesome;
-      case 'anthropic':
-        return Icons.smart_toy;
-      default:
-        return Icons.api;
-    }
-  }
-
-  /// 获取自定义提供商颜色
-  Color _getCustomProviderColor(String compatibilityType) {
-    switch (compatibilityType.toLowerCase()) {
-      case 'openai':
-        return Colors.green;
-      case 'gemini':
-        return Colors.blue;
-      case 'anthropic':
-        return Colors.orange;
-      default:
-        return Colors.purple;
+  /// 展开/折叠所有分组
+  void _expandAllGroups(WidgetRef ref, bool expanded) {
+    final groups = ref.read(providerGroupsProvider);
+    final notifier = ref.read(providerGroupNotifierProvider.notifier);
+    
+    for (final group in groups) {
+      notifier.setGroupExpanded(group.groupName, expanded);
     }
   }
 }

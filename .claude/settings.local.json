@@ -11,7 +11,8 @@
       "Bash(claude mcp add:*)",
       "WebSearch",
       "WebFetch(domain:pub.dev)",
-      "Bash(flutter pub:*)"
+      "Bash(flutter pub:*)",
+      "Bash(flutter test:*)"
     ],
     "deny": [],
     "ask": []

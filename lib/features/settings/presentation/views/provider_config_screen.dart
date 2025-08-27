@@ -36,6 +36,9 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
   bool _isEnabled = true;
   LlmConfigsTableData? _existingConfig;
   List<ModelInfo> _availableModels = [];
+  
+  // 模型分组展开状态（按系列名称）
+  final Map<String, bool> _expandedGroups = {};
 
   @override
   void initState() {
@@ -383,62 +386,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
             if (_availableModels.isEmpty)
               const Center(child: Text('暂无可用模型，请先配置API密钥并点击刷新'))
             else
-              Column(
-                children: _availableModels.map((model) {
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: _getModelTypeIcon(model.type),
-                      title: Text(model.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (model.description != null)
-                            Text(model.description!),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              if (model.contextWindow != null)
-                                Chip(
-                                  label: Text('${model.contextWindow}K上下文'),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              if (model.supportsVision)
-                                const Chip(
-                                  label: Text('视觉'),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              if (model.supportsFunctionCalling)
-                                const Chip(
-                                  label: Text('函数调用'),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) => _handleModelAction(model, value),
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                          const PopupMenuItem(
-                            value: 'duplicate',
-                            child: Text('复制'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('删除'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+              _buildGroupedModelList(),
           ],
         ),
       ),
@@ -551,6 +499,494 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 构建分组的模型列表
+  Widget _buildGroupedModelList() {
+    // 按用户自定义分组或默认分组分类
+    final Map<String, List<ModelInfo>> groupedModels = {};
+    for (final model in _availableModels) {
+      // 1. 优先使用用户自定义的分组
+      // 2. 如果没有自定义分组，则使用默认的系列分组
+      final groupKey = _getModelCustomGroup(model) ?? _extractModelSeries(model.name);
+      groupedModels.putIfAbsent(groupKey, () => []).add(model);
+    }
+
+    // 过滤掉空的分组并按组名排序
+    final availableGroups = groupedModels.entries
+        .where((entry) => entry.value.isNotEmpty)
+        .toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+
+    return Column(
+      children: [
+        // 全部展开/折叠按钮
+        if (availableGroups.length > 1) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => _toggleAllGroups(true),
+                icon: const Icon(Icons.expand_more, size: 18),
+                label: const Text('全部展开'),
+              ),
+              TextButton.icon(
+                onPressed: () => _toggleAllGroups(false),
+                icon: const Icon(Icons.expand_less, size: 18),
+                label: const Text('全部折叠'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+        
+        // 分组列表
+        ...availableGroups.map((entry) {
+          final seriesName = entry.key;
+          final models = entry.value;
+          final isExpanded = _expandedGroups[seriesName] ?? true;
+          
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              children: [
+                // 分组头部
+                InkWell(
+                  onTap: () => _toggleGroup(seriesName),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _getSeriesColor(seriesName).withValues(alpha: 0.08),
+                      borderRadius: isExpanded
+                          ? const BorderRadius.vertical(top: Radius.circular(12))
+                          : BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        _getSeriesIcon(seriesName),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                seriesName,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${models.length} 个模型',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // 分组删除按钮
+                        IconButton(
+                          onPressed: () => _showDeleteGroupDialog(context, seriesName, models),
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: '删除整个${seriesName}',
+                          iconSize: 20,
+                          color: Colors.red,
+                        ),
+                        
+                        // 展开/折叠箭头
+                        AnimatedRotation(
+                          turns: isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // 分组内容
+                if (isExpanded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      children: models.map((model) {
+                        return _buildModelItem(model);
+                      }).toList(),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  /// 构建单个模型项
+  Widget _buildModelItem(ModelInfo model) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 1,
+      child: ListTile(
+        leading: _getModelTypeIcon(model.type),
+        title: Text(model.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (model.description != null)
+              Text(model.description!),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (model.contextWindow != null)
+                  Chip(
+                    label: Text('${model.contextWindow}K上下文'),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                if (model.supportsVision)
+                  const Chip(
+                    label: Text('视觉'),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                if (model.supportsFunctionCalling)
+                  const Chip(
+                    label: Text('函数调用'),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+              ],
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 管理按钮
+            IconButton(
+              onPressed: () => _showModelManagementDialog(context, model),
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: '管理模型',
+              iconSize: 20,
+              color: Colors.blue,
+            ),
+            // 删除按钮
+            IconButton(
+              onPressed: () => _showDeleteModelDialog(context, model),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '删除模型',
+              iconSize: 20,
+              color: Colors.red,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 获取模型的用户自定义分组
+  /// 返回null表示使用默认分组
+  String? _getModelCustomGroup(ModelInfo model) {
+    // TODO: 从本地存储（SharedPreferences 或数据库）读取用户自定义的分组
+    // 例如：根据 model.id 查找用户设置的分组名称
+    // 目前返回null，使用默认分组
+    return null;
+  }
+
+  /// 保存模型的用户自定义分组
+  Future<void> _saveModelCustomGroup(String modelId, String groupName) async {
+    // TODO: 保存到本地存储
+    // 例如：SharedPreferences.setString('model_group_$modelId', groupName)
+  }
+
+  /// 提取模型系列名称（仅用作默认分组）
+  String _extractModelSeries(String modelName) {
+    final name = modelName.toLowerCase().trim();
+    
+    // DeepSeek系列
+    if (name.contains('deepseek')) {
+      return 'DeepSeek系列';
+    }
+    
+    // GPT系列细分
+    if (name.startsWith('gpt-5')) {
+      return 'GPT-5系列';
+    }
+    if (name.startsWith('gpt-4')) {
+      return 'GPT-4系列';
+    }
+    if (name.startsWith('gpt-3')) {
+      return 'GPT-3系列';
+    }
+    if (name.contains('gpt')) {
+      return 'GPT其他';
+    }
+    
+    // Claude系列细分
+    if (name.contains('claude-4')) {
+      return 'Claude 4系列';
+    }
+    if (name.contains('claude-3.5') || name.contains('claude-3-5')) {
+      return 'Claude 3.5系列';
+    }
+    if (name.contains('claude-3')) {
+      return 'Claude 3系列';
+    }
+    if (name.contains('claude')) {
+      return 'Claude其他';
+    }
+    
+    // Gemini系列
+    if (name.contains('gemini-2')) {
+      return 'Gemini 2系列';
+    }
+    if (name.contains('gemini-1.5')) {
+      return 'Gemini 1.5系列';
+    }
+    if (name.contains('gemini')) {
+      return 'Gemini系列';
+    }
+    
+    // 嵌入模型
+    if (name.contains('text-embedding') || name.contains('embedding')) {
+      return '嵌入模型';
+    }
+    
+    // 图像生成模型
+    if (name.contains('dall-e') || name.contains('dalle') || 
+        name.contains('midjourney') || name.contains('stable-diffusion') ||
+        name.contains('image') && (name.contains('gen') || name.contains('create'))) {
+      return '图像生成';
+    }
+    
+    // 语音模型
+    if (name.contains('tts') || name.contains('stt') || 
+        name.contains('whisper') || name.contains('speech')) {
+      return '语音模型';
+    }
+    
+    // 其他知名系列
+    if (name.contains('llama')) {
+      return 'LLaMA系列';
+    }
+    if (name.contains('qwen') || name.contains('tongyi')) {
+      return '通义千问系列';
+    }
+    if (name.contains('chatglm') || name.contains('glm')) {
+      return 'ChatGLM系列';
+    }
+    if (name.contains('moonshot') || name.contains('kimi')) {
+      return 'Moonshot系列';
+    }
+    if (name.contains('yi-')) {
+      return '零一万物系列';
+    }
+    
+    // 按第一个词或短划线分割
+    final parts = modelName.split(RegExp(r'[-_\s]'));
+    if (parts.isNotEmpty) {
+      final firstPart = parts[0].trim();
+      if (firstPart.isNotEmpty) {
+        return '${firstPart[0].toUpperCase()}${firstPart.substring(1)}系列';
+      }
+    }
+    
+    return '其他模型';
+  }
+
+  /// 切换单个分组的展开状态
+  void _toggleGroup(String seriesName) {
+    setState(() {
+      _expandedGroups[seriesName] = !(_expandedGroups[seriesName] ?? true);
+    });
+  }
+
+  /// 切换所有分组的展开状态
+  void _toggleAllGroups(bool expanded) {
+    setState(() {
+      // 获取当前所有分组的键
+      final currentGroups = <String>{};
+      for (final model in _availableModels) {
+        currentGroups.add(_extractModelSeries(model.name));
+      }
+      
+      for (final groupName in currentGroups) {
+        _expandedGroups[groupName] = expanded;
+      }
+    });
+  }
+
+  /// 获取系列颜色（统一淡灰色）
+  Color _getSeriesColor(String seriesName) {
+    return Colors.grey.shade300;
+  }
+
+  /// 获取系列图标
+  Widget _getSeriesIcon(String seriesName) {
+    final name = seriesName.toLowerCase();
+    const color = Colors.grey;
+    
+    if (name.contains('deepseek')) return const Icon(Icons.psychology_alt, color: color);
+    if (name.contains('gpt')) return const Icon(Icons.psychology, color: color);
+    if (name.contains('claude')) return const Icon(Icons.smart_toy, color: color);
+    if (name.contains('gemini')) return const Icon(Icons.auto_awesome, color: color);
+    if (name.contains('llama')) return const Icon(Icons.pets, color: color);
+    if (name.contains('qwen')) return const Icon(Icons.translate, color: color);
+    if (name.contains('chatglm')) return const Icon(Icons.chat_bubble, color: color);
+    
+    return const Icon(Icons.api, color: color);
+  }
+
+  /// 显示分组删除确认对话框
+  void _showDeleteGroupDialog(BuildContext context, String seriesName, List<ModelInfo> models) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('删除整个${seriesName}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('确定要删除 "${seriesName}" 下的所有模型吗？'),
+            const SizedBox(height: 12),
+            Text(
+              '将删除以下 ${models.length} 个模型：',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 150),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: models.map((model) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, size: 4),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(model.name)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, size: 16, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Text(
+                    '此操作无法撤销！',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteGroup(seriesName, models);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('删除$seriesName'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 删除整个分组
+  Future<void> _deleteGroup(String seriesName, List<ModelInfo> models) async {
+    try {
+      final service = ref.read(modelManagementServiceProvider);
+      
+      for (final model in models) {
+        await service.deleteCustomModel(model.id);
+      }
+      
+      await _loadModels();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已删除 "${seriesName}" 下的 ${models.length} 个模型'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('删除失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 显示模型管理对话框
+  void _showModelManagementDialog(BuildContext context, ModelInfo model) {
+    showDialog(
+      context: context,
+      builder: (context) => ModelManagementDialog(
+        model: model,
+        onSaved: () {
+          _loadModels();
+        },
+      ),
+    );
+  }
+
+  /// 显示删除模型确认对话框
+  void _showDeleteModelDialog(BuildContext context, ModelInfo model) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除模型'),
+        content: Text('确定要删除模型 "${model.name}" 吗？\n\n此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteModel(model);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('删除'),
+          ),
+        ],
       ),
     );
   }
@@ -1086,6 +1522,252 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
   }
 }
 
+/// 模型管理对话框
+class ModelManagementDialog extends ConsumerStatefulWidget {
+  final ModelInfo model;
+  final VoidCallback onSaved;
+
+  const ModelManagementDialog({
+    super.key,
+    required this.model,
+    required this.onSaved,
+  });
+
+  @override
+  ConsumerState<ModelManagementDialog> createState() => _ModelManagementDialogState();
+}
+
+class _ModelManagementDialogState extends ConsumerState<ModelManagementDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _groupNameController = TextEditingController();
+  
+  String _selectedApiType = 'OpenAI';
+  final List<String> _apiTypes = [
+    'OpenAI',
+    'OpenAI-Response', 
+    'Anthropic',
+    'Gemini',
+    '图片生成',
+    'Jina 重排序',
+  ];
+  
+  String _originalGroupName = '';  // 记录原始分组名
+
+  /// 获取模型的用户自定义分组
+  String? _getModelCustomGroup(ModelInfo model) {
+    // TODO: 从本地存储读取用户自定义的分组
+    return null;
+  }
+
+  /// 保存模型的用户自定义分组
+  Future<void> _saveModelCustomGroup(String modelId, String groupName) async {
+    // TODO: 保存到本地存储
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化当前值 - 优先使用用户自定义分组，否则使用默认分组
+    _originalGroupName = _getModelCustomGroup(widget.model) ?? _extractModelSeries(widget.model.name);
+    _groupNameController.text = _originalGroupName;
+    _selectedApiType = _getModelApiType(widget.model);
+  }
+
+  /// 根据模型推断API类型
+  String _getModelApiType(ModelInfo model) {
+    final name = model.name.toLowerCase();
+    if (name.contains('claude')) return 'Anthropic';
+    if (name.contains('gemini')) return 'Gemini';
+    if (name.contains('dall-e') || name.contains('image')) return '图片生成';
+    if (name.contains('jina')) return 'Jina 重排序';
+    return 'OpenAI';
+  }
+
+  /// 提取模型系列名称（复制之前的逻辑）
+  String _extractModelSeries(String modelName) {
+    final name = modelName.toLowerCase().trim();
+    
+    if (name.contains('deepseek')) return 'DeepSeek系列';
+    if (name.startsWith('gpt-5')) return 'GPT-5系列';
+    if (name.startsWith('gpt-4')) return 'GPT-4系列';
+    if (name.startsWith('gpt-3')) return 'GPT-3系列';
+    if (name.contains('gpt')) return 'GPT其他';
+    if (name.contains('claude-4')) return 'Claude 4系列';
+    if (name.contains('claude-3.5')) return 'Claude 3.5系列';
+    if (name.contains('claude-3')) return 'Claude 3系列';
+    if (name.contains('claude')) return 'Claude其他';
+    if (name.contains('gemini-2')) return 'Gemini 2系列';
+    if (name.contains('gemini-1.5')) return 'Gemini 1.5系列';
+    if (name.contains('gemini')) return 'Gemini系列';
+    
+    return '其他模型';
+  }
+
+  @override
+  void dispose() {
+    _groupNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('管理模型 - ${widget.model.name}'),
+      content: SizedBox(
+        width: 400,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 分组名称
+                TextFormField(
+                  controller: _groupNameController,
+                  decoration: const InputDecoration(
+                    labelText: '分组名称',
+                    helperText: '设置此模型所属的分组，如果分组不存在将自动创建',
+                    prefixIcon: Icon(Icons.folder_outlined),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入分组名称';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // 端点类型
+                const Text(
+                  '端点类型',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '选择此模型的API调用方式',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedApiType,
+                      isExpanded: true,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedApiType = newValue;
+                          });
+                        }
+                      },
+                      items: _apiTypes.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Row(
+                            children: [
+                              _getApiTypeIcon(value),
+                              const SizedBox(width: 8),
+                              Text(value),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: _saveModel,
+          child: const Text('保存'),
+        ),
+      ],
+    );
+  }
+
+  /// 获取API类型图标
+  Widget _getApiTypeIcon(String apiType) {
+    switch (apiType) {
+      case 'OpenAI':
+      case 'OpenAI-Response':
+        return const Icon(Icons.psychology, color: Colors.green, size: 20);
+      case 'Anthropic':
+        return const Icon(Icons.smart_toy, color: Colors.orange, size: 20);
+      case 'Gemini':
+        return const Icon(Icons.auto_awesome, color: Colors.blue, size: 20);
+      case '图片生成':
+        return const Icon(Icons.image, color: Colors.purple, size: 20);
+      case 'Jina 重排序':
+        return const Icon(Icons.sort, color: Colors.teal, size: 20);
+      default:
+        return const Icon(Icons.api, color: Colors.grey, size: 20);
+    }
+  }
+
+  /// 保存模型配置
+  Future<void> _saveModel() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      final newGroupName = _groupNameController.text.trim();
+      
+      // 检查分组是否需要更新
+      if (newGroupName != _originalGroupName) {
+        // 保存用户自定义的分组信息，不修改模型名称
+        await _saveModelCustomGroup(widget.model.id, newGroupName);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('模型 "${widget.model.name}" 已分组到 "$newGroupName"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+      
+      // TODO: 根据端点类型更新模型的API调用配置
+      // 这里需要根据 _selectedApiType 更新模型的调用方式，但不改变模型名称
+      
+      if (mounted) {
+        Navigator.of(context).pop();
+        widget.onSaved(); // 触发界面刷新
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('保存失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
 /// 模型编辑对话框
 class ModelEditDialog extends ConsumerStatefulWidget {
   final String providerId;
@@ -1224,4 +1906,5 @@ class _ModelEditDialogState extends ConsumerState<ModelEditDialog> {
         return '语音';
     }
   }
+
 }
