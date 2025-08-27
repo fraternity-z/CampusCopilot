@@ -25,6 +25,8 @@ import 'widgets/chat_action_menu.dart';
 import '../../../knowledge_base/presentation/providers/multi_knowledge_base_provider.dart';
 import '../providers/search_providers.dart';
 import '../../../../features/settings/presentation/providers/ui_settings_provider.dart';
+import '../../../../../core/utils/model_icon_utils.dart';
+import '../../../settings/domain/entities/app_settings.dart';
 
 /// 聊天界面
 ///
@@ -815,6 +817,73 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
+  /// 根据消息获取对应的AI提供商
+  AIProvider? _getProviderFromMessage(ChatMessage message) {
+    if (message.isFromUser) return null;
+    
+    // 首先尝试从模型名称推断提供商
+    final provider = ModelIconUtils.guessProviderFromModel(message.modelName);
+    if (provider != null) return provider;
+    
+    // 如果无法推断，使用默认提供商
+    final settings = ref.read(settingsProvider);
+    return settings.defaultProvider;
+  }
+
+  /// 构建助手头像
+  Widget _buildAssistantAvatar(ChatMessage message) {
+    final provider = _getProviderFromMessage(message);
+    Theme.of(context);
+    
+    // 尝试从模型名称获取厂商信息
+    final vendor = ModelIconUtils.getVendorFromModelName(message.modelName);
+    Color avatarColor;
+    Widget iconWidget;
+    
+    // 统一使用灰色背景，不使用花花绿绿的颜色
+    avatarColor = Colors.grey;
+    
+    if (vendor != null || provider != null) {
+      iconWidget = ModelIconUtils.buildModelIcon(
+        message.modelName,
+        size: 16,
+        color: Colors.white, // 头像中使用白色图标确保可见性
+        fallbackProvider: provider,
+      );
+    } else {
+      // 默认图标
+      iconWidget = Icon(
+        Icons.auto_awesome,
+        size: 16,
+        color: Colors.white,
+      );
+    }
+    
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            avatarColor.withValues(alpha: 0.8),
+            avatarColor,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: avatarColor.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: iconWidget,
+    );
+  }
+
   /// 构建消息气泡
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.isFromUser;
@@ -964,33 +1033,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 助手头像
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withValues(alpha: 0.8),
-                            colorScheme.primary,
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
+                    _buildAssistantAvatar(message),
                     const SizedBox(width: 8),
                     // 助手信息
                     Column(

@@ -13,6 +13,8 @@ import '../../../../data/local/app_database.dart';
 import '../../../../core/di/database_providers.dart';
 import '../widgets/select_model_dialog.dart';
 import '../providers/custom_provider_notifier.dart';
+import '../../../../core/utils/model_icon_utils.dart';
+import '../../domain/entities/app_settings.dart';
 
 /// AI提供商配置页面
 class ProviderConfigScreen extends ConsumerStatefulWidget {
@@ -632,7 +634,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 1,
       child: ListTile(
-        leading: _getModelTypeIcon(model.type),
+        leading: _getModelIcon(model),
         title: Text(model.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -811,16 +813,23 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 获取系列图标
   Widget _getSeriesIcon(String seriesName) {
-    final name = seriesName.toLowerCase();
     const color = Colors.grey;
     
-    if (name.contains('deepseek')) return const Icon(Icons.psychology_alt, color: color);
-    if (name.contains('gpt')) return const Icon(Icons.psychology, color: color);
-    if (name.contains('claude')) return const Icon(Icons.smart_toy, color: color);
-    if (name.contains('gemini')) return const Icon(Icons.auto_awesome, color: color);
-    if (name.contains('llama')) return const Icon(Icons.pets, color: color);
-    if (name.contains('qwen')) return const Icon(Icons.translate, color: color);
-    if (name.contains('chatglm')) return const Icon(Icons.chat_bubble, color: color);
+    // 直接根据系列名称识别厂商
+    final vendor = ModelIconUtils.getVendorFromModelName(seriesName);
+    
+    if (vendor != null) {
+      return ModelIconUtils.buildModelIcon(
+        seriesName,
+        size: 18,
+        color: Colors.grey,
+      );
+    }
+    
+    // 其他特殊情况
+    if (seriesName.toLowerCase().contains('chatglm')) {
+      return const Icon(Icons.chat_bubble, color: color);
+    }
     
     return const Icon(Icons.api, color: color);
   }
@@ -976,43 +985,53 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   /// 获取提供商图标
   Widget _getProviderIcon(String providerId) {
+    final provider = _mapProviderIdToEnum(providerId);
+    if (provider != null) {
+      return ModelIconUtils.buildProviderIcon(
+        provider,
+        size: 24,
+        color: Colors.grey,
+      );
+    }
+    return const Icon(Icons.api);
+  }
+  
+  /// 将providerId字符串映射到AIProvider枚举
+  AIProvider? _mapProviderIdToEnum(String providerId) {
     switch (providerId.toLowerCase()) {
       case 'openai':
-        return const Icon(Icons.psychology, color: Colors.green);
+        return AIProvider.openai;
       case 'openai_responses':
-        return const Icon(Icons.psychology_alt, color: Color(0xFF059669));
+        return AIProvider.openaiResponses;
       case 'google':
-        return const Icon(Icons.auto_awesome, color: Colors.blue);
+      case 'gemini':
+        return AIProvider.gemini;
       case 'anthropic':
-        return const Icon(Icons.smart_toy, color: Colors.orange);
+      case 'claude':
+        return AIProvider.claude;
       case 'deepseek':
-        return const Icon(Icons.psychology_alt, color: Colors.purple);
+        return AIProvider.deepseek;
       case 'qwen':
-        return const Icon(Icons.translate, color: Colors.red);
+        return AIProvider.qwen;
       case 'openrouter':
-        return const Icon(Icons.router, color: Colors.teal);
+        return AIProvider.openrouter;
       case 'ollama':
-        return const Icon(Icons.computer, color: Colors.brown);
+        return AIProvider.ollama;
       default:
-        return const Icon(Icons.api);
+        return null;
     }
   }
 
-  /// 获取模型类型图标
-  Widget _getModelTypeIcon(ModelType type) {
-    switch (type) {
-      case ModelType.chat:
-        return const Icon(Icons.chat, color: Colors.blue);
-      case ModelType.embedding:
-        return const Icon(Icons.text_fields, color: Colors.green);
-      case ModelType.multimodal:
-        return const Icon(Icons.image, color: Colors.purple);
-      case ModelType.imageGeneration:
-        return const Icon(Icons.image, color: Colors.orange);
-      case ModelType.speech:
-        return const Icon(Icons.mic, color: Colors.red);
-    }
+  /// 获取模型图标（根据模型名称）
+  Widget _getModelIcon(ModelInfo model) {
+    // 优先根据模型名称获取厂商图标
+    return ModelIconUtils.buildModelIcon(
+      model.name,
+      size: 20,
+      color: Colors.grey, // 统一使用灰色
+    );
   }
+
 
   /// 加载提供商配置
   Future<void> _loadProviderConfig() async {
@@ -1639,12 +1658,13 @@ class _ModelManagementDialogState extends ConsumerState<ModelManagementDialog> {
   Widget _getApiTypeIcon(String apiType) {
     switch (apiType) {
       case 'OpenAI':
+        return ModelIconUtils.buildProviderIcon(AIProvider.openai, size: 20);
       case 'OpenAI-Response':
-        return const Icon(Icons.psychology, color: Colors.green, size: 20);
+        return ModelIconUtils.buildProviderIcon(AIProvider.openaiResponses, size: 20);
       case 'Anthropic':
-        return const Icon(Icons.smart_toy, color: Colors.orange, size: 20);
+        return ModelIconUtils.buildProviderIcon(AIProvider.claude, size: 20);
       case 'Gemini':
-        return const Icon(Icons.auto_awesome, color: Colors.blue, size: 20);
+        return ModelIconUtils.buildProviderIcon(AIProvider.gemini, size: 20);
       case '图片生成':
         return const Icon(Icons.image, color: Colors.purple, size: 20);
       case 'Jina 重排序':

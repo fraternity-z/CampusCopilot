@@ -4,52 +4,23 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../settings/domain/entities/app_settings.dart';
 import '../../../../settings/presentation/providers/settings_provider.dart';
+import '../../../../../core/utils/model_icon_utils.dart';
 
 /// AIProvider扩展方法，提供UI相关的辅助功能
 extension AIProviderUIHelpers on AIProvider {
   /// 获取提供商图标
-  IconData get icon {
-    switch (this) {
-      case AIProvider.openai:
-        return Icons.psychology;
-      case AIProvider.openaiResponses:
-        return Icons.psychology_alt;
-      case AIProvider.gemini:
-        return Icons.auto_awesome;
-      case AIProvider.claude:
-        return Icons.smart_toy;
-      case AIProvider.deepseek:
-        return Icons.psychology_alt;
-      case AIProvider.qwen:
-        return Icons.translate;
-      case AIProvider.openrouter:
-        return Icons.hub;
-      case AIProvider.ollama:
-        return Icons.computer;
-    }
-  }
+  IconData get icon => ModelIconUtils.getFallbackIcon(this);
 
   /// 获取提供商颜色
-  Color get color {
-    switch (this) {
-      case AIProvider.openai:
-        return const Color(0xFF10B981);
-      case AIProvider.openaiResponses:
-        return const Color(0xFF059669);
-      case AIProvider.gemini:
-        return const Color(0xFF4285F4);
-      case AIProvider.claude:
-        return const Color(0xFFFF6B35);
-      case AIProvider.deepseek:
-        return const Color(0xFF9C27B0);
-      case AIProvider.qwen:
-        return const Color(0xFFF44336);
-      case AIProvider.openrouter:
-        return const Color(0xFF009688);
-      case AIProvider.ollama:
-        return const Color(0xFF3F51B5);
-    }
-  }
+  Color get color => ModelIconUtils.getColor(this);
+  
+  /// 获取提供商图标组件（优先使用SVG）
+  Widget getIconWidget({double size = 24.0, Color? color}) =>
+      ModelIconUtils.buildProviderIcon(this, size: size, color: color);
+      
+  /// 获取提供商头像组件
+  Widget getAvatarWidget({double radius = 20.0, Color? backgroundColor}) =>
+      ModelIconUtils.buildProviderAvatar(this, radius: radius, backgroundColor: backgroundColor);
 
   /// 获取提供商名称
   String get displayName {
@@ -432,7 +403,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
                   color: provider.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(provider.icon, size: 16, color: provider.color),
+                child: provider.getIconWidget(size: 16, color: Colors.grey),
               ),
               const SizedBox(width: 8),
               Text(
