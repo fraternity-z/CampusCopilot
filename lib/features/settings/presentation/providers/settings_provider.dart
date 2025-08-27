@@ -299,10 +299,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       final provider = _stringToAIProvider(config.provider);
       if (provider == null) continue;
 
-      // 直接更新状态，避免触发额外的state更新
-      state = state.copyWith(defaultProvider: provider);
-
-      // 更新数据库中的默认模型
+      // 首先更新数据库中的默认模型
       final updatedConfig = LlmConfigsTableCompanion(
         id: Value(config.id),
         name: Value(config.name),
@@ -325,95 +322,74 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       );
       await _database.upsertLlmConfig(updatedConfig);
 
-      // 同步到AppSettings
+      // 批量更新AppSettings，避免多次状态更新
+      AppSettings updatedState = state.copyWith(defaultProvider: provider);
+
+      // 同步到AppSettings - 批量更新避免多次状态通知
       switch (provider) {
         case AIProvider.openai:
-          if (state.openaiConfig != null) {
-            await updateOpenAIConfig(
-              state.openaiConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateOpenAIConfig(
-              OpenAIConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            openaiConfig: updatedState.openaiConfig != null
+                ? updatedState.openaiConfig!.copyWith(defaultModel: modelId)
+                : OpenAIConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.openaiResponses:
-          if (state.openaiResponsesConfig != null) {
-            await updateOpenAIResponsesConfig(
-              state.openaiResponsesConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateOpenAIResponsesConfig(
-              OpenAIResponsesConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            openaiResponsesConfig: updatedState.openaiResponsesConfig != null
+                ? updatedState.openaiResponsesConfig!.copyWith(defaultModel: modelId)
+                : OpenAIResponsesConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.gemini:
-          if (state.geminiConfig != null) {
-            await updateGeminiConfig(
-              state.geminiConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateGeminiConfig(
-              GeminiConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            geminiConfig: updatedState.geminiConfig != null
+                ? updatedState.geminiConfig!.copyWith(defaultModel: modelId)
+                : GeminiConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.claude:
-          if (state.claudeConfig != null) {
-            await updateClaudeConfig(
-              state.claudeConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateClaudeConfig(
-              ClaudeConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            claudeConfig: updatedState.claudeConfig != null
+                ? updatedState.claudeConfig!.copyWith(defaultModel: modelId)
+                : ClaudeConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.deepseek:
-          if (state.deepseekConfig != null) {
-            await updateDeepSeekConfig(
-              state.deepseekConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateDeepSeekConfig(
-              DeepSeekConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            deepseekConfig: updatedState.deepseekConfig != null
+                ? updatedState.deepseekConfig!.copyWith(defaultModel: modelId)
+                : DeepSeekConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.qwen:
-          if (state.qwenConfig != null) {
-            await updateQwenConfig(
-              state.qwenConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateQwenConfig(
-              QwenConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            qwenConfig: updatedState.qwenConfig != null
+                ? updatedState.qwenConfig!.copyWith(defaultModel: modelId)
+                : QwenConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.openrouter:
-          if (state.openrouterConfig != null) {
-            await updateOpenRouterConfig(
-              state.openrouterConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateOpenRouterConfig(
-              OpenRouterConfig(apiKey: '', defaultModel: modelId),
-            );
-          }
+          updatedState = updatedState.copyWith(
+            openrouterConfig: updatedState.openrouterConfig != null
+                ? updatedState.openrouterConfig!.copyWith(defaultModel: modelId)
+                : OpenRouterConfig(apiKey: '', defaultModel: modelId),
+          );
           break;
         case AIProvider.ollama:
-          if (state.ollamaConfig != null) {
-            await updateOllamaConfig(
-              state.ollamaConfig!.copyWith(defaultModel: modelId),
-            );
-          } else {
-            await updateOllamaConfig(OllamaConfig(defaultModel: modelId));
-          }
+          updatedState = updatedState.copyWith(
+            ollamaConfig: updatedState.ollamaConfig != null
+                ? updatedState.ollamaConfig!.copyWith(defaultModel: modelId)
+                : OllamaConfig(defaultModel: modelId),
+          );
           break;
       }
+
+      // 先更新状态
+      state = updatedState;
+      
+      // 保存设置
+      await _saveSettings();
 
       debugPrint('✅ 已切换模型到: $modelId (${config.provider})');
       switched = true;

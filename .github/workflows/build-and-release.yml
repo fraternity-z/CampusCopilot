@@ -379,8 +379,7 @@ jobs:
     - name: 构建iOS应用（无签名）
       run: |
         flutter build ios --release --no-codesign \
-          --dart-define=flutter.inspector.structuredErrors=false \
-          --target-platform ios-arm64
+          --dart-define=flutter.inspector.structuredErrors=false 
       continue-on-error: true
 
     - name: 创建IPA文件

@@ -204,7 +204,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// 构建模型选择器
   Widget _buildModelSelector() {
     return Consumer(
+      key: const ValueKey('model_selector_consumer'), // 添加稳定的key
       builder: (context, ref, child) {
+        // 监听异步数据，但避免在点击时触发不必要的重建
         final allModelsAsync = ref.watch(databaseChatModelsProvider);
         final currentModelAsync = ref.watch(databaseCurrentModelProvider);
 
@@ -428,6 +430,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         ),
       ),
       child: Consumer(
+        key: const ValueKey('persona_info_bar_consumer'), // 添加稳定的key
         builder: (context, ref, child) {
           final currentModelAsync = ref.watch(databaseCurrentModelProvider);
           return Row(
@@ -1892,13 +1895,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Widget _buildRagAndSearchControls() {
     return Consumer(
       builder: (context, ref, child) {
-        // 监听设置变化，同步RAG状态
-        final settings = ref.watch(settingsProvider);
-        final settingsRagEnabled = settings.chatSettings.enableRag;
-        if (_ragEnabled != settingsRagEnabled) {
+        // 只监听RAG设置变化，避免监听整个settingsProvider导致页面重建
+        final settings = ref.watch(settingsProvider.select((s) => s.chatSettings.enableRag));
+        if (_ragEnabled != settings) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             setState(() {
-              _ragEnabled = settingsRagEnabled;
+              _ragEnabled = settings;
             });
           });
         }
