@@ -285,7 +285,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                     });
                   },
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
+                  // activeThumbColor deprecated in Flutter 3.32+
                 ),
               ),
             ],

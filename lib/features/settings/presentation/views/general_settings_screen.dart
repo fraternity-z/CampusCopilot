@@ -369,31 +369,14 @@ class GeneralSettingsScreen extends ConsumerWidget {
           ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        RadioGroup<ProxyMode>(
-          groupValue: proxyConfig.mode,
-          onChanged: (value) {
-            if (value != null) {
-              final newConfig = proxyConfig.copyWith(mode: value);
-              ref
-                  .read(generalSettingsProvider.notifier)
-                  .setProxyConfig(newConfig);
-            }
+        _ProxyModeRadioGroup(
+          selectedMode: proxyConfig.mode,
+          onModeChanged: (mode) {
+            final newConfig = proxyConfig.copyWith(mode: mode);
+            ref
+                .read(generalSettingsProvider.notifier)
+                .setProxyConfig(newConfig);
           },
-          child: Column(
-            children: ProxyMode.values.map(
-              (mode) => RadioListTile<ProxyMode>(
-                title: Text(mode.displayName),
-                subtitle: Text(
-                  mode.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                value: mode,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ).toList(),
-          ),
         ),
       ],
     );
@@ -530,6 +513,89 @@ class GeneralSettingsScreen extends ConsumerWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+/// 代理模式单选按钮组组件
+class _ProxyModeRadioGroup extends StatelessWidget {
+  final ProxyMode selectedMode;
+  final ValueChanged<ProxyMode> onModeChanged;
+
+  const _ProxyModeRadioGroup({
+    required this.selectedMode,
+    required this.onModeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: ProxyMode.values.map((mode) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selectedMode == mode
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+              width: selectedMode == mode ? 2 : 1,
+            ),
+            color: selectedMode == mode
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                : null,
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            leading: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selectedMode == mode
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
+                  width: 2,
+                ),
+                color: selectedMode == mode
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.transparent,
+              ),
+              child: selectedMode == mode
+                  ? Icon(
+                      Icons.circle,
+                      size: 10,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    )
+                  : null,
+            ),
+            title: Text(
+              mode.displayName,
+              style: TextStyle(
+                fontWeight: selectedMode == mode
+                    ? FontWeight.w600
+                    : FontWeight.w500,
+                color: selectedMode == mode
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+            ),
+            subtitle: Text(
+              mode.description,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: selectedMode == mode
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            onTap: () => onModeChanged(mode),
+          ),
+        );
+      }).toList(),
     );
   }
 }
