@@ -541,11 +541,15 @@ class _McpToolCallDialogState extends State<McpToolCallDialog> {
     });
 
     try {
-      // TODO: 实际的工具调用逻辑
-      await Future.delayed(const Duration(seconds: 2));
+      // 模拟工具调用逻辑，实际需要通过MCP服务调用
+      await Future.delayed(const Duration(seconds: 2)); // 模拟网络延迟
+      
+      // TODO: 通过McpClientService调用实际工具
+      // final result = await ref.read(mcpClientServiceProvider)
+      //   .callTool(serverId, toolName, _values);
       
       setState(() {
-        _result = 'Tool execution successful\nArguments: ${_values.toString()}';
+        _result = 'Tool execution successful (simulated)\nTool: ${widget.tool.name}\nArguments: ${_values.toString()}';
         _isLoading = false;
       });
       

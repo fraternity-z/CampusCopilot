@@ -289,9 +289,9 @@ class McpConnectionMonitor extends ConsumerWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // TODO: 显示实际延迟
+          // 显示模拟延迟，实际延迟需要从服务器获取
           Text(
-            '45ms',
+            '45ms', // TODO: 后续从实际网络请求获取延迟数据
             style: TextStyle(
               fontSize: 12,
               color: Colors.green[600],
@@ -371,12 +371,24 @@ class McpConnectionMonitor extends ConsumerWidget {
 
   /// 刷新所有服务器状态
   void _refreshAll(WidgetRef ref) {
-    // TODO: 实现刷新逻辑
+    // 基础刷新实现，实际需要通过Provider调用MCP服务
+    for (final server in servers) {
+      if (server.isConnected) {
+        // TODO: 调用实际的服务器状态刷新
+        debugPrint('Refreshing server: ${server.name}');
+      }
+    }
   }
 
   /// 重连所有失败的服务器
   void _reconnectAll(WidgetRef ref) {
-    // TODO: 实现重连逻辑
+    // 基础重连实现，实际需要通过Provider调用MCP服务
+    for (final server in servers) {
+      if (!server.isConnected) {
+        // TODO: 调用实际的服务器重连逻辑
+        debugPrint('Attempting reconnect for server: ${server.name}');
+      }
+    }
   }
 
   /// 显示详细状态信息

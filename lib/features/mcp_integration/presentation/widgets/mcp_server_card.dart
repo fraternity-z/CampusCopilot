@@ -288,14 +288,14 @@ class McpServerCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // TODO: 显示实际的连接详情信息
+          // 显示模拟的连接详情，实际数据需要从服务器获取
           Row(
             children: [
-              _buildDetailItem('延迟', '45ms'),
+              _buildDetailItem('延迟', '45ms'), // TODO: 从实际ping结果获取
               const SizedBox(width: 24),
-              _buildDetailItem('工具', '12'),
+              _buildDetailItem('工具', '12'), // TODO: 从服务器获取实际工具数量
               const SizedBox(width: 24),
-              _buildDetailItem('资源', '8'),
+              _buildDetailItem('资源', '8'), // TODO: 从服务器获取实际资源数量
             ],
           ),
         ],

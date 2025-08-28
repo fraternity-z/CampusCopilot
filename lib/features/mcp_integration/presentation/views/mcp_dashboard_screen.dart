@@ -13,8 +13,11 @@ class McpDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: 从Provider获取服务器列表
+    // 暂时使用空列表，等待Provider层实现后连接实际数据源
     final servers = <McpServerConfig>[];
+    
+    // TODO: 当Repository层完成后，改为从Provider获取：
+    // final servers = ref.watch(mcpServersProvider);
 
     return ModernScaffold(
       appBar: AppBar(
