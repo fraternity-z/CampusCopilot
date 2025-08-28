@@ -463,7 +463,7 @@ class _PersonaEditDialogState extends ConsumerState<PersonaEditDialog>
                 child: ListView.separated(
                   padding: const EdgeInsets.all(24),
                   itemCount: presetPrompts.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final preset = presetPrompts[index];
                     final colors = [
