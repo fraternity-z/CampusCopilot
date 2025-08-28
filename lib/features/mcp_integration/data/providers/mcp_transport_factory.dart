@@ -96,7 +96,7 @@ class McpTransportFactory {
     // 添加OAuth认证头
     if (_needsOAuth(server)) {
       try {
-        final token = await _oauthProvider.getAccessToken(server);
+        final token = await _oauthProvider.getAccessTokenForServer(server);
         if (token != null) {
           headers['Authorization'] = 'Bearer $token';
         }
@@ -150,17 +150,60 @@ class McpTransportFactory {
     try {
       _validateServerConfig(server);
       
-      final transport = await createTransport(server);
+      await createTransport(server);
       
       // 创建临时客户端进行测试
-      final client = McpClient(ClientInfo(
+      final config = McpClient.simpleConfig(
         name: 'AnywhereChat-Test',
         version: '1.0.0',
-      ));
-
-      await client.connect(transport);
-      final result = await client.ping();
-      await client.close();
+        enableDebugLogging: false,
+      );
+      
+      // 根据服务器类型创建合适的transport config
+      TransportConfig transportConfig;
+      switch (server.type) {
+        case McpTransportType.sse:
+          transportConfig = TransportConfig.sse(
+            serverUrl: server.baseUrl,
+            headers: await _buildHeaders(server),
+            oauthConfig: _needsOAuth(server) ? OAuthConfig(
+              authorizationEndpoint: server.authorizationEndpoint!,
+              tokenEndpoint: server.tokenEndpoint!,
+              clientId: server.clientId!,
+            ) : null,
+          );
+          break;
+        case McpTransportType.streamableHttp:
+          transportConfig = TransportConfig.streamableHttp(
+            baseUrl: server.baseUrl,
+            headers: await _buildHeaders(server),
+            useHttp2: true,
+            maxConcurrentRequests: 10,
+            timeout: Duration(seconds: server.timeout ?? 60),
+            oauthConfig: _needsOAuth(server) ? OAuthConfig(
+              authorizationEndpoint: server.authorizationEndpoint!,
+              tokenEndpoint: server.tokenEndpoint!,
+              clientId: server.clientId!,
+            ) : null,
+          );
+          break;
+      }
+      
+      final clientResult = await McpClient.createAndConnect(
+        config: config,
+        transportConfig: transportConfig,
+      );
+      
+      final client = clientResult.fold(
+        (c) => c,
+        (error) => throw Exception('Failed to connect: $error'),
+      );
+      
+      // 执行健康检查
+      final health = await client.healthCheck();
+      final result = health.isRunning;
+      
+      client.disconnect();
 
       _logger.info('Connection test ${result ? 'successful' : 'failed'} for ${server.name}');
       return result;

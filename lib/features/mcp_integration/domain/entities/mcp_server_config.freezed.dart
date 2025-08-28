@@ -1611,3 +1611,215 @@ abstract class _McpCallHistory implements McpCallHistory {
   _$$McpCallHistoryImplCopyWith<_$McpCallHistoryImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+McpPrompt _$McpPromptFromJson(Map<String, dynamic> json) {
+  return _McpPrompt.fromJson(json);
+}
+
+/// @nodoc
+mixin _$McpPrompt {
+  String get name => throw _privateConstructorUsedError;
+  String get description => throw _privateConstructorUsedError;
+  Map<String, dynamic>? get arguments => throw _privateConstructorUsedError;
+  String? get serverId => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $McpPromptCopyWith<McpPrompt> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $McpPromptCopyWith<$Res> {
+  factory $McpPromptCopyWith(McpPrompt value, $Res Function(McpPrompt) then) =
+      _$McpPromptCopyWithImpl<$Res, McpPrompt>;
+  @useResult
+  $Res call(
+      {String name,
+      String description,
+      Map<String, dynamic>? arguments,
+      String? serverId});
+}
+
+/// @nodoc
+class _$McpPromptCopyWithImpl<$Res, $Val extends McpPrompt>
+    implements $McpPromptCopyWith<$Res> {
+  _$McpPromptCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? name = null,
+    Object? description = null,
+    Object? arguments = freezed,
+    Object? serverId = freezed,
+  }) {
+    return _then(_value.copyWith(
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
+      arguments: freezed == arguments
+          ? _value.arguments
+          : arguments // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      serverId: freezed == serverId
+          ? _value.serverId
+          : serverId // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$McpPromptImplCopyWith<$Res>
+    implements $McpPromptCopyWith<$Res> {
+  factory _$$McpPromptImplCopyWith(
+          _$McpPromptImpl value, $Res Function(_$McpPromptImpl) then) =
+      __$$McpPromptImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String name,
+      String description,
+      Map<String, dynamic>? arguments,
+      String? serverId});
+}
+
+/// @nodoc
+class __$$McpPromptImplCopyWithImpl<$Res>
+    extends _$McpPromptCopyWithImpl<$Res, _$McpPromptImpl>
+    implements _$$McpPromptImplCopyWith<$Res> {
+  __$$McpPromptImplCopyWithImpl(
+      _$McpPromptImpl _value, $Res Function(_$McpPromptImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? name = null,
+    Object? description = null,
+    Object? arguments = freezed,
+    Object? serverId = freezed,
+  }) {
+    return _then(_$McpPromptImpl(
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
+      arguments: freezed == arguments
+          ? _value._arguments
+          : arguments // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      serverId: freezed == serverId
+          ? _value.serverId
+          : serverId // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$McpPromptImpl implements _McpPrompt {
+  const _$McpPromptImpl(
+      {required this.name,
+      required this.description,
+      final Map<String, dynamic>? arguments,
+      this.serverId})
+      : _arguments = arguments;
+
+  factory _$McpPromptImpl.fromJson(Map<String, dynamic> json) =>
+      _$$McpPromptImplFromJson(json);
+
+  @override
+  final String name;
+  @override
+  final String description;
+  final Map<String, dynamic>? _arguments;
+  @override
+  Map<String, dynamic>? get arguments {
+    final value = _arguments;
+    if (value == null) return null;
+    if (_arguments is EqualUnmodifiableMapView) return _arguments;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
+  @override
+  final String? serverId;
+
+  @override
+  String toString() {
+    return 'McpPrompt(name: $name, description: $description, arguments: $arguments, serverId: $serverId)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$McpPromptImpl &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            const DeepCollectionEquality()
+                .equals(other._arguments, _arguments) &&
+            (identical(other.serverId, serverId) ||
+                other.serverId == serverId));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, name, description,
+      const DeepCollectionEquality().hash(_arguments), serverId);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$McpPromptImplCopyWith<_$McpPromptImpl> get copyWith =>
+      __$$McpPromptImplCopyWithImpl<_$McpPromptImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$McpPromptImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _McpPrompt implements McpPrompt {
+  const factory _McpPrompt(
+      {required final String name,
+      required final String description,
+      final Map<String, dynamic>? arguments,
+      final String? serverId}) = _$McpPromptImpl;
+
+  factory _McpPrompt.fromJson(Map<String, dynamic> json) =
+      _$McpPromptImpl.fromJson;
+
+  @override
+  String get name;
+  @override
+  String get description;
+  @override
+  Map<String, dynamic>? get arguments;
+  @override
+  String? get serverId;
+  @override
+  @JsonKey(ignore: true)
+  _$$McpPromptImplCopyWith<_$McpPromptImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}

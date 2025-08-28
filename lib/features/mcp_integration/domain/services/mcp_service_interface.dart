@@ -56,31 +56,3 @@ abstract class McpServiceInterface {
   Future<void> dispose();
 }
 
-/// MCP提示实体
-class McpPrompt {
-  final String name;
-  final String description;
-  final Map<String, dynamic> arguments;
-
-  const McpPrompt({
-    required this.name,
-    required this.description,
-    required this.arguments,
-  });
-
-  factory McpPrompt.fromJson(Map<String, dynamic> json) {
-    return McpPrompt(
-      name: json['name'] as String,
-      description: json['description'] as String? ?? '',
-      arguments: json['arguments'] as Map<String, dynamic>? ?? {},
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'description': description,
-      'arguments': arguments,
-    };
-  }
-}

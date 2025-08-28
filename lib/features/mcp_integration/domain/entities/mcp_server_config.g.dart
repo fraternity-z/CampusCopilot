@@ -153,3 +153,19 @@ Map<String, dynamic> _$$McpCallHistoryImplToJson(
       'error': instance.error,
       'duration': instance.duration,
     };
+
+_$McpPromptImpl _$$McpPromptImplFromJson(Map<String, dynamic> json) =>
+    _$McpPromptImpl(
+      name: json['name'] as String,
+      description: json['description'] as String,
+      arguments: json['arguments'] as Map<String, dynamic>?,
+      serverId: json['serverId'] as String?,
+    );
+
+Map<String, dynamic> _$$McpPromptImplToJson(_$McpPromptImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'description': instance.description,
+      'arguments': instance.arguments,
+      'serverId': instance.serverId,
+    };

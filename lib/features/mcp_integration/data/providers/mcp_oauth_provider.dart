@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:crypto/crypto.dart';
@@ -30,8 +31,7 @@ class McpOAuthProvider implements AuthProvider {
   }
 
   /// 获取指定服务器的访问令牌
-  @override
-  Future<String?> getAccessToken(McpServerConfig server) async {
+  Future<String?> getAccessTokenForServer(McpServerConfig server) async {
     final serverId = server.id;
     final tokenInfo = _tokens[serverId];
     
@@ -157,10 +157,10 @@ class McpOAuthProvider implements AuthProvider {
   /// 启动回调服务器
   Future<String> _startCallbackServer(String expectedState) async {
     final completer = Completer<String>();
-    late http.Server server;
+    late HttpServer server;
     
     try {
-      server = await http.Server.bind('localhost', callbackPort);
+      server = await HttpServer.bind('localhost', callbackPort);
       _logger.info('Callback server started on port $callbackPort');
       
       // 设置超时
@@ -180,7 +180,7 @@ class McpOAuthProvider implements AuthProvider {
           
           // 发送响应页面
           final response = request.response;
-          response.headers.contentType = http.ContentType.html;
+          response.headers.contentType = ContentType.html;
           
           if (error != null) {
             response.write(_getErrorPage(error));

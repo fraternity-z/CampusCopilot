@@ -109,3 +109,17 @@ class McpCallHistory with _$McpCallHistory {
   factory McpCallHistory.fromJson(Map<String, dynamic> json) =>
       _$McpCallHistoryFromJson(json);
 }
+
+/// MCP提示定义
+@freezed
+class McpPrompt with _$McpPrompt {
+  const factory McpPrompt({
+    required String name,
+    required String description,
+    Map<String, dynamic>? arguments,
+    String? serverId,
+  }) = _McpPrompt;
+
+  factory McpPrompt.fromJson(Map<String, dynamic> json) =>
+      _$McpPromptFromJson(json);
+}

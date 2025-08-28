@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:mcp_client/mcp_client.dart';
-import 'package:logging/logging.dart';
 import '../../domain/entities/mcp_server_config.dart';
 import '../../domain/services/mcp_service_interface.dart';
-import '../providers/mcp_transport_factory.dart';
-import '../providers/mcp_oauth_provider.dart';
 
 /// MCP客户端服务实现
 /// 负责与MCP服务器的实际通信和状态管理
@@ -27,11 +23,25 @@ class McpClientService implements McpServiceInterface {
   /// 健康检查定时器 serverId -> Timer
   final Map<String, Timer> _healthTimers = {};
   
-  /// 传输层工厂
-  final McpTransportFactory _transportFactory = McpTransportFactory();
+
+  /// 检查客户端是否健康
+  Future<bool> _isClientHealthy(Client client) async {
+    try {
+      // 尝试获取服务器健康状态
+      final health = await client.healthCheck();
+      return health.isRunning;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 检查是否需要OAuth认证
+  bool _needsOAuth(McpServerConfig server) {
+    return server.clientId?.isNotEmpty == true &&
+           server.authorizationEndpoint?.isNotEmpty == true &&
+           server.tokenEndpoint?.isNotEmpty == true;
+  }
   
-  /// OAuth提供者
-  final McpOAuthProvider _oauthProvider = McpOAuthProvider();
 
   @override
   Future<bool> connect(McpServerConfig server) async {
@@ -39,8 +49,12 @@ class McpClientService implements McpServiceInterface {
     
     // 如果已经连接，直接返回
     if (_clients.containsKey(serverId)) {
-      final isConnected = await _clients[serverId]!.ping();
-      if (isConnected) return true;
+      try {
+        final isConnected = await _isClientHealthy(_clients[serverId]!);
+        if (isConnected) return true;
+      } catch (e) {
+        // 健康检查失败，需要重连
+      }
       
       // 连接已失效，清理并重新连接
       await _cleanupClient(serverId);
@@ -86,24 +100,57 @@ class McpClientService implements McpServiceInterface {
   Future<Client> _createConnection(McpServerConfig server) async {
     _logger.info('Creating connection to ${server.name} (${server.type.name})');
     
-    // 创建客户端配置
-    final config = ClientInfo(
-      name: 'AnywhereChat',
-      version: '1.0.0',
-    );
-    
-    // 创建客户端
-    final client = McpClient(config);
-    
     try {
-      // 创建传输层
-      final transport = await _transportFactory.createTransport(server);
+      // 创建客户端配置
+      final config = McpClient.simpleConfig(
+        name: 'AnywhereChat',
+        version: '1.0.0',
+        enableDebugLogging: false,
+      );
       
-      // 连接客户端
-      await client.connect(transport);
+      // 根据服务器类型创建传输配置
+      TransportConfig transportConfig;
+      switch (server.type) {
+        case McpTransportType.sse:
+          transportConfig = TransportConfig.sse(
+            serverUrl: server.baseUrl,
+            headers: server.headers,
+            oauthConfig: _needsOAuth(server) ? OAuthConfig(
+              authorizationEndpoint: server.authorizationEndpoint!,
+              tokenEndpoint: server.tokenEndpoint!,
+              clientId: server.clientId!,
+            ) : null,
+          );
+          break;
+        case McpTransportType.streamableHttp:
+          transportConfig = TransportConfig.streamableHttp(
+            baseUrl: server.baseUrl,
+            headers: server.headers,
+            useHttp2: true,
+            maxConcurrentRequests: 10,
+            timeout: Duration(seconds: server.timeout ?? 60),
+            oauthConfig: _needsOAuth(server) ? OAuthConfig(
+              authorizationEndpoint: server.authorizationEndpoint!,
+              tokenEndpoint: server.tokenEndpoint!,
+              clientId: server.clientId!,
+            ) : null,
+          );
+          break;
+      }
+      
+      // 创建并连接客户端
+      final clientResult = await McpClient.createAndConnect(
+        config: config,
+        transportConfig: transportConfig,
+      );
+      
+  final client = clientResult.fold(
+        (c) => c,
+        (error) => throw Exception('Failed to connect: $error'),
+      );
       
       // 设置事件处理器
-      _setupEventHandlers(client, server.id);
+  _setupEventHandlers(client, server.id);
       
       return client;
     } catch (e) {
@@ -114,31 +161,18 @@ class McpClientService implements McpServiceInterface {
 
   /// 设置客户端事件处理器
   void _setupEventHandlers(Client client, String serverId) {
-    // 监听连接断开事件
-    client.onClose.listen((_) {
-      _logger.warning('Connection closed for server: $serverId');
-      _handleDisconnection(serverId);
-    });
-    
-    // 监听错误事件  
-    client.onError.listen((error) {
-      _logger.severe('Client error for server $serverId: $error');
-      _updateConnectionStatus(serverId, false, error: error.toString());
-    });
+    // 当前 SDK 未提供 onDisconnect/onError 事件流，依赖健康检查与异常捕获。
+    // 如未来 SDK 暴露事件，可在此订阅并路由到 _handleDisconnection/_updateConnectionStatus。
   }
 
-  /// 处理连接断开
-  void _handleDisconnection(String serverId) {
-    _updateConnectionStatus(serverId, false);
-    _cleanupClient(serverId);
-  }
+  // 连接断开由健康检查与异常处理触发清理。
 
   @override
   Future<void> disconnect(String serverId) async {
     final client = _clients[serverId];
     if (client != null) {
       try {
-        await client.close();
+        client.disconnect();
         _logger.info('Disconnected from server: $serverId');
       } catch (e) {
         _logger.warning('Error during disconnection: $e');
@@ -175,7 +209,8 @@ class McpClientService implements McpServiceInterface {
     if (client == null) return false;
     
     try {
-      return await client.ping();
+  final health = await client.healthCheck();
+  return health.isRunning;
     } catch (e) {
       return false;
     }
@@ -187,9 +222,9 @@ class McpClientService implements McpServiceInterface {
     if (client == null) return false;
     
     try {
-      final result = await client.ping();
-      await _updateConnectionStatus(serverId, result);
-      return result;
+  final health = await client.healthCheck();
+  await _updateConnectionStatus(serverId, health.isRunning);
+  return health.isRunning;
     } catch (e) {
       await _updateConnectionStatus(serverId, false, error: e.toString());
       return false;
@@ -206,7 +241,7 @@ class McpClientService implements McpServiceInterface {
       return tools.map((tool) => McpTool(
         name: tool.name,
         description: tool.description,
-        inputSchema: tool.inputSchema.toJson(),
+        inputSchema: tool.inputSchema,
         serverId: serverId,
       )).toList();
     } catch (e) {
@@ -307,13 +342,21 @@ class McpClientService implements McpServiceInterface {
   @override
   Future<McpConnectionStatus?> getConnectionStatus(String serverId) async {
     final client = _clients[serverId];
-    final isConnected = client != null && await client.ping();
+    bool isConnected = false;
+    if (client != null) {
+      try {
+        final health = await client.healthCheck();
+        isConnected = health.isRunning;
+      } catch (_) {
+        isConnected = false;
+      }
+    }
     
     return McpConnectionStatus(
       serverId: serverId,
       isConnected: isConnected,
       lastCheck: DateTime.now(),
-      latency: isConnected ? await _measureLatency(client) : null,
+      latency: isConnected && client != null ? await _measureLatency(client) : null,
     );
   }
 
@@ -321,7 +364,7 @@ class McpClientService implements McpServiceInterface {
   Future<int> _measureLatency(Client client) async {
     final stopwatch = Stopwatch()..start();
     try {
-      await client.ping();
+      await client.healthCheck();
       stopwatch.stop();
       return stopwatch.elapsedMilliseconds;
     } catch (e) {
@@ -380,7 +423,9 @@ class McpClientService implements McpServiceInterface {
       isConnected: isConnected,
       lastCheck: DateTime.now(),
       error: error,
-      latency: isConnected ? await _measureLatency(_clients[serverId]!) : null,
+    latency: isConnected && _clients[serverId] != null
+      ? await _measureLatency(_clients[serverId]!)
+      : null,
     );
 
     _statusControllers[serverId]?.add(status);
