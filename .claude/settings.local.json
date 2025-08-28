@@ -12,7 +12,8 @@
       "WebSearch",
       "WebFetch(domain:pub.dev)",
       "Bash(flutter pub:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "mcp__context7__resolve-library-id"
     ],
     "deny": [],
     "ask": []

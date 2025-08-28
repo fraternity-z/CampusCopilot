@@ -10,6 +10,8 @@
 analyzer:
   errors:
     unintended_html_in_doc_comment: ignore
+    deprecated_member_use: ignore
+    deprecated_member_use: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

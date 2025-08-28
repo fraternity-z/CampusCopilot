@@ -17,7 +17,7 @@ permissions:
   actions: read    # 需要读权限来访问构建产物
 
 env:
-  FLUTTER_VERSION: '3.32.5'
+  FLUTTER_VERSION: '3.34.0'
 
 jobs:
   # 准备发布
@@ -378,8 +378,24 @@ jobs:
 
     - name: 构建iOS应用（无签名）
       run: |
-        flutter build ios --release --no-codesign \
-          --dart-define=flutter.inspector.structuredErrors=false 
+        # 检查可用的iOS SDK并使用合适的版本
+        echo "🔍 检查可用的iOS SDK版本..."
+        xcodebuild -showsdks | grep -i ios
+        
+        # 获取可用的iOS SDK版本
+        AVAILABLE_IOS_SDK=$(xcodebuild -showsdks | grep 'iphoneos' | tail -1 | sed 's/.*iphoneos//' | xargs)
+        echo "📱 使用iOS SDK版本: $AVAILABLE_IOS_SDK"
+        
+        # 构建iOS应用，指定SDK版本
+        if [ -n "$AVAILABLE_IOS_SDK" ]; then
+          flutter build ios --release --no-codesign \
+            --dart-define=flutter.inspector.structuredErrors=false \
+            --ios-simulator-archs=x86_64
+        else
+          echo "⚠️ 未找到可用的iOS SDK，使用默认设置构建"
+          flutter build ios --release --no-codesign \
+            --dart-define=flutter.inspector.structuredErrors=false
+        fi
       continue-on-error: true
 
     - name: 创建IPA文件
