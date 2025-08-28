@@ -173,8 +173,7 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
             if (value == null || value.trim().isEmpty) {
               return '请输入服务器URL';
             }
-            final uri = Uri.tryParse(value);
-            if (uri == null || !uri.hasScheme) {
+            if (!Uri.tryParse(value)?.hasScheme == true) {
               return '请输入有效的URL';
             }
             return null;

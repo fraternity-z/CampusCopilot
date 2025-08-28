@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:math';
 import '../../domain/entities/mcp_server_config.dart';
+import 'mcp_transport_factory.dart';
 
 /// MCP OAuth认证提供者
 /// 实现OAuth 2.1流程，支持授权码流和PKCE
-class McpOAuthProvider {
+class McpOAuthProvider implements AuthProvider {
   static final Logger _logger = Logger('McpOAuthProvider');
   
   /// 存储服务器的访问令牌 serverId -> TokenInfo
@@ -23,26 +23,15 @@ class McpOAuthProvider {
   static const String callbackPath = '/oauth/callback';
   static const Duration tokenRefreshBuffer = Duration(minutes: 5);
 
-  /// 获取指定服务器的访问令牌
-  Future<String?> getAccessToken(String serverId) async {
-    final tokenInfo = _tokens[serverId];
-    
-    // 如果没有token，返回null
-    if (tokenInfo == null) {
-      return null;
-    }
-    
-    // 检查token是否过期
-    if (_isTokenExpired(tokenInfo)) {
-      _tokens.remove(serverId);
-      return null;
-    }
-    
-    return tokenInfo.accessToken;
+  @override
+  Future<String?> getAccessToken() async {
+    // 这个方法需要serverId参数，在实际使用时会被重写
+    throw UnimplementedError('Use getAccessToken(McpServerConfig) instead');
   }
 
-  /// 为指定服务器启动完整认证流程
-  Future<String?> authenticateServer(McpServerConfig server) async {
+  /// 获取指定服务器的访问令牌
+  @override
+  Future<String?> getAccessToken(McpServerConfig server) async {
     final serverId = server.id;
     final tokenInfo = _tokens[serverId];
     
@@ -71,7 +60,7 @@ class McpOAuthProvider {
     return tokenInfo.accessToken;
   }
 
-  /// 为指定服务器启动完整认证流程（内部方法）
+  /// 对服务器进行认证
   Future<String?> _authenticateServer(McpServerConfig server) async {
     final serverId = server.id;
     
@@ -168,10 +157,10 @@ class McpOAuthProvider {
   /// 启动回调服务器
   Future<String> _startCallbackServer(String expectedState) async {
     final completer = Completer<String>();
-    late HttpServer server;
+    late http.Server server;
     
     try {
-      server = await HttpServer.bind('localhost', callbackPort);
+      server = await http.Server.bind('localhost', callbackPort);
       _logger.info('Callback server started on port $callbackPort');
       
       // 设置超时
@@ -191,7 +180,7 @@ class McpOAuthProvider {
           
           // 发送响应页面
           final response = request.response;
-          response.headers.contentType = ContentType.html;
+          response.headers.contentType = http.ContentType.html;
           
           if (error != null) {
             response.write(_getErrorPage(error));
@@ -270,6 +259,11 @@ class McpOAuthProvider {
     }
   }
 
+  @override
+  Future<void> refreshToken() async {
+    // 这个方法需要具体的服务器参数
+    throw UnimplementedError('Use refreshToken(McpServerConfig, TokenInfo) instead');
+  }
 
   /// 刷新指定服务器的token
   Future<void> _refreshToken(McpServerConfig server, TokenInfo tokenInfo) async {
@@ -303,9 +297,7 @@ class McpOAuthProvider {
       final newTokenInfo = TokenInfo.fromJson(tokenData);
       
       // 如果没有新的refresh token，保留旧的
-      if (newTokenInfo.refreshToken == null) {
-        newTokenInfo.refreshToken = tokenInfo.refreshToken;
-      }
+      newTokenInfo.refreshToken ??= tokenInfo.refreshToken;
       
       _tokens[server.id] = newTokenInfo;
       _logger.info('Token refreshed successfully for server: ${server.name}');
