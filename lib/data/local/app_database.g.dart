@@ -7283,6 +7283,3341 @@ class GeneralSettingsTableCompanion
   }
 }
 
+class $McpServersTableTable extends McpServersTable
+    with TableInfo<$McpServersTableTable, McpServersTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpServersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _baseUrlMeta =
+      const VerificationMeta('baseUrl');
+  @override
+  late final GeneratedColumn<String> baseUrl = GeneratedColumn<String>(
+      'base_url', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _headersMeta =
+      const VerificationMeta('headers');
+  @override
+  late final GeneratedColumn<String> headers = GeneratedColumn<String>(
+      'headers', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _timeoutMeta =
+      const VerificationMeta('timeout');
+  @override
+  late final GeneratedColumn<int> timeout = GeneratedColumn<int>(
+      'timeout', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _longRunningMeta =
+      const VerificationMeta('longRunning');
+  @override
+  late final GeneratedColumn<bool> longRunning = GeneratedColumn<bool>(
+      'long_running', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("long_running" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _disabledMeta =
+      const VerificationMeta('disabled');
+  @override
+  late final GeneratedColumn<bool> disabled = GeneratedColumn<bool>(
+      'disabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("disabled" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+      'error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientIdMeta =
+      const VerificationMeta('clientId');
+  @override
+  late final GeneratedColumn<String> clientId = GeneratedColumn<String>(
+      'client_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientSecretMeta =
+      const VerificationMeta('clientSecret');
+  @override
+  late final GeneratedColumn<String> clientSecret = GeneratedColumn<String>(
+      'client_secret', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _authorizationEndpointMeta =
+      const VerificationMeta('authorizationEndpoint');
+  @override
+  late final GeneratedColumn<String> authorizationEndpoint =
+      GeneratedColumn<String>('authorization_endpoint', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tokenEndpointMeta =
+      const VerificationMeta('tokenEndpoint');
+  @override
+  late final GeneratedColumn<String> tokenEndpoint = GeneratedColumn<String>(
+      'token_endpoint', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isConnectedMeta =
+      const VerificationMeta('isConnected');
+  @override
+  late final GeneratedColumn<bool> isConnected = GeneratedColumn<bool>(
+      'is_connected', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_connected" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _lastConnectedMeta =
+      const VerificationMeta('lastConnected');
+  @override
+  late final GeneratedColumn<DateTime> lastConnected =
+      GeneratedColumn<DateTime>('last_connected', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        baseUrl,
+        type,
+        headers,
+        timeout,
+        longRunning,
+        disabled,
+        error,
+        clientId,
+        clientSecret,
+        authorizationEndpoint,
+        tokenEndpoint,
+        isConnected,
+        lastConnected,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_servers';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<McpServersTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base_url')) {
+      context.handle(_baseUrlMeta,
+          baseUrl.isAcceptableOrUnknown(data['base_url']!, _baseUrlMeta));
+    } else if (isInserting) {
+      context.missing(_baseUrlMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('headers')) {
+      context.handle(_headersMeta,
+          headers.isAcceptableOrUnknown(data['headers']!, _headersMeta));
+    }
+    if (data.containsKey('timeout')) {
+      context.handle(_timeoutMeta,
+          timeout.isAcceptableOrUnknown(data['timeout']!, _timeoutMeta));
+    }
+    if (data.containsKey('long_running')) {
+      context.handle(
+          _longRunningMeta,
+          longRunning.isAcceptableOrUnknown(
+              data['long_running']!, _longRunningMeta));
+    }
+    if (data.containsKey('disabled')) {
+      context.handle(_disabledMeta,
+          disabled.isAcceptableOrUnknown(data['disabled']!, _disabledMeta));
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+          _errorMeta, error.isAcceptableOrUnknown(data['error']!, _errorMeta));
+    }
+    if (data.containsKey('client_id')) {
+      context.handle(_clientIdMeta,
+          clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta));
+    }
+    if (data.containsKey('client_secret')) {
+      context.handle(
+          _clientSecretMeta,
+          clientSecret.isAcceptableOrUnknown(
+              data['client_secret']!, _clientSecretMeta));
+    }
+    if (data.containsKey('authorization_endpoint')) {
+      context.handle(
+          _authorizationEndpointMeta,
+          authorizationEndpoint.isAcceptableOrUnknown(
+              data['authorization_endpoint']!, _authorizationEndpointMeta));
+    }
+    if (data.containsKey('token_endpoint')) {
+      context.handle(
+          _tokenEndpointMeta,
+          tokenEndpoint.isAcceptableOrUnknown(
+              data['token_endpoint']!, _tokenEndpointMeta));
+    }
+    if (data.containsKey('is_connected')) {
+      context.handle(
+          _isConnectedMeta,
+          isConnected.isAcceptableOrUnknown(
+              data['is_connected']!, _isConnectedMeta));
+    }
+    if (data.containsKey('last_connected')) {
+      context.handle(
+          _lastConnectedMeta,
+          lastConnected.isAcceptableOrUnknown(
+              data['last_connected']!, _lastConnectedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpServersTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpServersTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      baseUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}base_url'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      headers: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}headers']),
+      timeout: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}timeout']),
+      longRunning: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}long_running'])!,
+      disabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}disabled'])!,
+      error: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error']),
+      clientId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}client_id']),
+      clientSecret: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}client_secret']),
+      authorizationEndpoint: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}authorization_endpoint']),
+      tokenEndpoint: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}token_endpoint']),
+      isConnected: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_connected'])!,
+      lastConnected: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_connected']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $McpServersTableTable createAlias(String alias) {
+    return $McpServersTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpServersTableData extends DataClass
+    implements Insertable<McpServersTableData> {
+  /// 服务器唯一标识
+  final String id;
+
+  /// 服务器名称
+  final String name;
+
+  /// 服务器基础URL
+  final String baseUrl;
+
+  /// 传输协议类型 (sse, streamableHttp)
+  final String type;
+
+  /// 自定义HTTP Headers (JSON格式存储)
+  final String? headers;
+
+  /// 连接超时时间(秒)
+  final int? timeout;
+
+  /// 是否为长时间运行的服务
+  final bool longRunning;
+
+  /// 是否禁用
+  final bool disabled;
+
+  /// 错误信息
+  final String? error;
+
+  /// OAuth客户端ID
+  final String? clientId;
+
+  /// OAuth客户端密钥 (加密存储)
+  final String? clientSecret;
+
+  /// OAuth授权端点
+  final String? authorizationEndpoint;
+
+  /// OAuth Token端点
+  final String? tokenEndpoint;
+
+  /// 是否已连接
+  final bool isConnected;
+
+  /// 上次连接时间
+  final DateTime? lastConnected;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+  const McpServersTableData(
+      {required this.id,
+      required this.name,
+      required this.baseUrl,
+      required this.type,
+      this.headers,
+      this.timeout,
+      required this.longRunning,
+      required this.disabled,
+      this.error,
+      this.clientId,
+      this.clientSecret,
+      this.authorizationEndpoint,
+      this.tokenEndpoint,
+      required this.isConnected,
+      this.lastConnected,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['base_url'] = Variable<String>(baseUrl);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || headers != null) {
+      map['headers'] = Variable<String>(headers);
+    }
+    if (!nullToAbsent || timeout != null) {
+      map['timeout'] = Variable<int>(timeout);
+    }
+    map['long_running'] = Variable<bool>(longRunning);
+    map['disabled'] = Variable<bool>(disabled);
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    if (!nullToAbsent || clientId != null) {
+      map['client_id'] = Variable<String>(clientId);
+    }
+    if (!nullToAbsent || clientSecret != null) {
+      map['client_secret'] = Variable<String>(clientSecret);
+    }
+    if (!nullToAbsent || authorizationEndpoint != null) {
+      map['authorization_endpoint'] = Variable<String>(authorizationEndpoint);
+    }
+    if (!nullToAbsent || tokenEndpoint != null) {
+      map['token_endpoint'] = Variable<String>(tokenEndpoint);
+    }
+    map['is_connected'] = Variable<bool>(isConnected);
+    if (!nullToAbsent || lastConnected != null) {
+      map['last_connected'] = Variable<DateTime>(lastConnected);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  McpServersTableCompanion toCompanion(bool nullToAbsent) {
+    return McpServersTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      baseUrl: Value(baseUrl),
+      type: Value(type),
+      headers: headers == null && nullToAbsent
+          ? const Value.absent()
+          : Value(headers),
+      timeout: timeout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timeout),
+      longRunning: Value(longRunning),
+      disabled: Value(disabled),
+      error:
+          error == null && nullToAbsent ? const Value.absent() : Value(error),
+      clientId: clientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientId),
+      clientSecret: clientSecret == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientSecret),
+      authorizationEndpoint: authorizationEndpoint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authorizationEndpoint),
+      tokenEndpoint: tokenEndpoint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenEndpoint),
+      isConnected: Value(isConnected),
+      lastConnected: lastConnected == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastConnected),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory McpServersTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpServersTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      baseUrl: serializer.fromJson<String>(json['baseUrl']),
+      type: serializer.fromJson<String>(json['type']),
+      headers: serializer.fromJson<String?>(json['headers']),
+      timeout: serializer.fromJson<int?>(json['timeout']),
+      longRunning: serializer.fromJson<bool>(json['longRunning']),
+      disabled: serializer.fromJson<bool>(json['disabled']),
+      error: serializer.fromJson<String?>(json['error']),
+      clientId: serializer.fromJson<String?>(json['clientId']),
+      clientSecret: serializer.fromJson<String?>(json['clientSecret']),
+      authorizationEndpoint:
+          serializer.fromJson<String?>(json['authorizationEndpoint']),
+      tokenEndpoint: serializer.fromJson<String?>(json['tokenEndpoint']),
+      isConnected: serializer.fromJson<bool>(json['isConnected']),
+      lastConnected: serializer.fromJson<DateTime?>(json['lastConnected']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'baseUrl': serializer.toJson<String>(baseUrl),
+      'type': serializer.toJson<String>(type),
+      'headers': serializer.toJson<String?>(headers),
+      'timeout': serializer.toJson<int?>(timeout),
+      'longRunning': serializer.toJson<bool>(longRunning),
+      'disabled': serializer.toJson<bool>(disabled),
+      'error': serializer.toJson<String?>(error),
+      'clientId': serializer.toJson<String?>(clientId),
+      'clientSecret': serializer.toJson<String?>(clientSecret),
+      'authorizationEndpoint':
+          serializer.toJson<String?>(authorizationEndpoint),
+      'tokenEndpoint': serializer.toJson<String?>(tokenEndpoint),
+      'isConnected': serializer.toJson<bool>(isConnected),
+      'lastConnected': serializer.toJson<DateTime?>(lastConnected),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  McpServersTableData copyWith(
+          {String? id,
+          String? name,
+          String? baseUrl,
+          String? type,
+          Value<String?> headers = const Value.absent(),
+          Value<int?> timeout = const Value.absent(),
+          bool? longRunning,
+          bool? disabled,
+          Value<String?> error = const Value.absent(),
+          Value<String?> clientId = const Value.absent(),
+          Value<String?> clientSecret = const Value.absent(),
+          Value<String?> authorizationEndpoint = const Value.absent(),
+          Value<String?> tokenEndpoint = const Value.absent(),
+          bool? isConnected,
+          Value<DateTime?> lastConnected = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      McpServersTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        baseUrl: baseUrl ?? this.baseUrl,
+        type: type ?? this.type,
+        headers: headers.present ? headers.value : this.headers,
+        timeout: timeout.present ? timeout.value : this.timeout,
+        longRunning: longRunning ?? this.longRunning,
+        disabled: disabled ?? this.disabled,
+        error: error.present ? error.value : this.error,
+        clientId: clientId.present ? clientId.value : this.clientId,
+        clientSecret:
+            clientSecret.present ? clientSecret.value : this.clientSecret,
+        authorizationEndpoint: authorizationEndpoint.present
+            ? authorizationEndpoint.value
+            : this.authorizationEndpoint,
+        tokenEndpoint:
+            tokenEndpoint.present ? tokenEndpoint.value : this.tokenEndpoint,
+        isConnected: isConnected ?? this.isConnected,
+        lastConnected:
+            lastConnected.present ? lastConnected.value : this.lastConnected,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  McpServersTableData copyWithCompanion(McpServersTableCompanion data) {
+    return McpServersTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
+      type: data.type.present ? data.type.value : this.type,
+      headers: data.headers.present ? data.headers.value : this.headers,
+      timeout: data.timeout.present ? data.timeout.value : this.timeout,
+      longRunning:
+          data.longRunning.present ? data.longRunning.value : this.longRunning,
+      disabled: data.disabled.present ? data.disabled.value : this.disabled,
+      error: data.error.present ? data.error.value : this.error,
+      clientId: data.clientId.present ? data.clientId.value : this.clientId,
+      clientSecret: data.clientSecret.present
+          ? data.clientSecret.value
+          : this.clientSecret,
+      authorizationEndpoint: data.authorizationEndpoint.present
+          ? data.authorizationEndpoint.value
+          : this.authorizationEndpoint,
+      tokenEndpoint: data.tokenEndpoint.present
+          ? data.tokenEndpoint.value
+          : this.tokenEndpoint,
+      isConnected:
+          data.isConnected.present ? data.isConnected.value : this.isConnected,
+      lastConnected: data.lastConnected.present
+          ? data.lastConnected.value
+          : this.lastConnected,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServersTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('type: $type, ')
+          ..write('headers: $headers, ')
+          ..write('timeout: $timeout, ')
+          ..write('longRunning: $longRunning, ')
+          ..write('disabled: $disabled, ')
+          ..write('error: $error, ')
+          ..write('clientId: $clientId, ')
+          ..write('clientSecret: $clientSecret, ')
+          ..write('authorizationEndpoint: $authorizationEndpoint, ')
+          ..write('tokenEndpoint: $tokenEndpoint, ')
+          ..write('isConnected: $isConnected, ')
+          ..write('lastConnected: $lastConnected, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      name,
+      baseUrl,
+      type,
+      headers,
+      timeout,
+      longRunning,
+      disabled,
+      error,
+      clientId,
+      clientSecret,
+      authorizationEndpoint,
+      tokenEndpoint,
+      isConnected,
+      lastConnected,
+      createdAt,
+      updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpServersTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.baseUrl == this.baseUrl &&
+          other.type == this.type &&
+          other.headers == this.headers &&
+          other.timeout == this.timeout &&
+          other.longRunning == this.longRunning &&
+          other.disabled == this.disabled &&
+          other.error == this.error &&
+          other.clientId == this.clientId &&
+          other.clientSecret == this.clientSecret &&
+          other.authorizationEndpoint == this.authorizationEndpoint &&
+          other.tokenEndpoint == this.tokenEndpoint &&
+          other.isConnected == this.isConnected &&
+          other.lastConnected == this.lastConnected &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class McpServersTableCompanion extends UpdateCompanion<McpServersTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> baseUrl;
+  final Value<String> type;
+  final Value<String?> headers;
+  final Value<int?> timeout;
+  final Value<bool> longRunning;
+  final Value<bool> disabled;
+  final Value<String?> error;
+  final Value<String?> clientId;
+  final Value<String?> clientSecret;
+  final Value<String?> authorizationEndpoint;
+  final Value<String?> tokenEndpoint;
+  final Value<bool> isConnected;
+  final Value<DateTime?> lastConnected;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const McpServersTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.type = const Value.absent(),
+    this.headers = const Value.absent(),
+    this.timeout = const Value.absent(),
+    this.longRunning = const Value.absent(),
+    this.disabled = const Value.absent(),
+    this.error = const Value.absent(),
+    this.clientId = const Value.absent(),
+    this.clientSecret = const Value.absent(),
+    this.authorizationEndpoint = const Value.absent(),
+    this.tokenEndpoint = const Value.absent(),
+    this.isConnected = const Value.absent(),
+    this.lastConnected = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpServersTableCompanion.insert({
+    required String id,
+    required String name,
+    required String baseUrl,
+    required String type,
+    this.headers = const Value.absent(),
+    this.timeout = const Value.absent(),
+    this.longRunning = const Value.absent(),
+    this.disabled = const Value.absent(),
+    this.error = const Value.absent(),
+    this.clientId = const Value.absent(),
+    this.clientSecret = const Value.absent(),
+    this.authorizationEndpoint = const Value.absent(),
+    this.tokenEndpoint = const Value.absent(),
+    this.isConnected = const Value.absent(),
+    this.lastConnected = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        baseUrl = Value(baseUrl),
+        type = Value(type);
+  static Insertable<McpServersTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? baseUrl,
+    Expression<String>? type,
+    Expression<String>? headers,
+    Expression<int>? timeout,
+    Expression<bool>? longRunning,
+    Expression<bool>? disabled,
+    Expression<String>? error,
+    Expression<String>? clientId,
+    Expression<String>? clientSecret,
+    Expression<String>? authorizationEndpoint,
+    Expression<String>? tokenEndpoint,
+    Expression<bool>? isConnected,
+    Expression<DateTime>? lastConnected,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (baseUrl != null) 'base_url': baseUrl,
+      if (type != null) 'type': type,
+      if (headers != null) 'headers': headers,
+      if (timeout != null) 'timeout': timeout,
+      if (longRunning != null) 'long_running': longRunning,
+      if (disabled != null) 'disabled': disabled,
+      if (error != null) 'error': error,
+      if (clientId != null) 'client_id': clientId,
+      if (clientSecret != null) 'client_secret': clientSecret,
+      if (authorizationEndpoint != null)
+        'authorization_endpoint': authorizationEndpoint,
+      if (tokenEndpoint != null) 'token_endpoint': tokenEndpoint,
+      if (isConnected != null) 'is_connected': isConnected,
+      if (lastConnected != null) 'last_connected': lastConnected,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpServersTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? baseUrl,
+      Value<String>? type,
+      Value<String?>? headers,
+      Value<int?>? timeout,
+      Value<bool>? longRunning,
+      Value<bool>? disabled,
+      Value<String?>? error,
+      Value<String?>? clientId,
+      Value<String?>? clientSecret,
+      Value<String?>? authorizationEndpoint,
+      Value<String?>? tokenEndpoint,
+      Value<bool>? isConnected,
+      Value<DateTime?>? lastConnected,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return McpServersTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      baseUrl: baseUrl ?? this.baseUrl,
+      type: type ?? this.type,
+      headers: headers ?? this.headers,
+      timeout: timeout ?? this.timeout,
+      longRunning: longRunning ?? this.longRunning,
+      disabled: disabled ?? this.disabled,
+      error: error ?? this.error,
+      clientId: clientId ?? this.clientId,
+      clientSecret: clientSecret ?? this.clientSecret,
+      authorizationEndpoint:
+          authorizationEndpoint ?? this.authorizationEndpoint,
+      tokenEndpoint: tokenEndpoint ?? this.tokenEndpoint,
+      isConnected: isConnected ?? this.isConnected,
+      lastConnected: lastConnected ?? this.lastConnected,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (baseUrl.present) {
+      map['base_url'] = Variable<String>(baseUrl.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (headers.present) {
+      map['headers'] = Variable<String>(headers.value);
+    }
+    if (timeout.present) {
+      map['timeout'] = Variable<int>(timeout.value);
+    }
+    if (longRunning.present) {
+      map['long_running'] = Variable<bool>(longRunning.value);
+    }
+    if (disabled.present) {
+      map['disabled'] = Variable<bool>(disabled.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (clientId.present) {
+      map['client_id'] = Variable<String>(clientId.value);
+    }
+    if (clientSecret.present) {
+      map['client_secret'] = Variable<String>(clientSecret.value);
+    }
+    if (authorizationEndpoint.present) {
+      map['authorization_endpoint'] =
+          Variable<String>(authorizationEndpoint.value);
+    }
+    if (tokenEndpoint.present) {
+      map['token_endpoint'] = Variable<String>(tokenEndpoint.value);
+    }
+    if (isConnected.present) {
+      map['is_connected'] = Variable<bool>(isConnected.value);
+    }
+    if (lastConnected.present) {
+      map['last_connected'] = Variable<DateTime>(lastConnected.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServersTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('type: $type, ')
+          ..write('headers: $headers, ')
+          ..write('timeout: $timeout, ')
+          ..write('longRunning: $longRunning, ')
+          ..write('disabled: $disabled, ')
+          ..write('error: $error, ')
+          ..write('clientId: $clientId, ')
+          ..write('clientSecret: $clientSecret, ')
+          ..write('authorizationEndpoint: $authorizationEndpoint, ')
+          ..write('tokenEndpoint: $tokenEndpoint, ')
+          ..write('isConnected: $isConnected, ')
+          ..write('lastConnected: $lastConnected, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpConnectionsTableTable extends McpConnectionsTable
+    with TableInfo<$McpConnectionsTableTable, McpConnectionsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpConnectionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES mcp_servers (id) ON DELETE CASCADE'));
+  static const VerificationMeta _isConnectedMeta =
+      const VerificationMeta('isConnected');
+  @override
+  late final GeneratedColumn<bool> isConnected = GeneratedColumn<bool>(
+      'is_connected', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_connected" IN (0, 1))'));
+  static const VerificationMeta _lastCheckMeta =
+      const VerificationMeta('lastCheck');
+  @override
+  late final GeneratedColumn<DateTime> lastCheck = GeneratedColumn<DateTime>(
+      'last_check', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _latencyMeta =
+      const VerificationMeta('latency');
+  @override
+  late final GeneratedColumn<int> latency = GeneratedColumn<int>(
+      'latency', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+      'error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _serverNameMeta =
+      const VerificationMeta('serverName');
+  @override
+  late final GeneratedColumn<String> serverName = GeneratedColumn<String>(
+      'server_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _serverVersionMeta =
+      const VerificationMeta('serverVersion');
+  @override
+  late final GeneratedColumn<String> serverVersion = GeneratedColumn<String>(
+      'server_version', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _protocolVersionMeta =
+      const VerificationMeta('protocolVersion');
+  @override
+  late final GeneratedColumn<String> protocolVersion = GeneratedColumn<String>(
+      'protocol_version', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _toolsCountMeta =
+      const VerificationMeta('toolsCount');
+  @override
+  late final GeneratedColumn<int> toolsCount = GeneratedColumn<int>(
+      'tools_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _resourcesCountMeta =
+      const VerificationMeta('resourcesCount');
+  @override
+  late final GeneratedColumn<int> resourcesCount = GeneratedColumn<int>(
+      'resources_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _promptsCountMeta =
+      const VerificationMeta('promptsCount');
+  @override
+  late final GeneratedColumn<int> promptsCount = GeneratedColumn<int>(
+      'prompts_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _recordedAtMeta =
+      const VerificationMeta('recordedAt');
+  @override
+  late final GeneratedColumn<DateTime> recordedAt = GeneratedColumn<DateTime>(
+      'recorded_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        serverId,
+        isConnected,
+        lastCheck,
+        latency,
+        error,
+        serverName,
+        serverVersion,
+        protocolVersion,
+        toolsCount,
+        resourcesCount,
+        promptsCount,
+        recordedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_connections';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<McpConnectionsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('is_connected')) {
+      context.handle(
+          _isConnectedMeta,
+          isConnected.isAcceptableOrUnknown(
+              data['is_connected']!, _isConnectedMeta));
+    } else if (isInserting) {
+      context.missing(_isConnectedMeta);
+    }
+    if (data.containsKey('last_check')) {
+      context.handle(_lastCheckMeta,
+          lastCheck.isAcceptableOrUnknown(data['last_check']!, _lastCheckMeta));
+    } else if (isInserting) {
+      context.missing(_lastCheckMeta);
+    }
+    if (data.containsKey('latency')) {
+      context.handle(_latencyMeta,
+          latency.isAcceptableOrUnknown(data['latency']!, _latencyMeta));
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+          _errorMeta, error.isAcceptableOrUnknown(data['error']!, _errorMeta));
+    }
+    if (data.containsKey('server_name')) {
+      context.handle(
+          _serverNameMeta,
+          serverName.isAcceptableOrUnknown(
+              data['server_name']!, _serverNameMeta));
+    }
+    if (data.containsKey('server_version')) {
+      context.handle(
+          _serverVersionMeta,
+          serverVersion.isAcceptableOrUnknown(
+              data['server_version']!, _serverVersionMeta));
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+          _protocolVersionMeta,
+          protocolVersion.isAcceptableOrUnknown(
+              data['protocol_version']!, _protocolVersionMeta));
+    }
+    if (data.containsKey('tools_count')) {
+      context.handle(
+          _toolsCountMeta,
+          toolsCount.isAcceptableOrUnknown(
+              data['tools_count']!, _toolsCountMeta));
+    }
+    if (data.containsKey('resources_count')) {
+      context.handle(
+          _resourcesCountMeta,
+          resourcesCount.isAcceptableOrUnknown(
+              data['resources_count']!, _resourcesCountMeta));
+    }
+    if (data.containsKey('prompts_count')) {
+      context.handle(
+          _promptsCountMeta,
+          promptsCount.isAcceptableOrUnknown(
+              data['prompts_count']!, _promptsCountMeta));
+    }
+    if (data.containsKey('recorded_at')) {
+      context.handle(
+          _recordedAtMeta,
+          recordedAt.isAcceptableOrUnknown(
+              data['recorded_at']!, _recordedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpConnectionsTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpConnectionsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
+      isConnected: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_connected'])!,
+      lastCheck: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_check'])!,
+      latency: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}latency']),
+      error: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error']),
+      serverName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_name']),
+      serverVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_version']),
+      protocolVersion: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}protocol_version']),
+      toolsCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}tools_count']),
+      resourcesCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}resources_count']),
+      promptsCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}prompts_count']),
+      recordedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}recorded_at'])!,
+    );
+  }
+
+  @override
+  $McpConnectionsTableTable createAlias(String alias) {
+    return $McpConnectionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpConnectionsTableData extends DataClass
+    implements Insertable<McpConnectionsTableData> {
+  /// 连接记录ID
+  final int id;
+
+  /// 服务器ID (外键)
+  final String serverId;
+
+  /// 是否连接
+  final bool isConnected;
+
+  /// 最后检查时间
+  final DateTime lastCheck;
+
+  /// 连接延迟 (毫秒)
+  final int? latency;
+
+  /// 错误信息
+  final String? error;
+
+  /// 服务器名称
+  final String? serverName;
+
+  /// 服务器版本
+  final String? serverVersion;
+
+  /// 协议版本
+  final String? protocolVersion;
+
+  /// 工具数量
+  final int? toolsCount;
+
+  /// 资源数量
+  final int? resourcesCount;
+
+  /// 提示数量
+  final int? promptsCount;
+
+  /// 记录时间
+  final DateTime recordedAt;
+  const McpConnectionsTableData(
+      {required this.id,
+      required this.serverId,
+      required this.isConnected,
+      required this.lastCheck,
+      this.latency,
+      this.error,
+      this.serverName,
+      this.serverVersion,
+      this.protocolVersion,
+      this.toolsCount,
+      this.resourcesCount,
+      this.promptsCount,
+      required this.recordedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['is_connected'] = Variable<bool>(isConnected);
+    map['last_check'] = Variable<DateTime>(lastCheck);
+    if (!nullToAbsent || latency != null) {
+      map['latency'] = Variable<int>(latency);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    if (!nullToAbsent || serverName != null) {
+      map['server_name'] = Variable<String>(serverName);
+    }
+    if (!nullToAbsent || serverVersion != null) {
+      map['server_version'] = Variable<String>(serverVersion);
+    }
+    if (!nullToAbsent || protocolVersion != null) {
+      map['protocol_version'] = Variable<String>(protocolVersion);
+    }
+    if (!nullToAbsent || toolsCount != null) {
+      map['tools_count'] = Variable<int>(toolsCount);
+    }
+    if (!nullToAbsent || resourcesCount != null) {
+      map['resources_count'] = Variable<int>(resourcesCount);
+    }
+    if (!nullToAbsent || promptsCount != null) {
+      map['prompts_count'] = Variable<int>(promptsCount);
+    }
+    map['recorded_at'] = Variable<DateTime>(recordedAt);
+    return map;
+  }
+
+  McpConnectionsTableCompanion toCompanion(bool nullToAbsent) {
+    return McpConnectionsTableCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      isConnected: Value(isConnected),
+      lastCheck: Value(lastCheck),
+      latency: latency == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latency),
+      error:
+          error == null && nullToAbsent ? const Value.absent() : Value(error),
+      serverName: serverName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverName),
+      serverVersion: serverVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverVersion),
+      protocolVersion: protocolVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(protocolVersion),
+      toolsCount: toolsCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolsCount),
+      resourcesCount: resourcesCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resourcesCount),
+      promptsCount: promptsCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promptsCount),
+      recordedAt: Value(recordedAt),
+    );
+  }
+
+  factory McpConnectionsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpConnectionsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      isConnected: serializer.fromJson<bool>(json['isConnected']),
+      lastCheck: serializer.fromJson<DateTime>(json['lastCheck']),
+      latency: serializer.fromJson<int?>(json['latency']),
+      error: serializer.fromJson<String?>(json['error']),
+      serverName: serializer.fromJson<String?>(json['serverName']),
+      serverVersion: serializer.fromJson<String?>(json['serverVersion']),
+      protocolVersion: serializer.fromJson<String?>(json['protocolVersion']),
+      toolsCount: serializer.fromJson<int?>(json['toolsCount']),
+      resourcesCount: serializer.fromJson<int?>(json['resourcesCount']),
+      promptsCount: serializer.fromJson<int?>(json['promptsCount']),
+      recordedAt: serializer.fromJson<DateTime>(json['recordedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'isConnected': serializer.toJson<bool>(isConnected),
+      'lastCheck': serializer.toJson<DateTime>(lastCheck),
+      'latency': serializer.toJson<int?>(latency),
+      'error': serializer.toJson<String?>(error),
+      'serverName': serializer.toJson<String?>(serverName),
+      'serverVersion': serializer.toJson<String?>(serverVersion),
+      'protocolVersion': serializer.toJson<String?>(protocolVersion),
+      'toolsCount': serializer.toJson<int?>(toolsCount),
+      'resourcesCount': serializer.toJson<int?>(resourcesCount),
+      'promptsCount': serializer.toJson<int?>(promptsCount),
+      'recordedAt': serializer.toJson<DateTime>(recordedAt),
+    };
+  }
+
+  McpConnectionsTableData copyWith(
+          {int? id,
+          String? serverId,
+          bool? isConnected,
+          DateTime? lastCheck,
+          Value<int?> latency = const Value.absent(),
+          Value<String?> error = const Value.absent(),
+          Value<String?> serverName = const Value.absent(),
+          Value<String?> serverVersion = const Value.absent(),
+          Value<String?> protocolVersion = const Value.absent(),
+          Value<int?> toolsCount = const Value.absent(),
+          Value<int?> resourcesCount = const Value.absent(),
+          Value<int?> promptsCount = const Value.absent(),
+          DateTime? recordedAt}) =>
+      McpConnectionsTableData(
+        id: id ?? this.id,
+        serverId: serverId ?? this.serverId,
+        isConnected: isConnected ?? this.isConnected,
+        lastCheck: lastCheck ?? this.lastCheck,
+        latency: latency.present ? latency.value : this.latency,
+        error: error.present ? error.value : this.error,
+        serverName: serverName.present ? serverName.value : this.serverName,
+        serverVersion:
+            serverVersion.present ? serverVersion.value : this.serverVersion,
+        protocolVersion: protocolVersion.present
+            ? protocolVersion.value
+            : this.protocolVersion,
+        toolsCount: toolsCount.present ? toolsCount.value : this.toolsCount,
+        resourcesCount:
+            resourcesCount.present ? resourcesCount.value : this.resourcesCount,
+        promptsCount:
+            promptsCount.present ? promptsCount.value : this.promptsCount,
+        recordedAt: recordedAt ?? this.recordedAt,
+      );
+  McpConnectionsTableData copyWithCompanion(McpConnectionsTableCompanion data) {
+    return McpConnectionsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      isConnected:
+          data.isConnected.present ? data.isConnected.value : this.isConnected,
+      lastCheck: data.lastCheck.present ? data.lastCheck.value : this.lastCheck,
+      latency: data.latency.present ? data.latency.value : this.latency,
+      error: data.error.present ? data.error.value : this.error,
+      serverName:
+          data.serverName.present ? data.serverName.value : this.serverName,
+      serverVersion: data.serverVersion.present
+          ? data.serverVersion.value
+          : this.serverVersion,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      toolsCount:
+          data.toolsCount.present ? data.toolsCount.value : this.toolsCount,
+      resourcesCount: data.resourcesCount.present
+          ? data.resourcesCount.value
+          : this.resourcesCount,
+      promptsCount: data.promptsCount.present
+          ? data.promptsCount.value
+          : this.promptsCount,
+      recordedAt:
+          data.recordedAt.present ? data.recordedAt.value : this.recordedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpConnectionsTableData(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('isConnected: $isConnected, ')
+          ..write('lastCheck: $lastCheck, ')
+          ..write('latency: $latency, ')
+          ..write('error: $error, ')
+          ..write('serverName: $serverName, ')
+          ..write('serverVersion: $serverVersion, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('toolsCount: $toolsCount, ')
+          ..write('resourcesCount: $resourcesCount, ')
+          ..write('promptsCount: $promptsCount, ')
+          ..write('recordedAt: $recordedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      serverId,
+      isConnected,
+      lastCheck,
+      latency,
+      error,
+      serverName,
+      serverVersion,
+      protocolVersion,
+      toolsCount,
+      resourcesCount,
+      promptsCount,
+      recordedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpConnectionsTableData &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.isConnected == this.isConnected &&
+          other.lastCheck == this.lastCheck &&
+          other.latency == this.latency &&
+          other.error == this.error &&
+          other.serverName == this.serverName &&
+          other.serverVersion == this.serverVersion &&
+          other.protocolVersion == this.protocolVersion &&
+          other.toolsCount == this.toolsCount &&
+          other.resourcesCount == this.resourcesCount &&
+          other.promptsCount == this.promptsCount &&
+          other.recordedAt == this.recordedAt);
+}
+
+class McpConnectionsTableCompanion
+    extends UpdateCompanion<McpConnectionsTableData> {
+  final Value<int> id;
+  final Value<String> serverId;
+  final Value<bool> isConnected;
+  final Value<DateTime> lastCheck;
+  final Value<int?> latency;
+  final Value<String?> error;
+  final Value<String?> serverName;
+  final Value<String?> serverVersion;
+  final Value<String?> protocolVersion;
+  final Value<int?> toolsCount;
+  final Value<int?> resourcesCount;
+  final Value<int?> promptsCount;
+  final Value<DateTime> recordedAt;
+  const McpConnectionsTableCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.isConnected = const Value.absent(),
+    this.lastCheck = const Value.absent(),
+    this.latency = const Value.absent(),
+    this.error = const Value.absent(),
+    this.serverName = const Value.absent(),
+    this.serverVersion = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.toolsCount = const Value.absent(),
+    this.resourcesCount = const Value.absent(),
+    this.promptsCount = const Value.absent(),
+    this.recordedAt = const Value.absent(),
+  });
+  McpConnectionsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String serverId,
+    required bool isConnected,
+    required DateTime lastCheck,
+    this.latency = const Value.absent(),
+    this.error = const Value.absent(),
+    this.serverName = const Value.absent(),
+    this.serverVersion = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.toolsCount = const Value.absent(),
+    this.resourcesCount = const Value.absent(),
+    this.promptsCount = const Value.absent(),
+    this.recordedAt = const Value.absent(),
+  })  : serverId = Value(serverId),
+        isConnected = Value(isConnected),
+        lastCheck = Value(lastCheck);
+  static Insertable<McpConnectionsTableData> custom({
+    Expression<int>? id,
+    Expression<String>? serverId,
+    Expression<bool>? isConnected,
+    Expression<DateTime>? lastCheck,
+    Expression<int>? latency,
+    Expression<String>? error,
+    Expression<String>? serverName,
+    Expression<String>? serverVersion,
+    Expression<String>? protocolVersion,
+    Expression<int>? toolsCount,
+    Expression<int>? resourcesCount,
+    Expression<int>? promptsCount,
+    Expression<DateTime>? recordedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (isConnected != null) 'is_connected': isConnected,
+      if (lastCheck != null) 'last_check': lastCheck,
+      if (latency != null) 'latency': latency,
+      if (error != null) 'error': error,
+      if (serverName != null) 'server_name': serverName,
+      if (serverVersion != null) 'server_version': serverVersion,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (toolsCount != null) 'tools_count': toolsCount,
+      if (resourcesCount != null) 'resources_count': resourcesCount,
+      if (promptsCount != null) 'prompts_count': promptsCount,
+      if (recordedAt != null) 'recorded_at': recordedAt,
+    });
+  }
+
+  McpConnectionsTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? serverId,
+      Value<bool>? isConnected,
+      Value<DateTime>? lastCheck,
+      Value<int?>? latency,
+      Value<String?>? error,
+      Value<String?>? serverName,
+      Value<String?>? serverVersion,
+      Value<String?>? protocolVersion,
+      Value<int?>? toolsCount,
+      Value<int?>? resourcesCount,
+      Value<int?>? promptsCount,
+      Value<DateTime>? recordedAt}) {
+    return McpConnectionsTableCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      isConnected: isConnected ?? this.isConnected,
+      lastCheck: lastCheck ?? this.lastCheck,
+      latency: latency ?? this.latency,
+      error: error ?? this.error,
+      serverName: serverName ?? this.serverName,
+      serverVersion: serverVersion ?? this.serverVersion,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      toolsCount: toolsCount ?? this.toolsCount,
+      resourcesCount: resourcesCount ?? this.resourcesCount,
+      promptsCount: promptsCount ?? this.promptsCount,
+      recordedAt: recordedAt ?? this.recordedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (isConnected.present) {
+      map['is_connected'] = Variable<bool>(isConnected.value);
+    }
+    if (lastCheck.present) {
+      map['last_check'] = Variable<DateTime>(lastCheck.value);
+    }
+    if (latency.present) {
+      map['latency'] = Variable<int>(latency.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (serverName.present) {
+      map['server_name'] = Variable<String>(serverName.value);
+    }
+    if (serverVersion.present) {
+      map['server_version'] = Variable<String>(serverVersion.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<String>(protocolVersion.value);
+    }
+    if (toolsCount.present) {
+      map['tools_count'] = Variable<int>(toolsCount.value);
+    }
+    if (resourcesCount.present) {
+      map['resources_count'] = Variable<int>(resourcesCount.value);
+    }
+    if (promptsCount.present) {
+      map['prompts_count'] = Variable<int>(promptsCount.value);
+    }
+    if (recordedAt.present) {
+      map['recorded_at'] = Variable<DateTime>(recordedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpConnectionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('isConnected: $isConnected, ')
+          ..write('lastCheck: $lastCheck, ')
+          ..write('latency: $latency, ')
+          ..write('error: $error, ')
+          ..write('serverName: $serverName, ')
+          ..write('serverVersion: $serverVersion, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('toolsCount: $toolsCount, ')
+          ..write('resourcesCount: $resourcesCount, ')
+          ..write('promptsCount: $promptsCount, ')
+          ..write('recordedAt: $recordedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpToolsTableTable extends McpToolsTable
+    with TableInfo<$McpToolsTableTable, McpToolsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpToolsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES mcp_servers (id) ON DELETE CASCADE'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _inputSchemaMeta =
+      const VerificationMeta('inputSchema');
+  @override
+  late final GeneratedColumn<String> inputSchema = GeneratedColumn<String>(
+      'input_schema', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _cachedAtMeta =
+      const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+      'cached_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _expiresAtMeta =
+      const VerificationMeta('expiresAt');
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+      'expires_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, serverId, name, description, inputSchema, cachedAt, expiresAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_tools';
+  @override
+  VerificationContext validateIntegrity(Insertable<McpToolsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('input_schema')) {
+      context.handle(
+          _inputSchemaMeta,
+          inputSchema.isAcceptableOrUnknown(
+              data['input_schema']!, _inputSchemaMeta));
+    } else if (isInserting) {
+      context.missing(_inputSchemaMeta);
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(_cachedAtMeta,
+          cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta));
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(_expiresAtMeta,
+          expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta));
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpToolsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpToolsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description'])!,
+      inputSchema: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}input_schema'])!,
+      cachedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}cached_at'])!,
+      expiresAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}expires_at'])!,
+    );
+  }
+
+  @override
+  $McpToolsTableTable createAlias(String alias) {
+    return $McpToolsTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpToolsTableData extends DataClass
+    implements Insertable<McpToolsTableData> {
+  /// 工具记录ID
+  final int id;
+
+  /// 服务器ID (外键)
+  final String serverId;
+
+  /// 工具名称
+  final String name;
+
+  /// 工具描述
+  final String description;
+
+  /// 输入模式 (JSON格式存储)
+  final String inputSchema;
+
+  /// 缓存时间
+  final DateTime cachedAt;
+
+  /// 过期时间
+  final DateTime expiresAt;
+  const McpToolsTableData(
+      {required this.id,
+      required this.serverId,
+      required this.name,
+      required this.description,
+      required this.inputSchema,
+      required this.cachedAt,
+      required this.expiresAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['input_schema'] = Variable<String>(inputSchema);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    return map;
+  }
+
+  McpToolsTableCompanion toCompanion(bool nullToAbsent) {
+    return McpToolsTableCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      name: Value(name),
+      description: Value(description),
+      inputSchema: Value(inputSchema),
+      cachedAt: Value(cachedAt),
+      expiresAt: Value(expiresAt),
+    );
+  }
+
+  factory McpToolsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpToolsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      inputSchema: serializer.fromJson<String>(json['inputSchema']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'inputSchema': serializer.toJson<String>(inputSchema),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+    };
+  }
+
+  McpToolsTableData copyWith(
+          {int? id,
+          String? serverId,
+          String? name,
+          String? description,
+          String? inputSchema,
+          DateTime? cachedAt,
+          DateTime? expiresAt}) =>
+      McpToolsTableData(
+        id: id ?? this.id,
+        serverId: serverId ?? this.serverId,
+        name: name ?? this.name,
+        description: description ?? this.description,
+        inputSchema: inputSchema ?? this.inputSchema,
+        cachedAt: cachedAt ?? this.cachedAt,
+        expiresAt: expiresAt ?? this.expiresAt,
+      );
+  McpToolsTableData copyWithCompanion(McpToolsTableCompanion data) {
+    return McpToolsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      inputSchema:
+          data.inputSchema.present ? data.inputSchema.value : this.inputSchema,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpToolsTableData(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('inputSchema: $inputSchema, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, serverId, name, description, inputSchema, cachedAt, expiresAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpToolsTableData &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.inputSchema == this.inputSchema &&
+          other.cachedAt == this.cachedAt &&
+          other.expiresAt == this.expiresAt);
+}
+
+class McpToolsTableCompanion extends UpdateCompanion<McpToolsTableData> {
+  final Value<int> id;
+  final Value<String> serverId;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<String> inputSchema;
+  final Value<DateTime> cachedAt;
+  final Value<DateTime> expiresAt;
+  const McpToolsTableCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.inputSchema = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+  });
+  McpToolsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String serverId,
+    required String name,
+    required String description,
+    required String inputSchema,
+    this.cachedAt = const Value.absent(),
+    required DateTime expiresAt,
+  })  : serverId = Value(serverId),
+        name = Value(name),
+        description = Value(description),
+        inputSchema = Value(inputSchema),
+        expiresAt = Value(expiresAt);
+  static Insertable<McpToolsTableData> custom({
+    Expression<int>? id,
+    Expression<String>? serverId,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? inputSchema,
+    Expression<DateTime>? cachedAt,
+    Expression<DateTime>? expiresAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (inputSchema != null) 'input_schema': inputSchema,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+    });
+  }
+
+  McpToolsTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? serverId,
+      Value<String>? name,
+      Value<String>? description,
+      Value<String>? inputSchema,
+      Value<DateTime>? cachedAt,
+      Value<DateTime>? expiresAt}) {
+    return McpToolsTableCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      inputSchema: inputSchema ?? this.inputSchema,
+      cachedAt: cachedAt ?? this.cachedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (inputSchema.present) {
+      map['input_schema'] = Variable<String>(inputSchema.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpToolsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('inputSchema: $inputSchema, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpCallHistoryTableTable extends McpCallHistoryTable
+    with TableInfo<$McpCallHistoryTableTable, McpCallHistoryTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpCallHistoryTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES mcp_servers (id) ON DELETE CASCADE'));
+  static const VerificationMeta _toolNameMeta =
+      const VerificationMeta('toolName');
+  @override
+  late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
+      'tool_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _argumentsMeta =
+      const VerificationMeta('arguments');
+  @override
+  late final GeneratedColumn<String> arguments = GeneratedColumn<String>(
+      'arguments', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _calledAtMeta =
+      const VerificationMeta('calledAt');
+  @override
+  late final GeneratedColumn<DateTime> calledAt = GeneratedColumn<DateTime>(
+      'called_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _resultMeta = const VerificationMeta('result');
+  @override
+  late final GeneratedColumn<String> result = GeneratedColumn<String>(
+      'result', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+      'error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _durationMeta =
+      const VerificationMeta('duration');
+  @override
+  late final GeneratedColumn<int> duration = GeneratedColumn<int>(
+      'duration', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _isSuccessMeta =
+      const VerificationMeta('isSuccess');
+  @override
+  late final GeneratedColumn<bool> isSuccess = GeneratedColumn<bool>(
+      'is_success', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_success" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        serverId,
+        toolName,
+        arguments,
+        calledAt,
+        result,
+        error,
+        duration,
+        isSuccess
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_call_history';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<McpCallHistoryTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('tool_name')) {
+      context.handle(_toolNameMeta,
+          toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta));
+    } else if (isInserting) {
+      context.missing(_toolNameMeta);
+    }
+    if (data.containsKey('arguments')) {
+      context.handle(_argumentsMeta,
+          arguments.isAcceptableOrUnknown(data['arguments']!, _argumentsMeta));
+    } else if (isInserting) {
+      context.missing(_argumentsMeta);
+    }
+    if (data.containsKey('called_at')) {
+      context.handle(_calledAtMeta,
+          calledAt.isAcceptableOrUnknown(data['called_at']!, _calledAtMeta));
+    } else if (isInserting) {
+      context.missing(_calledAtMeta);
+    }
+    if (data.containsKey('result')) {
+      context.handle(_resultMeta,
+          result.isAcceptableOrUnknown(data['result']!, _resultMeta));
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+          _errorMeta, error.isAcceptableOrUnknown(data['error']!, _errorMeta));
+    }
+    if (data.containsKey('duration')) {
+      context.handle(_durationMeta,
+          duration.isAcceptableOrUnknown(data['duration']!, _durationMeta));
+    }
+    if (data.containsKey('is_success')) {
+      context.handle(_isSuccessMeta,
+          isSuccess.isAcceptableOrUnknown(data['is_success']!, _isSuccessMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpCallHistoryTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpCallHistoryTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
+      toolName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tool_name'])!,
+      arguments: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}arguments'])!,
+      calledAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}called_at'])!,
+      result: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}result']),
+      error: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error']),
+      duration: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}duration']),
+      isSuccess: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_success'])!,
+    );
+  }
+
+  @override
+  $McpCallHistoryTableTable createAlias(String alias) {
+    return $McpCallHistoryTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpCallHistoryTableData extends DataClass
+    implements Insertable<McpCallHistoryTableData> {
+  /// 调用记录ID
+  final String id;
+
+  /// 服务器ID (外键)
+  final String serverId;
+
+  /// 工具名称
+  final String toolName;
+
+  /// 调用参数 (JSON格式存储)
+  final String arguments;
+
+  /// 调用时间
+  final DateTime calledAt;
+
+  /// 执行结果 (JSON格式存储)
+  final String? result;
+
+  /// 错误信息
+  final String? error;
+
+  /// 执行时长 (毫秒)
+  final int? duration;
+
+  /// 是否成功
+  final bool isSuccess;
+  const McpCallHistoryTableData(
+      {required this.id,
+      required this.serverId,
+      required this.toolName,
+      required this.arguments,
+      required this.calledAt,
+      this.result,
+      this.error,
+      this.duration,
+      required this.isSuccess});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['tool_name'] = Variable<String>(toolName);
+    map['arguments'] = Variable<String>(arguments);
+    map['called_at'] = Variable<DateTime>(calledAt);
+    if (!nullToAbsent || result != null) {
+      map['result'] = Variable<String>(result);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    if (!nullToAbsent || duration != null) {
+      map['duration'] = Variable<int>(duration);
+    }
+    map['is_success'] = Variable<bool>(isSuccess);
+    return map;
+  }
+
+  McpCallHistoryTableCompanion toCompanion(bool nullToAbsent) {
+    return McpCallHistoryTableCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      toolName: Value(toolName),
+      arguments: Value(arguments),
+      calledAt: Value(calledAt),
+      result:
+          result == null && nullToAbsent ? const Value.absent() : Value(result),
+      error:
+          error == null && nullToAbsent ? const Value.absent() : Value(error),
+      duration: duration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(duration),
+      isSuccess: Value(isSuccess),
+    );
+  }
+
+  factory McpCallHistoryTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpCallHistoryTableData(
+      id: serializer.fromJson<String>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      toolName: serializer.fromJson<String>(json['toolName']),
+      arguments: serializer.fromJson<String>(json['arguments']),
+      calledAt: serializer.fromJson<DateTime>(json['calledAt']),
+      result: serializer.fromJson<String?>(json['result']),
+      error: serializer.fromJson<String?>(json['error']),
+      duration: serializer.fromJson<int?>(json['duration']),
+      isSuccess: serializer.fromJson<bool>(json['isSuccess']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'toolName': serializer.toJson<String>(toolName),
+      'arguments': serializer.toJson<String>(arguments),
+      'calledAt': serializer.toJson<DateTime>(calledAt),
+      'result': serializer.toJson<String?>(result),
+      'error': serializer.toJson<String?>(error),
+      'duration': serializer.toJson<int?>(duration),
+      'isSuccess': serializer.toJson<bool>(isSuccess),
+    };
+  }
+
+  McpCallHistoryTableData copyWith(
+          {String? id,
+          String? serverId,
+          String? toolName,
+          String? arguments,
+          DateTime? calledAt,
+          Value<String?> result = const Value.absent(),
+          Value<String?> error = const Value.absent(),
+          Value<int?> duration = const Value.absent(),
+          bool? isSuccess}) =>
+      McpCallHistoryTableData(
+        id: id ?? this.id,
+        serverId: serverId ?? this.serverId,
+        toolName: toolName ?? this.toolName,
+        arguments: arguments ?? this.arguments,
+        calledAt: calledAt ?? this.calledAt,
+        result: result.present ? result.value : this.result,
+        error: error.present ? error.value : this.error,
+        duration: duration.present ? duration.value : this.duration,
+        isSuccess: isSuccess ?? this.isSuccess,
+      );
+  McpCallHistoryTableData copyWithCompanion(McpCallHistoryTableCompanion data) {
+    return McpCallHistoryTableData(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      toolName: data.toolName.present ? data.toolName.value : this.toolName,
+      arguments: data.arguments.present ? data.arguments.value : this.arguments,
+      calledAt: data.calledAt.present ? data.calledAt.value : this.calledAt,
+      result: data.result.present ? data.result.value : this.result,
+      error: data.error.present ? data.error.value : this.error,
+      duration: data.duration.present ? data.duration.value : this.duration,
+      isSuccess: data.isSuccess.present ? data.isSuccess.value : this.isSuccess,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpCallHistoryTableData(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('toolName: $toolName, ')
+          ..write('arguments: $arguments, ')
+          ..write('calledAt: $calledAt, ')
+          ..write('result: $result, ')
+          ..write('error: $error, ')
+          ..write('duration: $duration, ')
+          ..write('isSuccess: $isSuccess')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, serverId, toolName, arguments, calledAt,
+      result, error, duration, isSuccess);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpCallHistoryTableData &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.toolName == this.toolName &&
+          other.arguments == this.arguments &&
+          other.calledAt == this.calledAt &&
+          other.result == this.result &&
+          other.error == this.error &&
+          other.duration == this.duration &&
+          other.isSuccess == this.isSuccess);
+}
+
+class McpCallHistoryTableCompanion
+    extends UpdateCompanion<McpCallHistoryTableData> {
+  final Value<String> id;
+  final Value<String> serverId;
+  final Value<String> toolName;
+  final Value<String> arguments;
+  final Value<DateTime> calledAt;
+  final Value<String?> result;
+  final Value<String?> error;
+  final Value<int?> duration;
+  final Value<bool> isSuccess;
+  final Value<int> rowid;
+  const McpCallHistoryTableCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    this.arguments = const Value.absent(),
+    this.calledAt = const Value.absent(),
+    this.result = const Value.absent(),
+    this.error = const Value.absent(),
+    this.duration = const Value.absent(),
+    this.isSuccess = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpCallHistoryTableCompanion.insert({
+    required String id,
+    required String serverId,
+    required String toolName,
+    required String arguments,
+    required DateTime calledAt,
+    this.result = const Value.absent(),
+    this.error = const Value.absent(),
+    this.duration = const Value.absent(),
+    this.isSuccess = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        serverId = Value(serverId),
+        toolName = Value(toolName),
+        arguments = Value(arguments),
+        calledAt = Value(calledAt);
+  static Insertable<McpCallHistoryTableData> custom({
+    Expression<String>? id,
+    Expression<String>? serverId,
+    Expression<String>? toolName,
+    Expression<String>? arguments,
+    Expression<DateTime>? calledAt,
+    Expression<String>? result,
+    Expression<String>? error,
+    Expression<int>? duration,
+    Expression<bool>? isSuccess,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (toolName != null) 'tool_name': toolName,
+      if (arguments != null) 'arguments': arguments,
+      if (calledAt != null) 'called_at': calledAt,
+      if (result != null) 'result': result,
+      if (error != null) 'error': error,
+      if (duration != null) 'duration': duration,
+      if (isSuccess != null) 'is_success': isSuccess,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpCallHistoryTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? serverId,
+      Value<String>? toolName,
+      Value<String>? arguments,
+      Value<DateTime>? calledAt,
+      Value<String?>? result,
+      Value<String?>? error,
+      Value<int?>? duration,
+      Value<bool>? isSuccess,
+      Value<int>? rowid}) {
+    return McpCallHistoryTableCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      toolName: toolName ?? this.toolName,
+      arguments: arguments ?? this.arguments,
+      calledAt: calledAt ?? this.calledAt,
+      result: result ?? this.result,
+      error: error ?? this.error,
+      duration: duration ?? this.duration,
+      isSuccess: isSuccess ?? this.isSuccess,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (toolName.present) {
+      map['tool_name'] = Variable<String>(toolName.value);
+    }
+    if (arguments.present) {
+      map['arguments'] = Variable<String>(arguments.value);
+    }
+    if (calledAt.present) {
+      map['called_at'] = Variable<DateTime>(calledAt.value);
+    }
+    if (result.present) {
+      map['result'] = Variable<String>(result.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (duration.present) {
+      map['duration'] = Variable<int>(duration.value);
+    }
+    if (isSuccess.present) {
+      map['is_success'] = Variable<bool>(isSuccess.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpCallHistoryTableCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('toolName: $toolName, ')
+          ..write('arguments: $arguments, ')
+          ..write('calledAt: $calledAt, ')
+          ..write('result: $result, ')
+          ..write('error: $error, ')
+          ..write('duration: $duration, ')
+          ..write('isSuccess: $isSuccess, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpResourcesTableTable extends McpResourcesTable
+    with TableInfo<$McpResourcesTableTable, McpResourcesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpResourcesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES mcp_servers (id) ON DELETE CASCADE'));
+  static const VerificationMeta _uriMeta = const VerificationMeta('uri');
+  @override
+  late final GeneratedColumn<String> uri = GeneratedColumn<String>(
+      'uri', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _mimeTypeMeta =
+      const VerificationMeta('mimeType');
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+      'mime_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cachedAtMeta =
+      const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+      'cached_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _expiresAtMeta =
+      const VerificationMeta('expiresAt');
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+      'expires_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, serverId, uri, name, description, mimeType, cachedAt, expiresAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_resources';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<McpResourcesTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('uri')) {
+      context.handle(
+          _uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
+    } else if (isInserting) {
+      context.missing(_uriMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(_mimeTypeMeta,
+          mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta));
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(_cachedAtMeta,
+          cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta));
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(_expiresAtMeta,
+          expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta));
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpResourcesTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpResourcesTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
+      uri: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      mimeType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mime_type']),
+      cachedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}cached_at'])!,
+      expiresAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}expires_at'])!,
+    );
+  }
+
+  @override
+  $McpResourcesTableTable createAlias(String alias) {
+    return $McpResourcesTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpResourcesTableData extends DataClass
+    implements Insertable<McpResourcesTableData> {
+  /// 资源记录ID
+  final int id;
+
+  /// 服务器ID (外键)
+  final String serverId;
+
+  /// 资源URI
+  final String uri;
+
+  /// 资源名称
+  final String name;
+
+  /// 资源描述
+  final String? description;
+
+  /// MIME类型
+  final String? mimeType;
+
+  /// 缓存时间
+  final DateTime cachedAt;
+
+  /// 过期时间
+  final DateTime expiresAt;
+  const McpResourcesTableData(
+      {required this.id,
+      required this.serverId,
+      required this.uri,
+      required this.name,
+      this.description,
+      this.mimeType,
+      required this.cachedAt,
+      required this.expiresAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['uri'] = Variable<String>(uri);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || mimeType != null) {
+      map['mime_type'] = Variable<String>(mimeType);
+    }
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    return map;
+  }
+
+  McpResourcesTableCompanion toCompanion(bool nullToAbsent) {
+    return McpResourcesTableCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      uri: Value(uri),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      mimeType: mimeType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mimeType),
+      cachedAt: Value(cachedAt),
+      expiresAt: Value(expiresAt),
+    );
+  }
+
+  factory McpResourcesTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpResourcesTableData(
+      id: serializer.fromJson<int>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      uri: serializer.fromJson<String>(json['uri']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      mimeType: serializer.fromJson<String?>(json['mimeType']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'uri': serializer.toJson<String>(uri),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'mimeType': serializer.toJson<String?>(mimeType),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+    };
+  }
+
+  McpResourcesTableData copyWith(
+          {int? id,
+          String? serverId,
+          String? uri,
+          String? name,
+          Value<String?> description = const Value.absent(),
+          Value<String?> mimeType = const Value.absent(),
+          DateTime? cachedAt,
+          DateTime? expiresAt}) =>
+      McpResourcesTableData(
+        id: id ?? this.id,
+        serverId: serverId ?? this.serverId,
+        uri: uri ?? this.uri,
+        name: name ?? this.name,
+        description: description.present ? description.value : this.description,
+        mimeType: mimeType.present ? mimeType.value : this.mimeType,
+        cachedAt: cachedAt ?? this.cachedAt,
+        expiresAt: expiresAt ?? this.expiresAt,
+      );
+  McpResourcesTableData copyWithCompanion(McpResourcesTableCompanion data) {
+    return McpResourcesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      uri: data.uri.present ? data.uri.value : this.uri,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpResourcesTableData(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('uri: $uri, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, serverId, uri, name, description, mimeType, cachedAt, expiresAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpResourcesTableData &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.uri == this.uri &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.mimeType == this.mimeType &&
+          other.cachedAt == this.cachedAt &&
+          other.expiresAt == this.expiresAt);
+}
+
+class McpResourcesTableCompanion
+    extends UpdateCompanion<McpResourcesTableData> {
+  final Value<int> id;
+  final Value<String> serverId;
+  final Value<String> uri;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String?> mimeType;
+  final Value<DateTime> cachedAt;
+  final Value<DateTime> expiresAt;
+  const McpResourcesTableCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.uri = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+  });
+  McpResourcesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String serverId,
+    required String uri,
+    required String name,
+    this.description = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    required DateTime expiresAt,
+  })  : serverId = Value(serverId),
+        uri = Value(uri),
+        name = Value(name),
+        expiresAt = Value(expiresAt);
+  static Insertable<McpResourcesTableData> custom({
+    Expression<int>? id,
+    Expression<String>? serverId,
+    Expression<String>? uri,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? mimeType,
+    Expression<DateTime>? cachedAt,
+    Expression<DateTime>? expiresAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (uri != null) 'uri': uri,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+    });
+  }
+
+  McpResourcesTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? serverId,
+      Value<String>? uri,
+      Value<String>? name,
+      Value<String?>? description,
+      Value<String?>? mimeType,
+      Value<DateTime>? cachedAt,
+      Value<DateTime>? expiresAt}) {
+    return McpResourcesTableCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      uri: uri ?? this.uri,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      mimeType: mimeType ?? this.mimeType,
+      cachedAt: cachedAt ?? this.cachedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (uri.present) {
+      map['uri'] = Variable<String>(uri.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpResourcesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('uri: $uri, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $McpOAuthTokensTableTable extends McpOAuthTokensTable
+    with TableInfo<$McpOAuthTokensTableTable, McpOAuthTokensTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $McpOAuthTokensTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES mcp_servers (id) ON DELETE CASCADE'));
+  static const VerificationMeta _accessTokenMeta =
+      const VerificationMeta('accessToken');
+  @override
+  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
+      'access_token', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _refreshTokenMeta =
+      const VerificationMeta('refreshToken');
+  @override
+  late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
+      'refresh_token', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tokenTypeMeta =
+      const VerificationMeta('tokenType');
+  @override
+  late final GeneratedColumn<String> tokenType = GeneratedColumn<String>(
+      'token_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _expiresAtMeta =
+      const VerificationMeta('expiresAt');
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+      'expires_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _scopesMeta = const VerificationMeta('scopes');
+  @override
+  late final GeneratedColumn<String> scopes = GeneratedColumn<String>(
+      'scopes', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        serverId,
+        accessToken,
+        refreshToken,
+        tokenType,
+        expiresAt,
+        scopes,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_oauth_tokens';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<McpOAuthTokensTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('access_token')) {
+      context.handle(
+          _accessTokenMeta,
+          accessToken.isAcceptableOrUnknown(
+              data['access_token']!, _accessTokenMeta));
+    } else if (isInserting) {
+      context.missing(_accessTokenMeta);
+    }
+    if (data.containsKey('refresh_token')) {
+      context.handle(
+          _refreshTokenMeta,
+          refreshToken.isAcceptableOrUnknown(
+              data['refresh_token']!, _refreshTokenMeta));
+    }
+    if (data.containsKey('token_type')) {
+      context.handle(_tokenTypeMeta,
+          tokenType.isAcceptableOrUnknown(data['token_type']!, _tokenTypeMeta));
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(_expiresAtMeta,
+          expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta));
+    }
+    if (data.containsKey('scopes')) {
+      context.handle(_scopesMeta,
+          scopes.isAcceptableOrUnknown(data['scopes']!, _scopesMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {serverId};
+  @override
+  McpOAuthTokensTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpOAuthTokensTableData(
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
+      accessToken: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}access_token'])!,
+      refreshToken: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}refresh_token']),
+      tokenType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}token_type']),
+      expiresAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}expires_at']),
+      scopes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}scopes']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $McpOAuthTokensTableTable createAlias(String alias) {
+    return $McpOAuthTokensTableTable(attachedDatabase, alias);
+  }
+}
+
+class McpOAuthTokensTableData extends DataClass
+    implements Insertable<McpOAuthTokensTableData> {
+  /// 服务器ID (外键)
+  final String serverId;
+
+  /// 访问令牌 (加密存储)
+  final String accessToken;
+
+  /// 刷新令牌 (加密存储)
+  final String? refreshToken;
+
+  /// 令牌类型
+  final String? tokenType;
+
+  /// 过期时间
+  final DateTime? expiresAt;
+
+  /// 权限范围
+  final String? scopes;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
+  const McpOAuthTokensTableData(
+      {required this.serverId,
+      required this.accessToken,
+      this.refreshToken,
+      this.tokenType,
+      this.expiresAt,
+      this.scopes,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['server_id'] = Variable<String>(serverId);
+    map['access_token'] = Variable<String>(accessToken);
+    if (!nullToAbsent || refreshToken != null) {
+      map['refresh_token'] = Variable<String>(refreshToken);
+    }
+    if (!nullToAbsent || tokenType != null) {
+      map['token_type'] = Variable<String>(tokenType);
+    }
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    if (!nullToAbsent || scopes != null) {
+      map['scopes'] = Variable<String>(scopes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  McpOAuthTokensTableCompanion toCompanion(bool nullToAbsent) {
+    return McpOAuthTokensTableCompanion(
+      serverId: Value(serverId),
+      accessToken: Value(accessToken),
+      refreshToken: refreshToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refreshToken),
+      tokenType: tokenType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenType),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      scopes:
+          scopes == null && nullToAbsent ? const Value.absent() : Value(scopes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory McpOAuthTokensTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpOAuthTokensTableData(
+      serverId: serializer.fromJson<String>(json['serverId']),
+      accessToken: serializer.fromJson<String>(json['accessToken']),
+      refreshToken: serializer.fromJson<String?>(json['refreshToken']),
+      tokenType: serializer.fromJson<String?>(json['tokenType']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      scopes: serializer.fromJson<String?>(json['scopes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'serverId': serializer.toJson<String>(serverId),
+      'accessToken': serializer.toJson<String>(accessToken),
+      'refreshToken': serializer.toJson<String?>(refreshToken),
+      'tokenType': serializer.toJson<String?>(tokenType),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'scopes': serializer.toJson<String?>(scopes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  McpOAuthTokensTableData copyWith(
+          {String? serverId,
+          String? accessToken,
+          Value<String?> refreshToken = const Value.absent(),
+          Value<String?> tokenType = const Value.absent(),
+          Value<DateTime?> expiresAt = const Value.absent(),
+          Value<String?> scopes = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      McpOAuthTokensTableData(
+        serverId: serverId ?? this.serverId,
+        accessToken: accessToken ?? this.accessToken,
+        refreshToken:
+            refreshToken.present ? refreshToken.value : this.refreshToken,
+        tokenType: tokenType.present ? tokenType.value : this.tokenType,
+        expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+        scopes: scopes.present ? scopes.value : this.scopes,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  McpOAuthTokensTableData copyWithCompanion(McpOAuthTokensTableCompanion data) {
+    return McpOAuthTokensTableData(
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      accessToken:
+          data.accessToken.present ? data.accessToken.value : this.accessToken,
+      refreshToken: data.refreshToken.present
+          ? data.refreshToken.value
+          : this.refreshToken,
+      tokenType: data.tokenType.present ? data.tokenType.value : this.tokenType,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      scopes: data.scopes.present ? data.scopes.value : this.scopes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpOAuthTokensTableData(')
+          ..write('serverId: $serverId, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('tokenType: $tokenType, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('scopes: $scopes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(serverId, accessToken, refreshToken,
+      tokenType, expiresAt, scopes, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpOAuthTokensTableData &&
+          other.serverId == this.serverId &&
+          other.accessToken == this.accessToken &&
+          other.refreshToken == this.refreshToken &&
+          other.tokenType == this.tokenType &&
+          other.expiresAt == this.expiresAt &&
+          other.scopes == this.scopes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class McpOAuthTokensTableCompanion
+    extends UpdateCompanion<McpOAuthTokensTableData> {
+  final Value<String> serverId;
+  final Value<String> accessToken;
+  final Value<String?> refreshToken;
+  final Value<String?> tokenType;
+  final Value<DateTime?> expiresAt;
+  final Value<String?> scopes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const McpOAuthTokensTableCompanion({
+    this.serverId = const Value.absent(),
+    this.accessToken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
+    this.tokenType = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.scopes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpOAuthTokensTableCompanion.insert({
+    required String serverId,
+    required String accessToken,
+    this.refreshToken = const Value.absent(),
+    this.tokenType = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.scopes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : serverId = Value(serverId),
+        accessToken = Value(accessToken);
+  static Insertable<McpOAuthTokensTableData> custom({
+    Expression<String>? serverId,
+    Expression<String>? accessToken,
+    Expression<String>? refreshToken,
+    Expression<String>? tokenType,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? scopes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (serverId != null) 'server_id': serverId,
+      if (accessToken != null) 'access_token': accessToken,
+      if (refreshToken != null) 'refresh_token': refreshToken,
+      if (tokenType != null) 'token_type': tokenType,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (scopes != null) 'scopes': scopes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpOAuthTokensTableCompanion copyWith(
+      {Value<String>? serverId,
+      Value<String>? accessToken,
+      Value<String?>? refreshToken,
+      Value<String?>? tokenType,
+      Value<DateTime?>? expiresAt,
+      Value<String?>? scopes,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return McpOAuthTokensTableCompanion(
+      serverId: serverId ?? this.serverId,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      tokenType: tokenType ?? this.tokenType,
+      expiresAt: expiresAt ?? this.expiresAt,
+      scopes: scopes ?? this.scopes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (accessToken.present) {
+      map['access_token'] = Variable<String>(accessToken.value);
+    }
+    if (refreshToken.present) {
+      map['refresh_token'] = Variable<String>(refreshToken.value);
+    }
+    if (tokenType.present) {
+      map['token_type'] = Variable<String>(tokenType.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (scopes.present) {
+      map['scopes'] = Variable<String>(scopes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpOAuthTokensTableCompanion(')
+          ..write('serverId: $serverId, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('tokenType: $tokenType, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('scopes: $scopes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7307,6 +10642,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CustomModelsTableTable(this);
   late final $GeneralSettingsTableTable generalSettingsTable =
       $GeneralSettingsTableTable(this);
+  late final $McpServersTableTable mcpServersTable =
+      $McpServersTableTable(this);
+  late final $McpConnectionsTableTable mcpConnectionsTable =
+      $McpConnectionsTableTable(this);
+  late final $McpToolsTableTable mcpToolsTable = $McpToolsTableTable(this);
+  late final $McpCallHistoryTableTable mcpCallHistoryTable =
+      $McpCallHistoryTableTable(this);
+  late final $McpResourcesTableTable mcpResourcesTable =
+      $McpResourcesTableTable(this);
+  late final $McpOAuthTokensTableTable mcpOAuthTokensTable =
+      $McpOAuthTokensTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7322,8 +10668,54 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         knowledgeChunksTable,
         knowledgeBaseConfigsTable,
         customModelsTable,
-        generalSettingsTable
+        generalSettingsTable,
+        mcpServersTable,
+        mcpConnectionsTable,
+        mcpToolsTable,
+        mcpCallHistoryTable,
+        mcpResourcesTable,
+        mcpOAuthTokensTable
       ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('mcp_servers',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('mcp_connections', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('mcp_servers',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('mcp_tools', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('mcp_servers',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('mcp_call_history', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('mcp_servers',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('mcp_resources', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('mcp_servers',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('mcp_oauth_tokens', kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$LlmConfigsTableTableCreateCompanionBuilder = LlmConfigsTableCompanion
@@ -10579,6 +13971,2447 @@ typedef $$GeneralSettingsTableTableProcessedTableManager
         ),
         GeneralSettingsTableData,
         PrefetchHooks Function()>;
+typedef $$McpServersTableTableCreateCompanionBuilder = McpServersTableCompanion
+    Function({
+  required String id,
+  required String name,
+  required String baseUrl,
+  required String type,
+  Value<String?> headers,
+  Value<int?> timeout,
+  Value<bool> longRunning,
+  Value<bool> disabled,
+  Value<String?> error,
+  Value<String?> clientId,
+  Value<String?> clientSecret,
+  Value<String?> authorizationEndpoint,
+  Value<String?> tokenEndpoint,
+  Value<bool> isConnected,
+  Value<DateTime?> lastConnected,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$McpServersTableTableUpdateCompanionBuilder = McpServersTableCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> baseUrl,
+  Value<String> type,
+  Value<String?> headers,
+  Value<int?> timeout,
+  Value<bool> longRunning,
+  Value<bool> disabled,
+  Value<String?> error,
+  Value<String?> clientId,
+  Value<String?> clientSecret,
+  Value<String?> authorizationEndpoint,
+  Value<String?> tokenEndpoint,
+  Value<bool> isConnected,
+  Value<DateTime?> lastConnected,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+final class $$McpServersTableTableReferences extends BaseReferences<
+    _$AppDatabase, $McpServersTableTable, McpServersTableData> {
+  $$McpServersTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$McpConnectionsTableTable,
+      List<McpConnectionsTableData>> _mcpConnectionsTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.mcpConnectionsTable,
+          aliasName: $_aliasNameGenerator(
+              db.mcpServersTable.id, db.mcpConnectionsTable.serverId));
+
+  $$McpConnectionsTableTableProcessedTableManager get mcpConnectionsTableRefs {
+    final manager =
+        $$McpConnectionsTableTableTableManager($_db, $_db.mcpConnectionsTable)
+            .filter((f) => f.serverId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_mcpConnectionsTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$McpToolsTableTable, List<McpToolsTableData>>
+      _mcpToolsTableRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.mcpToolsTable,
+              aliasName: $_aliasNameGenerator(
+                  db.mcpServersTable.id, db.mcpToolsTable.serverId));
+
+  $$McpToolsTableTableProcessedTableManager get mcpToolsTableRefs {
+    final manager = $$McpToolsTableTableTableManager($_db, $_db.mcpToolsTable)
+        .filter((f) => f.serverId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_mcpToolsTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$McpCallHistoryTableTable,
+      List<McpCallHistoryTableData>> _mcpCallHistoryTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.mcpCallHistoryTable,
+          aliasName: $_aliasNameGenerator(
+              db.mcpServersTable.id, db.mcpCallHistoryTable.serverId));
+
+  $$McpCallHistoryTableTableProcessedTableManager get mcpCallHistoryTableRefs {
+    final manager =
+        $$McpCallHistoryTableTableTableManager($_db, $_db.mcpCallHistoryTable)
+            .filter((f) => f.serverId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_mcpCallHistoryTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$McpResourcesTableTable,
+      List<McpResourcesTableData>> _mcpResourcesTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.mcpResourcesTable,
+          aliasName: $_aliasNameGenerator(
+              db.mcpServersTable.id, db.mcpResourcesTable.serverId));
+
+  $$McpResourcesTableTableProcessedTableManager get mcpResourcesTableRefs {
+    final manager =
+        $$McpResourcesTableTableTableManager($_db, $_db.mcpResourcesTable)
+            .filter((f) => f.serverId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_mcpResourcesTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$McpOAuthTokensTableTable,
+      List<McpOAuthTokensTableData>> _mcpOAuthTokensTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.mcpOAuthTokensTable,
+          aliasName: $_aliasNameGenerator(
+              db.mcpServersTable.id, db.mcpOAuthTokensTable.serverId));
+
+  $$McpOAuthTokensTableTableProcessedTableManager get mcpOAuthTokensTableRefs {
+    final manager =
+        $$McpOAuthTokensTableTableTableManager($_db, $_db.mcpOAuthTokensTable)
+            .filter((f) => f.serverId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_mcpOAuthTokensTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$McpServersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpServersTableTable> {
+  $$McpServersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get headers => $composableBuilder(
+      column: $table.headers, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get timeout => $composableBuilder(
+      column: $table.timeout, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get longRunning => $composableBuilder(
+      column: $table.longRunning, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get disabled => $composableBuilder(
+      column: $table.disabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get clientId => $composableBuilder(
+      column: $table.clientId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get clientSecret => $composableBuilder(
+      column: $table.clientSecret, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get authorizationEndpoint => $composableBuilder(
+      column: $table.authorizationEndpoint,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tokenEndpoint => $composableBuilder(
+      column: $table.tokenEndpoint, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastConnected => $composableBuilder(
+      column: $table.lastConnected, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> mcpConnectionsTableRefs(
+      Expression<bool> Function($$McpConnectionsTableTableFilterComposer f) f) {
+    final $$McpConnectionsTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpConnectionsTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpConnectionsTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpConnectionsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> mcpToolsTableRefs(
+      Expression<bool> Function($$McpToolsTableTableFilterComposer f) f) {
+    final $$McpToolsTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpToolsTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpToolsTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpToolsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> mcpCallHistoryTableRefs(
+      Expression<bool> Function($$McpCallHistoryTableTableFilterComposer f) f) {
+    final $$McpCallHistoryTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpCallHistoryTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpCallHistoryTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpCallHistoryTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> mcpResourcesTableRefs(
+      Expression<bool> Function($$McpResourcesTableTableFilterComposer f) f) {
+    final $$McpResourcesTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpResourcesTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpResourcesTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpResourcesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> mcpOAuthTokensTableRefs(
+      Expression<bool> Function($$McpOAuthTokensTableTableFilterComposer f) f) {
+    final $$McpOAuthTokensTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpOAuthTokensTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpOAuthTokensTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpOAuthTokensTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$McpServersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpServersTableTable> {
+  $$McpServersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get headers => $composableBuilder(
+      column: $table.headers, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get timeout => $composableBuilder(
+      column: $table.timeout, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get longRunning => $composableBuilder(
+      column: $table.longRunning, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get disabled => $composableBuilder(
+      column: $table.disabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get clientId => $composableBuilder(
+      column: $table.clientId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get clientSecret => $composableBuilder(
+      column: $table.clientSecret,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get authorizationEndpoint => $composableBuilder(
+      column: $table.authorizationEndpoint,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tokenEndpoint => $composableBuilder(
+      column: $table.tokenEndpoint,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastConnected => $composableBuilder(
+      column: $table.lastConnected,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$McpServersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpServersTableTable> {
+  $$McpServersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get baseUrl =>
+      $composableBuilder(column: $table.baseUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get headers =>
+      $composableBuilder(column: $table.headers, builder: (column) => column);
+
+  GeneratedColumn<int> get timeout =>
+      $composableBuilder(column: $table.timeout, builder: (column) => column);
+
+  GeneratedColumn<bool> get longRunning => $composableBuilder(
+      column: $table.longRunning, builder: (column) => column);
+
+  GeneratedColumn<bool> get disabled =>
+      $composableBuilder(column: $table.disabled, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<String> get clientId =>
+      $composableBuilder(column: $table.clientId, builder: (column) => column);
+
+  GeneratedColumn<String> get clientSecret => $composableBuilder(
+      column: $table.clientSecret, builder: (column) => column);
+
+  GeneratedColumn<String> get authorizationEndpoint => $composableBuilder(
+      column: $table.authorizationEndpoint, builder: (column) => column);
+
+  GeneratedColumn<String> get tokenEndpoint => $composableBuilder(
+      column: $table.tokenEndpoint, builder: (column) => column);
+
+  GeneratedColumn<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastConnected => $composableBuilder(
+      column: $table.lastConnected, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> mcpConnectionsTableRefs<T extends Object>(
+      Expression<T> Function($$McpConnectionsTableTableAnnotationComposer a)
+          f) {
+    final $$McpConnectionsTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.mcpConnectionsTable,
+            getReferencedColumn: (t) => t.serverId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$McpConnectionsTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.mcpConnectionsTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
+  Expression<T> mcpToolsTableRefs<T extends Object>(
+      Expression<T> Function($$McpToolsTableTableAnnotationComposer a) f) {
+    final $$McpToolsTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.mcpToolsTable,
+        getReferencedColumn: (t) => t.serverId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpToolsTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpToolsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> mcpCallHistoryTableRefs<T extends Object>(
+      Expression<T> Function($$McpCallHistoryTableTableAnnotationComposer a)
+          f) {
+    final $$McpCallHistoryTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.mcpCallHistoryTable,
+            getReferencedColumn: (t) => t.serverId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$McpCallHistoryTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.mcpCallHistoryTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
+  Expression<T> mcpResourcesTableRefs<T extends Object>(
+      Expression<T> Function($$McpResourcesTableTableAnnotationComposer a) f) {
+    final $$McpResourcesTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.mcpResourcesTable,
+            getReferencedColumn: (t) => t.serverId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$McpResourcesTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.mcpResourcesTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+
+  Expression<T> mcpOAuthTokensTableRefs<T extends Object>(
+      Expression<T> Function($$McpOAuthTokensTableTableAnnotationComposer a)
+          f) {
+    final $$McpOAuthTokensTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.mcpOAuthTokensTable,
+            getReferencedColumn: (t) => t.serverId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$McpOAuthTokensTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.mcpOAuthTokensTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$McpServersTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpServersTableTable,
+    McpServersTableData,
+    $$McpServersTableTableFilterComposer,
+    $$McpServersTableTableOrderingComposer,
+    $$McpServersTableTableAnnotationComposer,
+    $$McpServersTableTableCreateCompanionBuilder,
+    $$McpServersTableTableUpdateCompanionBuilder,
+    (McpServersTableData, $$McpServersTableTableReferences),
+    McpServersTableData,
+    PrefetchHooks Function(
+        {bool mcpConnectionsTableRefs,
+        bool mcpToolsTableRefs,
+        bool mcpCallHistoryTableRefs,
+        bool mcpResourcesTableRefs,
+        bool mcpOAuthTokensTableRefs})> {
+  $$McpServersTableTableTableManager(
+      _$AppDatabase db, $McpServersTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpServersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpServersTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpServersTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> baseUrl = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String?> headers = const Value.absent(),
+            Value<int?> timeout = const Value.absent(),
+            Value<bool> longRunning = const Value.absent(),
+            Value<bool> disabled = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<String?> clientId = const Value.absent(),
+            Value<String?> clientSecret = const Value.absent(),
+            Value<String?> authorizationEndpoint = const Value.absent(),
+            Value<String?> tokenEndpoint = const Value.absent(),
+            Value<bool> isConnected = const Value.absent(),
+            Value<DateTime?> lastConnected = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpServersTableCompanion(
+            id: id,
+            name: name,
+            baseUrl: baseUrl,
+            type: type,
+            headers: headers,
+            timeout: timeout,
+            longRunning: longRunning,
+            disabled: disabled,
+            error: error,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            authorizationEndpoint: authorizationEndpoint,
+            tokenEndpoint: tokenEndpoint,
+            isConnected: isConnected,
+            lastConnected: lastConnected,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String baseUrl,
+            required String type,
+            Value<String?> headers = const Value.absent(),
+            Value<int?> timeout = const Value.absent(),
+            Value<bool> longRunning = const Value.absent(),
+            Value<bool> disabled = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<String?> clientId = const Value.absent(),
+            Value<String?> clientSecret = const Value.absent(),
+            Value<String?> authorizationEndpoint = const Value.absent(),
+            Value<String?> tokenEndpoint = const Value.absent(),
+            Value<bool> isConnected = const Value.absent(),
+            Value<DateTime?> lastConnected = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpServersTableCompanion.insert(
+            id: id,
+            name: name,
+            baseUrl: baseUrl,
+            type: type,
+            headers: headers,
+            timeout: timeout,
+            longRunning: longRunning,
+            disabled: disabled,
+            error: error,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            authorizationEndpoint: authorizationEndpoint,
+            tokenEndpoint: tokenEndpoint,
+            isConnected: isConnected,
+            lastConnected: lastConnected,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpServersTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: (
+              {mcpConnectionsTableRefs = false,
+              mcpToolsTableRefs = false,
+              mcpCallHistoryTableRefs = false,
+              mcpResourcesTableRefs = false,
+              mcpOAuthTokensTableRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (mcpConnectionsTableRefs) db.mcpConnectionsTable,
+                if (mcpToolsTableRefs) db.mcpToolsTable,
+                if (mcpCallHistoryTableRefs) db.mcpCallHistoryTable,
+                if (mcpResourcesTableRefs) db.mcpResourcesTable,
+                if (mcpOAuthTokensTableRefs) db.mcpOAuthTokensTable
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (mcpConnectionsTableRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$McpServersTableTableReferences
+                            ._mcpConnectionsTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$McpServersTableTableReferences(db, table, p0)
+                                .mcpConnectionsTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.serverId == item.id),
+                        typedResults: items),
+                  if (mcpToolsTableRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$McpServersTableTableReferences
+                            ._mcpToolsTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$McpServersTableTableReferences(db, table, p0)
+                                .mcpToolsTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.serverId == item.id),
+                        typedResults: items),
+                  if (mcpCallHistoryTableRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$McpServersTableTableReferences
+                            ._mcpCallHistoryTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$McpServersTableTableReferences(db, table, p0)
+                                .mcpCallHistoryTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.serverId == item.id),
+                        typedResults: items),
+                  if (mcpResourcesTableRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$McpServersTableTableReferences
+                            ._mcpResourcesTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$McpServersTableTableReferences(db, table, p0)
+                                .mcpResourcesTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.serverId == item.id),
+                        typedResults: items),
+                  if (mcpOAuthTokensTableRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$McpServersTableTableReferences
+                            ._mcpOAuthTokensTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$McpServersTableTableReferences(db, table, p0)
+                                .mcpOAuthTokensTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.serverId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpServersTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpServersTableTable,
+    McpServersTableData,
+    $$McpServersTableTableFilterComposer,
+    $$McpServersTableTableOrderingComposer,
+    $$McpServersTableTableAnnotationComposer,
+    $$McpServersTableTableCreateCompanionBuilder,
+    $$McpServersTableTableUpdateCompanionBuilder,
+    (McpServersTableData, $$McpServersTableTableReferences),
+    McpServersTableData,
+    PrefetchHooks Function(
+        {bool mcpConnectionsTableRefs,
+        bool mcpToolsTableRefs,
+        bool mcpCallHistoryTableRefs,
+        bool mcpResourcesTableRefs,
+        bool mcpOAuthTokensTableRefs})>;
+typedef $$McpConnectionsTableTableCreateCompanionBuilder
+    = McpConnectionsTableCompanion Function({
+  Value<int> id,
+  required String serverId,
+  required bool isConnected,
+  required DateTime lastCheck,
+  Value<int?> latency,
+  Value<String?> error,
+  Value<String?> serverName,
+  Value<String?> serverVersion,
+  Value<String?> protocolVersion,
+  Value<int?> toolsCount,
+  Value<int?> resourcesCount,
+  Value<int?> promptsCount,
+  Value<DateTime> recordedAt,
+});
+typedef $$McpConnectionsTableTableUpdateCompanionBuilder
+    = McpConnectionsTableCompanion Function({
+  Value<int> id,
+  Value<String> serverId,
+  Value<bool> isConnected,
+  Value<DateTime> lastCheck,
+  Value<int?> latency,
+  Value<String?> error,
+  Value<String?> serverName,
+  Value<String?> serverVersion,
+  Value<String?> protocolVersion,
+  Value<int?> toolsCount,
+  Value<int?> resourcesCount,
+  Value<int?> promptsCount,
+  Value<DateTime> recordedAt,
+});
+
+final class $$McpConnectionsTableTableReferences extends BaseReferences<
+    _$AppDatabase, $McpConnectionsTableTable, McpConnectionsTableData> {
+  $$McpConnectionsTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $McpServersTableTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServersTable.createAlias($_aliasNameGenerator(
+          db.mcpConnectionsTable.serverId, db.mcpServersTable.id));
+
+  $$McpServersTableTableProcessedTableManager? get serverId {
+    if ($_item.serverId == null) return null;
+    final manager =
+        $$McpServersTableTableTableManager($_db, $_db.mcpServersTable)
+            .filter((f) => f.id($_item.serverId!));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$McpConnectionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpConnectionsTableTable> {
+  $$McpConnectionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastCheck => $composableBuilder(
+      column: $table.lastCheck, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get latency => $composableBuilder(
+      column: $table.latency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get serverName => $composableBuilder(
+      column: $table.serverName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get serverVersion => $composableBuilder(
+      column: $table.serverVersion, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get protocolVersion => $composableBuilder(
+      column: $table.protocolVersion,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get toolsCount => $composableBuilder(
+      column: $table.toolsCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get resourcesCount => $composableBuilder(
+      column: $table.resourcesCount,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get promptsCount => $composableBuilder(
+      column: $table.promptsCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get recordedAt => $composableBuilder(
+      column: $table.recordedAt, builder: (column) => ColumnFilters(column));
+
+  $$McpServersTableTableFilterComposer get serverId {
+    final $$McpServersTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpConnectionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpConnectionsTableTable> {
+  $$McpConnectionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastCheck => $composableBuilder(
+      column: $table.lastCheck, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get latency => $composableBuilder(
+      column: $table.latency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get serverName => $composableBuilder(
+      column: $table.serverName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get serverVersion => $composableBuilder(
+      column: $table.serverVersion,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get protocolVersion => $composableBuilder(
+      column: $table.protocolVersion,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get toolsCount => $composableBuilder(
+      column: $table.toolsCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get resourcesCount => $composableBuilder(
+      column: $table.resourcesCount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get promptsCount => $composableBuilder(
+      column: $table.promptsCount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get recordedAt => $composableBuilder(
+      column: $table.recordedAt, builder: (column) => ColumnOrderings(column));
+
+  $$McpServersTableTableOrderingComposer get serverId {
+    final $$McpServersTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpConnectionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpConnectionsTableTable> {
+  $$McpConnectionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get isConnected => $composableBuilder(
+      column: $table.isConnected, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastCheck =>
+      $composableBuilder(column: $table.lastCheck, builder: (column) => column);
+
+  GeneratedColumn<int> get latency =>
+      $composableBuilder(column: $table.latency, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<String> get serverName => $composableBuilder(
+      column: $table.serverName, builder: (column) => column);
+
+  GeneratedColumn<String> get serverVersion => $composableBuilder(
+      column: $table.serverVersion, builder: (column) => column);
+
+  GeneratedColumn<String> get protocolVersion => $composableBuilder(
+      column: $table.protocolVersion, builder: (column) => column);
+
+  GeneratedColumn<int> get toolsCount => $composableBuilder(
+      column: $table.toolsCount, builder: (column) => column);
+
+  GeneratedColumn<int> get resourcesCount => $composableBuilder(
+      column: $table.resourcesCount, builder: (column) => column);
+
+  GeneratedColumn<int> get promptsCount => $composableBuilder(
+      column: $table.promptsCount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get recordedAt => $composableBuilder(
+      column: $table.recordedAt, builder: (column) => column);
+
+  $$McpServersTableTableAnnotationComposer get serverId {
+    final $$McpServersTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpConnectionsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpConnectionsTableTable,
+    McpConnectionsTableData,
+    $$McpConnectionsTableTableFilterComposer,
+    $$McpConnectionsTableTableOrderingComposer,
+    $$McpConnectionsTableTableAnnotationComposer,
+    $$McpConnectionsTableTableCreateCompanionBuilder,
+    $$McpConnectionsTableTableUpdateCompanionBuilder,
+    (McpConnectionsTableData, $$McpConnectionsTableTableReferences),
+    McpConnectionsTableData,
+    PrefetchHooks Function({bool serverId})> {
+  $$McpConnectionsTableTableTableManager(
+      _$AppDatabase db, $McpConnectionsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpConnectionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpConnectionsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpConnectionsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> serverId = const Value.absent(),
+            Value<bool> isConnected = const Value.absent(),
+            Value<DateTime> lastCheck = const Value.absent(),
+            Value<int?> latency = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<String?> serverName = const Value.absent(),
+            Value<String?> serverVersion = const Value.absent(),
+            Value<String?> protocolVersion = const Value.absent(),
+            Value<int?> toolsCount = const Value.absent(),
+            Value<int?> resourcesCount = const Value.absent(),
+            Value<int?> promptsCount = const Value.absent(),
+            Value<DateTime> recordedAt = const Value.absent(),
+          }) =>
+              McpConnectionsTableCompanion(
+            id: id,
+            serverId: serverId,
+            isConnected: isConnected,
+            lastCheck: lastCheck,
+            latency: latency,
+            error: error,
+            serverName: serverName,
+            serverVersion: serverVersion,
+            protocolVersion: protocolVersion,
+            toolsCount: toolsCount,
+            resourcesCount: resourcesCount,
+            promptsCount: promptsCount,
+            recordedAt: recordedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String serverId,
+            required bool isConnected,
+            required DateTime lastCheck,
+            Value<int?> latency = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<String?> serverName = const Value.absent(),
+            Value<String?> serverVersion = const Value.absent(),
+            Value<String?> protocolVersion = const Value.absent(),
+            Value<int?> toolsCount = const Value.absent(),
+            Value<int?> resourcesCount = const Value.absent(),
+            Value<int?> promptsCount = const Value.absent(),
+            Value<DateTime> recordedAt = const Value.absent(),
+          }) =>
+              McpConnectionsTableCompanion.insert(
+            id: id,
+            serverId: serverId,
+            isConnected: isConnected,
+            lastCheck: lastCheck,
+            latency: latency,
+            error: error,
+            serverName: serverName,
+            serverVersion: serverVersion,
+            protocolVersion: protocolVersion,
+            toolsCount: toolsCount,
+            resourcesCount: resourcesCount,
+            promptsCount: promptsCount,
+            recordedAt: recordedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpConnectionsTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (serverId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.serverId,
+                    referencedTable:
+                        $$McpConnectionsTableTableReferences._serverIdTable(db),
+                    referencedColumn: $$McpConnectionsTableTableReferences
+                        ._serverIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpConnectionsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpConnectionsTableTable,
+    McpConnectionsTableData,
+    $$McpConnectionsTableTableFilterComposer,
+    $$McpConnectionsTableTableOrderingComposer,
+    $$McpConnectionsTableTableAnnotationComposer,
+    $$McpConnectionsTableTableCreateCompanionBuilder,
+    $$McpConnectionsTableTableUpdateCompanionBuilder,
+    (McpConnectionsTableData, $$McpConnectionsTableTableReferences),
+    McpConnectionsTableData,
+    PrefetchHooks Function({bool serverId})>;
+typedef $$McpToolsTableTableCreateCompanionBuilder = McpToolsTableCompanion
+    Function({
+  Value<int> id,
+  required String serverId,
+  required String name,
+  required String description,
+  required String inputSchema,
+  Value<DateTime> cachedAt,
+  required DateTime expiresAt,
+});
+typedef $$McpToolsTableTableUpdateCompanionBuilder = McpToolsTableCompanion
+    Function({
+  Value<int> id,
+  Value<String> serverId,
+  Value<String> name,
+  Value<String> description,
+  Value<String> inputSchema,
+  Value<DateTime> cachedAt,
+  Value<DateTime> expiresAt,
+});
+
+final class $$McpToolsTableTableReferences extends BaseReferences<_$AppDatabase,
+    $McpToolsTableTable, McpToolsTableData> {
+  $$McpToolsTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $McpServersTableTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServersTable.createAlias($_aliasNameGenerator(
+          db.mcpToolsTable.serverId, db.mcpServersTable.id));
+
+  $$McpServersTableTableProcessedTableManager? get serverId {
+    if ($_item.serverId == null) return null;
+    final manager =
+        $$McpServersTableTableTableManager($_db, $_db.mcpServersTable)
+            .filter((f) => f.id($_item.serverId!));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$McpToolsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpToolsTableTable> {
+  $$McpToolsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get inputSchema => $composableBuilder(
+      column: $table.inputSchema, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnFilters(column));
+
+  $$McpServersTableTableFilterComposer get serverId {
+    final $$McpServersTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpToolsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpToolsTableTable> {
+  $$McpToolsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get inputSchema => $composableBuilder(
+      column: $table.inputSchema, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnOrderings(column));
+
+  $$McpServersTableTableOrderingComposer get serverId {
+    final $$McpServersTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpToolsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpToolsTableTable> {
+  $$McpToolsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get inputSchema => $composableBuilder(
+      column: $table.inputSchema, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  $$McpServersTableTableAnnotationComposer get serverId {
+    final $$McpServersTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpToolsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpToolsTableTable,
+    McpToolsTableData,
+    $$McpToolsTableTableFilterComposer,
+    $$McpToolsTableTableOrderingComposer,
+    $$McpToolsTableTableAnnotationComposer,
+    $$McpToolsTableTableCreateCompanionBuilder,
+    $$McpToolsTableTableUpdateCompanionBuilder,
+    (McpToolsTableData, $$McpToolsTableTableReferences),
+    McpToolsTableData,
+    PrefetchHooks Function({bool serverId})> {
+  $$McpToolsTableTableTableManager(_$AppDatabase db, $McpToolsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpToolsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpToolsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpToolsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> serverId = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> description = const Value.absent(),
+            Value<String> inputSchema = const Value.absent(),
+            Value<DateTime> cachedAt = const Value.absent(),
+            Value<DateTime> expiresAt = const Value.absent(),
+          }) =>
+              McpToolsTableCompanion(
+            id: id,
+            serverId: serverId,
+            name: name,
+            description: description,
+            inputSchema: inputSchema,
+            cachedAt: cachedAt,
+            expiresAt: expiresAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String serverId,
+            required String name,
+            required String description,
+            required String inputSchema,
+            Value<DateTime> cachedAt = const Value.absent(),
+            required DateTime expiresAt,
+          }) =>
+              McpToolsTableCompanion.insert(
+            id: id,
+            serverId: serverId,
+            name: name,
+            description: description,
+            inputSchema: inputSchema,
+            cachedAt: cachedAt,
+            expiresAt: expiresAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpToolsTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (serverId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.serverId,
+                    referencedTable:
+                        $$McpToolsTableTableReferences._serverIdTable(db),
+                    referencedColumn:
+                        $$McpToolsTableTableReferences._serverIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpToolsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpToolsTableTable,
+    McpToolsTableData,
+    $$McpToolsTableTableFilterComposer,
+    $$McpToolsTableTableOrderingComposer,
+    $$McpToolsTableTableAnnotationComposer,
+    $$McpToolsTableTableCreateCompanionBuilder,
+    $$McpToolsTableTableUpdateCompanionBuilder,
+    (McpToolsTableData, $$McpToolsTableTableReferences),
+    McpToolsTableData,
+    PrefetchHooks Function({bool serverId})>;
+typedef $$McpCallHistoryTableTableCreateCompanionBuilder
+    = McpCallHistoryTableCompanion Function({
+  required String id,
+  required String serverId,
+  required String toolName,
+  required String arguments,
+  required DateTime calledAt,
+  Value<String?> result,
+  Value<String?> error,
+  Value<int?> duration,
+  Value<bool> isSuccess,
+  Value<int> rowid,
+});
+typedef $$McpCallHistoryTableTableUpdateCompanionBuilder
+    = McpCallHistoryTableCompanion Function({
+  Value<String> id,
+  Value<String> serverId,
+  Value<String> toolName,
+  Value<String> arguments,
+  Value<DateTime> calledAt,
+  Value<String?> result,
+  Value<String?> error,
+  Value<int?> duration,
+  Value<bool> isSuccess,
+  Value<int> rowid,
+});
+
+final class $$McpCallHistoryTableTableReferences extends BaseReferences<
+    _$AppDatabase, $McpCallHistoryTableTable, McpCallHistoryTableData> {
+  $$McpCallHistoryTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $McpServersTableTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServersTable.createAlias($_aliasNameGenerator(
+          db.mcpCallHistoryTable.serverId, db.mcpServersTable.id));
+
+  $$McpServersTableTableProcessedTableManager? get serverId {
+    if ($_item.serverId == null) return null;
+    final manager =
+        $$McpServersTableTableTableManager($_db, $_db.mcpServersTable)
+            .filter((f) => f.id($_item.serverId!));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$McpCallHistoryTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpCallHistoryTableTable> {
+  $$McpCallHistoryTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get toolName => $composableBuilder(
+      column: $table.toolName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get arguments => $composableBuilder(
+      column: $table.arguments, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get calledAt => $composableBuilder(
+      column: $table.calledAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get result => $composableBuilder(
+      column: $table.result, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get duration => $composableBuilder(
+      column: $table.duration, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isSuccess => $composableBuilder(
+      column: $table.isSuccess, builder: (column) => ColumnFilters(column));
+
+  $$McpServersTableTableFilterComposer get serverId {
+    final $$McpServersTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpCallHistoryTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpCallHistoryTableTable> {
+  $$McpCallHistoryTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get toolName => $composableBuilder(
+      column: $table.toolName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get arguments => $composableBuilder(
+      column: $table.arguments, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get calledAt => $composableBuilder(
+      column: $table.calledAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get result => $composableBuilder(
+      column: $table.result, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get error => $composableBuilder(
+      column: $table.error, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get duration => $composableBuilder(
+      column: $table.duration, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isSuccess => $composableBuilder(
+      column: $table.isSuccess, builder: (column) => ColumnOrderings(column));
+
+  $$McpServersTableTableOrderingComposer get serverId {
+    final $$McpServersTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpCallHistoryTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpCallHistoryTableTable> {
+  $$McpCallHistoryTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get toolName =>
+      $composableBuilder(column: $table.toolName, builder: (column) => column);
+
+  GeneratedColumn<String> get arguments =>
+      $composableBuilder(column: $table.arguments, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get calledAt =>
+      $composableBuilder(column: $table.calledAt, builder: (column) => column);
+
+  GeneratedColumn<String> get result =>
+      $composableBuilder(column: $table.result, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<int> get duration =>
+      $composableBuilder(column: $table.duration, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSuccess =>
+      $composableBuilder(column: $table.isSuccess, builder: (column) => column);
+
+  $$McpServersTableTableAnnotationComposer get serverId {
+    final $$McpServersTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpCallHistoryTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpCallHistoryTableTable,
+    McpCallHistoryTableData,
+    $$McpCallHistoryTableTableFilterComposer,
+    $$McpCallHistoryTableTableOrderingComposer,
+    $$McpCallHistoryTableTableAnnotationComposer,
+    $$McpCallHistoryTableTableCreateCompanionBuilder,
+    $$McpCallHistoryTableTableUpdateCompanionBuilder,
+    (McpCallHistoryTableData, $$McpCallHistoryTableTableReferences),
+    McpCallHistoryTableData,
+    PrefetchHooks Function({bool serverId})> {
+  $$McpCallHistoryTableTableTableManager(
+      _$AppDatabase db, $McpCallHistoryTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpCallHistoryTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpCallHistoryTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpCallHistoryTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> serverId = const Value.absent(),
+            Value<String> toolName = const Value.absent(),
+            Value<String> arguments = const Value.absent(),
+            Value<DateTime> calledAt = const Value.absent(),
+            Value<String?> result = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<int?> duration = const Value.absent(),
+            Value<bool> isSuccess = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpCallHistoryTableCompanion(
+            id: id,
+            serverId: serverId,
+            toolName: toolName,
+            arguments: arguments,
+            calledAt: calledAt,
+            result: result,
+            error: error,
+            duration: duration,
+            isSuccess: isSuccess,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String serverId,
+            required String toolName,
+            required String arguments,
+            required DateTime calledAt,
+            Value<String?> result = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<int?> duration = const Value.absent(),
+            Value<bool> isSuccess = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpCallHistoryTableCompanion.insert(
+            id: id,
+            serverId: serverId,
+            toolName: toolName,
+            arguments: arguments,
+            calledAt: calledAt,
+            result: result,
+            error: error,
+            duration: duration,
+            isSuccess: isSuccess,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpCallHistoryTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (serverId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.serverId,
+                    referencedTable:
+                        $$McpCallHistoryTableTableReferences._serverIdTable(db),
+                    referencedColumn: $$McpCallHistoryTableTableReferences
+                        ._serverIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpCallHistoryTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpCallHistoryTableTable,
+    McpCallHistoryTableData,
+    $$McpCallHistoryTableTableFilterComposer,
+    $$McpCallHistoryTableTableOrderingComposer,
+    $$McpCallHistoryTableTableAnnotationComposer,
+    $$McpCallHistoryTableTableCreateCompanionBuilder,
+    $$McpCallHistoryTableTableUpdateCompanionBuilder,
+    (McpCallHistoryTableData, $$McpCallHistoryTableTableReferences),
+    McpCallHistoryTableData,
+    PrefetchHooks Function({bool serverId})>;
+typedef $$McpResourcesTableTableCreateCompanionBuilder
+    = McpResourcesTableCompanion Function({
+  Value<int> id,
+  required String serverId,
+  required String uri,
+  required String name,
+  Value<String?> description,
+  Value<String?> mimeType,
+  Value<DateTime> cachedAt,
+  required DateTime expiresAt,
+});
+typedef $$McpResourcesTableTableUpdateCompanionBuilder
+    = McpResourcesTableCompanion Function({
+  Value<int> id,
+  Value<String> serverId,
+  Value<String> uri,
+  Value<String> name,
+  Value<String?> description,
+  Value<String?> mimeType,
+  Value<DateTime> cachedAt,
+  Value<DateTime> expiresAt,
+});
+
+final class $$McpResourcesTableTableReferences extends BaseReferences<
+    _$AppDatabase, $McpResourcesTableTable, McpResourcesTableData> {
+  $$McpResourcesTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $McpServersTableTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServersTable.createAlias($_aliasNameGenerator(
+          db.mcpResourcesTable.serverId, db.mcpServersTable.id));
+
+  $$McpServersTableTableProcessedTableManager? get serverId {
+    if ($_item.serverId == null) return null;
+    final manager =
+        $$McpServersTableTableTableManager($_db, $_db.mcpServersTable)
+            .filter((f) => f.id($_item.serverId!));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$McpResourcesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpResourcesTableTable> {
+  $$McpResourcesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uri => $composableBuilder(
+      column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+      column: $table.mimeType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnFilters(column));
+
+  $$McpServersTableTableFilterComposer get serverId {
+    final $$McpServersTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpResourcesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpResourcesTableTable> {
+  $$McpResourcesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uri => $composableBuilder(
+      column: $table.uri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+      column: $table.mimeType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnOrderings(column));
+
+  $$McpServersTableTableOrderingComposer get serverId {
+    final $$McpServersTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpResourcesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpResourcesTableTable> {
+  $$McpResourcesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  $$McpServersTableTableAnnotationComposer get serverId {
+    final $$McpServersTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpResourcesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpResourcesTableTable,
+    McpResourcesTableData,
+    $$McpResourcesTableTableFilterComposer,
+    $$McpResourcesTableTableOrderingComposer,
+    $$McpResourcesTableTableAnnotationComposer,
+    $$McpResourcesTableTableCreateCompanionBuilder,
+    $$McpResourcesTableTableUpdateCompanionBuilder,
+    (McpResourcesTableData, $$McpResourcesTableTableReferences),
+    McpResourcesTableData,
+    PrefetchHooks Function({bool serverId})> {
+  $$McpResourcesTableTableTableManager(
+      _$AppDatabase db, $McpResourcesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpResourcesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpResourcesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpResourcesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> serverId = const Value.absent(),
+            Value<String> uri = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> mimeType = const Value.absent(),
+            Value<DateTime> cachedAt = const Value.absent(),
+            Value<DateTime> expiresAt = const Value.absent(),
+          }) =>
+              McpResourcesTableCompanion(
+            id: id,
+            serverId: serverId,
+            uri: uri,
+            name: name,
+            description: description,
+            mimeType: mimeType,
+            cachedAt: cachedAt,
+            expiresAt: expiresAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String serverId,
+            required String uri,
+            required String name,
+            Value<String?> description = const Value.absent(),
+            Value<String?> mimeType = const Value.absent(),
+            Value<DateTime> cachedAt = const Value.absent(),
+            required DateTime expiresAt,
+          }) =>
+              McpResourcesTableCompanion.insert(
+            id: id,
+            serverId: serverId,
+            uri: uri,
+            name: name,
+            description: description,
+            mimeType: mimeType,
+            cachedAt: cachedAt,
+            expiresAt: expiresAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpResourcesTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (serverId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.serverId,
+                    referencedTable:
+                        $$McpResourcesTableTableReferences._serverIdTable(db),
+                    referencedColumn: $$McpResourcesTableTableReferences
+                        ._serverIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpResourcesTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpResourcesTableTable,
+    McpResourcesTableData,
+    $$McpResourcesTableTableFilterComposer,
+    $$McpResourcesTableTableOrderingComposer,
+    $$McpResourcesTableTableAnnotationComposer,
+    $$McpResourcesTableTableCreateCompanionBuilder,
+    $$McpResourcesTableTableUpdateCompanionBuilder,
+    (McpResourcesTableData, $$McpResourcesTableTableReferences),
+    McpResourcesTableData,
+    PrefetchHooks Function({bool serverId})>;
+typedef $$McpOAuthTokensTableTableCreateCompanionBuilder
+    = McpOAuthTokensTableCompanion Function({
+  required String serverId,
+  required String accessToken,
+  Value<String?> refreshToken,
+  Value<String?> tokenType,
+  Value<DateTime?> expiresAt,
+  Value<String?> scopes,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$McpOAuthTokensTableTableUpdateCompanionBuilder
+    = McpOAuthTokensTableCompanion Function({
+  Value<String> serverId,
+  Value<String> accessToken,
+  Value<String?> refreshToken,
+  Value<String?> tokenType,
+  Value<DateTime?> expiresAt,
+  Value<String?> scopes,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+final class $$McpOAuthTokensTableTableReferences extends BaseReferences<
+    _$AppDatabase, $McpOAuthTokensTableTable, McpOAuthTokensTableData> {
+  $$McpOAuthTokensTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $McpServersTableTable _serverIdTable(_$AppDatabase db) =>
+      db.mcpServersTable.createAlias($_aliasNameGenerator(
+          db.mcpOAuthTokensTable.serverId, db.mcpServersTable.id));
+
+  $$McpServersTableTableProcessedTableManager? get serverId {
+    if ($_item.serverId == null) return null;
+    final manager =
+        $$McpServersTableTableTableManager($_db, $_db.mcpServersTable)
+            .filter((f) => f.id($_item.serverId!));
+    final item = $_typedResult.readTableOrNull(_serverIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$McpOAuthTokensTableTableFilterComposer
+    extends Composer<_$AppDatabase, $McpOAuthTokensTableTable> {
+  $$McpOAuthTokensTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get accessToken => $composableBuilder(
+      column: $table.accessToken, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get refreshToken => $composableBuilder(
+      column: $table.refreshToken, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tokenType => $composableBuilder(
+      column: $table.tokenType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get scopes => $composableBuilder(
+      column: $table.scopes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$McpServersTableTableFilterComposer get serverId {
+    final $$McpServersTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableFilterComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpOAuthTokensTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpOAuthTokensTableTable> {
+  $$McpOAuthTokensTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+      column: $table.accessToken, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get refreshToken => $composableBuilder(
+      column: $table.refreshToken,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tokenType => $composableBuilder(
+      column: $table.tokenType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+      column: $table.expiresAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get scopes => $composableBuilder(
+      column: $table.scopes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$McpServersTableTableOrderingComposer get serverId {
+    final $$McpServersTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpOAuthTokensTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpOAuthTokensTableTable> {
+  $$McpOAuthTokensTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+      column: $table.accessToken, builder: (column) => column);
+
+  GeneratedColumn<String> get refreshToken => $composableBuilder(
+      column: $table.refreshToken, builder: (column) => column);
+
+  GeneratedColumn<String> get tokenType =>
+      $composableBuilder(column: $table.tokenType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get scopes =>
+      $composableBuilder(column: $table.scopes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$McpServersTableTableAnnotationComposer get serverId {
+    final $$McpServersTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.serverId,
+        referencedTable: $db.mcpServersTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$McpServersTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.mcpServersTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$McpOAuthTokensTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $McpOAuthTokensTableTable,
+    McpOAuthTokensTableData,
+    $$McpOAuthTokensTableTableFilterComposer,
+    $$McpOAuthTokensTableTableOrderingComposer,
+    $$McpOAuthTokensTableTableAnnotationComposer,
+    $$McpOAuthTokensTableTableCreateCompanionBuilder,
+    $$McpOAuthTokensTableTableUpdateCompanionBuilder,
+    (McpOAuthTokensTableData, $$McpOAuthTokensTableTableReferences),
+    McpOAuthTokensTableData,
+    PrefetchHooks Function({bool serverId})> {
+  $$McpOAuthTokensTableTableTableManager(
+      _$AppDatabase db, $McpOAuthTokensTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpOAuthTokensTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpOAuthTokensTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpOAuthTokensTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> serverId = const Value.absent(),
+            Value<String> accessToken = const Value.absent(),
+            Value<String?> refreshToken = const Value.absent(),
+            Value<String?> tokenType = const Value.absent(),
+            Value<DateTime?> expiresAt = const Value.absent(),
+            Value<String?> scopes = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpOAuthTokensTableCompanion(
+            serverId: serverId,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            tokenType: tokenType,
+            expiresAt: expiresAt,
+            scopes: scopes,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String serverId,
+            required String accessToken,
+            Value<String?> refreshToken = const Value.absent(),
+            Value<String?> tokenType = const Value.absent(),
+            Value<DateTime?> expiresAt = const Value.absent(),
+            Value<String?> scopes = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              McpOAuthTokensTableCompanion.insert(
+            serverId: serverId,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            tokenType: tokenType,
+            expiresAt: expiresAt,
+            scopes: scopes,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$McpOAuthTokensTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({serverId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (serverId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.serverId,
+                    referencedTable:
+                        $$McpOAuthTokensTableTableReferences._serverIdTable(db),
+                    referencedColumn: $$McpOAuthTokensTableTableReferences
+                        ._serverIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$McpOAuthTokensTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $McpOAuthTokensTableTable,
+    McpOAuthTokensTableData,
+    $$McpOAuthTokensTableTableFilterComposer,
+    $$McpOAuthTokensTableTableOrderingComposer,
+    $$McpOAuthTokensTableTableAnnotationComposer,
+    $$McpOAuthTokensTableTableCreateCompanionBuilder,
+    $$McpOAuthTokensTableTableUpdateCompanionBuilder,
+    (McpOAuthTokensTableData, $$McpOAuthTokensTableTableReferences),
+    McpOAuthTokensTableData,
+    PrefetchHooks Function({bool serverId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10607,4 +16440,16 @@ class $AppDatabaseManager {
       $$CustomModelsTableTableTableManager(_db, _db.customModelsTable);
   $$GeneralSettingsTableTableTableManager get generalSettingsTable =>
       $$GeneralSettingsTableTableTableManager(_db, _db.generalSettingsTable);
+  $$McpServersTableTableTableManager get mcpServersTable =>
+      $$McpServersTableTableTableManager(_db, _db.mcpServersTable);
+  $$McpConnectionsTableTableTableManager get mcpConnectionsTable =>
+      $$McpConnectionsTableTableTableManager(_db, _db.mcpConnectionsTable);
+  $$McpToolsTableTableTableManager get mcpToolsTable =>
+      $$McpToolsTableTableTableManager(_db, _db.mcpToolsTable);
+  $$McpCallHistoryTableTableTableManager get mcpCallHistoryTable =>
+      $$McpCallHistoryTableTableTableManager(_db, _db.mcpCallHistoryTable);
+  $$McpResourcesTableTableTableManager get mcpResourcesTable =>
+      $$McpResourcesTableTableTableManager(_db, _db.mcpResourcesTable);
+  $$McpOAuthTokensTableTableTableManager get mcpOAuthTokensTable =>
+      $$McpOAuthTokensTableTableTableManager(_db, _db.mcpOAuthTokensTable);
 }

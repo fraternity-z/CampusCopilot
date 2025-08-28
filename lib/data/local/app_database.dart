@@ -18,6 +18,7 @@ import 'tables/knowledge_base_configs_table.dart';
 import 'tables/knowledge_bases_table.dart';
 import 'tables/custom_models_table.dart';
 import 'tables/general_settings_table.dart';
+import 'tables/mcp_servers_table.dart';
 
 part 'app_database.g.dart';
 
@@ -41,6 +42,13 @@ part 'app_database.g.dart';
     KnowledgeBaseConfigsTable,
     CustomModelsTable,
     GeneralSettingsTable,
+    // MCP相关表
+    McpServersTable,
+    McpConnectionsTable,
+    McpToolsTable,
+    McpCallHistoryTable,
+    McpResourcesTable,
+    McpOAuthTokensTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -68,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
   _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -433,6 +441,23 @@ class AppDatabase extends _$AppDatabase {
               debugPrint('❌ 数据库版本12迁移失败: $e');
               // 如果添加列失败，可能是因为列已经存在，这是正常的
               debugPrint('这可能是因为列已经存在，继续执行...');
+            }
+          }
+          if (from < 13) {
+            try {
+              debugPrint('🔄 执行数据库版本13迁移（添加MCP支持）...');
+
+              // 创建MCP相关表
+              await m.createTable(mcpServersTable);
+              await m.createTable(mcpConnectionsTable);
+              await m.createTable(mcpToolsTable);
+              await m.createTable(mcpCallHistoryTable);
+              await m.createTable(mcpResourcesTable);
+              await m.createTable(mcpOAuthTokensTable);
+
+              debugPrint('✅ 数据库版本13迁移完成');
+            } catch (e) {
+              debugPrint('❌ 数据库版本13迁移失败: $e');
             }
           }
         });
