@@ -387,15 +387,9 @@ jobs:
         echo "📱 使用iOS SDK版本: $AVAILABLE_IOS_SDK"
         
         # 构建iOS应用，指定SDK版本
-        if [ -n "$AVAILABLE_IOS_SDK" ]; then
-          flutter build ios --release --no-codesign \
-            --dart-define=flutter.inspector.structuredErrors=false \
-            --ios-simulator-archs=x86_64
-        else
-          echo "⚠️ 未找到可用的iOS SDK，使用默认设置构建"
-          flutter build ios --release --no-codesign \
-            --dart-define=flutter.inspector.structuredErrors=false
-        fi
+        echo "📱 开始构建iOS应用..."
+        flutter build ios --release --no-codesign \
+          --dart-define=flutter.inspector.structuredErrors=false
       continue-on-error: true
 
     - name: 创建IPA文件
