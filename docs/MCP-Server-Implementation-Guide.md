@@ -598,7 +598,6 @@ console.log('Connection status:', isConnected)
 ## 相关文档
 
 - [MCP官方规范](https://modelcontextprotocol.io/)
-- [Cherry Studio用户指南](../README.zh.md)
 - [开发者贡献指南](../CONTRIBUTING.zh.md)
 - [API参考文档](./api-reference.md)
 
