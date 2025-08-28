@@ -90,11 +90,11 @@ class McpDashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildQuickActionButton(
-                    icon: Icons.build,
-                    label: '工具中心',
-                    subtitle: '查看和使用MCP工具',
+                    icon: Icons.monitor,
+                    label: '状态监控',
+                    subtitle: '查看所有服务器状态',
                     color: Colors.orange,
-                    onTap: () => _navigateToTools(context),
+                    onTap: () => _navigateToManagement(context),
                   ),
                 ),
               ],
@@ -230,7 +230,7 @@ class McpDashboardScreen extends ConsumerWidget {
                 margin: const EdgeInsets.only(right: 12),
                 child: McpServerCard(
                   server: server,
-                  onTap: () => _navigateToTools(context, server),
+                  onTap: () => _navigateToServerDetail(context, server),
                 ),
               );
             },
@@ -242,7 +242,6 @@ class McpDashboardScreen extends ConsumerWidget {
 
   /// 构建功能导航卡片
   Widget _buildFeatureCards(BuildContext context, List<McpServerConfig> servers) {
-    final connectedServers = servers.where((s) => s.isConnected).toList();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -266,32 +265,32 @@ class McpDashboardScreen extends ConsumerWidget {
             childAspectRatio: 1.5,
             children: [
               _buildFeatureCard(
-                title: '工具调用',
-                subtitle: '${_getTotalToolsCount(connectedServers)}个可用工具',
-                icon: Icons.build,
-                color: Colors.orange,
-                onTap: () => _navigateToTools(context),
+                title: '服务器管理',
+                subtitle: '添加、编辑和配置MCP服务器',
+                icon: Icons.dns,
+                color: Colors.blue,
+                onTap: () => _navigateToManagement(context),
               ),
               _buildFeatureCard(
-                title: '资源浏览',
-                subtitle: '${_getTotalResourcesCount(connectedServers)}个可用资源',
-                icon: Icons.folder,
-                color: Colors.blue,
-                onTap: () => _navigateToTools(context),
+                title: '连接监控',
+                subtitle: '查看服务器连接状态',
+                icon: Icons.monitor_heart,
+                color: Colors.green,
+                onTap: () => _navigateToManagement(context),
               ),
               _buildFeatureCard(
                 title: '调用历史',
                 subtitle: '查看工具使用记录',
                 icon: Icons.history,
                 color: Colors.purple,
-                onTap: () => _navigateToTools(context),
+                onTap: () => _navigateToManagement(context),
               ),
               _buildFeatureCard(
-                title: '服务器设置',
-                subtitle: '配置MCP连接',
-                icon: Icons.settings,
-                color: Colors.green,
-                onTap: () => _navigateToManagement(context),
+                title: '快速连接',
+                subtitle: '一键连接MCP服务器',
+                icon: Icons.flash_on,
+                color: Colors.orange,
+                onTap: () => _quickConnectServers(),
               ),
             ],
           ),
@@ -368,8 +367,8 @@ class McpDashboardScreen extends ConsumerWidget {
     );
   }
 
-  /// 导航到工具界面
-  void _navigateToTools(BuildContext context, [McpServerConfig? server]) {
+  /// 导航到服务器详情(工具/资源界面)
+  void _navigateToServerDetail(BuildContext context, McpServerConfig server) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => McpToolsScreen(server: server),
@@ -393,15 +392,8 @@ class McpDashboardScreen extends ConsumerWidget {
     // TODO: 实现重连失败服务器逻辑
   }
 
-  /// 获取总工具数量
-  int _getTotalToolsCount(List<McpServerConfig> connectedServers) {
-    // TODO: 从实际数据获取工具数量
-    return connectedServers.length * 5; // 临时计算
-  }
-
-  /// 获取总资源数量
-  int _getTotalResourcesCount(List<McpServerConfig> connectedServers) {
-    // TODO: 从实际数据获取资源数量
-    return connectedServers.length * 3; // 临时计算
+  /// 快速连接所有服务器
+  void _quickConnectServers() {
+    // TODO: 实现快速连接所有服务器逻辑
   }
 }

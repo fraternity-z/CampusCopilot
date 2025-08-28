@@ -43,6 +43,10 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
     return ModernScaffold(
       appBar: AppBar(
         title: Text(_selectedServer?.name ?? 'MCP 工具'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(

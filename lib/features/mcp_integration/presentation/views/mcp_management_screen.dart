@@ -14,6 +14,10 @@ class McpManagementScreen extends ConsumerWidget {
     return ModernScaffold(
       appBar: AppBar(
         title: const Text('MCP 服务管理'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           IconButton(
             onPressed: () => _showAddServerDialog(context),
