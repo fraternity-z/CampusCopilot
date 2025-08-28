@@ -239,7 +239,7 @@ class ExportService {
     final zipEncoder = ZipEncoder();
     final zipBytes = zipEncoder.encode(archive);
 
-    return Uint8List.fromList(zipBytes!);
+    return Uint8List.fromList(zipBytes);
   }
 
   /// 创建document.xml内容

@@ -230,7 +230,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
                                   ),
                                 ],
                               ),
-                              error: (_, __) => const SizedBox.shrink(),
+                              error: (_, _) => const SizedBox.shrink(),
                             );
                           },
                         ),

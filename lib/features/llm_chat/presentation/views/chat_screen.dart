@@ -328,7 +328,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 ],
               ),
             ),
-            error: (_, __) => Container(
+            error: (_, _) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -388,7 +388,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               ],
             ),
           ),
-          error: (_, __) => Container(
+          error: (_, _) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
@@ -451,7 +451,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   loading: () => const Text('加载中...'),
-                  error: (_, __) => const Text('AI 助手'),
+                  error: (_, _) => const Text('AI 助手'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -482,7 +482,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   height: 8,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                error: (_, __) => Container(
+                error: (_, _) => Container(
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(

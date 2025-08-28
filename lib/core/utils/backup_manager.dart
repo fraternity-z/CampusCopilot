@@ -246,7 +246,7 @@ class BackupManager {
     // 压缩并写入文件
     final encoder = ZipEncoder();
     final zipBytes = encoder.encode(archive);
-    await backupFile.writeAsBytes(zipBytes!);
+    await backupFile.writeAsBytes(zipBytes);
   }
 
   /// 解压ZIP备份文件
