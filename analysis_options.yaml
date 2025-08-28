@@ -8,6 +8,13 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
+  # 排除生成文件，避免对自动生成代码（如 drift、freezed、json_serializable 等）报出无意义的告警
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+    - "**/*.gen.dart"
+    - "**/*.mocks.dart"
   errors:
     unintended_html_in_doc_comment: ignore
 include: package:flutter_lints/flutter.yaml
