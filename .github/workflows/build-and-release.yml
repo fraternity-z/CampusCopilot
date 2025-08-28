@@ -17,7 +17,7 @@ permissions:
   actions: read    # 需要读权限来访问构建产物
 
 env:
-  FLUTTER_VERSION: '3.34.0'
+  FLUTTER_VERSION: '3.35.0'
 
 jobs:
   # 准备发布
