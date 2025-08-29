@@ -30,76 +30,82 @@ class McpServerCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          children: [
-            // 服务器基本信息
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // 连接状态指示器
-                  _buildStatusIndicator(),
-                  const SizedBox(width: 12),
-                  // 服务器信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                server.name,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+        child: IntrinsicHeight(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 服务器基本信息
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // 连接状态指示器
+                    _buildStatusIndicator(),
+                    const SizedBox(width: 12),
+                    // 服务器信息
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  server.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                            _buildTransportTypeChip(),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          server.baseUrl,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                              _buildTransportTypeChip(),
+                            ],
                           ),
-                        ),
-                        if (server.error != null) ...[
                           const SizedBox(height: 4),
                           Text(
-                            server.error!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
+                            server.baseUrl,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
                             ),
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                        if (server.lastConnected != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '上次连接: ${_formatDateTime(server.lastConnected!)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
+                          if (server.error != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              server.error!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                          ],
+                          if (server.lastConnected != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '上次连接: ${_formatDateTime(server.lastConnected!)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                  // 操作按钮
-                  _buildActionButtons(context),
-                ],
+                    // 操作按钮
+                    _buildActionButtons(context),
+                  ],
+                ),
               ),
-            ),
-            // 服务器状态详情
-            if (server.isConnected) _buildConnectionDetails(ref),
-          ],
+              // 服务器状态详情 - 简化显示
+              if (server.isConnected) _buildSimpleConnectionStatus(ref),
+            ],
+          ),
         ),
       ),
     ).animate().fadeIn().slideX();
@@ -262,93 +268,6 @@ class McpServerCard extends ConsumerWidget {
     );
   }
 
-  /// 构建连接详情
-  Widget _buildConnectionDetails(WidgetRef ref) {
-    final connectionStatus = ref.watch(connectionStatusProvider(server.id));
-    final serverTools = ref.watch(serverToolsProvider(server.id));
-    final serverResources = ref.watch(serverResourcesProvider(server.id));
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-  color: Colors.green.withValues(alpha: 0.05),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Colors.green[700],
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '连接详情',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green[700],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 显示实际的连接详情
-          Row(
-            children: [
-              // 从实际ping结果获取延迟
-              connectionStatus.when(
-                data: (status) => _buildDetailItem(
-                  '延迟', 
-                  status?.latency != null ? '${status!.latency}ms' : '-'
-                ),
-                loading: () => _buildDetailItem('延迟', '检测中...'),
-                error: (_, _) => _buildDetailItem('延迟', '错误'),
-              ),
-              const SizedBox(width: 24),
-              // 从服务器获取实际工具数量
-              serverTools.when(
-                data: (tools) => _buildDetailItem('工具', '${tools.length}'),
-                loading: () => _buildDetailItem('工具', '加载中...'),
-                error: (_, _) => _buildDetailItem('工具', '错误'),
-              ),
-              const SizedBox(width: 24),
-              // 从服务器获取实际资源数量
-              serverResources.when(
-                data: (resources) => _buildDetailItem('资源', '${resources.length}'),
-                loading: () => _buildDetailItem('资源', '加载中...'),
-                error: (_, _) => _buildDetailItem('资源', '错误'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建详情项
-  Widget _buildDetailItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// 格式化日期时间
   String _formatDateTime(DateTime dateTime) {
@@ -364,5 +283,110 @@ class McpServerCard extends ConsumerWidget {
     } else {
       return '${difference.inDays}天前';
     }
+  }
+
+  /// 构建简化的连接状态
+  Widget _buildSimpleConnectionStatus(WidgetRef ref) {
+    final connectionStatus = ref.watch(connectionStatusProvider(server.id));
+    final serverTools = ref.watch(serverToolsProvider(server.id));
+    final serverResources = ref.watch(serverResourcesProvider(server.id));
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.green.withValues(alpha: 0.05),
+        border: Border(
+          top: BorderSide(
+            color: Colors.green.withValues(alpha: 0.2),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 14,
+            color: Colors.green[600],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '已连接',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.green[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 延迟显示
+          connectionStatus.when(
+            data: (status) => status?.latency != null
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${status!.latency}ms',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox(),
+            loading: () => const SizedBox(),
+            error: (_, _) => const SizedBox(),
+          ),
+          const Spacer(),
+          // 工具和资源数量
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              serverTools.when(
+                data: (tools) => _buildCompactStat(Icons.build, tools.length),
+                loading: () => _buildCompactStat(Icons.build, null),
+                error: (_, _) => const SizedBox(),
+              ),
+              const SizedBox(width: 12),
+              serverResources.when(
+                data: (resources) => _buildCompactStat(Icons.folder, resources.length),
+                loading: () => _buildCompactStat(Icons.folder, null),
+                error: (_, _) => const SizedBox(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建紧凑的统计显示
+  Widget _buildCompactStat(IconData icon, int? count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 12,
+          color: Colors.grey[600],
+        ),
+        const SizedBox(width: 2),
+        Text(
+          count?.toString() ?? '...',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
   }
 }

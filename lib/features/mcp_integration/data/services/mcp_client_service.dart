@@ -99,33 +99,51 @@ class McpClientService implements McpServiceInterface {
   /// 创建新的客户端连接
   Future<Client> _createConnection(McpServerConfig server) async {
     _logger.info('Creating connection to ${server.name} (${server.type.name})');
+    _logger.info('Server URL: ${server.baseUrl}');
+    
+    // 验证URL格式
+    final uri = Uri.tryParse(server.baseUrl);
+    if (uri == null || !uri.hasScheme) {
+      throw Exception('Invalid server URL: ${server.baseUrl}');
+    }
+    
+    // 检查SSE URL是否以/sse结尾
+    if (server.type == McpTransportType.sse && !server.baseUrl.endsWith('/sse')) {
+      _logger.warning('SSE URL should typically end with /sse: ${server.baseUrl}');
+    }
     
     try {
       // 创建客户端配置
       final config = McpClient.simpleConfig(
         name: 'AnywhereChat',
         version: '1.0.0',
-        enableDebugLogging: false,
+        enableDebugLogging: true, // 启用调试日志
       );
       
       // 根据服务器类型创建传输配置
       TransportConfig transportConfig;
       switch (server.type) {
         case McpTransportType.sse:
+          _logger.info('Creating SSE transport config for URL: ${server.baseUrl}');
           transportConfig = TransportConfig.sse(
             serverUrl: server.baseUrl,
-            headers: server.headers,
+            headers: server.headers ?? {},
             oauthConfig: _needsOAuth(server) ? OAuthConfig(
               authorizationEndpoint: server.authorizationEndpoint!,
               tokenEndpoint: server.tokenEndpoint!,
               clientId: server.clientId!,
             ) : null,
+            // 添加连接配置
+            heartbeatInterval: const Duration(seconds: 30),
+            maxMissedHeartbeats: 3,
+            enableCompression: true,
           );
           break;
         case McpTransportType.streamableHttp:
+          _logger.info('Creating StreamableHTTP transport config for URL: ${server.baseUrl}');
           transportConfig = TransportConfig.streamableHttp(
             baseUrl: server.baseUrl,
-            headers: server.headers,
+            headers: server.headers ?? {},
             useHttp2: true,
             maxConcurrentRequests: 10,
             timeout: Duration(seconds: server.timeout ?? 60),
@@ -134,23 +152,32 @@ class McpClientService implements McpServiceInterface {
               tokenEndpoint: server.tokenEndpoint!,
               clientId: server.clientId!,
             ) : null,
+            enableCompression: true,
+            heartbeatInterval: const Duration(seconds: 60),
           );
           break;
       }
       
       // 创建并连接客户端
+      _logger.info('Attempting to create and connect MCP client...');
       final clientResult = await McpClient.createAndConnect(
         config: config,
         transportConfig: transportConfig,
       );
       
-  final client = clientResult.fold(
-        (c) => c,
-        (error) => throw Exception('Failed to connect: $error'),
+      final client = clientResult.fold(
+        (c) {
+          _logger.info('Successfully created MCP client');
+          return c;
+        },
+        (error) {
+          _logger.severe('Failed to create MCP client: $error');
+          throw Exception('Failed to connect to MCP server: $error');
+        },
       );
       
       // 设置事件处理器
-  _setupEventHandlers(client, server.id);
+      _setupEventHandlers(client, server.id);
       
       return client;
     } catch (e) {
@@ -161,8 +188,56 @@ class McpClientService implements McpServiceInterface {
 
   /// 设置客户端事件处理器
   void _setupEventHandlers(Client client, String serverId) {
-    // 当前 SDK 未提供 onDisconnect/onError 事件流，依赖健康检查与异常捕获。
-    // 如未来 SDK 暴露事件，可在此订阅并路由到 _handleDisconnection/_updateConnectionStatus。
+    _logger.info('Setting up event handlers for server: $serverId');
+    
+    try {
+      // 连接事件处理
+      client.onConnect.listen((serverInfo) {
+        _logger.info('Connected to MCP server: ${serverInfo.name} v${serverInfo.version}');
+        _logger.info('Protocol version: ${serverInfo.protocolVersion}');
+        _updateConnectionStatus(serverId, true);
+      });
+      
+      // 断开连接事件处理
+      client.onDisconnect.listen((reason) {
+        _logger.warning('MCP server disconnected: $reason');
+        _handleDisconnection(serverId, reason.toString());
+      });
+      
+      // 错误事件处理
+      client.onError.listen((error) {
+        _logger.severe('MCP client error: ${error.message}');
+        _updateConnectionStatus(serverId, false, error: error.message);
+      });
+      
+      // 日志事件处理（如果可用）
+      try {
+        client.onLogging((level, message, logger, data) {
+          _logger.info('MCP Server log [$level]${logger != null ? " [$logger]" : ""}: $message');
+          if (data != null) {
+            _logger.fine('Additional data: $data');
+          }
+        });
+      } catch (e) {
+        _logger.fine('onLogging callback not available: $e');
+      }
+      
+    } catch (e) {
+      _logger.warning('Some event handlers may not be available: $e');
+    }
+  }
+  
+  /// 处理连接断开
+  void _handleDisconnection(String serverId, String reason) {
+    _updateConnectionStatus(serverId, false, error: reason);
+    
+    // 根据断开原因决定是否尝试重连
+    if (reason.contains('transport') || reason.contains('error')) {
+      _logger.info('Scheduling reconnection attempt for server: $serverId');
+      Future.delayed(const Duration(seconds: 5), () {
+        attemptReconnection(serverId);
+      });
+    }
   }
 
   // 连接断开由健康检查与异常处理触发清理。

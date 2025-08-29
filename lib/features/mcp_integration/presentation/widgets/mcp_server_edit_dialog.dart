@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../domain/entities/mcp_server_config.dart';
 
 /// MCP服务器编辑对话框
@@ -32,6 +34,10 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
   bool _longRunning = false;
   bool _showOAuthSettings = false;
   final Map<String, String> _headers = {};
+  
+  // JSON导入相关
+  final TextEditingController _jsonController = TextEditingController();
+  bool _showJsonImport = false;
 
   @override
   void initState() {
@@ -48,6 +54,7 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
     _clientSecretController.dispose();
     _authEndpointController.dispose();
     _tokenEndpointController.dispose();
+    _jsonController.dispose();
     super.dispose();
   }
 
@@ -76,6 +83,348 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
     }
   }
 
+  /// 构建手动表单
+  Widget _buildManualForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildBasicSettings(),
+          const SizedBox(height: 24),
+          _buildConnectionSettings(),
+          const SizedBox(height: 24),
+          _buildHeadersSettings(),
+          const SizedBox(height: 24),
+          _buildOAuthSettings(),
+        ],
+      ),
+    );
+  }
+
+  /// 构建JSON导入表单
+  Widget _buildJsonImportForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'JSON配置导入',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '支持格式示例：{"mcpServers": {"server-name": {"type": "sse", "url": "https://example.com"}}}',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+        // JSON输入框
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 工具栏
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Text('JSON配置'),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: _pasteFromClipboard,
+                      icon: const Icon(Icons.paste, size: 16),
+                      label: const Text('从剪贴板粘贴'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: _clearJsonInput,
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('清空'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // JSON编辑器
+              TextField(
+                controller: _jsonController,
+                decoration: const InputDecoration(
+                  hintText: '在此粘贴JSON配置...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                maxLines: 15,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // 解析和保存按钮
+        Row(
+          children: [
+            ElevatedButton.icon(
+              onPressed: _parseJsonConfig,
+              icon: const Icon(Icons.transform, size: 16),
+              label: const Text('解析并填充表单'),
+            ),
+            const SizedBox(width: 16),
+            OutlinedButton.icon(
+              onPressed: _parseAndSaveJson,
+              icon: const Icon(Icons.save, size: 16),
+              label: const Text('解析并保存'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.green,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _showJsonImport = false;
+                });
+              },
+              child: const Text('切换到手动模式'),
+            ),
+          ],
+        ),
+        if (_jsonController.text.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info, color: Colors.blue[700], size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '解析JSON配置后会自动填充到表单字段中，您可以切换到手动模式进行进一步编辑',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 从剪贴板粘贴
+  Future<void> _pasteFromClipboard() async {
+    try {
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboardData?.text != null) {
+        setState(() {
+          _jsonController.text = clipboardData!.text!;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已从剪贴板粘贴配置')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('粘贴失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 清空JSON输入
+  void _clearJsonInput() {
+    setState(() {
+      _jsonController.clear();
+    });
+  }
+
+  /// 解析JSON配置
+  void _parseJsonConfig({bool showSuccessMessage = true}) {
+    if (_jsonController.text.trim().isEmpty) {
+      if (showSuccessMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('请先输入JSON配置')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final jsonData = json.decode(_jsonController.text);
+      
+      if (jsonData is Map<String, dynamic> && jsonData.containsKey('mcpServers')) {
+        final servers = jsonData['mcpServers'] as Map<String, dynamic>;
+        
+        if (servers.isEmpty) {
+          if (showSuccessMessage) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('JSON中未找到服务器配置')),
+            );
+          }
+          return;
+        }
+
+        // 取第一个服务器配置（如果有多个，用户可以选择）
+        final serverEntry = servers.entries.first;
+        final serverName = serverEntry.key;
+        final serverConfig = serverEntry.value as Map<String, dynamic>;
+
+        _fillFormFromJson(serverName, serverConfig);
+        
+        if (showSuccessMessage) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('已解析配置: $serverName')),
+          );
+
+          // 如果有多个服务器，提示用户
+          if (servers.length > 1) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('检测到${servers.length}个服务器配置，已导入第一个: $serverName'),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      } else {
+        if (showSuccessMessage) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('JSON格式不正确，请检查格式')),
+          );
+        }
+      }
+    } catch (e) {
+      if (showSuccessMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('JSON解析失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 解析JSON并直接保存
+  void _parseAndSaveJson() {
+    if (_jsonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请先输入JSON配置')),
+      );
+      return;
+    }
+
+    try {
+      final jsonData = json.decode(_jsonController.text);
+      
+      if (jsonData is Map<String, dynamic> && jsonData.containsKey('mcpServers')) {
+        final servers = jsonData['mcpServers'] as Map<String, dynamic>;
+        
+        if (servers.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('JSON中未找到服务器配置')),
+          );
+          return;
+        }
+
+        // 取第一个服务器配置
+        final serverEntry = servers.entries.first;
+        final serverName = serverEntry.key;
+        final serverConfig = serverEntry.value as Map<String, dynamic>;
+
+        // 填充表单
+        _fillFormFromJson(serverName, serverConfig);
+        
+        // 立即保存
+        _performSave();
+        
+        // 如果有多个服务器，提示用户
+        if (servers.length > 1) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('检测到${servers.length}个服务器配置，已保存第一个: $serverName'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('JSON格式不正确，请检查格式')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('JSON解析失败: $e')),
+      );
+    }
+  }
+
+  /// 从JSON填充表单
+  void _fillFormFromJson(String serverName, Map<String, dynamic> config) {
+    setState(() {
+      // 基础信息
+      _nameController.text = serverName;
+      _baseUrlController.text = config['url'] ?? '';
+      
+      // 连接类型
+      final typeString = config['type']?.toString().toLowerCase() ?? 'sse';
+      _selectedType = typeString == 'streamablehttp' ? McpTransportType.streamableHttp : McpTransportType.sse;
+      
+      // 超时设置
+      if (config['timeout'] != null) {
+        _timeoutController.text = config['timeout'].toString();
+      } else {
+        _timeoutController.text = '30';
+      }
+      
+      // 长时间运行设置
+      _longRunning = config['longRunning'] == true;
+      
+      // Headers
+      _headers.clear();
+      if (config['headers'] is Map) {
+        final headers = config['headers'] as Map<String, dynamic>;
+        _headers.addAll(headers.map((key, value) => MapEntry(key, value.toString())));
+      }
+      
+      // OAuth设置
+      _clientIdController.text = config['clientId']?.toString() ?? '';
+      _clientSecretController.text = config['clientSecret']?.toString() ?? '';
+      _authEndpointController.text = config['authorizationEndpoint']?.toString() ?? '';
+      _tokenEndpointController.text = config['tokenEndpoint']?.toString() ?? '';
+      _showOAuthSettings = _clientIdController.text.isNotEmpty;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -87,7 +436,7 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题
+            // 标题和JSON导入切换
             Row(
               children: [
                 Expanded(
@@ -97,6 +446,18 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showJsonImport = !_showJsonImport;
+                    });
+                  },
+                  icon: Icon(_showJsonImport ? Icons.edit : Icons.code),
+                  label: Text(_showJsonImport ? '表单模式' : 'JSON导入'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
                   ),
                 ),
                 IconButton(
@@ -109,21 +470,7 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
             // 表单内容
             Flexible(
               child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildBasicSettings(),
-                      const SizedBox(height: 24),
-                      _buildConnectionSettings(),
-                      const SizedBox(height: 24),
-                      _buildHeadersSettings(),
-                      const SizedBox(height: 24),
-                      _buildOAuthSettings(),
-                    ],
-                  ),
-                ),
+                child: _showJsonImport ? _buildJsonImportForm() : _buildManualForm(),
               ),
             ),
             const SizedBox(height: 24),
@@ -432,25 +779,78 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
 
   /// 保存服务器配置
   void _saveServer() {
-    if (_formKey.currentState!.validate()) {
-      final config = McpServerConfig(
-        id: widget.server?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
-        baseUrl: _baseUrlController.text.trim(),
-        type: _selectedType,
-        headers: _headers.isNotEmpty ? Map.from(_headers) : null,
-        timeout: int.tryParse(_timeoutController.text),
-        longRunning: _longRunning,
-        clientId: _showOAuthSettings ? _clientIdController.text.trim() : null,
-        clientSecret: _showOAuthSettings ? _clientSecretController.text.trim() : null,
-        authorizationEndpoint: _showOAuthSettings ? _authEndpointController.text.trim() : null,
-        tokenEndpoint: _showOAuthSettings ? _tokenEndpointController.text.trim() : null,
-        createdAt: widget.server?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      widget.onSave(config);
+    // 在JSON导入模式下，如果字段为空，尝试先自动解析JSON
+    if (_showJsonImport) {
+      if (_nameController.text.trim().isEmpty && _jsonController.text.trim().isNotEmpty) {
+        // 静默解析JSON，不显示成功消息
+        _parseJsonConfig(showSuccessMessage: false);
+        // 立即继续保存
+        _performSave();
+        return;
+      } else if (_nameController.text.trim().isEmpty && _jsonController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('请输入JSON配置或切换到手动模式')),
+        );
+        return;
+      }
+    } else {
+      // 表单模式下进行表单验证
+      if (_formKey.currentState?.validate() != true) {
+        return;
+      }
     }
+    
+    _performSave();
+  }
+
+  /// 执行实际的保存操作
+  void _performSave() {
+    // 基础字段验证
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入服务器名称')),
+      );
+      return;
+    }
+    
+    if (_baseUrlController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入服务器URL')),
+      );
+      return;
+    }
+    
+    // URL格式验证
+    final uri = Uri.tryParse(_baseUrlController.text.trim());
+    if (uri == null || !uri.hasScheme) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入有效的URL')),
+      );
+      return;
+    }
+    
+    // 创建服务器配置
+    final config = McpServerConfig(
+      id: widget.server?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      baseUrl: _baseUrlController.text.trim(),
+      type: _selectedType,
+      headers: _headers.isNotEmpty ? Map.from(_headers) : null,
+      timeout: int.tryParse(_timeoutController.text),
+      longRunning: _longRunning,
+      clientId: _showOAuthSettings && _clientIdController.text.trim().isNotEmpty 
+          ? _clientIdController.text.trim() : null,
+      clientSecret: _showOAuthSettings && _clientSecretController.text.trim().isNotEmpty 
+          ? _clientSecretController.text.trim() : null,
+      authorizationEndpoint: _showOAuthSettings && _authEndpointController.text.trim().isNotEmpty 
+          ? _authEndpointController.text.trim() : null,
+      tokenEndpoint: _showOAuthSettings && _tokenEndpointController.text.trim().isNotEmpty 
+          ? _tokenEndpointController.text.trim() : null,
+      createdAt: widget.server?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    widget.onSave(config);
   }
 
   /// 获取传输类型名称
