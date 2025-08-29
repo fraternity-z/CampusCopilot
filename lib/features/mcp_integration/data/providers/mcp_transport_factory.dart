@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mcp_client/mcp_client.dart';
 import '../../domain/entities/mcp_server_config.dart';
 import 'mcp_oauth_provider.dart';
@@ -305,7 +306,8 @@ class SSEClientTransport implements Transport {
     
     try {
       // 基础SSE消息发送实现
-      // TODO:暂时存储消息，实际传输留待后续完善
+      // 暂时只记录消息，实际HTTP请求传输留待后续完善
+      debugPrint('SSE发送消息: ${message.toString()}');
     } catch (e) {
       throw Exception('SSE消息发送失败: $e');
     }

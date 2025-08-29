@@ -187,3 +187,52 @@ final serverStatsProvider = Provider<Map<String, int>>((ref) {
     error: (_, _) => {'total': 0, 'connected': 0, 'failed': 0, 'disabled': 0},
   );
 });
+
+/// 获取指定服务器的工具列表Provider
+final serverToolsProvider = FutureProvider.family<List<McpTool>, String>((ref, serverId) async {
+  final clientService = ref.watch(mcpClientServiceProvider);
+  try {
+    final tools = await clientService.listTools(serverId);
+    return tools;
+  } catch (error) {
+    _logger.severe('Failed to get tools for server $serverId: $error');
+    return [];
+  }
+});
+
+/// 获取指定服务器的资源列表Provider  
+final serverResourcesProvider = FutureProvider.family<List<McpResource>, String>((ref, serverId) async {
+  final clientService = ref.watch(mcpClientServiceProvider);
+  try {
+    final resources = await clientService.listResources(serverId);
+    return resources;
+  } catch (error) {
+    _logger.severe('Failed to get resources for server $serverId: $error');
+    return [];
+  }
+});
+
+
+/// 获取指定服务器的连接状态Provider
+final connectionStatusProvider = FutureProvider.family<McpConnectionStatus?, String>((ref, serverId) async {
+  final clientService = ref.watch(mcpClientServiceProvider);
+  try {
+    final status = await clientService.getConnectionStatus(serverId);
+    return status;
+  } catch (error) {
+    _logger.severe('Failed to get connection status for server $serverId: $error');
+    return null;
+  }
+});
+
+/// 获取指定服务器的提示列表Provider
+final serverPromptsProvider = FutureProvider.family<List<McpPrompt>, String>((ref, serverId) async {
+  final clientService = ref.watch(mcpClientServiceProvider);
+  try {
+    final prompts = await clientService.listPrompts(serverId);
+    return prompts;
+  } catch (error) {
+    _logger.severe('Failed to get prompts for server $serverId: $error');
+    return [];
+  }
+});

@@ -202,12 +202,36 @@ class McpManagementScreen extends ConsumerWidget {
   void _showAddServerDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => McpServerEditDialog(
-        title: '添加MCP服务器',
-        onSave: (config) {
-          // TODO: 添加服务器逻辑
-          Navigator.of(context).pop();
-        },
+      builder: (context) => Consumer(
+        builder: (context, ref, child) => McpServerEditDialog(
+          title: '添加MCP服务器',
+          onSave: (config) async {
+            try {
+              // 添加服务器逻辑
+              final serversNotifier = ref.read(mcpServersProvider.notifier);
+              await serversNotifier.addServer(config);
+              
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('服务器 "${config.name}" 已添加成功'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (error) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('添加服务器失败: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }
@@ -216,20 +240,48 @@ class McpManagementScreen extends ConsumerWidget {
   void _showEditServerDialog(BuildContext context, McpServerConfig server) {
     showDialog(
       context: context,
-      builder: (context) => McpServerEditDialog(
-        title: '编辑服务器',
-        server: server,
-        onSave: (config) {
-          // TODO: 更新服务器逻辑
-          Navigator.of(context).pop();
-        },
+      builder: (context) => Consumer(
+        builder: (context, ref, child) => McpServerEditDialog(
+          title: '编辑服务器',
+          server: server,
+          onSave: (config) async {
+            try {
+              // 更新服务器逻辑
+              final serversNotifier = ref.read(mcpServersProvider.notifier);
+              await serversNotifier.updateServer(config);
+              
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('服务器 "${config.name}" 已更新成功'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (error) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('更新服务器失败: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }
 
   /// 显示服务器详情
   void _showServerDetails(BuildContext context, McpServerConfig server) {
-    // TODO: 导航到服务器详情页面
+    // 导航到MCP工具界面，显示服务器详情和工具
+    Navigator.of(context).pushNamed(
+      '/mcp-tools',
+      arguments: {'server': server},
+    );
   }
 
   /// 确认删除服务器
@@ -246,9 +298,32 @@ class McpManagementScreen extends ConsumerWidget {
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () {
-              // TODO: 删除服务器逻辑
-              Navigator.of(context).pop();
+            onPressed: () async {
+              try {
+                // 删除服务器逻辑
+                final serversNotifier = ref.read(mcpServersProvider.notifier);
+                await serversNotifier.deleteServer(server.id);
+                
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('服务器 "${server.name}" 已删除'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (error) {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('删除服务器失败: $error'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('删除'),
@@ -259,17 +334,52 @@ class McpManagementScreen extends ConsumerWidget {
   }
 
   /// 切换服务器启用状态
-  void _toggleServerEnabled(WidgetRef ref, McpServerConfig server) {
-    // TODO: 切换启用状态逻辑
+  Future<void> _toggleServerEnabled(WidgetRef ref, McpServerConfig server) async {
+    try {
+      // 切换启用状态逻辑
+      final serversNotifier = ref.read(mcpServersProvider.notifier);
+      await serversNotifier.toggleServer(server.id);
+    } catch (error) {
+      // 显示错误信息但不阻塞用户界面
+      debugPrint('切换服务器状态失败: $error');
+    }
   }
 
   /// 连接到服务器
-  void _connectToServer(WidgetRef ref, McpServerConfig server) {
-    // TODO: 连接服务器逻辑
+  Future<void> _connectToServer(WidgetRef ref, McpServerConfig server) async {
+    try {
+      // 连接服务器逻辑
+      final serversNotifier = ref.read(mcpServersProvider.notifier);
+      
+      if (server.isConnected) {
+        // 如果已连接，则断开连接
+        await serversNotifier.disconnectFromServer(server.id);
+      } else {
+        // 如果未连接，则尝试连接
+        await serversNotifier.connectToServer(server.id);
+      }
+    } catch (error) {
+      // 显示错误信息但不阻塞用户界面
+      debugPrint('服务器连接操作失败: $error');
+    }
   }
 
   /// 刷新服务器状态
-  void _refreshServers(WidgetRef ref) {
-    // TODO: 刷新所有服务器状态
+  Future<void> _refreshServers(WidgetRef ref) async {
+    // 刷新所有服务器状态
+    try {
+      // 刷新服务器列表
+      await ref.read(mcpServersProvider.notifier).refresh();
+      
+      // 刷新相关Provider缓存
+      final servers = ref.read(mcpServersProvider).value ?? [];
+      for (final server in servers) {
+        ref.invalidate(connectionStatusProvider(server.id));
+        ref.invalidate(serverToolsProvider(server.id));
+        ref.invalidate(serverResourcesProvider(server.id));
+      }
+    } catch (error) {
+      debugPrint('刷新服务器状态失败: $error');
+    }
   }
 }

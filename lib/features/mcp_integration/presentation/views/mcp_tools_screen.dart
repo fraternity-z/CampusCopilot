@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/modern_scaffold.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 import '../widgets/mcp_tool_card.dart';
 import '../widgets/mcp_tool_call_dialog.dart';
 
@@ -96,7 +97,16 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
           labelText: '选择服务器',
           border: OutlineInputBorder(),
         ),
-        items: const [], // TODO: 从Provider获取服务器列表
+        items: ref.watch(mcpServersProvider).when(
+          data: (servers) => servers
+              .map((server) => DropdownMenuItem<McpServerConfig>(
+                    value: server,
+                    child: Text(server.name),
+                  ))
+              .toList(),
+          loading: () => [],
+          error: (_, _) => [],
+        ),
         onChanged: (server) {
           setState(() {
             _selectedServer = server;
@@ -139,8 +149,29 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
       );
     }
 
-    // TODO: 从Provider获取工具列表
-    final tools = <McpTool>[];
+    // 从Provider获取工具列表
+    final toolsAsync = ref.watch(serverToolsProvider(_selectedServer!.id));
+    
+    return toolsAsync.when(
+      data: (tools) => _buildToolsList(tools),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            Text('加载工具失败: $error'),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(serverToolsProvider(_selectedServer!.id)),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolsList(List<McpTool> tools) {
 
     if (tools.isEmpty) {
       return _buildEmptyState(
@@ -171,9 +202,29 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
       );
     }
 
-    // TODO: 从Provider获取资源列表
-    final resources = <McpResource>[];
+    // 从Provider获取资源列表
+    final resourcesAsync = ref.watch(serverResourcesProvider(_selectedServer!.id));
+    
+    return resourcesAsync.when(
+      data: (resources) => _buildResourcesList(resources),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            Text('加载资源失败: $error'),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(serverResourcesProvider(_selectedServer!.id)),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildResourcesList(List<McpResource> resources) {
     if (resources.isEmpty) {
       return _buildEmptyState(
         icon: Icons.folder_outlined,
@@ -208,50 +259,20 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
 
   /// 构建历史标签页
   Widget _buildHistoryTab() {
-    // TODO: 从Provider获取调用历史
-    final history = <McpCallHistory>[];
-
-    if (history.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.history,
-        title: '暂无调用历史',
-        subtitle: '开始使用工具后将显示调用记录',
+    if (_selectedServer == null) {
+      return const Center(
+        child: Text('请先选择一个MCP服务器'),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: history.length,
-      itemBuilder: (context, index) {
-        final call = history[index];
-        return Card(
-          child: ListTile(
-            leading: Icon(
-              call.error != null ? Icons.error : Icons.check_circle,
-              color: call.error != null ? Colors.red : Colors.green,
-            ),
-            title: Text(call.toolName),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_formatDateTime(call.calledAt)),
-                if (call.error != null) 
-                  Text(
-                    call.error!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-              ],
-            ),
-            trailing: Text(
-              call.duration != null ? '${call.duration}ms' : '',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            onTap: () => _showCallDetails(call),
-          ),
-        );
-      },
+    // 暂时显示功能开发中的状态
+    return _buildEmptyState(
+      icon: Icons.history,
+      title: '调用历史功能开发中',
+      subtitle: '此功能将在后续版本中提供',
     );
   }
+
 
   /// 构建空状态
   Widget _buildEmptyState({
@@ -296,23 +317,298 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
       builder: (context) => McpToolCallDialog(
         tool: tool,
         server: _selectedServer!,
-        onCall: (arguments) {
-          // TODO: 调用工具逻辑
-          Navigator.of(context).pop();
+        onCall: (arguments) async {
+          // 调用工具逻辑
+          await _callTool(tool, arguments);
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
         },
       ),
     );
   }
 
-  /// 显示资源详情
-  void _showResourceDetails(McpResource resource) {
-    // TODO: 显示资源详情对话框或页面
+  /// 调用MCP工具
+  Future<void> _callTool(McpTool tool, Map<String, dynamic> arguments) async {
+    try {
+      final clientService = ref.read(mcpClientServiceProvider);
+      
+      // 显示加载提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('正在调用工具 ${tool.name}...')),
+      );
+
+      // 调用工具
+      await clientService.callTool(
+        _selectedServer!.id, 
+        tool.name, 
+        arguments,
+      );
+
+      // 显示成功结果
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('工具调用成功'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // 刷新工具列表（移除历史记录相关功能）
+      ref.invalidate(serverToolsProvider(_selectedServer!.id));
+      
+    } catch (error) {
+      // 显示错误信息
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('工具调用失败: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  /// 显示调用详情
-  void _showCallDetails(McpCallHistory call) {
-    // TODO: 显示调用详情对话框
+  /// 显示资源详情
+  void _showResourceDetails(McpResource resource) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 600,
+          constraints: const BoxConstraints(maxHeight: 700),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 资源头部信息
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _getResourceIcon(resource.mimeType),
+                      color: Colors.blue,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          resource.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          resource.uri,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // 资源详情
+              if (resource.description?.isNotEmpty == true) ...[
+                const Text(
+                  '描述',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Text(
+                    resource.description!,
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              // 资源信息
+              const Text(
+                '资源信息',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildResourceInfoItem('URI', resource.uri),
+              if (resource.mimeType != null)
+                _buildResourceInfoItem('MIME类型', resource.mimeType!),
+              const SizedBox(height: 16),
+              // 操作按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('关闭'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _loadResource(resource),
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('加载资源'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+
+  /// 构建资源信息项
+  Widget _buildResourceInfoItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 加载资源内容
+  Future<void> _loadResource(McpResource resource) async {
+    if (_selectedServer == null) return;
+    
+    try {
+      final clientService = ref.read(mcpClientServiceProvider);
+      final result = await clientService.getResource(
+        _selectedServer!.id,
+        resource.uri,
+      );
+      
+      if (mounted) {
+        // 显示资源内容
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            child: Container(
+              width: 700,
+              constraints: const BoxConstraints(maxHeight: 600),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '资源内容: ${resource.name}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: SingleChildScrollView(
+                        child: SelectableText(
+                          result['contents']?.toString() ?? '无内容',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('关闭'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('加载资源失败: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
 
   /// 获取资源图标
   IconData _getResourceIcon(String? mimeType) {
@@ -328,19 +624,4 @@ class _McpToolsScreenState extends ConsumerState<McpToolsScreen>
     return Icons.insert_drive_file;
   }
 
-  /// 格式化日期时间
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时前';
-    } else {
-      return '${difference.inDays}天前';
-    }
-  }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 
 /// MCP工具调用对话框
-class McpToolCallDialog extends StatefulWidget {
+class McpToolCallDialog extends ConsumerStatefulWidget {
   final McpTool tool;
   final McpServerConfig server;
   final Function(Map<String, dynamic>) onCall;
@@ -16,10 +18,10 @@ class McpToolCallDialog extends StatefulWidget {
   });
 
   @override
-  State<McpToolCallDialog> createState() => _McpToolCallDialogState();
+  ConsumerState<McpToolCallDialog> createState() => _McpToolCallDialogState();
 }
 
-class _McpToolCallDialogState extends State<McpToolCallDialog> {
+class _McpToolCallDialogState extends ConsumerState<McpToolCallDialog> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, dynamic> _values = {};
@@ -541,15 +543,20 @@ class _McpToolCallDialogState extends State<McpToolCallDialog> {
     });
 
     try {
-      // 模拟工具调用逻辑，实际需要通过MCP服务调用
-      await Future.delayed(const Duration(seconds: 2)); // 模拟网络延迟
-      
-      // TODO: 通过McpClientService调用实际工具
-      // final result = await ref.read(mcpClientServiceProvider)
-      //   .callTool(serverId, toolName, _values);
+      // 通过McpClientService调用实际工具
+      final clientService = ref.read(mcpClientServiceProvider);
+      final result = await clientService.callTool(
+        widget.server.id,
+        widget.tool.name,
+        _values,
+      );
       
       setState(() {
-        _result = 'Tool execution successful (simulated)\nTool: ${widget.tool.name}\nArguments: ${_values.toString()}';
+        if (result['isError'] == true) {
+          _error = result['error'] ?? '工具调用失败';
+        } else {
+          _result = result['result']?.toString() ?? '工具执行成功';
+        }
         _isLoading = false;
       });
       

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 
 /// MCP服务器卡片组件
-class McpServerCard extends StatelessWidget {
+class McpServerCard extends ConsumerWidget {
   final McpServerConfig server;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
@@ -22,7 +24,7 @@ class McpServerCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
@@ -96,7 +98,7 @@ class McpServerCard extends StatelessWidget {
               ),
             ),
             // 服务器状态详情
-            if (server.isConnected) _buildConnectionDetails(),
+            if (server.isConnected) _buildConnectionDetails(ref),
           ],
         ),
       ),
@@ -261,7 +263,11 @@ class McpServerCard extends StatelessWidget {
   }
 
   /// 构建连接详情
-  Widget _buildConnectionDetails() {
+  Widget _buildConnectionDetails(WidgetRef ref) {
+    final connectionStatus = ref.watch(connectionStatusProvider(server.id));
+    final serverTools = ref.watch(serverToolsProvider(server.id));
+    final serverResources = ref.watch(serverResourcesProvider(server.id));
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -288,14 +294,32 @@ class McpServerCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // 显示模拟的连接详情，实际数据需要从服务器获取
+          // 显示实际的连接详情
           Row(
             children: [
-              _buildDetailItem('延迟', '45ms'), // TODO: 从实际ping结果获取
+              // 从实际ping结果获取延迟
+              connectionStatus.when(
+                data: (status) => _buildDetailItem(
+                  '延迟', 
+                  status?.latency != null ? '${status!.latency}ms' : '-'
+                ),
+                loading: () => _buildDetailItem('延迟', '检测中...'),
+                error: (_, _) => _buildDetailItem('延迟', '错误'),
+              ),
               const SizedBox(width: 24),
-              _buildDetailItem('工具', '12'), // TODO: 从服务器获取实际工具数量
+              // 从服务器获取实际工具数量
+              serverTools.when(
+                data: (tools) => _buildDetailItem('工具', '${tools.length}'),
+                loading: () => _buildDetailItem('工具', '加载中...'),
+                error: (_, _) => _buildDetailItem('工具', '错误'),
+              ),
               const SizedBox(width: 24),
-              _buildDetailItem('资源', '8'), // TODO: 从服务器获取实际资源数量
+              // 从服务器获取实际资源数量
+              serverResources.when(
+                data: (resources) => _buildDetailItem('资源', '${resources.length}'),
+                loading: () => _buildDetailItem('资源', '加载中...'),
+                error: (_, _) => _buildDetailItem('资源', '错误'),
+              ),
             ],
           ),
         ],

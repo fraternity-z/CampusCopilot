@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 
 /// MCP连接状态监控面板
 class McpConnectionMonitor extends ConsumerWidget {
@@ -45,7 +46,7 @@ class McpConnectionMonitor extends ConsumerWidget {
           if (servers.isEmpty)
             _buildEmptyState()
           else
-            _buildServerStatusList(),
+            _buildServerStatusList(ref),
           // 操作栏
           _buildActionBar(context, ref),
         ],
@@ -152,7 +153,7 @@ class McpConnectionMonitor extends ConsumerWidget {
   }
 
   /// 构建服务器状态列表
-  Widget _buildServerStatusList() {
+  Widget _buildServerStatusList(WidgetRef ref) {
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
       child: ListView.separated(
@@ -161,14 +162,14 @@ class McpConnectionMonitor extends ConsumerWidget {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final server = servers[index];
-          return _buildServerStatusItem(server);
+          return _buildServerStatusItem(server, ref);
         },
       ),
     );
   }
 
   /// 构建单个服务器状态项
-  Widget _buildServerStatusItem(McpServerConfig server) {
+  Widget _buildServerStatusItem(McpServerConfig server, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -233,7 +234,7 @@ class McpConnectionMonitor extends ConsumerWidget {
             ),
           ),
           // 连接信息
-          _buildConnectionInfo(server),
+          _buildConnectionInfo(server, ref),
         ],
       ),
     );
@@ -280,31 +281,73 @@ class McpConnectionMonitor extends ConsumerWidget {
   }
 
   /// 构建连接信息
-  Widget _buildConnectionInfo(McpServerConfig server) {
+  Widget _buildConnectionInfo(McpServerConfig server, WidgetRef ref) {
     if (server.disabled == true) {
       return const Icon(Icons.pause, size: 16, color: Colors.grey);
     }
 
     if (server.isConnected) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 显示模拟延迟，实际延迟需要从服务器获取
-          Text(
-            '45ms', // TODO: 后续从实际网络请求获取延迟数据
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.green[600],
-              fontWeight: FontWeight.w500,
+      // 从实际网络请求获取延迟数据
+      final connectionStatus = ref.watch(connectionStatusProvider(server.id));
+      
+      return connectionStatus.when(
+        data: (status) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              status?.latency != null ? '${status!.latency}ms' : '-',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: Colors.green[600],
-          ),
-        ],
+            const SizedBox(width: 8),
+            Icon(
+              Icons.check_circle,
+              size: 16,
+              color: Colors.green[600],
+            ),
+          ],
+        ),
+        loading: () => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '检测中...',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.check_circle,
+              size: 16,
+              color: Colors.green[600],
+            ),
+          ],
+        ),
+        error: (_, stackTrace) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '错误',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.error,
+              size: 16,
+              color: Colors.red[600],
+            ),
+          ],
+        ),
       );
     }
 
@@ -370,24 +413,51 @@ class McpConnectionMonitor extends ConsumerWidget {
   }
 
   /// 刷新所有服务器状态
-  void _refreshAll(WidgetRef ref) {
-    // 基础刷新实现，实际需要通过Provider调用MCP服务
+  Future<void> _refreshAll(WidgetRef ref) async {
+    // 调用实际的服务器状态刷新
+    final clientService = ref.read(mcpClientServiceProvider);
+    
     for (final server in servers) {
       if (server.isConnected) {
-        // TODO: 调用实际的服务器状态刷新
-        debugPrint('Refreshing server: ${server.name}');
+        try {
+          // 执行ping检测服务器状态
+          await clientService.ping(server.id);
+          debugPrint('Refreshed server: ${server.name}');
+        } catch (e) {
+          debugPrint('Failed to refresh server ${server.name}: $e');
+        }
       }
     }
+    
+    // 刷新连接状态Provider缓存
+    for (final server in servers) {
+      ref.invalidate(connectionStatusProvider(server.id));
+    }
+    
+    // 刷新服务器列表
+    ref.invalidate(mcpServersProvider);
   }
 
   /// 重连所有失败的服务器
-  void _reconnectAll(WidgetRef ref) {
-    // 基础重连实现，实际需要通过Provider调用MCP服务
+  Future<void> _reconnectAll(WidgetRef ref) async {
+    // 调用实际的服务器重连逻辑
+    final serversNotifier = ref.read(mcpServersProvider.notifier);
+    
     for (final server in servers) {
-      if (!server.isConnected) {
-        // TODO: 调用实际的服务器重连逻辑
-        debugPrint('Attempting reconnect for server: ${server.name}');
+      if (!server.isConnected && server.disabled != true) {
+        try {
+          // 通过McpServersNotifier进行重连
+          await serversNotifier.connectToServer(server.id);
+          debugPrint('Successfully reconnected to server: ${server.name}');
+        } catch (e) {
+          debugPrint('Failed to reconnect to server ${server.name}: $e');
+        }
       }
+    }
+    
+    // 刷新连接状态
+    for (final server in servers) {
+      ref.invalidate(connectionStatusProvider(server.id));
     }
   }
 

@@ -46,13 +46,13 @@ class McpDashboardScreen extends ConsumerWidget {
               McpConnectionMonitor(servers: servers),
               
               // 快速操作区域
-              _buildQuickActions(context),
+              _buildQuickActions(context, ref),
               
               // 最近使用的服务器
               _buildRecentServers(context, servers),
               
               // 功能导航卡片
-              _buildFeatureCards(context, servers),
+              _buildFeatureCards(context, ref, servers),
               
               const SizedBox(height: 16),
             ],
@@ -68,7 +68,7 @@ class McpDashboardScreen extends ConsumerWidget {
   }
 
   /// 构建快速操作区域
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -116,7 +116,7 @@ class McpDashboardScreen extends ConsumerWidget {
                     label: '全部刷新',
                     subtitle: '刷新所有服务器状态',
                     color: Colors.green,
-                    onTap: () => _refreshAllServers(),
+                    onTap: () => _refreshAllServers(context, ref),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -126,7 +126,7 @@ class McpDashboardScreen extends ConsumerWidget {
                     label: '重新连接',
                     subtitle: '重连断开的服务器',
                     color: Colors.purple,
-                    onTap: () => _reconnectFailedServers(),
+                    onTap: () => _reconnectFailedServers(context, ref),
                   ),
                 ),
               ],
@@ -249,7 +249,7 @@ class McpDashboardScreen extends ConsumerWidget {
   }
 
   /// 构建功能导航卡片
-  Widget _buildFeatureCards(BuildContext context, List<McpServerConfig> servers) {
+  Widget _buildFeatureCards(BuildContext context, WidgetRef ref, List<McpServerConfig> servers) {
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -298,7 +298,7 @@ class McpDashboardScreen extends ConsumerWidget {
                 subtitle: '一键连接MCP服务器',
                 icon: Icons.flash_on,
                 color: Colors.orange,
-                onTap: () => _quickConnectServers(),
+                onTap: () => _quickConnectServers(context, ref),
               ),
             ],
           ),
@@ -386,23 +386,77 @@ class McpDashboardScreen extends ConsumerWidget {
 
   /// 刷新数据
   Future<void> _refreshData(WidgetRef ref) async {
-    // TODO: 实现数据刷新逻辑
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // 刷新服务器列表数据
+      await ref.read(mcpServersProvider.notifier).refresh();
+    } catch (e) {
+      debugPrint('刷新数据失败: $e');
+    }
   }
 
   /// 刷新所有服务器
-  void _refreshAllServers() {
-    // TODO: 实现刷新所有服务器逻辑
+  void _refreshAllServers(BuildContext context, WidgetRef ref) {
+    try {
+      // 刷新服务器列表
+      ref.read(mcpServersProvider.notifier).refresh();
+      
+      // 显示刷新提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('正在刷新所有服务器状态...')),
+      );
+    } catch (e) {
+      debugPrint('刷新所有服务器失败: $e');
+    }
   }
 
   /// 重连失败的服务器
-  void _reconnectFailedServers() {
-    // TODO: 实现重连失败服务器逻辑
+  void _reconnectFailedServers(BuildContext context, WidgetRef ref) {
+    try {
+      // 调用Provider的重连方法
+      ref.read(mcpServersProvider.notifier).reconnectFailedServers();
+      
+      // 显示提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('正在重连失败的服务器...')),
+      );
+    } catch (e) {
+      debugPrint('重连失败服务器失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('重连失败: $e')),
+      );
+    }
   }
 
   /// 快速连接所有服务器
-  void _quickConnectServers() {
-    // TODO: 实现快速连接所有服务器逻辑
+  void _quickConnectServers(BuildContext context, WidgetRef ref) {
+    try {
+      final serversAsync = ref.read(mcpServersProvider);
+      serversAsync.whenData((servers) async {
+        final disconnectedServers = servers.where((s) => !s.isConnected && !(s.disabled ?? false));
+        
+        if (disconnectedServers.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('没有需要连接的服务器')),
+          );
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('正在连接${disconnectedServers.length}个服务器...')),
+        );
+
+        // 连接所有断开的服务器
+        for (final server in disconnectedServers) {
+          try {
+            await ref.read(mcpServersProvider.notifier).connectToServer(server.id);
+          } catch (e) {
+            debugPrint('连接服务器${server.name}失败: $e');
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('快速连接服务器失败: $e');
+    }
   }
 
   /// 构建加载状态

@@ -532,11 +532,19 @@ class McpClientService implements McpServiceInterface {
     if (client == null) return [];
     
     try {
-      // 基础提示列表实现
+      // 从实际MCP服务器获取提示数据
       _logger.info('Listing prompts for server: $serverId');
       
-      // TODO:暂时返回空列表，实际的提示数据需要从MCP服务器获取
-      return [];
+      final prompts = await client.listPrompts();
+      return prompts.map((prompt) => McpPrompt(
+        name: prompt.name,
+        description: prompt.description ?? '',
+        arguments: prompt.arguments.fold<Map<String, dynamic>>(
+          {}, 
+          (map, arg) => map..[arg.name] = arg.description ?? '',
+        ),
+        serverId: serverId,
+      )).toList();
       
     } catch (e) {
       _logger.severe('Failed to list prompts for server $serverId: $e');
@@ -556,15 +564,15 @@ class McpClientService implements McpServiceInterface {
     }
     
     try {
-      // 基础获取提示内容实现
+      // 从实际MCP服务器获取提示内容
       _logger.info('Getting prompt "$name" from server: $serverId');
       
-      // 暂时返回空内容，实际的提示内容需要从MCP服务器获取
+      final result = await client.getPrompt(name, arguments);
       return {
         'name': name,
-        'description': 'MCP Prompt',
+        'description': result.description ?? 'MCP Prompt',
         'arguments': arguments ?? {},
-        'messages': [],
+        'messages': result.messages,
       };
       
     } catch (e) {
