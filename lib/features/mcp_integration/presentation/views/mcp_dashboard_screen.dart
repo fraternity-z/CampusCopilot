@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/modern_scaffold.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 import '../widgets/mcp_connection_monitor.dart';
 import '../widgets/mcp_server_card.dart';
 import 'mcp_management_screen.dart';
@@ -13,12 +14,16 @@ class McpDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 暂时使用空列表，等待Provider层实现后连接实际数据源
-    final servers = <McpServerConfig>[];
+    final serversAsync = ref.watch(mcpServersProvider);
     
-    // TODO: 当Repository层完成后，改为从Provider获取：
-    // final servers = ref.watch(mcpServersProvider);
+    return serversAsync.when(
+      data: (servers) => _buildContent(context, ref, servers),
+      loading: () => _buildLoading(),
+      error: (error, stack) => _buildError(context, error),
+    );
+  }
 
+  Widget _buildContent(BuildContext context, WidgetRef ref, List<McpServerConfig> servers) {
     return ModernScaffold(
       appBar: AppBar(
         title: const Text('MCP 服务中心'),
@@ -398,5 +403,45 @@ class McpDashboardScreen extends ConsumerWidget {
   /// 快速连接所有服务器
   void _quickConnectServers() {
     // TODO: 实现快速连接所有服务器逻辑
+  }
+
+  /// 构建加载状态
+  Widget _buildLoading() {
+    return const ModernScaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('正在加载MCP服务器...'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建错误状态
+  Widget _buildError(BuildContext context, Object error) {
+    return ModernScaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text('加载失败: ${error.toString()}'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // 重试加载
+                // ref.invalidate(mcpServersProvider);
+              },
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

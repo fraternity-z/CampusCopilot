@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/modern_scaffold.dart';
 import '../../domain/entities/mcp_server_config.dart';
+import '../providers/mcp_servers_provider.dart';
 import '../widgets/mcp_server_card.dart';
 import '../widgets/mcp_server_edit_dialog.dart';
 
@@ -52,7 +53,8 @@ class McpManagementScreen extends ConsumerWidget {
 
   /// 构建统计信息卡片
   Widget _buildStatsCard(BuildContext context, WidgetRef ref) {
-    // TODO: 从Provider获取统计数据
+    final stats = ref.watch(serverStatsProvider);
+    
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -63,26 +65,26 @@ class McpManagementScreen extends ConsumerWidget {
             _buildStatItem(
               icon: Icons.dns,
               label: '服务器',
-              value: '0', // TODO: 实际数量
+              value: stats['total'].toString(),
               color: Colors.blue,
             ),
             _buildStatItem(
               icon: Icons.link,
               label: '已连接',
-              value: '0', // TODO: 实际数量
+              value: stats['connected'].toString(),
               color: Colors.green,
             ),
             _buildStatItem(
-              icon: Icons.build,
-              label: '工具',
-              value: '0', // TODO: 实际数量
-              color: Colors.orange,
+              icon: Icons.error,
+              label: '失败',
+              value: stats['failed'].toString(),
+              color: Colors.red,
             ),
             _buildStatItem(
-              icon: Icons.folder,
-              label: '资源',
-              value: '0', // TODO: 实际数量
-              color: Colors.purple,
+              icon: Icons.pause,
+              label: '禁用',
+              value: stats['disabled'].toString(),
+              color: Colors.grey,
             ),
           ],
         ),
@@ -122,8 +124,31 @@ class McpManagementScreen extends ConsumerWidget {
 
   /// 构建服务器列表
   Widget _buildServersList(BuildContext context, WidgetRef ref) {
-    // TODO: 从Provider获取服务器列表
-    final servers = <McpServerConfig>[];
+    return Consumer(
+      builder: (context, ref, child) {
+        final serversAsync = ref.watch(mcpServersProvider);
+        
+        return serversAsync.when(
+          data: (servers) => _buildServerListContent(context, ref, servers),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('加载失败: $error'),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(mcpServersProvider),
+                  child: const Text('重试'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildServerListContent(BuildContext context, WidgetRef ref, List<McpServerConfig> servers) {
 
     if (servers.isEmpty) {
       return Center(
