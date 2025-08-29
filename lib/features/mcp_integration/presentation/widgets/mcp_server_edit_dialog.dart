@@ -113,7 +113,7 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          '支持格式示例：{"mcpServers": {"server-name": {"type": "sse", "url": "https://example.com"}}}',
+          '支持格式示例：{"mcpServers": {"12306-mcp": {"type": "sse", "url": "https://mcp.api-inference.modelscope.net/xxx/sse"}}}',
           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
         const SizedBox(height: 16),
@@ -393,7 +393,10 @@ class _McpServerEditDialogState extends State<McpServerEditDialog> {
     setState(() {
       // 基础信息
       _nameController.text = serverName;
-      _baseUrlController.text = config['url'] ?? '';
+      
+      // ModelScope格式兼容：支持 url 和 baseUrl 两种字段
+      String? serverUrl = config['baseUrl'] ?? config['url'];
+      _baseUrlController.text = serverUrl ?? '';
       
       // 连接类型
       final typeString = config['type']?.toString().toLowerCase() ?? 'sse';

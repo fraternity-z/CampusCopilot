@@ -60,6 +60,7 @@ class McpDashboardScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: "mcp_dashboard_fab",
         onPressed: () => _navigateToManagement(context),
         icon: const Icon(Icons.add),
         label: const Text('添加服务器'),

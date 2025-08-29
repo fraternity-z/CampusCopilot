@@ -5,6 +5,7 @@ import '../../domain/entities/mcp_server_config.dart';
 import '../providers/mcp_servers_provider.dart';
 import '../widgets/mcp_server_card.dart';
 import '../widgets/mcp_server_edit_dialog.dart';
+import 'mcp_tools_screen.dart';
 
 /// MCP服务器管理主界面
 class McpManagementScreen extends ConsumerWidget {
@@ -44,6 +45,7 @@ class McpManagementScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "mcp_management_fab",
         onPressed: () => _showAddServerDialog(context),
         tooltip: '添加MCP服务器',
         child: const Icon(Icons.add),
@@ -278,9 +280,10 @@ class McpManagementScreen extends ConsumerWidget {
   /// 显示服务器详情
   void _showServerDetails(BuildContext context, McpServerConfig server) {
     // 导航到MCP工具界面，显示服务器详情和工具
-    Navigator.of(context).pushNamed(
-      '/mcp-tools',
-      arguments: {'server': server},
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => McpToolsScreen(server: server),
+      ),
     );
   }
 

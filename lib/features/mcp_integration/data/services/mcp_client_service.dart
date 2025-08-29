@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:logging/logging.dart' as logging;
 import 'package:mcp_client/mcp_client.dart';
 import '../../domain/entities/mcp_server_config.dart';
 import '../../domain/services/mcp_service_interface.dart';
@@ -6,7 +7,7 @@ import '../../domain/services/mcp_service_interface.dart';
 /// MCP客户端服务实现
 /// 负责与MCP服务器的实际通信和状态管理
 class McpClientService implements McpServiceInterface {
-  static final Logger _logger = Logger('McpClientService');
+  static final logging.Logger _logger = logging.Logger('McpClientService');
   
   /// 客户端实例缓存 serverId -> Client
   final Map<String, Client> _clients = {};
@@ -54,6 +55,7 @@ class McpClientService implements McpServiceInterface {
         if (isConnected) return true;
       } catch (e) {
         // 健康检查失败，需要重连
+        _logger.warning('Health check failed for $serverId: $e');
       }
       
       // 连接已失效，清理并重新连接
@@ -71,29 +73,46 @@ class McpClientService implements McpServiceInterface {
       }
     }
 
-    // 开始新连接
-    final connectionFuture = _createConnection(server);
-    _pendingConnections[serverId] = connectionFuture;
+    // 实现重试机制
+    const maxRetries = 3;
+    Exception? lastException;
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      _logger.info('Connection attempt $attempt/$maxRetries for ${server.name}');
+      
+      try {
+        // 开始新连接
+        final connectionFuture = _createConnection(server);
+        _pendingConnections[serverId] = connectionFuture;
 
-    try {
-      final client = await connectionFuture;
-      _clients[serverId] = client;
-      _pendingConnections.remove(serverId);
-      
-      // 更新连接状态
-      await _updateConnectionStatus(serverId, true);
-      
-      // 开始健康检查
-      await startHealthMonitoring(serverId);
-      
-      _logger.info('Successfully connected to MCP server: ${server.name}');
-      return true;
-    } catch (e) {
-      _pendingConnections.remove(serverId);
-      await _updateConnectionStatus(serverId, false, error: e.toString());
-      _logger.severe('Failed to connect to MCP server ${server.name}: $e');
-      return false;
+        final client = await connectionFuture;
+        _clients[serverId] = client;
+        _pendingConnections.remove(serverId);
+        
+        // 更新连接状态
+        await _updateConnectionStatus(serverId, true);
+        
+        // 开始健康检查
+        await startHealthMonitoring(serverId);
+        
+        _logger.info('Successfully connected to MCP server: ${server.name}');
+        return true;
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        _pendingConnections.remove(serverId);
+        _logger.warning('Connection attempt $attempt failed for ${server.name}: $e');
+        
+        // 如果不是最后一次重试，等待一段时间再重试
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(seconds: attempt * 2));
+        }
+      }
     }
+
+    // 所有重试都失败了
+    await _updateConnectionStatus(serverId, false, error: lastException?.toString());
+    _logger.severe('All connection attempts failed for MCP server ${server.name}: $lastException');
+    return false;
   }
 
   /// 创建新的客户端连接
@@ -133,10 +152,11 @@ class McpClientService implements McpServiceInterface {
               tokenEndpoint: server.tokenEndpoint!,
               clientId: server.clientId!,
             ) : null,
-            // 添加连接配置
-            heartbeatInterval: const Duration(seconds: 30),
+            // 优化连接配置，禁用压缩以避免超时
+            heartbeatInterval: const Duration(seconds: 60),
             maxMissedHeartbeats: 3,
-            enableCompression: true,
+            enableCompression: false, // 暂时禁用压缩，避免连接超时
+            connectionTimeout: Duration(seconds: server.timeout ?? 30), // 连接超时设置
           );
           break;
         case McpTransportType.streamableHttp:
@@ -144,25 +164,31 @@ class McpClientService implements McpServiceInterface {
           transportConfig = TransportConfig.streamableHttp(
             baseUrl: server.baseUrl,
             headers: server.headers ?? {},
-            useHttp2: true,
-            maxConcurrentRequests: 10,
-            timeout: Duration(seconds: server.timeout ?? 60),
+            useHttp2: false, // 禁用HTTP2以提高兼容性
+            maxConcurrentRequests: 5, // 减少并发请求数
+            timeout: Duration(seconds: server.timeout ?? 30), // 减少超时时间
             oauthConfig: _needsOAuth(server) ? OAuthConfig(
               authorizationEndpoint: server.authorizationEndpoint!,
               tokenEndpoint: server.tokenEndpoint!,
               clientId: server.clientId!,
             ) : null,
-            enableCompression: true,
+            enableCompression: false,
             heartbeatInterval: const Duration(seconds: 60),
           );
           break;
       }
       
-      // 创建并连接客户端
+      // 创建并连接客户端，添加超时控制
       _logger.info('Attempting to create and connect MCP client...');
       final clientResult = await McpClient.createAndConnect(
         config: config,
         transportConfig: transportConfig,
+      ).timeout(
+        Duration(seconds: (server.timeout ?? 30) + 10),
+        onTimeout: () {
+          _logger.severe('MCP client connection timeout');
+          throw Exception('Connection timeout after ${server.timeout ?? 30} seconds');
+        },
       );
       
       final client = clientResult.fold(
