@@ -304,8 +304,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const KnowledgeBaseScreen(),
           ),
 
-          // MCP 服务管理
-
           // 设置
           GoRoute(
             path: '/settings',

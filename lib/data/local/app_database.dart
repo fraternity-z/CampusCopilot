@@ -437,19 +437,16 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 13) {
             try {
-              debugPrint('🔄 执行数据库版本13迁移（添加MCP支持）...');
+              debugPrint('🔄 执行数据库版本13迁移（添加图片支持）...');
 
-              // 创建MCP相关表
-              await m.createTable(mcpServersTable);
-              await m.createTable(mcpConnectionsTable);
-              await m.createTable(mcpToolsTable);
-              await m.createTable(mcpCallHistoryTable);
-              await m.createTable(mcpResourcesTable);
-              await m.createTable(mcpOAuthTokensTable);
+              // 添加 imageUrls 列到 chat_messages_table
+              await m.addColumn(chatMessagesTable, chatMessagesTable.imageUrls);
 
               debugPrint('✅ 数据库版本13迁移完成');
             } catch (e) {
               debugPrint('❌ 数据库版本13迁移失败: $e');
+              // 如果添加列失败，可能是因为列已经存在，这是正常的
+              debugPrint('这可能是因为列已经存在，继续执行...');
             }
           }
         });

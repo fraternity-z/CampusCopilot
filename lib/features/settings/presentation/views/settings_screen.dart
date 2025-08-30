@@ -89,14 +89,6 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               _buildSettingsModule(
                 context,
-                icon: Icons.extension,
-                title: 'MCP 服务',
-                subtitle: '管理 Model Context Protocol 服务连接',
-                onTap: () => context.push('/mcp'),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsModule(
-                context,
                 icon: Icons.info,
                 title: '关于',
                 subtitle: '版本信息、帮助文档',
