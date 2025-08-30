@@ -120,11 +120,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
-  /// 更新动画设置
-  Future<void> updateEnableAnimations(bool enableAnimations) async {
-    state = state.copyWith(enableAnimations: enableAnimations);
-    await _saveSettings();
-  }
 
   /// 更新思考链设置
   Future<void> updateThinkingChainSettings(

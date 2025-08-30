@@ -48,7 +48,6 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
           ? const PrivacySettings()
           : PrivacySettings.fromJson(
               json['privacySettings'] as Map<String, dynamic>),
-      enableAnimations: json['enableAnimations'] as bool? ?? true,
       thinkingChainSettings: json['thinkingChainSettings'] == null
           ? const ThinkingChainSettings()
           : ThinkingChainSettings.fromJson(
@@ -70,7 +69,6 @@ Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
       'defaultProvider': _$AIProviderEnumMap[instance.defaultProvider]!,
       'chatSettings': instance.chatSettings,
       'privacySettings': instance.privacySettings,
-      'enableAnimations': instance.enableAnimations,
       'thinkingChainSettings': instance.thinkingChainSettings,
     };
 

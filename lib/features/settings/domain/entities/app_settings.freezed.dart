@@ -60,9 +60,6 @@ mixin _$AppSettings {
   /// 隐私设置
   PrivacySettings get privacySettings => throw _privateConstructorUsedError;
 
-  /// 动画设置
-  bool get enableAnimations => throw _privateConstructorUsedError;
-
   /// 思考链设置
   ThinkingChainSettings get thinkingChainSettings =>
       throw _privateConstructorUsedError;
@@ -93,7 +90,6 @@ abstract class $AppSettingsCopyWith<$Res> {
       AIProvider defaultProvider,
       ChatSettings chatSettings,
       PrivacySettings privacySettings,
-      bool enableAnimations,
       ThinkingChainSettings thinkingChainSettings});
 
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
@@ -135,7 +131,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? defaultProvider = null,
     Object? chatSettings = null,
     Object? privacySettings = null,
-    Object? enableAnimations = null,
     Object? thinkingChainSettings = null,
   }) {
     return _then(_value.copyWith(
@@ -191,10 +186,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.privacySettings
           : privacySettings // ignore: cast_nullable_to_non_nullable
               as PrivacySettings,
-      enableAnimations: null == enableAnimations
-          ? _value.enableAnimations
-          : enableAnimations // ignore: cast_nullable_to_non_nullable
-              as bool,
       thinkingChainSettings: null == thinkingChainSettings
           ? _value.thinkingChainSettings
           : thinkingChainSettings // ignore: cast_nullable_to_non_nullable
@@ -347,7 +338,6 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
       AIProvider defaultProvider,
       ChatSettings chatSettings,
       PrivacySettings privacySettings,
-      bool enableAnimations,
       ThinkingChainSettings thinkingChainSettings});
 
   @override
@@ -398,7 +388,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? defaultProvider = null,
     Object? chatSettings = null,
     Object? privacySettings = null,
-    Object? enableAnimations = null,
     Object? thinkingChainSettings = null,
   }) {
     return _then(_$AppSettingsImpl(
@@ -454,10 +443,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.privacySettings
           : privacySettings // ignore: cast_nullable_to_non_nullable
               as PrivacySettings,
-      enableAnimations: null == enableAnimations
-          ? _value.enableAnimations
-          : enableAnimations // ignore: cast_nullable_to_non_nullable
-              as bool,
       thinkingChainSettings: null == thinkingChainSettings
           ? _value.thinkingChainSettings
           : thinkingChainSettings // ignore: cast_nullable_to_non_nullable
@@ -483,7 +468,6 @@ class _$AppSettingsImpl implements _AppSettings {
       this.defaultProvider = AIProvider.openai,
       this.chatSettings = const ChatSettings(),
       this.privacySettings = const PrivacySettings(),
-      this.enableAnimations = true,
       this.thinkingChainSettings = const ThinkingChainSettings()});
 
   factory _$AppSettingsImpl.fromJson(Map<String, dynamic> json) =>
@@ -546,11 +530,6 @@ class _$AppSettingsImpl implements _AppSettings {
   @JsonKey()
   final PrivacySettings privacySettings;
 
-  /// 动画设置
-  @override
-  @JsonKey()
-  final bool enableAnimations;
-
   /// 思考链设置
   @override
   @JsonKey()
@@ -558,7 +537,7 @@ class _$AppSettingsImpl implements _AppSettings {
 
   @override
   String toString() {
-    return 'AppSettings(openaiConfig: $openaiConfig, openaiResponsesConfig: $openaiResponsesConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, enableAnimations: $enableAnimations, thinkingChainSettings: $thinkingChainSettings)';
+    return 'AppSettings(openaiConfig: $openaiConfig, openaiResponsesConfig: $openaiResponsesConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, thinkingChainSettings: $thinkingChainSettings)';
   }
 
   @override
@@ -592,8 +571,6 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.chatSettings == chatSettings) &&
             (identical(other.privacySettings, privacySettings) ||
                 other.privacySettings == privacySettings) &&
-            (identical(other.enableAnimations, enableAnimations) ||
-                other.enableAnimations == enableAnimations) &&
             (identical(other.thinkingChainSettings, thinkingChainSettings) ||
                 other.thinkingChainSettings == thinkingChainSettings));
   }
@@ -615,7 +592,6 @@ class _$AppSettingsImpl implements _AppSettings {
       defaultProvider,
       chatSettings,
       privacySettings,
-      enableAnimations,
       thinkingChainSettings);
 
   @JsonKey(ignore: true)
@@ -647,7 +623,6 @@ abstract class _AppSettings implements AppSettings {
       final AIProvider defaultProvider,
       final ChatSettings chatSettings,
       final PrivacySettings privacySettings,
-      final bool enableAnimations,
       final ThinkingChainSettings thinkingChainSettings}) = _$AppSettingsImpl;
 
   factory _AppSettings.fromJson(Map<String, dynamic> json) =
@@ -705,10 +680,6 @@ abstract class _AppSettings implements AppSettings {
 
   /// 隐私设置
   PrivacySettings get privacySettings;
-  @override
-
-  /// 动画设置
-  bool get enableAnimations;
   @override
 
   /// 思考链设置

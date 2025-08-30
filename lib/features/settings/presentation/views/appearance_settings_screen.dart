@@ -25,10 +25,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
           children: [
             _buildThemeSection(context, ref),
             const SizedBox(height: 16),
-            _buildAnimationSection(context, ref),
-            const SizedBox(height: 16),
-            _buildDisplaySection(context, ref),
-            const SizedBox(height: 16),
             _buildThinkingChainSection(context, ref),
           ],
         ),
@@ -89,96 +85,12 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                 );
               },
             ),
-
-            const Divider(),
-
-            // 主题预览
-            ListTile(
-              title: const Text('主题预览'),
-              subtitle: const Text('查看不同主题的效果'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showThemePreview(context),
-              contentPadding: EdgeInsets.zero,
-            ),
           ],
         ),
       ),
     );
   }
 
-  /// 动画设置区域
-  Widget _buildAnimationSection(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    final notifier = ref.read(settingsProvider.notifier);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.animation,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '动画效果',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('启用界面动画'),
-              subtitle: const Text('为获得更流畅的体验，请启用动画'),
-              value: settings.enableAnimations,
-              onChanged: (value) {
-                notifier.updateEnableAnimations(value);
-              },
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 显示设置区域
-  Widget _buildDisplaySection(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.display_settings,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '显示设置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Remove ListTile for '字体大小'
-          ],
-        ),
-      ),
-    );
-  }
 
   /// 思考链设置区域
   Widget _buildThinkingChainSection(BuildContext context, WidgetRef ref) {
@@ -313,22 +225,6 @@ class AppearanceSettingsScreen extends ConsumerWidget {
     );
   }
 
-  /// 显示主题预览
-  void _showThemePreview(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('主题预览'),
-        content: const Text('主题预览功能开发中...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 将ThemeMode转换为字符串
   String _getThemeModeString(app_settings.ThemeMode themeMode) {

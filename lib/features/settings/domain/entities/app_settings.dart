@@ -48,9 +48,6 @@ class AppSettings with _$AppSettings {
     /// 隐私设置
     @Default(PrivacySettings()) PrivacySettings privacySettings,
 
-    /// 动画设置
-    @Default(true) bool enableAnimations,
-
     /// 思考链设置
     @Default(ThinkingChainSettings())
     ThinkingChainSettings thinkingChainSettings,
