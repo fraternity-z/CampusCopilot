@@ -49,6 +49,14 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               _buildSettingsModule(
                 context,
+                icon: Icons.model_training,
+                title: '模型设置',
+                subtitle: '管理AI模型配置、自定义模型和API设置',
+                onTap: () => context.push('/settings/models'),
+              ),
+              const SizedBox(height: 12),
+              _buildSettingsModule(
+                context,
                 icon: Icons.travel_explore,
                 title: 'AI 搜索设置',
                 subtitle: '选择搜索服务商并配置 API 密钥',
@@ -61,14 +69,6 @@ class SettingsScreen extends ConsumerWidget {
                 title: '外观设置',
                 subtitle: '主题、语言等界面设置',
                 onTap: () => context.push('/settings/appearance'),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsModule(
-                context,
-                icon: Icons.model_training,
-                title: '模型设置',
-                subtitle: '管理AI模型配置、自定义模型和API设置',
-                onTap: () => context.push('/settings/models'),
               ),
               const SizedBox(height: 12),
               _buildSettingsModule(
