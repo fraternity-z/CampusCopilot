@@ -76,7 +76,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
           ThinkingChainWidget(
             content: thinkingContent,
             modelName: widget.message.modelName ?? '',
-            isCompleted: true, // UI层面分离时总是完整的
+            isCompleted: widget.message.thinkingComplete, // 使用思考链完成状态
           ),
         // 文件附件显示
         if (widget.message.attachments.isNotEmpty)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../../../../settings/presentation/providers/settings_provider.dart';
 
 /// 思考链显示组件
@@ -47,10 +48,23 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
   static const int _charsPerUpdate = 3; // 每次更新显示的字符数
   static const int _updateInterval = 20; // 更新间隔(ms)
 
+  // 预览窗相关
+  late ScrollController _previewScrollController;
+  late ValueNotifier<int> _activeLineIndex;
+  Timer? _previewTimer;
+  List<String> _contentLines = [];
+  
+  // 预览窗配置
+  static const double _previewWindowHeight = 72.0; // 3行高度
+  static const double _lineHeight = 24.0; // 单行高度
+  static const int _previewScrollInterval = 800; // 滚动间隔(ms)
+
   @override
   void initState() {
     super.initState();
     _displayedContentNotifier = ValueNotifier<String>('');
+    _previewScrollController = ScrollController();
+    _activeLineIndex = ValueNotifier<int>(0);
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -93,14 +107,76 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
 
     if (widget.content != oldWidget.content && !widget.isCompleted) {
       _displayedContentNotifier.value = '';
+      _contentLines.clear();
+      _activeLineIndex.value = 0;
       _startOptimizedTypingAnimation();
     }
 
     if (widget.isCompleted && !oldWidget.isCompleted) {
       _pulsateController.stop();
       _typingTimer?.cancel();
+      _previewTimer?.cancel();
       _displayedContentNotifier.value = widget.content;
+      _processContentLines(widget.content);
     }
+  }
+
+  /// 处理内容分行
+  void _processContentLines(String content) {
+    _contentLines = content.split('\n')
+        .expand((line) => _wrapTextLine(line, 50)) // 每行最多50字符
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+  }
+
+  /// 文本换行处理
+  List<String> _wrapTextLine(String text, int maxLength) {
+    if (text.length <= maxLength) return [text];
+    
+    final List<String> lines = [];
+    int start = 0;
+    
+    while (start < text.length) {
+      int end = math.min(start + maxLength, text.length);
+      // 尝试在单词边界断行
+      if (end < text.length) {
+        int spaceIndex = text.lastIndexOf(' ', end);
+        if (spaceIndex > start) end = spaceIndex;
+      }
+      
+      lines.add(text.substring(start, end).trim());
+      start = end + (end < text.length && text[end] == ' ' ? 1 : 0);
+    }
+    
+    return lines;
+  }
+
+  /// 启动预览窗滚动动画
+  void _startPreviewScrollAnimation() {
+    _previewTimer?.cancel();
+    
+    if (_contentLines.isEmpty) return;
+    
+    _previewTimer = Timer.periodic(
+      Duration(milliseconds: _previewScrollInterval),
+      (timer) {
+        if (!mounted || _isExpanded) {
+          timer.cancel();
+          return;
+        }
+        
+        final nextIndex = (_activeLineIndex.value + 1) % _contentLines.length;
+        _activeLineIndex.value = nextIndex;
+        
+        // 平滑滚动到目标位置
+        final targetOffset = nextIndex * _lineHeight - _previewWindowHeight / 2 + _lineHeight / 2;
+        _previewScrollController.animateTo(
+          math.max(0, targetOffset),
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      },
+    );
   }
 
   /// 优化的打字动画 - 批量更新字符
@@ -127,7 +203,17 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           }
           buffer.write(widget.content.substring(currentIndex, endIndex));
           currentIndex = endIndex;
-          _displayedContentNotifier.value = buffer.toString();
+          final newContent = buffer.toString();
+          _displayedContentNotifier.value = newContent;
+          
+          // 只在内容完成时处理预览窗，避免闪烁
+          if (currentIndex >= contentLength) {
+            _processContentLines(newContent);
+            if (!_isExpanded && _contentLines.isNotEmpty && _previewTimer == null) {
+              _startPreviewScrollAnimation();
+            }
+          }
+          
           if (currentIndex >= contentLength) {
             timer.cancel();
           }
@@ -143,7 +229,10 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     _animationController.dispose();
     _pulsateController.dispose();
     _typingTimer?.cancel();
+    _previewTimer?.cancel();
     _displayedContentNotifier.dispose();
+    _previewScrollController.dispose();
+    _activeLineIndex.dispose();
     super.dispose();
   }
 
@@ -167,15 +256,40 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
               ValueListenableBuilder<String>(
                 valueListenable: _displayedContentNotifier,
                 builder: (context, displayedContent, child) {
-                  if (_isExpanded ||
-                      settings.maxDisplayLength > displayedContent.length) {
+                  // 简化逻辑：显示折叠展开的内容
+                  if (displayedContent.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  
+                  // 内容较短时直接显示，不支持折叠
+                  if (displayedContent.length <= 100) { // 降低阈值以便测试
                     return _buildOptimizedContent(
                       context,
                       settings,
                       displayedContent,
                     );
                   }
-                  return const SizedBox.shrink();
+                  
+                  // 内容较长时支持折叠
+                  if (_isExpanded) {
+                    return _buildOptimizedContent(
+                      context,
+                      settings,
+                      displayedContent,
+                    );
+                  } else {
+                    // 折叠状态显示预览窗
+                    _processContentLines(displayedContent); // 实时处理分行
+                    if (_contentLines.isNotEmpty) {
+                      return _buildPreviewWindow(context, settings);
+                    } else {
+                      return _buildOptimizedContent(
+                        context,
+                        settings,
+                        displayedContent,
+                      );
+                    }
+                  }
                 },
               ),
             ],
@@ -195,10 +309,24 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     return GestureDetector(
       onTap: () {
         final currentLength = _displayedContentNotifier.value.length;
-        if (currentLength > settings.maxDisplayLength) {
+        // 降低折叠阈值以便测试
+        if (currentLength > 10) {
           setState(() {
             _isExpanded = !_isExpanded;
           });
+          
+          // 折叠状态管理
+          if (_isExpanded) {
+            _previewTimer?.cancel();
+            _previewTimer = null;
+          } else {
+            // 折叠时立即处理内容并启动动画
+            _processContentLines(_displayedContentNotifier.value);
+            if (_contentLines.isNotEmpty) {
+              _startPreviewScrollAnimation();
+            }
+          }
+          
           widget.onToggleExpanded?.call();
         }
       },
@@ -297,6 +425,96 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建预览窗组件
+  Widget _buildPreviewWindow(BuildContext context, settings) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      margin: const EdgeInsets.only(top: 8),
+      height: _previewWindowHeight,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ShaderMask(
+          shaderCallback: (Rect bounds) {
+            return LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black,
+                Colors.black,
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.15, 0.85, 1.0],
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.dstIn,
+          child: ValueListenableBuilder<int>(
+            valueListenable: _activeLineIndex,
+            builder: (context, activeIndex, child) {
+              return ListView.builder(
+                controller: _previewScrollController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemExtent: _lineHeight,
+                itemCount: _contentLines.length,
+                itemBuilder: (context, index) {
+                  final isActive = index == activeIndex;
+                  return _buildPreviewLine(
+                    context,
+                    _contentLines[index],
+                    isActive,
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建预览行组件
+  Widget _buildPreviewLine(BuildContext context, String text, bool isActive) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: _lineHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: isActive 
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 300),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
+              alpha: isActive ? 1.0 : 0.7,
+            ),
+            fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
+          ),
+          child: Transform.scale(
+            scale: isActive ? 1.02 : 1.0,
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
       ),

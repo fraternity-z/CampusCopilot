@@ -556,7 +556,7 @@ class ChatService {
               debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
               debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
             } else {
-              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
+              // 未找到相关知识库内容，使用原始查询
             }
           } else if (ragService is EnhancedRagService) {
             // 使用增强RAG服务
@@ -883,16 +883,11 @@ class ChatService {
 
           // 检查是否包含任何可能的思考链标签
           if (kDebugMode) {
+            // 检查标签内容
             if (deltaText.contains('<') ||
                 deltaText.contains('>') ||
                 deltaText.contains('think')) {
-              debugPrint('⚠️ 发现可能的标签内容: $deltaText');
-            }
-            // 检查是否包含其他可能的思考标记
-            if (deltaText.contains('思考') ||
-                deltaText.contains('thinking') ||
-                deltaText.contains('reason')) {
-              debugPrint('🧠 发现思考相关关键词: $deltaText');
+              // 发现可能的标签内容
             }
           }
 
@@ -929,7 +924,7 @@ class ChatService {
             accumulatedActualContent += contentDelta;
             if (kDebugMode) {
               debugPrint(
-                '📝 正文总长度: $accumulatedActualContent.length',
+                '📝 正文内容已累积',
               );
             }
           }
@@ -1294,9 +1289,7 @@ class ChatService {
         final thinkingContent = text.substring(thinkStart + 7, thinkEnd);
         final afterThink = text.substring(thinkEnd + 8);
 
-        debugPrint('📝 开始前内容: "$beforeThink"');
-        debugPrint('🧠 思考链内容: "$thinkingContent"');
-        debugPrint('📝 结束后内容: "$afterThink"');
+        // 内容分离完成
 
         contentDelta = beforeThink + afterThink;
         thinkingDelta = thinkingContent;
