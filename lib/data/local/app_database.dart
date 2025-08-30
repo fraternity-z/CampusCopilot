@@ -18,7 +18,6 @@ import 'tables/knowledge_base_configs_table.dart';
 import 'tables/knowledge_bases_table.dart';
 import 'tables/custom_models_table.dart';
 import 'tables/general_settings_table.dart';
-import 'tables/mcp_servers_table.dart';
 
 part 'app_database.g.dart';
 
@@ -42,13 +41,6 @@ part 'app_database.g.dart';
     KnowledgeBaseConfigsTable,
     CustomModelsTable,
     GeneralSettingsTable,
-    // MCP相关表
-    McpServersTable,
-    McpConnectionsTable,
-    McpToolsTable,
-    McpCallHistoryTable,
-    McpResourcesTable,
-    McpOAuthTokensTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -86,7 +78,7 @@ class AppDatabase extends _$AppDatabase {
         await _insertDefaultData();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // 使用事务包裹所有迁移，防止中途失败导致部分状态
+        // 使用事务包裹所有迁移，防止中途失败导致部分状态丢失
         await transaction(() async {
           if (from < 2) {
             await m.createTable(personaGroupsTable);

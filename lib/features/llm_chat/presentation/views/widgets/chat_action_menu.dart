@@ -53,15 +53,6 @@ class ChatActionMenu extends ConsumerWidget {
         ),
         const PopupMenuDivider(),
         PopupMenuItem<String>(
-          value: 'mcp_tools',
-          child: _buildMenuItem(
-            icon: Icons.extension_outlined,
-            title: 'MCP工具',
-            subtitle: '模型上下文协议工具',
-            color: Colors.purple,
-          ),
-        ),
-        PopupMenuItem<String>(
           value: 'settings',
           child: _buildMenuItem(
             icon: Icons.settings_outlined,
@@ -133,9 +124,6 @@ class ChatActionMenu extends ConsumerWidget {
         break;
       case 'clear_context':
         _showClearContextDialog(context, ref);
-        break;
-      case 'mcp_tools':
-        _showMCPToolsDialog(context, ref);
         break;
       case 'settings':
         _navigateToSettings(context);
@@ -219,30 +207,6 @@ class ChatActionMenu extends ConsumerWidget {
     );
   }
 
-  /// 显示MCP工具对话框
-  void _showMCPToolsDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.extension_outlined, color: Colors.purple),
-            SizedBox(width: 8),
-            Text('MCP工具'),
-          ],
-        ),
-        content: const Text('MCP（模型上下文协议）工具功能正在开发中...\n\n敬请期待！'),
-        actions: [
-          ModernButton(
-            text: '知道了',
-            onPressed: () => Navigator.of(context).pop(),
-            style: ModernButtonStyle.outline,
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 导航到设置页面
   void _navigateToSettings(BuildContext context) {

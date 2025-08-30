@@ -23,7 +23,6 @@ import '../features/settings/presentation/views/model_management_screen.dart';
 import '../features/settings/presentation/views/provider_config_screen.dart';
 import '../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
-import '../features/mcp_integration/presentation/views/mcp_dashboard_screen.dart';
 
 /// 侧边栏标签页状态管理
 final sidebarTabProvider = StateProvider<SidebarTab>(
@@ -306,11 +305,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
 
           // MCP 服务管理
-          GoRoute(
-            path: '/mcp',
-            name: 'mcp',
-            builder: (context, state) => const McpDashboardScreen(),
-          ),
 
           // 设置
           GoRoute(
