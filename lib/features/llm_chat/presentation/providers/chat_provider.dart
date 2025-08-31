@@ -297,8 +297,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final messageContent = learningModeState.isLearningMode ? processedMessage : userContent;
       final stream = _chatService.sendMessageStream(
         sessionId: currentSession.id,
-        content: messageContent,
+        content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
+        displayContent: userContent, // 传递原始用户输入用于显示
       );
 
       String fullResponse = '';
@@ -313,6 +314,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (messageChunk.isFromUser && isFirstUserMessage) {
             // 跳过第一个用户消息，因为我们不需要重复添加
             isFirstUserMessage = false;
+            debugPrint('🔍 重新生成：跳过流中的用户消息');
+            return;
+          }
+
+          // 额外保护：如果流中还有其他用户消息，也要跳过
+          if (messageChunk.isFromUser) {
+            debugPrint('⚠️ 重新生成：检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 
@@ -928,9 +936,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 开始流式响应
       final stream = _chatService.sendMessageStream(
         sessionId: currentSession.id,
-        content: messageContent,
+        content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
         imageUrls: imageUrlsForAI, // 传递base64格式的图片给AI
+        displayContent: text, // 传递原始用户输入用于显示
       );
 
       String fullResponse = '';
@@ -943,8 +952,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
       _currentStreamSubscription = stream.listen(
         (messageChunk) {
           if (messageChunk.isFromUser && isFirstUserMessage) {
-            // 跳过第一个用户消息，因为我们已经在UI中显示了
+            // 跳过第一个用户消息，因为我们已经在UI中显示了原始用户消息
             isFirstUserMessage = false;
+            debugPrint('🔍 跳过流中的用户消息，保持显示原始内容');
+            return;
+          }
+
+          // 额外保护：如果流中还有其他用户消息，也要跳过，防止替换原始用户消息
+          if (messageChunk.isFromUser) {
+            debugPrint('⚠️ 检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 

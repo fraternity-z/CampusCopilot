@@ -438,15 +438,18 @@ class ChatService {
     String? parentMessageId,
     bool includeContext = true, // 是否包含历史上下文
     List<String> imageUrls = const [], // 图片URL列表
+    String? displayContent, // 用于UI显示的原始内容（可选）
   }) async* {
     debugPrint('🚀 开始发送消息: $content');
+    final messageContentForDisplay = displayContent ?? content;
+    debugPrint('🔍 用户消息内容 - 显示: ${messageContentForDisplay.length}字符, AI处理: ${content.length}字符');
 
     final String? pId = parentMessageId;
-    // 1. 创建用户消息
+    // 1. 创建用户消息（使用显示内容，确保UI显示的是原始输入）
     final userMessage = imageUrls.isNotEmpty
         ? ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            content: content,
+            content: messageContentForDisplay, // 使用显示内容
             isFromUser: true,
             timestamp: DateTime.now(),
             chatSessionId: sessionId,
@@ -455,7 +458,7 @@ class ChatService {
             parentMessageId: pId,
           )
         : ChatMessageFactory.createUserMessage(
-            content: content,
+            content: messageContentForDisplay, // 使用显示内容
             chatSessionId: sessionId,
             parentMessageId: pId,
           );
