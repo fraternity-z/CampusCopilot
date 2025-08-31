@@ -1129,12 +1129,12 @@ $wrappedMessage
 
     // 如果是最后一轮，直接替换为最终答案提示词
     if (shouldGiveFinalAnswer) {
-      // 根据原因确定说明内容
+      // 根据原因确定说明内容（用户主动要求优先级最高）
       String reasonExplanation = '';
-      if (reachedMaxRounds) {
-        reasonExplanation = '我们已经完成了${currentSession.maxRounds}轮的学习引导，现在是时候给出完整答案了。';
-      } else if (userRequestedAnswer) {
+      if (userRequestedAnswer) {
         reasonExplanation = '根据您的要求，我将直接给出完整答案。';
+      } else if (reachedMaxRounds) {
+        reasonExplanation = '我们已经完成了${currentSession.maxRounds}轮的学习引导，现在是时候给出完整答案了。';
       } else {
         reasonExplanation = '学习会话已完成，现在给出完整答案。';
       }

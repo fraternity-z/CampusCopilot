@@ -959,7 +959,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
