@@ -244,10 +244,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     String processedMessage = userContent;
     
     if (learningModeState.isLearningMode) {
-      // 在重新生成时，检查是否应该给出最终答案
-      final shouldGiveFinalAnswerInRegen = learningModeState.currentSession != null &&
-          (learningModeState.currentSession!.currentRound >= learningModeState.currentSession!.maxRounds ||
-           learningModeState.currentSession!.userRequestedAnswer);
+      // 重新生成时检查是否应该给出答案
+      final userWantsDirectAnswer = _isRequestingDirectAnswer(userContent);
+      final reachedMaxRounds = learningModeState.currentSession != null && 
+          learningModeState.currentSession!.currentRound >= learningModeState.currentSession!.maxRounds;
+      final shouldGiveFinalAnswerInRegen = userWantsDirectAnswer || reachedMaxRounds;
       
       // 构建学习模式消息，并添加重新生成标识
       if (learningModeState.currentSession != null) {
@@ -459,6 +460,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return false;
   }
 
+
+  /// 检测用户是否要求直接答案 - 让AI自己判断
+  bool _isRequestingDirectAnswer(String text) {
+    return false; // 先简化为false，让AI在学习提示词中自己判断
+  }
 
   /// 判断是否为图像生成指令
   bool _isImageGenerationPrompt(String text) {
@@ -695,26 +701,26 @@ class ChatNotifier extends StateNotifier<ChatState> {
         debugPrint('🎓 开始新的学习会话');
       }
       
-      // 检查是否应该在这轮给出最终答案（但不立即结束会话）
-      final shouldGiveFinalAnswer = learningModeNotifier.shouldEndCurrentSession(text);
-      final isUserRequestedAnswer = LearningSessionService.shouldTriggerDirectAnswer(
-        text, 
-        learningModeState.sessionConfig.answerTriggerKeywords,
-      );
+      // 简化逻辑：检查用户是否明确要求答案或到达最后一轮
+      final userWantsDirectAnswer = _isRequestingDirectAnswer(text);
+      final reachedMaxRounds = learningModeState.currentSession != null && 
+          learningModeState.currentSession!.currentRound >= learningModeState.currentSession!.maxRounds;
+      // 关键修改：当要发送的消息会导致达到最大轮数时，就应该给最终答案  
+      final willReachMaxRounds = learningModeState.currentSession != null && 
+          (learningModeState.currentSession!.currentRound + 1) >= learningModeState.currentSession!.maxRounds;
+      final shouldGiveFinalAnswer = userWantsDirectAnswer || reachedMaxRounds || willReachMaxRounds;
       
-      debugPrint('🔍 学习模式检测: shouldGiveFinalAnswer=$shouldGiveFinalAnswer, isUserRequestedAnswer=$isUserRequestedAnswer');
+      debugPrint('🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
       debugPrint('🔍 用户消息: "$text"');
-      debugPrint('🔍 当前会话: ${learningModeState.currentSession?.currentRound}/${learningModeState.currentSession?.maxRounds}');
-      debugPrint('🔍 触发关键词: ${learningModeState.sessionConfig.answerTriggerKeywords}');
       
-      // 如果用户主动要求答案，标记会话状态但不结束
-      if (isUserRequestedAnswer && learningModeState.currentSession != null) {
-        // 先更新会话状态为用户要求答案，但保持active状态直到AI回复完成
-        final updatedSession = LearningSessionService.markUserRequestedAnswer(
-          learningModeState.currentSession!
-        ).copyWith(status: LearningSessionStatus.active); // 保持active状态
+      // 如果用户要求答案或达到最大轮数，标记会话状态
+      if (shouldGiveFinalAnswer && learningModeState.currentSession != null) {
+        final updatedSession = learningModeState.currentSession!.copyWith(
+          userRequestedAnswer: userWantsDirectAnswer,
+          status: LearningSessionStatus.active, // 保持active状态直到AI回复完成
+        );
         learningModeNotifier.updateCurrentSession(updatedSession);
-        debugPrint('🎓 用户要求直接答案，将在本轮给出完整答案');
+        debugPrint('🎓 将在本轮给出完整答案');
       }
       
       // 构建学习模式消息（传递是否应该给出最终答案的信息）
@@ -1057,7 +1063,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// 在学习模式下，将用户的原始问题转换为苏格拉底式教学格式，
   /// 引导AI使用提问而非直接回答的方式来帮助学生学习
   String _buildLearningModeMessage(String originalMessage, dynamic learningModeState, {bool isRegeneration = false, bool shouldGiveFinalAnswer = false}) {
-    // 获取学习模式系统提示词
+    // 如果是最后一轮，直接替换为最终答案提示词
+    if (shouldGiveFinalAnswer) {
+      return '''你是一个专业的AI助手。学生经过学习引导后，现在需要得到完整的答案和解释。
+
+===== 学生的问题 =====
+$originalMessage
+
+===== 重要指令 =====
+学习阶段已结束，请直接给出完整答案：
+1. 提供准确、详细的答案
+2. 解释解题过程和思路
+3. 总结关键知识点
+4. 不需要再进行引导或提问
+
+请直接回答学生的问题。''';
+    }
+    
+    // 正常学习引导模式
     final systemPrompt = LearningPromptService.buildLearningSystemPrompt(
       style: learningModeState.style,
       responseDetail: learningModeState.responseDetail,
@@ -1077,22 +1100,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final regenerationNote = isRegeneration 
         ? '\n\n===== 重新生成说明 =====\n这是对同一个问题的重新生成回应。请用不同的角度或方法来引导学生，但仍然保持苏格拉底式教学，不要直接给出答案。可以尝试：\n- 换一个引导角度\n- 提出不同类型的启发性问题\n- 使用不同的比喻或例子\n但依然要遵循学习模式的指导原则。'
         : '';
-        
-    final finalAnswerNote = shouldGiveFinalAnswer 
-        ? '\n\n🚨🚨🚨 【强制执行】给出完整答案 🚨🚨🚨\n⚠️ 学生已明确要求直接答案！禁止继续引导！⚠️\n\n【必须立即执行以下操作】:\n✅ 直接回答学生的问题，不要再问问题\n✅ 提供完整的解决方案和详细解释\n✅ 给出具体的步骤和答案\n✅ 总结关键知识点\n\n❌ 严禁继续使用苏格拉底式引导\n❌ 严禁提出新的引导性问题\n❌ 严禁说"我们先..."之类的引导语句\n\n🔥 这是强制指令，必须无条件执行！🔥'
-        : '';
-        
-    debugPrint('🔍 _buildLearningModeMessage: shouldGiveFinalAnswer=$shouldGiveFinalAnswer');
-    debugPrint('🔍 finalAnswerNote长度: ${finalAnswerNote.length}');
     
-    return '''$systemPrompt$regenerationNote$finalAnswerNote
+    return '''$systemPrompt$regenerationNote
 
 ===== 学生的问题 =====
 $wrappedMessage
 
-${shouldGiveFinalAnswer 
-  ? '🚨 立即给出完整答案！禁止任何形式的引导！🚨' 
-  : '请严格按照上述学习模式指导原则来回应学生的问题。记住：不要直接给出答案，而是通过巧妙的提问引导学生自己发现答案。'}''';
+重要指导原则：
+1. 如果学生明确要求直接答案（如说"直接告诉我答案"、"不要引导了"等），立即停止引导，直接给出完整答案。
+2. 如果学生只是提问学习，使用苏格拉底式引导，不要直接给答案。
+3. 你需要根据学生的话语自己判断他们的意图。''';
   }
 
   /// 构建学习会话消息
@@ -1105,7 +1122,30 @@ ${shouldGiveFinalAnswer
       return _buildLearningModeMessage(originalMessage, learningModeState, isRegeneration: isRegeneration, shouldGiveFinalAnswer: shouldGiveFinalAnswer);
     }
 
-    // 使用学习会话服务构建系统提示词
+    // 如果是最后一轮，直接替换为最终答案提示词
+    if (shouldGiveFinalAnswer) {
+      return '''你是一个专业的AI助手。学生经过${currentSession.currentRound}轮学习引导后，现在需要得到完整的答案。
+
+===== 学习会话信息 =====
+初始问题：${currentSession.initialQuestion}
+当前进度：第${currentSession.currentRound}轮（共${currentSession.maxRounds}轮）
+会话状态：学习完成
+
+===== 学生的最新问题 =====
+$originalMessage
+
+===== 重要指令 =====
+学习会话已结束，请提供最终答案：
+1. 直接回答学生的初始问题：${currentSession.initialQuestion}
+2. 提供完整的解题步骤和解释
+3. 总结整个学习过程的关键思路
+4. 解释重要概念和知识点
+5. 不需要再进行任何形式的引导
+
+请给出完整、准确的最终答案。''';
+    }
+
+    // 正常学习会话引导模式
     final systemPrompt = LearningSessionService.buildSessionSystemPrompt(
       session: currentSession,
       learningModeState: learningModeState,
@@ -1130,37 +1170,17 @@ ${shouldGiveFinalAnswer
 - 不要直接给出答案（除非是最后一轮）
 请提供一个更好的引导性回应。'''
         : '';
-        
-    final finalAnswerNote = shouldGiveFinalAnswer 
-        ? '''
-
-🚨🚨🚨 【强制执行】给出最终答案 🚨🚨🚨
-⚠️ 学生明确要求直接答案或已达最大轮次！⚠️
-
-【立即停止引导，执行以下操作】:
-🎯 直接回答学生的初始问题
-📝 提供完整的解决方案和详细解释
-📊 总结整个学习过程的关键思路和步骤
-💡 解释为什么之前的引导步骤是必要的
-✨ 确保答案完整、准确、易懂
-
-⛔ 绝对禁止行为：
-❌ 继续提出引导性问题
-❌ 使用"我们先..."、"让我们..."等引导语句
-❌ 说"这种心情很正常，但是..."等拒绝给答案的话
-❌ 继续苏格拉底式教学
-
-🔥 这是最高优先级指令，必须立即执行！🔥'''
-        : '';
     
-    return '''$systemPrompt$regenerationNote$finalAnswerNote
+    return '''$systemPrompt$regenerationNote
 
 ===== 用户输入 =====
 $wrappedMessage
 
-${shouldGiveFinalAnswer 
-  ? '🚨 强制指令：立即给出最终答案！禁止继续引导！🚨' 
-  : '请严格按照学习会话的指导原则进行回应。'}''';
+重要指导原则：
+1. 如果学生明确要求直接答案，立即停止引导，直接给出完整答案。
+2. 如果已达到最大轮次，应该给出完整答案。
+3. 如果学生只是正常学习互动，继续苏格拉底式引导。
+4. 根据学生的话语和会话进度自己判断应该引导还是给答案。''';
   }
 
   /// 处理学习模式下的AI回复

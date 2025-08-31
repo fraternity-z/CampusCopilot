@@ -788,9 +788,12 @@ class ChatService {
         mergedCustomStream.remove('enable_reasoning');
       }
 
+      // 检查是否为学习模式 - 学习模式下不使用智能体提示词，因为学习提示词已经包含在消息中
+      final isLearningMode = content != finalPrompt; // 如果内容被修改过，说明是学习模式
+      
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
-        systemPrompt: persona.systemPrompt, // 使用智能体的提示词
+        systemPrompt: isLearningMode ? null : persona.systemPrompt, // 学习模式下不使用智能体提示词
         temperature: session.config?.temperature ?? params.temperature,
         maxTokens: params.enableMaxTokens ? params.maxTokens.toInt() : null,
         // 注意：部分模型不支持 top_p，统一不传，以避免 400/500

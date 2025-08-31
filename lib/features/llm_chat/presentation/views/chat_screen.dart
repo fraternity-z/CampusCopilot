@@ -28,6 +28,7 @@ import '../../../../features/settings/presentation/providers/ui_settings_provide
 import '../../../../../core/utils/model_icon_utils.dart';
 import '../../../settings/domain/entities/app_settings.dart';
 import '../../../learning_mode/presentation/widgets/mode_toggle_widget.dart';
+import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
 /// 聊天界面
 ///
@@ -435,9 +436,53 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         ),
       ),
       child: Consumer(
-        key: const ValueKey('persona_info_bar_consumer'), // 添加稳定的key
+        key: const ValueKey('persona_info_bar_consumer'),
         builder: (context, ref, child) {
+          final learningModeState = ref.watch(learningModeProvider);
           final currentModelAsync = ref.watch(databaseCurrentModelProvider);
+          
+          // 如果是学习模式且有会话，显示学习进度
+          if (learningModeState.isLearningMode && learningModeState.currentSession != null) {
+            final session = learningModeState.currentSession!;
+            return Row(
+              children: [
+                Icon(
+                  Icons.psychology,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '学习模式 - 第 ${session.currentRound} 轮 / 共 ${session.maxRounds} 轮',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${session.currentRound}/${session.maxRounds}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          
+          // 普通模式，显示模型名称
           return Row(
             children: [
               Icon(
@@ -2281,4 +2326,5 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       ),
     );
   }
+
 }
