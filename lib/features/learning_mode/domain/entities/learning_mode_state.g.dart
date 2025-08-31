@@ -16,8 +16,9 @@ _$LearningModeStateImpl _$$LearningModeStateImplFromJson(
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      currentSubject: json['currentSubject'] as String?,
-      difficultyLevel: (json['difficultyLevel'] as num?)?.toInt() ?? 3,
+      responseDetail: $enumDecodeNullable(
+              _$ResponseDetailEnumMap, json['responseDetail']) ??
+          ResponseDetail.normal,
       showLearningHints: json['showLearningHints'] as bool? ?? true,
       questionStep: (json['questionStep'] as num?)?.toInt() ?? 0,
       maxQuestionSteps: (json['maxQuestionSteps'] as num?)?.toInt() ?? 5,
@@ -29,8 +30,7 @@ Map<String, dynamic> _$$LearningModeStateImplToJson(
       'isLearningMode': instance.isLearningMode,
       'style': _$LearningStyleEnumMap[instance.style]!,
       'hintHistory': instance.hintHistory,
-      'currentSubject': instance.currentSubject,
-      'difficultyLevel': instance.difficultyLevel,
+      'responseDetail': _$ResponseDetailEnumMap[instance.responseDetail]!,
       'showLearningHints': instance.showLearningHints,
       'questionStep': instance.questionStep,
       'maxQuestionSteps': instance.maxQuestionSteps,
@@ -40,6 +40,12 @@ const _$LearningStyleEnumMap = {
   LearningStyle.guided: 'guided',
   LearningStyle.exploratory: 'exploratory',
   LearningStyle.structured: 'structured',
+};
+
+const _$ResponseDetailEnumMap = {
+  ResponseDetail.brief: 'brief',
+  ResponseDetail.normal: 'normal',
+  ResponseDetail.detailed: 'detailed',
 };
 
 _$LearningModeConfigImpl _$$LearningModeConfigImplFromJson(
@@ -52,10 +58,6 @@ _$LearningModeConfigImpl _$$LearningModeConfigImplFromJson(
           (json['customPromptTemplates'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
-      preferredSubjects: (json['preferredSubjects'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
     );
 
 Map<String, dynamic> _$$LearningModeConfigImplToJson(
@@ -65,5 +67,4 @@ Map<String, dynamic> _$$LearningModeConfigImplToJson(
       'allowDirectAnswers': instance.allowDirectAnswers,
       'hintInterval': instance.hintInterval,
       'customPromptTemplates': instance.customPromptTemplates,
-      'preferredSubjects': instance.preferredSubjects,
     };

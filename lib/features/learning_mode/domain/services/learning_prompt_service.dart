@@ -8,24 +8,20 @@ class LearningPromptService {
   /// 根据学习模式构建系统提示词
   static String buildLearningSystemPrompt({
     required LearningStyle style,
-    required int difficultyLevel,
-    String? subject,
+    required ResponseDetail responseDetail,
     int questionStep = 0,
     int maxSteps = 5,
   }) {
     final basePrompt = _getBaseEducatorPrompt();
     final stylePrompt = _getStyleSpecificPrompt(style, questionStep, maxSteps);
-    final difficultyPrompt = _getDifficultyPrompt(difficultyLevel);
-    final subjectPrompt = subject != null ? _getSubjectPrompt(subject) : '';
+    final detailPrompt = _getResponseDetailPrompt(responseDetail);
 
     return '''
 $basePrompt
 
 $stylePrompt
 
-$difficultyPrompt
-
-$subjectPrompt
+$detailPrompt
 
 重要原则：
 1. 绝不直接给出答案，始终通过提问引导学生思考
@@ -113,110 +109,36 @@ $subjectPrompt
     }
   }
 
-  /// 获取难度相关的提示词
-  static String _getDifficultyPrompt(int level) {
-    switch (level) {
-      case 1:
+  /// 获取回答详细程度相关的提示词
+  static String _getResponseDetailPrompt(ResponseDetail detail) {
+    switch (detail) {
+      case ResponseDetail.brief:
         return '''
-难度级别：初级 (1/5)
-- 使用简单易懂的词汇
-- 提供更多的背景信息和例子
-- 分解步骤要更加细致
-- 给予更多的鼓励和肯定
+回答详细程度：粗略
+- 简洁的引导性提问，直击要点
+- 提供关键提示即可，让学生自主思考
+- 避免过多解释，重点在于启发
+- 单次回应控制在2-3个问题内
 ''';
-      case 2:
+      case ResponseDetail.normal:
         return '''
-难度级别：入门 (2/5)
-- 逐步引入专业术语
-- 提供适当的类比和比喻
-- 步骤分解适中
-- 适时给予提示
+回答详细程度：默认
+- 适中的引导深度，循序渐进
+- 提供必要的背景和提示
+- 平衡引导和独立思考
+- 单次回应包含3-5个递进问题
 ''';
-      case 3:
+      case ResponseDetail.detailed:
         return '''
-难度级别：中等 (3/5)
-- 平衡使用通俗和专业语言
-- 引导学生主动思考
-- 适当增加思维跳跃
-- 鼓励独立解决部分问题
+回答详细程度：详细
+- 深入的引导过程，充分解释思路
+- 提供丰富的背景信息和多角度提示
+- 详细阐述思考过程和方法
+- 可以包含更多启发性的补充问题
 ''';
-      case 4:
-        return '''
-难度级别：进阶 (4/5)
-- 使用更多专业术语
-- 提出更有挑战性的问题
-- 期待更深入的思考
-- 引导学生发现更复杂的联系
-''';
-      case 5:
-        return '''
-难度级别：高级 (5/5)
-- 使用专业学术语言
-- 提出开放性和批判性问题
-- 期待原创性思考
-- 挑战学生的认知边界
-''';
-      default:
-        return _getDifficultyPrompt(3);
     }
   }
 
-  /// 获取学科特定的提示词
-  static String _getSubjectPrompt(String subject) {
-    // 可以根据不同学科制定特定的教学策略
-    final subjectLower = subject.toLowerCase();
-    
-    if (subjectLower.contains('数学') || subjectLower.contains('math')) {
-      return '''
-学科焦点：数学
-教学重点：
-- 重视逻辑推理过程
-- 鼓励多种解题方法
-- 强调概念的本质理解
-- 联系实际应用场景
-- 培养严谨的思维习惯
-''';
-    } else if (subjectLower.contains('物理') || subjectLower.contains('physics')) {
-      return '''
-学科焦点：物理
-教学重点：
-- 强调物理现象的观察和分析
-- 重视实验思维和假设验证
-- 引导从现象到本质的思考
-- 注重数学工具的运用
-- 培养科学思维方法
-''';
-    } else if (subjectLower.contains('化学') || subjectLower.contains('chemistry')) {
-      return '''
-学科焦点：化学
-教学重点：
-- 从微观角度理解宏观现象
-- 重视实验观察和数据分析
-- 强调化学反应的本质
-- 注重安全意识的培养
-- 联系生活中的化学现象
-''';
-    } else if (subjectLower.contains('生物') || subjectLower.contains('biology')) {
-      return '''
-学科焦点：生物
-教学重点：
-- 从结构与功能的关系思考
-- 重视观察和分类能力
-- 强调生命现象的规律性
-- 注重实验设计思维
-- 培养科学探究精神
-''';
-    }
-    
-    return '''
-当前学科：$subject
-通用教学重点：
-- 注重学科特有的思维方式
-- 联系相关的背景知识
-- 培养学科核心素养
-- 强调知识的应用价值
-''';
-  }
 
   /// 构建用户消息的学习模式包装
   static String wrapUserMessage(String originalMessage, {

@@ -642,8 +642,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (learningModeState.isLearningMode) {
       // 在学习模式下，包装用户消息以引导AI使用苏格拉底式教学
       processedMessage = _buildLearningModeMessage(text, learningModeState);
-      debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}, 难度: ${learningModeState.difficultyLevel}');
-      
+      debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}');
+
       // 增加提问步骤
       _ref.read(learningModeProvider.notifier).incrementQuestionStep();
     }
@@ -965,8 +965,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 获取学习模式系统提示词
     final systemPrompt = LearningPromptService.buildLearningSystemPrompt(
       style: learningModeState.style,
-      difficultyLevel: learningModeState.difficultyLevel,
-      subject: learningModeState.currentSubject,
+      responseDetail: learningModeState.responseDetail,
       questionStep: learningModeState.questionStep,
       maxSteps: learningModeState.maxQuestionSteps,
     );

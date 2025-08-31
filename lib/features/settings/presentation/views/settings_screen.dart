@@ -73,6 +73,14 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               _buildSettingsModule(
                 context,
+                icon: Icons.school,
+                title: '学习模式',
+                subtitle: '苏格拉底式教学、难度调节、学科设置',
+                onTap: () => context.push('/settings/learning-mode'),
+              ),
+              const SizedBox(height: 12),
+              _buildSettingsModule(
+                context,
                 icon: Icons.storage,
                 title: '数据管理',
                 subtitle: '备份、恢复、清空数据',

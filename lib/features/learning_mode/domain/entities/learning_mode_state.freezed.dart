@@ -29,11 +29,8 @@ mixin _$LearningModeState {
   /// 提示历史记录（用于上下文连贯性）
   List<String> get hintHistory => throw _privateConstructorUsedError;
 
-  /// 当前学科/主题
-  String? get currentSubject => throw _privateConstructorUsedError;
-
-  /// 学习难度级别 (1-5)
-  int get difficultyLevel => throw _privateConstructorUsedError;
+  /// 回答详细程度
+  ResponseDetail get responseDetail => throw _privateConstructorUsedError;
 
   /// 是否显示学习提示
   bool get showLearningHints => throw _privateConstructorUsedError;
@@ -60,8 +57,7 @@ abstract class $LearningModeStateCopyWith<$Res> {
       {bool isLearningMode,
       LearningStyle style,
       List<String> hintHistory,
-      String? currentSubject,
-      int difficultyLevel,
+      ResponseDetail responseDetail,
       bool showLearningHints,
       int questionStep,
       int maxQuestionSteps});
@@ -83,8 +79,7 @@ class _$LearningModeStateCopyWithImpl<$Res, $Val extends LearningModeState>
     Object? isLearningMode = null,
     Object? style = null,
     Object? hintHistory = null,
-    Object? currentSubject = freezed,
-    Object? difficultyLevel = null,
+    Object? responseDetail = null,
     Object? showLearningHints = null,
     Object? questionStep = null,
     Object? maxQuestionSteps = null,
@@ -102,14 +97,10 @@ class _$LearningModeStateCopyWithImpl<$Res, $Val extends LearningModeState>
           ? _value.hintHistory
           : hintHistory // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      currentSubject: freezed == currentSubject
-          ? _value.currentSubject
-          : currentSubject // ignore: cast_nullable_to_non_nullable
-              as String?,
-      difficultyLevel: null == difficultyLevel
-          ? _value.difficultyLevel
-          : difficultyLevel // ignore: cast_nullable_to_non_nullable
-              as int,
+      responseDetail: null == responseDetail
+          ? _value.responseDetail
+          : responseDetail // ignore: cast_nullable_to_non_nullable
+              as ResponseDetail,
       showLearningHints: null == showLearningHints
           ? _value.showLearningHints
           : showLearningHints // ignore: cast_nullable_to_non_nullable
@@ -138,8 +129,7 @@ abstract class _$$LearningModeStateImplCopyWith<$Res>
       {bool isLearningMode,
       LearningStyle style,
       List<String> hintHistory,
-      String? currentSubject,
-      int difficultyLevel,
+      ResponseDetail responseDetail,
       bool showLearningHints,
       int questionStep,
       int maxQuestionSteps});
@@ -159,8 +149,7 @@ class __$$LearningModeStateImplCopyWithImpl<$Res>
     Object? isLearningMode = null,
     Object? style = null,
     Object? hintHistory = null,
-    Object? currentSubject = freezed,
-    Object? difficultyLevel = null,
+    Object? responseDetail = null,
     Object? showLearningHints = null,
     Object? questionStep = null,
     Object? maxQuestionSteps = null,
@@ -178,14 +167,10 @@ class __$$LearningModeStateImplCopyWithImpl<$Res>
           ? _value._hintHistory
           : hintHistory // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      currentSubject: freezed == currentSubject
-          ? _value.currentSubject
-          : currentSubject // ignore: cast_nullable_to_non_nullable
-              as String?,
-      difficultyLevel: null == difficultyLevel
-          ? _value.difficultyLevel
-          : difficultyLevel // ignore: cast_nullable_to_non_nullable
-              as int,
+      responseDetail: null == responseDetail
+          ? _value.responseDetail
+          : responseDetail // ignore: cast_nullable_to_non_nullable
+              as ResponseDetail,
       showLearningHints: null == showLearningHints
           ? _value.showLearningHints
           : showLearningHints // ignore: cast_nullable_to_non_nullable
@@ -209,8 +194,7 @@ class _$LearningModeStateImpl implements _LearningModeState {
       {this.isLearningMode = false,
       this.style = LearningStyle.guided,
       final List<String> hintHistory = const [],
-      this.currentSubject,
-      this.difficultyLevel = 3,
+      this.responseDetail = ResponseDetail.normal,
       this.showLearningHints = true,
       this.questionStep = 0,
       this.maxQuestionSteps = 5})
@@ -241,14 +225,10 @@ class _$LearningModeStateImpl implements _LearningModeState {
     return EqualUnmodifiableListView(_hintHistory);
   }
 
-  /// 当前学科/主题
-  @override
-  final String? currentSubject;
-
-  /// 学习难度级别 (1-5)
+  /// 回答详细程度
   @override
   @JsonKey()
-  final int difficultyLevel;
+  final ResponseDetail responseDetail;
 
   /// 是否显示学习提示
   @override
@@ -267,7 +247,7 @@ class _$LearningModeStateImpl implements _LearningModeState {
 
   @override
   String toString() {
-    return 'LearningModeState(isLearningMode: $isLearningMode, style: $style, hintHistory: $hintHistory, currentSubject: $currentSubject, difficultyLevel: $difficultyLevel, showLearningHints: $showLearningHints, questionStep: $questionStep, maxQuestionSteps: $maxQuestionSteps)';
+    return 'LearningModeState(isLearningMode: $isLearningMode, style: $style, hintHistory: $hintHistory, responseDetail: $responseDetail, showLearningHints: $showLearningHints, questionStep: $questionStep, maxQuestionSteps: $maxQuestionSteps)';
   }
 
   @override
@@ -280,10 +260,8 @@ class _$LearningModeStateImpl implements _LearningModeState {
             (identical(other.style, style) || other.style == style) &&
             const DeepCollectionEquality()
                 .equals(other._hintHistory, _hintHistory) &&
-            (identical(other.currentSubject, currentSubject) ||
-                other.currentSubject == currentSubject) &&
-            (identical(other.difficultyLevel, difficultyLevel) ||
-                other.difficultyLevel == difficultyLevel) &&
+            (identical(other.responseDetail, responseDetail) ||
+                other.responseDetail == responseDetail) &&
             (identical(other.showLearningHints, showLearningHints) ||
                 other.showLearningHints == showLearningHints) &&
             (identical(other.questionStep, questionStep) ||
@@ -299,8 +277,7 @@ class _$LearningModeStateImpl implements _LearningModeState {
       isLearningMode,
       style,
       const DeepCollectionEquality().hash(_hintHistory),
-      currentSubject,
-      difficultyLevel,
+      responseDetail,
       showLearningHints,
       questionStep,
       maxQuestionSteps);
@@ -325,8 +302,7 @@ abstract class _LearningModeState implements LearningModeState {
       {final bool isLearningMode,
       final LearningStyle style,
       final List<String> hintHistory,
-      final String? currentSubject,
-      final int difficultyLevel,
+      final ResponseDetail responseDetail,
       final bool showLearningHints,
       final int questionStep,
       final int maxQuestionSteps}) = _$LearningModeStateImpl;
@@ -348,12 +324,8 @@ abstract class _LearningModeState implements LearningModeState {
   List<String> get hintHistory;
   @override
 
-  /// 当前学科/主题
-  String? get currentSubject;
-  @override
-
-  /// 学习难度级别 (1-5)
-  int get difficultyLevel;
+  /// 回答详细程度
+  ResponseDetail get responseDetail;
   @override
 
   /// 是否显示学习提示
@@ -391,9 +363,6 @@ mixin _$LearningModeConfig {
   Map<String, String>? get customPromptTemplates =>
       throw _privateConstructorUsedError;
 
-  /// 学科偏好设置
-  List<String> get preferredSubjects => throw _privateConstructorUsedError;
-
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $LearningModeConfigCopyWith<LearningModeConfig> get copyWith =>
@@ -410,8 +379,7 @@ abstract class $LearningModeConfigCopyWith<$Res> {
       {bool provideHintsFirst,
       bool allowDirectAnswers,
       int hintInterval,
-      Map<String, String>? customPromptTemplates,
-      List<String> preferredSubjects});
+      Map<String, String>? customPromptTemplates});
 }
 
 /// @nodoc
@@ -431,7 +399,6 @@ class _$LearningModeConfigCopyWithImpl<$Res, $Val extends LearningModeConfig>
     Object? allowDirectAnswers = null,
     Object? hintInterval = null,
     Object? customPromptTemplates = freezed,
-    Object? preferredSubjects = null,
   }) {
     return _then(_value.copyWith(
       provideHintsFirst: null == provideHintsFirst
@@ -450,10 +417,6 @@ class _$LearningModeConfigCopyWithImpl<$Res, $Val extends LearningModeConfig>
           ? _value.customPromptTemplates
           : customPromptTemplates // ignore: cast_nullable_to_non_nullable
               as Map<String, String>?,
-      preferredSubjects: null == preferredSubjects
-          ? _value.preferredSubjects
-          : preferredSubjects // ignore: cast_nullable_to_non_nullable
-              as List<String>,
     ) as $Val);
   }
 }
@@ -470,8 +433,7 @@ abstract class _$$LearningModeConfigImplCopyWith<$Res>
       {bool provideHintsFirst,
       bool allowDirectAnswers,
       int hintInterval,
-      Map<String, String>? customPromptTemplates,
-      List<String> preferredSubjects});
+      Map<String, String>? customPromptTemplates});
 }
 
 /// @nodoc
@@ -489,7 +451,6 @@ class __$$LearningModeConfigImplCopyWithImpl<$Res>
     Object? allowDirectAnswers = null,
     Object? hintInterval = null,
     Object? customPromptTemplates = freezed,
-    Object? preferredSubjects = null,
   }) {
     return _then(_$LearningModeConfigImpl(
       provideHintsFirst: null == provideHintsFirst
@@ -508,10 +469,6 @@ class __$$LearningModeConfigImplCopyWithImpl<$Res>
           ? _value._customPromptTemplates
           : customPromptTemplates // ignore: cast_nullable_to_non_nullable
               as Map<String, String>?,
-      preferredSubjects: null == preferredSubjects
-          ? _value._preferredSubjects
-          : preferredSubjects // ignore: cast_nullable_to_non_nullable
-              as List<String>,
     ));
   }
 }
@@ -523,10 +480,8 @@ class _$LearningModeConfigImpl implements _LearningModeConfig {
       {this.provideHintsFirst = true,
       this.allowDirectAnswers = false,
       this.hintInterval = 5,
-      final Map<String, String>? customPromptTemplates,
-      final List<String> preferredSubjects = const []})
-      : _customPromptTemplates = customPromptTemplates,
-        _preferredSubjects = preferredSubjects;
+      final Map<String, String>? customPromptTemplates})
+      : _customPromptTemplates = customPromptTemplates;
 
   factory _$LearningModeConfigImpl.fromJson(Map<String, dynamic> json) =>
       _$$LearningModeConfigImplFromJson(json);
@@ -560,22 +515,9 @@ class _$LearningModeConfigImpl implements _LearningModeConfig {
     return EqualUnmodifiableMapView(value);
   }
 
-  /// 学科偏好设置
-  final List<String> _preferredSubjects;
-
-  /// 学科偏好设置
-  @override
-  @JsonKey()
-  List<String> get preferredSubjects {
-    if (_preferredSubjects is EqualUnmodifiableListView)
-      return _preferredSubjects;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_preferredSubjects);
-  }
-
   @override
   String toString() {
-    return 'LearningModeConfig(provideHintsFirst: $provideHintsFirst, allowDirectAnswers: $allowDirectAnswers, hintInterval: $hintInterval, customPromptTemplates: $customPromptTemplates, preferredSubjects: $preferredSubjects)';
+    return 'LearningModeConfig(provideHintsFirst: $provideHintsFirst, allowDirectAnswers: $allowDirectAnswers, hintInterval: $hintInterval, customPromptTemplates: $customPromptTemplates)';
   }
 
   @override
@@ -590,9 +532,7 @@ class _$LearningModeConfigImpl implements _LearningModeConfig {
             (identical(other.hintInterval, hintInterval) ||
                 other.hintInterval == hintInterval) &&
             const DeepCollectionEquality()
-                .equals(other._customPromptTemplates, _customPromptTemplates) &&
-            const DeepCollectionEquality()
-                .equals(other._preferredSubjects, _preferredSubjects));
+                .equals(other._customPromptTemplates, _customPromptTemplates));
   }
 
   @JsonKey(ignore: true)
@@ -602,8 +542,7 @@ class _$LearningModeConfigImpl implements _LearningModeConfig {
       provideHintsFirst,
       allowDirectAnswers,
       hintInterval,
-      const DeepCollectionEquality().hash(_customPromptTemplates),
-      const DeepCollectionEquality().hash(_preferredSubjects));
+      const DeepCollectionEquality().hash(_customPromptTemplates));
 
   @JsonKey(ignore: true)
   @override
@@ -622,11 +561,11 @@ class _$LearningModeConfigImpl implements _LearningModeConfig {
 
 abstract class _LearningModeConfig implements LearningModeConfig {
   const factory _LearningModeConfig(
-      {final bool provideHintsFirst,
-      final bool allowDirectAnswers,
-      final int hintInterval,
-      final Map<String, String>? customPromptTemplates,
-      final List<String> preferredSubjects}) = _$LearningModeConfigImpl;
+          {final bool provideHintsFirst,
+          final bool allowDirectAnswers,
+          final int hintInterval,
+          final Map<String, String>? customPromptTemplates}) =
+      _$LearningModeConfigImpl;
 
   factory _LearningModeConfig.fromJson(Map<String, dynamic> json) =
       _$LearningModeConfigImpl.fromJson;
@@ -647,10 +586,6 @@ abstract class _LearningModeConfig implements LearningModeConfig {
 
   /// 自定义提示模板
   Map<String, String>? get customPromptTemplates;
-  @override
-
-  /// 学科偏好设置
-  List<String> get preferredSubjects;
   @override
   @JsonKey(ignore: true)
   _$$LearningModeConfigImplCopyWith<_$LearningModeConfigImpl> get copyWith =>

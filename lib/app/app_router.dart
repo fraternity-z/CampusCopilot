@@ -23,6 +23,7 @@ import '../features/settings/presentation/views/model_management_screen.dart';
 import '../features/settings/presentation/views/provider_config_screen.dart';
 import '../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
+import '../features/learning_mode/presentation/views/learning_mode_settings_screen.dart';
 
 /// 侧边栏标签页状态管理
 final sidebarTabProvider = StateProvider<SidebarTab>(
@@ -343,6 +344,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'appearance',
                 name: 'appearance-settings',
                 builder: (context, state) => const AppearanceSettingsScreen(),
+              ),
+              // 学习模式设置
+              GoRoute(
+                path: 'learning-mode',
+                name: 'learning-mode-settings',
+                builder: (context, state) => const LearningModeSettingsScreen(),
               ),
               // 数据管理
               GoRoute(

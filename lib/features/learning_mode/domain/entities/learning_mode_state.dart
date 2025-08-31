@@ -16,11 +16,8 @@ class LearningModeState with _$LearningModeState {
     /// 提示历史记录（用于上下文连贯性）
     @Default([]) List<String> hintHistory,
     
-    /// 当前学科/主题
-    String? currentSubject,
-    
-    /// 学习难度级别 (1-5)
-    @Default(3) int difficultyLevel,
+    /// 回答详细程度
+    @Default(ResponseDetail.normal) ResponseDetail responseDetail,
     
     /// 是否显示学习提示
     @Default(true) bool showLearningHints,
@@ -34,6 +31,27 @@ class LearningModeState with _$LearningModeState {
 
   factory LearningModeState.fromJson(Map<String, dynamic> json) =>
       _$LearningModeStateFromJson(json);
+}
+
+/// 回答详细程度枚举
+@JsonEnum()
+enum ResponseDetail {
+  /// 粗略回答
+  @JsonValue('brief')
+  brief('粗略', '简单引导，关键提示'),
+  
+  /// 默认回答
+  @JsonValue('normal')
+  normal('默认', '适中引导，逐步提示'),
+  
+  /// 详细回答
+  @JsonValue('detailed')
+  detailed('详细', '深入引导，充分解释');
+
+  const ResponseDetail(this.displayName, this.description);
+  
+  final String displayName;
+  final String description;
 }
 
 /// 学习风格枚举
@@ -73,8 +91,6 @@ class LearningModeConfig with _$LearningModeConfig {
     /// 自定义提示模板
     Map<String, String>? customPromptTemplates,
     
-    /// 学科偏好设置
-    @Default([]) List<String> preferredSubjects,
   }) = _LearningModeConfig;
 
   factory LearningModeConfig.fromJson(Map<String, dynamic> json) =>

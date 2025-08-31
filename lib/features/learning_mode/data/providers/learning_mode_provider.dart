@@ -41,21 +41,10 @@ class LearningModeNotifier extends _$LearningModeNotifier {
     await _saveToStorage();
   }
 
-  /// 设置当前学科
-  Future<void> setCurrentSubject(String? subject) async {
-    state = state.copyWith(
-      currentSubject: subject,
-      questionStep: 0, // 切换学科时重置步骤
-    );
+  /// 设置回答详细程度
+  Future<void> setResponseDetail(ResponseDetail detail) async {
+    state = state.copyWith(responseDetail: detail);
     await _saveToStorage();
-  }
-
-  /// 设置难度级别
-  Future<void> setDifficultyLevel(int level) async {
-    if (level >= 1 && level <= 5) {
-      state = state.copyWith(difficultyLevel: level);
-      await _saveToStorage();
-    }
   }
 
   /// 增加提问步骤
@@ -101,8 +90,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
   String getCurrentSystemPrompt() {
     return LearningPromptService.buildLearningSystemPrompt(
       style: state.style,
-      difficultyLevel: state.difficultyLevel,
-      subject: state.currentSubject,
+      responseDetail: state.responseDetail,
       questionStep: state.questionStep,
       maxSteps: state.maxQuestionSteps,
     );
@@ -190,21 +178,6 @@ class LearningModeConfigNotifier extends _$LearningModeConfigNotifier {
     }
   }
 
-  /// 添加偏好学科
-  Future<void> addPreferredSubject(String subject) async {
-    if (!state.preferredSubjects.contains(subject)) {
-      final newSubjects = [...state.preferredSubjects, subject];
-      state = state.copyWith(preferredSubjects: newSubjects);
-      await _saveToStorage();
-    }
-  }
-
-  /// 移除偏好学科
-  Future<void> removePreferredSubject(String subject) async {
-    final newSubjects = state.preferredSubjects.where((s) => s != subject).toList();
-    state = state.copyWith(preferredSubjects: newSubjects);
-    await _saveToStorage();
-  }
 
   /// 从本地存储加载配置
   Future<void> _loadFromStorage() async {
