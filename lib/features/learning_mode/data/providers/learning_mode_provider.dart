@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import '../../domain/entities/learning_mode_state.dart';
+import '../../domain/entities/learning_session.dart';
 import '../../domain/services/learning_prompt_service.dart';
+import '../../domain/services/learning_session_service.dart';
 
 part 'learning_mode_provider.g.dart';
 
@@ -83,6 +85,105 @@ class LearningModeNotifier extends _$LearningModeNotifier {
     if (maxSteps >= 1 && maxSteps <= 10) {
       state = state.copyWith(maxQuestionSteps: maxSteps);
       await _saveToStorage();
+    }
+  }
+
+  // ===== 学习会话管理方法 =====
+
+  /// 开始新的学习会话
+  void startLearningSession(String initialQuestion, {int? maxRounds}) {
+    if (state.isLearningMode) {
+      final session = LearningSessionService.createSession(
+        initialQuestion: initialQuestion,
+        maxRounds: maxRounds ?? state.sessionConfig.defaultMaxRounds,
+      );
+      
+      state = state.copyWith(
+        currentSession: session,
+        questionStep: 0, // 重置步骤计数
+      );
+      
+      debugPrint('🎓 开始学习会话: ${session.sessionId.substring(0, 8)}, 问题: $initialQuestion');
+    }
+  }
+
+  /// 推进学习会话
+  void advanceLearningSession(String messageId) {
+    final currentSession = state.currentSession;
+    if (currentSession != null) {
+      final updatedSession = LearningSessionService.advanceSession(
+        currentSession, 
+        messageId,
+      );
+      
+      state = state.copyWith(currentSession: updatedSession);
+      debugPrint('🎓 会话推进到第 ${updatedSession.currentRound} 轮');
+    }
+  }
+
+  /// 检查是否应该结束会话
+  bool shouldEndCurrentSession(String? userMessage) {
+    final currentSession = state.currentSession;
+    if (currentSession == null) return false;
+    
+    return LearningSessionService.shouldEndSession(
+      currentSession, 
+      userMessage, 
+      state.sessionConfig.answerTriggerKeywords,
+    );
+  }
+
+  /// 更新当前学习会话
+  void updateCurrentSession(LearningSession session) {
+    state = state.copyWith(currentSession: session);
+  }
+
+  /// 结束当前学习会话
+  void endCurrentSession({bool userRequested = false}) {
+    final currentSession = state.currentSession;
+    if (currentSession != null) {
+      final endedSession = userRequested
+          ? LearningSessionService.markUserRequestedAnswer(currentSession)
+          : LearningSessionService.completeSession(currentSession);
+          
+      state = state.copyWith(currentSession: endedSession);
+      
+      debugPrint('🎓 学习会话结束: ${endedSession.status}');
+      
+      // 延迟清除会话状态
+      Future.delayed(const Duration(seconds: 2), () {
+        if (state.currentSession?.sessionId == endedSession.sessionId) {
+          state = state.copyWith(currentSession: null);
+        }
+      });
+    }
+  }
+
+  /// 检查是否在学习会话中
+  bool get isInLearningSession => 
+      state.isLearningMode && 
+      state.currentSession != null && 
+      state.currentSession!.status == LearningSessionStatus.active;
+
+  /// 获取当前会话进度
+  String? get currentSessionProgress {
+    final session = state.currentSession;
+    if (session == null) return null;
+    
+    return '${session.currentRound}/${session.maxRounds}';
+  }
+
+  /// 更新会话配置
+  Future<void> updateSessionConfig(LearningSessionConfig config) async {
+    state = state.copyWith(sessionConfig: config);
+    await _saveToStorage();
+  }
+
+  /// 设置默认最大轮数
+  Future<void> setDefaultMaxRounds(int maxRounds) async {
+    if (maxRounds >= 3 && maxRounds <= 20) {
+      final newConfig = state.sessionConfig.copyWith(defaultMaxRounds: maxRounds);
+      await updateSessionConfig(newConfig);
     }
   }
 

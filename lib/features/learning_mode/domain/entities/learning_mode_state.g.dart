@@ -22,6 +22,14 @@ _$LearningModeStateImpl _$$LearningModeStateImplFromJson(
       showLearningHints: json['showLearningHints'] as bool? ?? true,
       questionStep: (json['questionStep'] as num?)?.toInt() ?? 0,
       maxQuestionSteps: (json['maxQuestionSteps'] as num?)?.toInt() ?? 5,
+      currentSession: json['currentSession'] == null
+          ? null
+          : LearningSession.fromJson(
+              json['currentSession'] as Map<String, dynamic>),
+      sessionConfig: json['sessionConfig'] == null
+          ? const LearningSessionConfig()
+          : LearningSessionConfig.fromJson(
+              json['sessionConfig'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$LearningModeStateImplToJson(
@@ -34,6 +42,8 @@ Map<String, dynamic> _$$LearningModeStateImplToJson(
       'showLearningHints': instance.showLearningHints,
       'questionStep': instance.questionStep,
       'maxQuestionSteps': instance.maxQuestionSteps,
+      'currentSession': instance.currentSession,
+      'sessionConfig': instance.sessionConfig,
     };
 
 const _$LearningStyleEnumMap = {

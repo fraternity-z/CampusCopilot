@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'learning_session.dart';
+
 part 'learning_mode_state.freezed.dart';
 part 'learning_mode_state.g.dart';
 
@@ -27,6 +29,12 @@ class LearningModeState with _$LearningModeState {
     
     /// 最大提问步骤数
     @Default(5) int maxQuestionSteps,
+    
+    /// 当前学习会话
+    LearningSession? currentSession,
+    
+    /// 学习会话配置
+    @Default(LearningSessionConfig()) LearningSessionConfig sessionConfig,
   }) = _LearningModeState;
 
   factory LearningModeState.fromJson(Map<String, dynamic> json) =>

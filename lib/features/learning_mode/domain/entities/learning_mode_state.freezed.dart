@@ -41,6 +41,12 @@ mixin _$LearningModeState {
   /// 最大提问步骤数
   int get maxQuestionSteps => throw _privateConstructorUsedError;
 
+  /// 当前学习会话
+  LearningSession? get currentSession => throw _privateConstructorUsedError;
+
+  /// 学习会话配置
+  LearningSessionConfig get sessionConfig => throw _privateConstructorUsedError;
+
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $LearningModeStateCopyWith<LearningModeState> get copyWith =>
@@ -60,7 +66,12 @@ abstract class $LearningModeStateCopyWith<$Res> {
       ResponseDetail responseDetail,
       bool showLearningHints,
       int questionStep,
-      int maxQuestionSteps});
+      int maxQuestionSteps,
+      LearningSession? currentSession,
+      LearningSessionConfig sessionConfig});
+
+  $LearningSessionCopyWith<$Res>? get currentSession;
+  $LearningSessionConfigCopyWith<$Res> get sessionConfig;
 }
 
 /// @nodoc
@@ -83,6 +94,8 @@ class _$LearningModeStateCopyWithImpl<$Res, $Val extends LearningModeState>
     Object? showLearningHints = null,
     Object? questionStep = null,
     Object? maxQuestionSteps = null,
+    Object? currentSession = freezed,
+    Object? sessionConfig = null,
   }) {
     return _then(_value.copyWith(
       isLearningMode: null == isLearningMode
@@ -113,7 +126,35 @@ class _$LearningModeStateCopyWithImpl<$Res, $Val extends LearningModeState>
           ? _value.maxQuestionSteps
           : maxQuestionSteps // ignore: cast_nullable_to_non_nullable
               as int,
+      currentSession: freezed == currentSession
+          ? _value.currentSession
+          : currentSession // ignore: cast_nullable_to_non_nullable
+              as LearningSession?,
+      sessionConfig: null == sessionConfig
+          ? _value.sessionConfig
+          : sessionConfig // ignore: cast_nullable_to_non_nullable
+              as LearningSessionConfig,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $LearningSessionCopyWith<$Res>? get currentSession {
+    if (_value.currentSession == null) {
+      return null;
+    }
+
+    return $LearningSessionCopyWith<$Res>(_value.currentSession!, (value) {
+      return _then(_value.copyWith(currentSession: value) as $Val);
+    });
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $LearningSessionConfigCopyWith<$Res> get sessionConfig {
+    return $LearningSessionConfigCopyWith<$Res>(_value.sessionConfig, (value) {
+      return _then(_value.copyWith(sessionConfig: value) as $Val);
+    });
   }
 }
 
@@ -132,7 +173,14 @@ abstract class _$$LearningModeStateImplCopyWith<$Res>
       ResponseDetail responseDetail,
       bool showLearningHints,
       int questionStep,
-      int maxQuestionSteps});
+      int maxQuestionSteps,
+      LearningSession? currentSession,
+      LearningSessionConfig sessionConfig});
+
+  @override
+  $LearningSessionCopyWith<$Res>? get currentSession;
+  @override
+  $LearningSessionConfigCopyWith<$Res> get sessionConfig;
 }
 
 /// @nodoc
@@ -153,6 +201,8 @@ class __$$LearningModeStateImplCopyWithImpl<$Res>
     Object? showLearningHints = null,
     Object? questionStep = null,
     Object? maxQuestionSteps = null,
+    Object? currentSession = freezed,
+    Object? sessionConfig = null,
   }) {
     return _then(_$LearningModeStateImpl(
       isLearningMode: null == isLearningMode
@@ -183,6 +233,14 @@ class __$$LearningModeStateImplCopyWithImpl<$Res>
           ? _value.maxQuestionSteps
           : maxQuestionSteps // ignore: cast_nullable_to_non_nullable
               as int,
+      currentSession: freezed == currentSession
+          ? _value.currentSession
+          : currentSession // ignore: cast_nullable_to_non_nullable
+              as LearningSession?,
+      sessionConfig: null == sessionConfig
+          ? _value.sessionConfig
+          : sessionConfig // ignore: cast_nullable_to_non_nullable
+              as LearningSessionConfig,
     ));
   }
 }
@@ -197,7 +255,9 @@ class _$LearningModeStateImpl implements _LearningModeState {
       this.responseDetail = ResponseDetail.normal,
       this.showLearningHints = true,
       this.questionStep = 0,
-      this.maxQuestionSteps = 5})
+      this.maxQuestionSteps = 5,
+      this.currentSession,
+      this.sessionConfig = const LearningSessionConfig()})
       : _hintHistory = hintHistory;
 
   factory _$LearningModeStateImpl.fromJson(Map<String, dynamic> json) =>
@@ -245,9 +305,18 @@ class _$LearningModeStateImpl implements _LearningModeState {
   @JsonKey()
   final int maxQuestionSteps;
 
+  /// 当前学习会话
+  @override
+  final LearningSession? currentSession;
+
+  /// 学习会话配置
+  @override
+  @JsonKey()
+  final LearningSessionConfig sessionConfig;
+
   @override
   String toString() {
-    return 'LearningModeState(isLearningMode: $isLearningMode, style: $style, hintHistory: $hintHistory, responseDetail: $responseDetail, showLearningHints: $showLearningHints, questionStep: $questionStep, maxQuestionSteps: $maxQuestionSteps)';
+    return 'LearningModeState(isLearningMode: $isLearningMode, style: $style, hintHistory: $hintHistory, responseDetail: $responseDetail, showLearningHints: $showLearningHints, questionStep: $questionStep, maxQuestionSteps: $maxQuestionSteps, currentSession: $currentSession, sessionConfig: $sessionConfig)';
   }
 
   @override
@@ -267,7 +336,11 @@ class _$LearningModeStateImpl implements _LearningModeState {
             (identical(other.questionStep, questionStep) ||
                 other.questionStep == questionStep) &&
             (identical(other.maxQuestionSteps, maxQuestionSteps) ||
-                other.maxQuestionSteps == maxQuestionSteps));
+                other.maxQuestionSteps == maxQuestionSteps) &&
+            (identical(other.currentSession, currentSession) ||
+                other.currentSession == currentSession) &&
+            (identical(other.sessionConfig, sessionConfig) ||
+                other.sessionConfig == sessionConfig));
   }
 
   @JsonKey(ignore: true)
@@ -280,7 +353,9 @@ class _$LearningModeStateImpl implements _LearningModeState {
       responseDetail,
       showLearningHints,
       questionStep,
-      maxQuestionSteps);
+      maxQuestionSteps,
+      currentSession,
+      sessionConfig);
 
   @JsonKey(ignore: true)
   @override
@@ -305,7 +380,9 @@ abstract class _LearningModeState implements LearningModeState {
       final ResponseDetail responseDetail,
       final bool showLearningHints,
       final int questionStep,
-      final int maxQuestionSteps}) = _$LearningModeStateImpl;
+      final int maxQuestionSteps,
+      final LearningSession? currentSession,
+      final LearningSessionConfig sessionConfig}) = _$LearningModeStateImpl;
 
   factory _LearningModeState.fromJson(Map<String, dynamic> json) =
       _$LearningModeStateImpl.fromJson;
@@ -338,6 +415,14 @@ abstract class _LearningModeState implements LearningModeState {
 
   /// 最大提问步骤数
   int get maxQuestionSteps;
+  @override
+
+  /// 当前学习会话
+  LearningSession? get currentSession;
+  @override
+
+  /// 学习会话配置
+  LearningSessionConfig get sessionConfig;
   @override
   @JsonKey(ignore: true)
   _$$LearningModeStateImplCopyWith<_$LearningModeStateImpl> get copyWith =>

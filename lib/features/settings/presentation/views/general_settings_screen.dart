@@ -198,6 +198,25 @@ class GeneralSettingsScreen extends ConsumerWidget {
   ) {
     return availableModelsAsync.when(
       data: (models) {
+        // 去重模型列表
+        final uniqueModels = {
+          for (var model in models) model.id: model
+        }.values.toList();
+        
+        // 检查当前选中的值是否存在于可用模型中
+        final currentValue = settingsState.autoTopicNamingModelId;
+        final isCurrentValueValid = currentValue == null || 
+            uniqueModels.any((model) => model.id == currentValue);
+        
+        // 如果当前值无效，异步重置为null
+        if (!isCurrentValueValid) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref
+                .read(generalSettingsProvider.notifier)
+                .setAutoTopicNamingModelId(null);
+          });
+        }
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -209,7 +228,7 @@ class GeneralSettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: settingsState.autoTopicNamingModelId,
+              initialValue: isCurrentValueValid ? currentValue : null,
               decoration: const InputDecoration(
                 hintText: '选择用于生成话题名称的模型',
                 border: OutlineInputBorder(),
@@ -219,7 +238,8 @@ class GeneralSettingsScreen extends ConsumerWidget {
                   value: null,
                   child: Text('请选择模型'),
                 ),
-                ...models.map((model) {
+                // 使用去重后的模型列表
+                ...uniqueModels.map((model) {
                   // 构建显示文本
                   String displayText = model.name;
                   if (model.modelId != model.name) {

@@ -128,6 +128,28 @@ class LearningModeSettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
+          // 学习会话设置
+          Text(
+            '学习会话设置',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '配置学习会话的行为和参数',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildMaxRoundsSelector(context, ref, state, theme),
+          
+          const SizedBox(height: 20),
+          _buildTriggerKeywordsInfo(context, ref, state, theme),
+
+          const SizedBox(height: 32),
+
           // 其他选项
           Text(
             '其他设置',
@@ -348,6 +370,200 @@ class LearningModeSettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// 构建最大轮数选择器
+  Widget _buildMaxRoundsSelector(
+    BuildContext context, 
+    WidgetRef ref, 
+    LearningModeState state,
+    ThemeData theme,
+  ) {
+    final currentMaxRounds = state.sessionConfig.defaultMaxRounds;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '最大对话轮数',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '设置学习会话的最大轮数，达到后AI将给出完整答案',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$currentMaxRounds 轮',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: currentMaxRounds.toDouble(),
+                  min: 3,
+                  max: 15,
+                  divisions: 12,
+                  label: '$currentMaxRounds 轮',
+                  onChanged: (value) {
+                    ref
+                        .read(learningModeProvider.notifier)
+                        .setDefaultMaxRounds(value.round());
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '3 轮',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                '15 轮',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建触发关键词信息
+  Widget _buildTriggerKeywordsInfo(
+    BuildContext context, 
+    WidgetRef ref, 
+    LearningModeState state,
+    ThemeData theme,
+  ) {
+    final keywords = state.sessionConfig.answerTriggerKeywords;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.psychology_outlined,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '智能答案触发',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '当您在学习过程中使用以下关键词时，AI将直接给出完整答案：',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: keywords.map((keyword) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.primaryContainer,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                '"$keyword"',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '也可以在对话中直接说"我想要答案"来触发',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   /// 构建切换选项
   Widget _buildToggleOption({

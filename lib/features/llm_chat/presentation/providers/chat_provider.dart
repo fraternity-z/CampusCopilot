@@ -14,6 +14,8 @@ import '../../../../core/services/image_generation_service.dart';
 import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
+import '../../../learning_mode/domain/services/learning_session_service.dart';
+import '../../../learning_mode/domain/entities/learning_session.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -237,6 +239,36 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 重新生成AI回复（不添加新的用户消息）
   Future<void> _regenerateAIResponse(String userContent) async {
+    // 学习模式处理：检查是否启用学习模式并处理消息内容
+    final learningModeState = _ref.read(learningModeProvider);
+    String processedMessage = userContent;
+    
+    if (learningModeState.isLearningMode) {
+      // 在重新生成时，检查是否应该给出最终答案
+      final shouldGiveFinalAnswerInRegen = learningModeState.currentSession != null &&
+          (learningModeState.currentSession!.currentRound >= learningModeState.currentSession!.maxRounds ||
+           learningModeState.currentSession!.userRequestedAnswer);
+      
+      // 构建学习模式消息，并添加重新生成标识
+      if (learningModeState.currentSession != null) {
+        processedMessage = _buildLearningSessionMessage(
+          userContent, 
+          learningModeState, 
+          isRegeneration: true,
+          shouldGiveFinalAnswer: shouldGiveFinalAnswerInRegen,
+        );
+      } else {
+        processedMessage = _buildLearningModeMessage(
+          userContent, 
+          learningModeState, 
+          isRegeneration: true,
+          shouldGiveFinalAnswer: shouldGiveFinalAnswerInRegen,
+        );
+      }
+      
+      debugPrint('🎓 学习模式重新生成: ${learningModeState.style.displayName}');
+    }
+    
     // 检查是否有当前会话
     ChatSession? currentSession = state.currentSession;
     if (currentSession == null) {
@@ -261,10 +293,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 添加AI占位符到UI
       state = state.copyWith(messages: [...state.messages, aiPlaceholder]);
 
-      // 开始流式响应（使用原始用户内容）
+      // 开始流式响应（在学习模式下使用处理过的消息，普通模式下使用原始内容）
+      final messageContent = learningModeState.isLearningMode ? processedMessage : userContent;
       final stream = _chatService.sendMessageStream(
         sessionId: currentSession.id,
-        content: userContent,
+        content: messageContent,
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
       );
 
@@ -298,6 +331,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
               messages: updatedMessages,
               isLoading: messageChunk.status != MessageStatus.sent,
             );
+
+            // 如果是学习模式且AI回复完成，进行学习模式处理
+            if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
+              _processLearningModeResponse(fullResponse, aiMessageId);
+            }
           }
         },
         onError: (error) {
@@ -637,15 +675,56 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> sendMessage(String text) async {
     // 学习模式处理：检查是否启用学习模式并处理消息内容
     final learningModeState = _ref.read(learningModeProvider);
+    final learningModeNotifier = _ref.read(learningModeProvider.notifier);
     String processedMessage = text;
     
     if (learningModeState.isLearningMode) {
-      // 在学习模式下，包装用户消息以引导AI使用苏格拉底式教学
-      processedMessage = _buildLearningModeMessage(text, learningModeState);
+      // 检查是否需要开始新的学习会话
+      if (learningModeState.currentSession == null && 
+          LearningSessionService.isLearningQuestion(text)) {
+        // 开始新的学习会话
+        learningModeNotifier.startLearningSession(text);
+        debugPrint('🎓 开始新的学习会话');
+      }
+      
+      // 检查是否应该在这轮给出最终答案（但不立即结束会话）
+      final shouldGiveFinalAnswer = learningModeNotifier.shouldEndCurrentSession(text);
+      final isUserRequestedAnswer = LearningSessionService.shouldTriggerDirectAnswer(
+        text, 
+        learningModeState.sessionConfig.answerTriggerKeywords,
+      );
+      
+      debugPrint('🔍 学习模式检测: shouldGiveFinalAnswer=$shouldGiveFinalAnswer, isUserRequestedAnswer=$isUserRequestedAnswer');
+      debugPrint('🔍 用户消息: "$text"');
+      debugPrint('🔍 当前会话: ${learningModeState.currentSession?.currentRound}/${learningModeState.currentSession?.maxRounds}');
+      debugPrint('🔍 触发关键词: ${learningModeState.sessionConfig.answerTriggerKeywords}');
+      
+      // 如果用户主动要求答案，标记会话状态但不结束
+      if (isUserRequestedAnswer && learningModeState.currentSession != null) {
+        // 先更新会话状态为用户要求答案，但保持active状态直到AI回复完成
+        final updatedSession = LearningSessionService.markUserRequestedAnswer(
+          learningModeState.currentSession!
+        ).copyWith(status: LearningSessionStatus.active); // 保持active状态
+        learningModeNotifier.updateCurrentSession(updatedSession);
+        debugPrint('🎓 用户要求直接答案，将在本轮给出完整答案');
+      }
+      
+      // 构建学习模式消息（传递是否应该给出最终答案的信息）
+      if (learningModeState.currentSession != null) {
+        processedMessage = _buildLearningSessionMessage(
+          text, 
+          learningModeState,
+          shouldGiveFinalAnswer: shouldGiveFinalAnswer,
+        );
+      } else {
+        processedMessage = _buildLearningModeMessage(
+          text, 
+          learningModeState, 
+          shouldGiveFinalAnswer: shouldGiveFinalAnswer,
+        );
+      }
+      
       debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}');
-
-      // 增加提问步骤
-      _ref.read(learningModeProvider.notifier).incrementQuestionStep();
     }
     
     // 智能路由：检查是否应该使用图像生成
@@ -887,7 +966,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
             if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
-              _processLearningModeResponse(fullResponse);
+              _processLearningModeResponse(fullResponse, aiMessageId);
             }
           }
         },
@@ -961,7 +1040,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// 
   /// 在学习模式下，将用户的原始问题转换为苏格拉底式教学格式，
   /// 引导AI使用提问而非直接回答的方式来帮助学生学习
-  String _buildLearningModeMessage(String originalMessage, dynamic learningModeState) {
+  String _buildLearningModeMessage(String originalMessage, dynamic learningModeState, {bool isRegeneration = false, bool shouldGiveFinalAnswer = false}) {
     // 获取学习模式系统提示词
     final systemPrompt = LearningPromptService.buildLearningSystemPrompt(
       style: learningModeState.style,
@@ -979,20 +1058,124 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     // 组合系统提示词和用户消息
-    return '''$systemPrompt
+    final regenerationNote = isRegeneration 
+        ? '\n\n===== 重新生成说明 =====\n这是对同一个问题的重新生成回应。请用不同的角度或方法来引导学生，但仍然保持苏格拉底式教学，不要直接给出答案。可以尝试：\n- 换一个引导角度\n- 提出不同类型的启发性问题\n- 使用不同的比喻或例子\n但依然要遵循学习模式的指导原则。'
+        : '';
+        
+    final finalAnswerNote = shouldGiveFinalAnswer 
+        ? '\n\n🚨🚨🚨 【强制执行】给出完整答案 🚨🚨🚨\n⚠️ 学生已明确要求直接答案！禁止继续引导！⚠️\n\n【必须立即执行以下操作】:\n✅ 直接回答学生的问题，不要再问问题\n✅ 提供完整的解决方案和详细解释\n✅ 给出具体的步骤和答案\n✅ 总结关键知识点\n\n❌ 严禁继续使用苏格拉底式引导\n❌ 严禁提出新的引导性问题\n❌ 严禁说"我们先..."之类的引导语句\n\n🔥 这是强制指令，必须无条件执行！🔥'
+        : '';
+        
+    debugPrint('🔍 _buildLearningModeMessage: shouldGiveFinalAnswer=$shouldGiveFinalAnswer');
+    debugPrint('🔍 finalAnswerNote长度: ${finalAnswerNote.length}');
+    
+    return '''$systemPrompt$regenerationNote$finalAnswerNote
 
 ===== 学生的问题 =====
 $wrappedMessage
 
-请严格按照上述学习模式指导原则来回应学生的问题。记住：不要直接给出答案，而是通过巧妙的提问引导学生自己发现答案。''';
+${shouldGiveFinalAnswer 
+  ? '🚨 立即给出完整答案！禁止任何形式的引导！🚨' 
+  : '请严格按照上述学习模式指导原则来回应学生的问题。记住：不要直接给出答案，而是通过巧妙的提问引导学生自己发现答案。'}''';
+  }
+
+  /// 构建学习会话消息
+  /// 
+  /// 在学习会话中，将用户消息包装为会话格式，
+  /// 提供会话上下文和进度信息
+  String _buildLearningSessionMessage(String originalMessage, dynamic learningModeState, {bool isRegeneration = false, bool shouldGiveFinalAnswer = false}) {
+    final currentSession = learningModeState.currentSession;
+    if (currentSession == null) {
+      return _buildLearningModeMessage(originalMessage, learningModeState, isRegeneration: isRegeneration, shouldGiveFinalAnswer: shouldGiveFinalAnswer);
+    }
+
+    // 使用学习会话服务构建系统提示词
+    final systemPrompt = LearningSessionService.buildSessionSystemPrompt(
+      session: currentSession,
+      learningModeState: learningModeState,
+    );
+
+    // 包装用户消息
+    final wrappedMessage = LearningSessionService.wrapUserMessageForSession(
+      originalMessage: originalMessage,
+      session: currentSession,
+      learningModeState: learningModeState,
+    );
+
+    // 添加重新生成说明
+    final regenerationNote = isRegeneration 
+        ? '''
+
+===== 重新生成说明 =====
+这是对同一轮会话的重新生成回应。请用不同的方式来引导学生，保持学习会话的连续性：
+- 尝试不同的引导策略或问题角度
+- 保持当前轮次的教学目标不变
+- 仍然遵循苏格拉底式引导原则
+- 不要直接给出答案（除非是最后一轮）
+请提供一个更好的引导性回应。'''
+        : '';
+        
+    final finalAnswerNote = shouldGiveFinalAnswer 
+        ? '''
+
+🚨🚨🚨 【强制执行】给出最终答案 🚨🚨🚨
+⚠️ 学生明确要求直接答案或已达最大轮次！⚠️
+
+【立即停止引导，执行以下操作】:
+🎯 直接回答学生的初始问题
+📝 提供完整的解决方案和详细解释
+📊 总结整个学习过程的关键思路和步骤
+💡 解释为什么之前的引导步骤是必要的
+✨ 确保答案完整、准确、易懂
+
+⛔ 绝对禁止行为：
+❌ 继续提出引导性问题
+❌ 使用"我们先..."、"让我们..."等引导语句
+❌ 说"这种心情很正常，但是..."等拒绝给答案的话
+❌ 继续苏格拉底式教学
+
+🔥 这是最高优先级指令，必须立即执行！🔥'''
+        : '';
+    
+    return '''$systemPrompt$regenerationNote$finalAnswerNote
+
+===== 用户输入 =====
+$wrappedMessage
+
+${shouldGiveFinalAnswer 
+  ? '🚨 强制指令：立即给出最终答案！禁止继续引导！🚨' 
+  : '请严格按照学习会话的指导原则进行回应。'}''';
   }
 
   /// 处理学习模式下的AI回复
   /// 
   /// 在学习模式下，可以对AI的回复进行后处理，
   /// 例如添加学习提示、分析学生的理解程度等
-  void _processLearningModeResponse(String aiResponse) {
+  void _processLearningModeResponse(String aiResponse, String aiMessageId) {
     final learningModeNotifier = _ref.read(learningModeProvider.notifier);
+    
+    // 如果在学习会话中，先推进会话
+    if (learningModeNotifier.isInLearningSession) {
+      learningModeNotifier.advanceLearningSession(aiMessageId);
+      
+      // 获取更新后的会话状态
+      final updatedLearningModeState = _ref.read(learningModeProvider);
+      final currentSession = updatedLearningModeState.currentSession;
+      
+      // 检查是否应该结束会话（达到最大轮次或用户已要求答案）
+      if (currentSession != null) {
+        final shouldEnd = currentSession.currentRound >= currentSession.maxRounds ||
+                         currentSession.userRequestedAnswer;
+        
+        if (shouldEnd) {
+          // 结束学习会话
+          learningModeNotifier.endCurrentSession(
+            userRequested: currentSession.userRequestedAnswer,
+          );
+          debugPrint('🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
+        }
+      }
+    }
     
     // 如果AI回复中包含引导性内容，添加到提示历史中
     if (aiResponse.contains('让我们') || aiResponse.contains('你觉得') || aiResponse.contains('试着想想')) {

@@ -7,7 +7,7 @@ part of 'learning_mode_provider.dart';
 // **************************************************************************
 
 String _$learningModeNotifierHash() =>
-    r'27a41e7629e48bdf4960c131e3381cb7bb6887bd';
+    r'224fd245bde956786e9dc9db785f7b9fcf699368';
 
 /// 学习模式状态Provider
 ///
