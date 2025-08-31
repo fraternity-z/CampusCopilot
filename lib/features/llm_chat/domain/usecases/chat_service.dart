@@ -30,6 +30,9 @@ import '../../../knowledge_base/domain/entities/knowledge_document.dart';
 import '../../presentation/providers/search_providers.dart';
 import '../../../settings/domain/entities/search_config.dart';
 
+// 学习模式相关导入
+import '../../../learning_mode/data/providers/learning_mode_provider.dart';
+
 /// 聊天服务
 ///
 /// 管理聊天会话、消息发送和AI响应生成的核心业务逻辑
@@ -1030,17 +1033,52 @@ class ChatService {
         .map((data) => data.toChatMessage())
         .toList();
 
+    // 学习模式下的上下文过滤：只包含最近一次学习会话结束分割线之后的消息
+    final filteredMessages = _filterContextForLearningMode(contextMessages);
+
     // 如果有RAG增强的消息，替换最后一条用户消息
-    if (enhancedUserMessage != null && contextMessages.isNotEmpty) {
-      final lastMessage = contextMessages.last;
+    if (enhancedUserMessage != null && filteredMessages.isNotEmpty) {
+      final lastMessage = filteredMessages.last;
       if (lastMessage.isFromUser) {
-        contextMessages[contextMessages.length - 1] = lastMessage.copyWith(
+        filteredMessages[filteredMessages.length - 1] = lastMessage.copyWith(
           content: enhancedUserMessage,
         );
       }
     }
 
-    return contextMessages;
+    return filteredMessages;
+  }
+
+  /// 过滤学习模式下的上下文消息
+  /// 
+  /// 在学习模式下，只保留最近一次学习会话结束分割线之后的消息，
+  /// 确保新的学习会话不会包含上一轮学习的内容
+  List<ChatMessage> _filterContextForLearningMode(List<ChatMessage> messages) {
+    // 检查是否在学习模式
+    final learningModeState = _ref.read(learningModeProvider);
+    if (!learningModeState.isLearningMode) {
+      return messages; // 非学习模式，返回所有消息
+    }
+
+    // 查找最后一个系统分割线消息（学习会话结束标记）
+    int lastDividerIndex = -1;
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].type == MessageType.system && 
+          messages[i].content.contains('学习会话结束')) {
+        lastDividerIndex = i;
+        break;
+      }
+    }
+
+    // 如果找到分割线，只返回分割线之后的消息
+    if (lastDividerIndex >= 0) {
+      final filtered = messages.sublist(lastDividerIndex + 1);
+      debugPrint('🎓 学习模式上下文过滤: 原消息${messages.length}条 → 过滤后${filtered.length}条');
+      return filtered;
+    }
+
+    // 没有找到分割线，返回所有消息（可能是第一次学习会话）
+    return messages;
   }
 
   /// 更新会话统计

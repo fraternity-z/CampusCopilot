@@ -1226,6 +1226,9 @@ $wrappedMessage
             userRequested: currentSession.userRequestedAnswer,
           );
           debugPrint('🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
+          
+          // 添加学习会话结束分割线
+          _addLearningSessionEndDivider();
         }
       }
     }
@@ -1240,6 +1243,30 @@ $wrappedMessage
       // 可以考虑重置或调整学习进度
       debugPrint('🎓 学生理解程度良好，学习模式响应已处理');
     }
+  }
+
+  /// 添加学习会话结束分割线
+  void _addLearningSessionEndDivider() {
+    final currentSession = state.currentSession;
+    if (currentSession == null) return;
+
+    // 创建分割线消息
+    final dividerMessage = ChatMessage(
+      id: _uuid.v4(),
+      chatSessionId: currentSession.id,
+      content: '─ ─ ─ ─ ─ 学习会话结束，您可以开始新的学习话题 ─ ─ ─ ─ ─',
+      isFromUser: false,
+      timestamp: DateTime.now(),
+      status: MessageStatus.sent,
+      type: MessageType.system, // 标记为系统消息，用于特殊样式
+    );
+
+    // 添加分割线消息到消息列表
+    state = state.copyWith(
+      messages: [...state.messages, dividerMessage],
+    );
+
+    debugPrint('🎓 已添加学习会话结束分割线');
   }
 }
 
