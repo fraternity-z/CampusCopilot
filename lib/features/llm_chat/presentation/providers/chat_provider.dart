@@ -257,6 +257,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           learningModeState, 
           isRegeneration: true,
           shouldGiveFinalAnswer: shouldGiveFinalAnswerInRegen,
+          userRequestedAnswer: false, // 重新生成时无法确定具体原因
+          reachedMaxRounds: shouldGiveFinalAnswerInRegen,
         );
       } else {
         processedMessage = _buildLearningModeMessage(
@@ -705,9 +707,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final userWantsDirectAnswer = _isRequestingDirectAnswer(text);
       final reachedMaxRounds = learningModeState.currentSession != null && 
           learningModeState.currentSession!.currentRound >= learningModeState.currentSession!.maxRounds;
-      // 关键修改：当要发送的消息会导致达到最大轮数时，就应该给最终答案  
+      // 关键修改：只有当这轮回复后正好达到最大轮数时，才给最终答案
+      // 例如：3轮设置，第3轮时给最终答案（currentRound + 1 == maxRounds）  
       final willReachMaxRounds = learningModeState.currentSession != null && 
-          (learningModeState.currentSession!.currentRound + 1) >= learningModeState.currentSession!.maxRounds;
+          (learningModeState.currentSession!.currentRound + 1) == learningModeState.currentSession!.maxRounds;
       final shouldGiveFinalAnswer = userWantsDirectAnswer || reachedMaxRounds || willReachMaxRounds;
       
       debugPrint('🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
@@ -729,6 +732,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           text, 
           learningModeState,
           shouldGiveFinalAnswer: shouldGiveFinalAnswer,
+          userRequestedAnswer: userWantsDirectAnswer,
+          reachedMaxRounds: reachedMaxRounds || willReachMaxRounds,
         );
       } else {
         processedMessage = _buildLearningModeMessage(
@@ -1116,7 +1121,7 @@ $wrappedMessage
   /// 
   /// 在学习会话中，将用户消息包装为会话格式，
   /// 提供会话上下文和进度信息
-  String _buildLearningSessionMessage(String originalMessage, dynamic learningModeState, {bool isRegeneration = false, bool shouldGiveFinalAnswer = false}) {
+  String _buildLearningSessionMessage(String originalMessage, dynamic learningModeState, {bool isRegeneration = false, bool shouldGiveFinalAnswer = false, bool userRequestedAnswer = false, bool reachedMaxRounds = false}) {
     final currentSession = learningModeState.currentSession;
     if (currentSession == null) {
       return _buildLearningModeMessage(originalMessage, learningModeState, isRegeneration: isRegeneration, shouldGiveFinalAnswer: shouldGiveFinalAnswer);
@@ -1124,6 +1129,16 @@ $wrappedMessage
 
     // 如果是最后一轮，直接替换为最终答案提示词
     if (shouldGiveFinalAnswer) {
+      // 根据原因确定说明内容
+      String reasonExplanation = '';
+      if (reachedMaxRounds) {
+        reasonExplanation = '我们已经完成了${currentSession.maxRounds}轮的学习引导，现在是时候给出完整答案了。';
+      } else if (userRequestedAnswer) {
+        reasonExplanation = '根据您的要求，我将直接给出完整答案。';
+      } else {
+        reasonExplanation = '学习会话已完成，现在给出完整答案。';
+      }
+      
       return '''你是一个专业的AI助手。学生经过${currentSession.currentRound}轮学习引导后，现在需要得到完整的答案。
 
 ===== 学习会话信息 =====
@@ -1135,7 +1150,9 @@ $wrappedMessage
 $originalMessage
 
 ===== 重要指令 =====
-学习会话已结束，请提供最终答案：
+$reasonExplanation
+
+请在回答的开头简要说明："$reasonExplanation"，然后提供完整答案：
 1. 直接回答学生的初始问题：${currentSession.initialQuestion}
 2. 提供完整的解题步骤和解释
 3. 总结整个学习过程的关键思路

@@ -212,14 +212,9 @@ ${isLastRound ? '⚠️ 这是最后一轮，需要给出完整答案！' : ''}
 
   /// 检查消息是否包含学习相关的问题
   static bool isLearningQuestion(String message) {
-    // 简单的启发式判断，可以根据需要扩展
-    final questionIndicators = [
-      '?', '？', '怎么', '如何', '为什么', '什么是', 
-      '请问', '能否', '可以', '解释', '计算', '求解'
-    ];
-    
-    return questionIndicators.any((indicator) => 
-        message.contains(indicator));
+    // 在学习模式下，任何非空消息都应该能触发学习会话
+    // 这样用户不需要特定格式就能开始学习
+    return message.trim().isNotEmpty;
   }
 
   /// 包装用户消息为学习会话格式
