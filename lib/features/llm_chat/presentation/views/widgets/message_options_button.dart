@@ -20,11 +20,26 @@ class MessageOptionsButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_MessageOption>(
       tooltip: '更多操作',
-      icon: Icon(
-        Icons.more_vert,
-        size: 18,
-        color: Theme.of(context).colorScheme.outline,
+      icon: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          Icons.more_vert,
+          size: 18,
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.7),
+        ),
       ),
+      offset: const Offset(0, 8),
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: Theme.of(context).colorScheme.surface,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
       // 添加延迟处理，避免在设备更新期间处理事件
       onSelected: (option) {
         // 使用 scheduleMicrotask 和 postFrameCallback 双重保护
@@ -41,27 +56,102 @@ class MessageOptionsButton extends ConsumerWidget {
       },
       itemBuilder: (context) {
         final items = <PopupMenuEntry<_MessageOption>>[
-          const PopupMenuItem<_MessageOption>(
+          PopupMenuItem<_MessageOption>(
             value: _MessageOption.copy,
-            child: Text('复制'),
+            height: 48,
+            child: _buildMenuItem(
+              context: context,
+              icon: Icons.copy_outlined,
+              title: '复制',
+              subtitle: '复制到剪贴板',
+              color: const Color(0xFF2196F3),
+            ),
           ),
-          const PopupMenuItem<_MessageOption>(
+          PopupMenuItem<_MessageOption>(
             value: _MessageOption.export,
-            child: Text('导出'),
+            height: 48,
+            child: _buildMenuItem(
+              context: context,
+              icon: Icons.download_outlined,
+              title: '导出',
+              subtitle: '保存为文件',
+              color: const Color(0xFF4CAF50),
+            ),
           ),
         ];
 
         if (!message.isFromUser) {
           items.add(
-            const PopupMenuItem<_MessageOption>(
+            PopupMenuItem<_MessageOption>(
               value: _MessageOption.regenerate,
-              child: Text('重新生成'),
+              height: 48,
+              child: _buildMenuItem(
+                context: context,
+                icon: Icons.refresh_outlined,
+                title: '重新生成',
+                subtitle: '生成新回答',
+                color: const Color(0xFFFF9800),
+              ),
             ),
           );
         }
 
         return items;
       },
+    );
+  }
+
+  /// 构建美化的菜单项
+  Widget _buildMenuItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

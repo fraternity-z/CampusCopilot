@@ -5,6 +5,7 @@ import '../../../../../shared/widgets/modern_button.dart';
 import '../../providers/chat_provider.dart';
 // 删除AI搜索切换相关的导入，开关已移动到输入区
 import '../../../../../core/widgets/elegant_notification.dart';
+import '../../../domain/services/export_service.dart';
 
 /// 聊天操作菜单组件
 ///
@@ -33,6 +34,16 @@ class ChatActionMenu extends ConsumerWidget {
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
       itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'export_conversation',
+          child: _buildMenuItem(
+            icon: Icons.download_outlined,
+            title: '导出对话',
+            subtitle: '保存完整对话记录',
+            color: const Color(0xFF4CAF50),
+          ),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'clear_chat',
           child: _buildMenuItem(
@@ -119,6 +130,9 @@ class ChatActionMenu extends ConsumerWidget {
   /// 处理菜单操作
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
     switch (action) {
+      case 'export_conversation':
+        _showExportDialog(context, ref);
+        break;
       case 'clear_chat':
         _showClearChatDialog(context, ref);
         break;
@@ -128,6 +142,148 @@ class ChatActionMenu extends ConsumerWidget {
       case 'settings':
         _navigateToSettings(context);
         break;
+    }
+  }
+
+  /// 显示导出对话框
+  Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
+    final chatState = ref.read(chatProvider);
+
+    if (chatState.currentSession == null || chatState.messages.isEmpty) {
+      ElegantNotification.warning(
+        context,
+        '当前没有可导出的对话记录',
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    final result = await showDialog<ExportFormat>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.download_outlined, color: Color(0xFF4CAF50)),
+            SizedBox(width: 8),
+            Text('导出完整对话'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('选择导出格式:'),
+            const SizedBox(height: 16),
+            ...ExportService.getSupportedFormats().map(
+              (format) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  dense: true,
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      format['icon'] as IconData,
+                      color: const Color(0xFF4CAF50),
+                      size: 18,
+                    ),
+                  ),
+                  title: Text(
+                    format['name'] as String,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    format['description'] as String,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  onTap: () =>
+                      Navigator.of(context).pop(format['format'] as ExportFormat),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && context.mounted) {
+      await _exportChatHistory(context, ref, result);
+    }
+  }
+
+  /// 导出聊天记录
+  Future<void> _exportChatHistory(
+    BuildContext context,
+    WidgetRef ref,
+    ExportFormat format,
+  ) async {
+    final chatState = ref.read(chatProvider);
+
+    if (chatState.currentSession == null) {
+      ElegantNotification.warning(
+        context,
+        '当前没有选中的对话会话',
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    try {
+      // 显示导出中的提示
+      ElegantNotification.info(
+        context,
+        '正在导出为${format == ExportFormat.markdown ? 'Markdown' : 'Word'}格式...',
+        duration: const Duration(seconds: 2),
+      );
+
+      final filePath = await ExportService.exportChatHistory(
+        session: chatState.currentSession!,
+        messages: chatState.messages,
+        format: format,
+        includeMetadata: true,
+      );
+
+      if (filePath != null && context.mounted) {
+        ElegantNotification.success(
+          context,
+          '导出成功！文件已保存到: $filePath',
+          duration: const Duration(seconds: 5),
+        );
+      } else if (context.mounted) {
+        ElegantNotification.error(
+          context,
+          '导出失败，请重试',
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ElegantNotification.error(
+          context,
+          '导出失败: $e',
+          duration: const Duration(seconds: 3),
+        );
+      }
     }
   }
 

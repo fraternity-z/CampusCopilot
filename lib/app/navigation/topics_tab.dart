@@ -6,6 +6,8 @@ import '../constants/ui_constants.dart';
 import '../../features/llm_chat/presentation/providers/chat_provider.dart';
 import '../../features/llm_chat/presentation/views/widgets/animated_title_widget.dart';
 import '../../features/settings/presentation/providers/ui_settings_provider.dart';
+import '../../features/llm_chat/domain/services/export_service.dart';
+import '../../core/widgets/elegant_notification.dart';
 
 /// 聊天记录标签页组件
 class TopicsTab extends ConsumerWidget {
