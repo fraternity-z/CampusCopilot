@@ -12,6 +12,8 @@ import 'package:file_picker/file_picker.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
 import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
+import '../../../learning_mode/data/providers/learning_mode_provider.dart';
+import '../../../learning_mode/domain/services/learning_prompt_service.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -633,6 +635,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 发送消息
   Future<void> sendMessage(String text) async {
+    // 学习模式处理：检查是否启用学习模式并处理消息内容
+    final learningModeState = _ref.read(learningModeProvider);
+    String processedMessage = text;
+    
+    if (learningModeState.isLearningMode) {
+      // 在学习模式下，包装用户消息以引导AI使用苏格拉底式教学
+      processedMessage = _buildLearningModeMessage(text, learningModeState);
+      debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}, 难度: ${learningModeState.difficultyLevel}');
+      
+      // 增加提问步骤
+      _ref.read(learningModeProvider.notifier).incrementQuestionStep();
+    }
+    
     // 智能路由：检查是否应该使用图像生成
     final isImageGeneration = _shouldUseImageGeneration(text);
     if (isImageGeneration) {
@@ -665,7 +680,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoading: true, error: null);
 
     // 准备消息内容和图片URL
-    String messageContent = text;
+    // 在学习模式下使用处理过的消息，普通模式下使用原始文本
+    String messageContent = learningModeState.isLearningMode ? processedMessage : text;
     List<String> imageUrls = [];
 
     // 处理附加的图片
@@ -868,6 +884,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
               messages: updatedMessages,
               isLoading: messageChunk.status != MessageStatus.sent,
             );
+
+            // 如果是学习模式且AI回复完成，进行学习模式处理
+            if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
+              _processLearningModeResponse(fullResponse);
+            }
           }
         },
         onError: (error) {
@@ -933,6 +954,56 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }).toList();
 
       state = state.copyWith(messages: updatedMessages, isLoading: false);
+    }
+  }
+
+  /// 构建学习模式消息
+  /// 
+  /// 在学习模式下，将用户的原始问题转换为苏格拉底式教学格式，
+  /// 引导AI使用提问而非直接回答的方式来帮助学生学习
+  String _buildLearningModeMessage(String originalMessage, dynamic learningModeState) {
+    // 获取学习模式系统提示词
+    final systemPrompt = LearningPromptService.buildLearningSystemPrompt(
+      style: learningModeState.style,
+      difficultyLevel: learningModeState.difficultyLevel,
+      subject: learningModeState.currentSubject,
+      questionStep: learningModeState.questionStep,
+      maxSteps: learningModeState.maxQuestionSteps,
+    );
+
+    // 包装用户消息
+    final wrappedMessage = LearningPromptService.wrapUserMessage(
+      originalMessage,
+      style: learningModeState.style,
+      questionStep: learningModeState.questionStep,
+      hintHistory: learningModeState.hintHistory,
+    );
+
+    // 组合系统提示词和用户消息
+    return '''$systemPrompt
+
+===== 学生的问题 =====
+$wrappedMessage
+
+请严格按照上述学习模式指导原则来回应学生的问题。记住：不要直接给出答案，而是通过巧妙的提问引导学生自己发现答案。''';
+  }
+
+  /// 处理学习模式下的AI回复
+  /// 
+  /// 在学习模式下，可以对AI的回复进行后处理，
+  /// 例如添加学习提示、分析学生的理解程度等
+  void _processLearningModeResponse(String aiResponse) {
+    final learningModeNotifier = _ref.read(learningModeProvider.notifier);
+    
+    // 如果AI回复中包含引导性内容，添加到提示历史中
+    if (aiResponse.contains('让我们') || aiResponse.contains('你觉得') || aiResponse.contains('试着想想')) {
+      learningModeNotifier.addToHintHistory(aiResponse.split('\n').first);
+    }
+
+    // 检查是否需要重置提问步骤（当学生得到完整理解时）
+    if (aiResponse.contains('很好') || aiResponse.contains('正确') || aiResponse.contains('理解得很棒')) {
+      // 可以考虑重置或调整学习进度
+      debugPrint('🎓 学生理解程度良好，学习模式响应已处理');
     }
   }
 }

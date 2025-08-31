@@ -27,6 +27,7 @@ import '../providers/search_providers.dart';
 import '../../../../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../../../../../core/utils/model_icon_utils.dart';
 import '../../../settings/domain/entities/app_settings.dart';
+import '../../../learning_mode/presentation/widgets/mode_toggle_widget.dart';
 
 /// 聊天界面
 ///
@@ -182,6 +183,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       ),
       actions: [
         _buildModelSelector(),
+        const SizedBox(width: 8),
+        const ModeToggleWidget(),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: _showSettings,
