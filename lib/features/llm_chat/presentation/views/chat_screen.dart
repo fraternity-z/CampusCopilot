@@ -126,9 +126,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // 监听消息变化并自动滚动
+    
+    // 使用 ref.listen 的正确方式：它会自动处理重复注册问题
+    // 但我们添加额外的条件来避免不必要的滚动触发
     ref.listen<List<ChatMessage>>(chatMessagesProvider, (previous, current) {
       if (previous == null) return;
+      
+      // 检查是否真的有实质性变化，避免因UI重建触发的误滚动
+      if (previous.length == current.length && previous.isNotEmpty && current.isNotEmpty) {
+        // 如果长度相同，检查内容是否真的发生了变化
+        bool hasContentChange = false;
+        for (int i = 0; i < current.length; i++) {
+          if (previous[i].content != current[i].content) {
+            hasContentChange = true;
+            break;
+          }
+        }
+        // 如果没有实质性内容变化，不触发滚动
+        if (!hasContentChange) return;
+      }
 
       // 如果消息数量增加了，则立即自动滚动（新消息）
       if (current.length > previous.length) {

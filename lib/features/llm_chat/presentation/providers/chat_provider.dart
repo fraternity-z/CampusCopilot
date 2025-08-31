@@ -716,6 +716,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
       debugPrint('🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
       debugPrint('🔍 用户消息: "$text"');
       
+      // 如果在学习会话中，推进轮数（用户发送消息时推进）
+      if (learningModeState.currentSession != null && learningModeState.currentSession!.status == LearningSessionStatus.active) {
+        // 先推进轮数，因为这代表用户开始了新一轮对话
+        learningModeNotifier.advanceLearningSession('user-message-temp'); // 临时ID，后面会被替换
+        // 重新获取更新后的状态
+        final updatedLearningModeState = _ref.read(learningModeProvider);
+        debugPrint('🎓 用户发送消息，推进到第 ${updatedLearningModeState.currentSession?.currentRound ?? 0} 轮');
+      }
+      
       // 如果用户要求答案或达到最大轮数，标记会话状态
       if (shouldGiveFinalAnswer && learningModeState.currentSession != null) {
         final updatedSession = learningModeState.currentSession!.copyWith(
@@ -1207,11 +1216,10 @@ $wrappedMessage
   void _processLearningModeResponse(String aiResponse, String aiMessageId) {
     final learningModeNotifier = _ref.read(learningModeProvider.notifier);
     
-    // 如果在学习会话中，先推进会话
+    // 移除AI回复时的轮数推进，轮数推进应该在用户发送消息时进行
+    // 这样确保一问一答为一轮，而不是每条消息都增加轮数
     if (learningModeNotifier.isInLearningSession) {
-      learningModeNotifier.advanceLearningSession(aiMessageId);
-      
-      // 获取更新后的会话状态
+      // 获取当前会话状态
       final updatedLearningModeState = _ref.read(learningModeProvider);
       final currentSession = updatedLearningModeState.currentSession;
       

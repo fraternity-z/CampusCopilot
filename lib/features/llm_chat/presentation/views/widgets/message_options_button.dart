@@ -23,25 +23,13 @@ class MessageOptionsButton extends ConsumerWidget {
         size: 18,
         color: Theme.of(context).colorScheme.outline,
       ),
-      onSelected: (option) async {
-        switch (option) {
-          case _MessageOption.copy:
-            final messenger = ScaffoldMessenger.of(context);
-            Clipboard.setData(ClipboardData(text: message.content)).then((_) {
-              messenger.showSnackBar(const SnackBar(content: Text('已复制到剪贴板')));
-            });
-            break;
-          case _MessageOption.export:
-            await _showExportDialog(context, ref);
-            break;
-          case _MessageOption.regenerate:
-            // 仅在消息来自AI时提供重新生成
-            if (!message.isFromUser) {
-              // 当前简单实现：重新生成最后一条用户消息的回复
-              await ref.read(chatProvider.notifier).retryLastMessage();
-            }
-            break;
-        }
+      // 添加延迟处理，避免在设备更新期间处理事件
+      onSelected: (option) {
+        // 使用 postFrameCallback 确保在渲染完成后处理选择事件
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!context.mounted) return;
+          await _handleMenuSelection(context, ref, option);
+        });
       },
       itemBuilder: (context) {
         final items = <PopupMenuEntry<_MessageOption>>[
@@ -67,6 +55,51 @@ class MessageOptionsButton extends ConsumerWidget {
         return items;
       },
     );
+  }
+
+  /// 处理菜单选择事件
+  Future<void> _handleMenuSelection(
+    BuildContext context,
+    WidgetRef ref,
+    _MessageOption option,
+  ) async {
+    switch (option) {
+      case _MessageOption.copy:
+        final messenger = ScaffoldMessenger.of(context);
+        try {
+          await Clipboard.setData(ClipboardData(text: message.content));
+          // 再次使用 postFrameCallback 确保 SnackBar 显示不会干扰其他操作
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              messenger.showSnackBar(const SnackBar(
+                content: Text('已复制到剪贴板'),
+                duration: Duration(seconds: 2),
+              ));
+            }
+          });
+        } catch (e) {
+          // 复制失败处理
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              messenger.showSnackBar(SnackBar(
+                content: Text('复制失败: $e'),
+                duration: const Duration(seconds: 2),
+              ));
+            }
+          });
+        }
+        break;
+      case _MessageOption.export:
+        await _showExportDialog(context, ref);
+        break;
+      case _MessageOption.regenerate:
+        // 仅在消息来自AI时提供重新生成
+        if (!message.isFromUser) {
+          // 当前简单实现：重新生成最后一条用户消息的回复
+          await ref.read(chatProvider.notifier).retryLastMessage();
+        }
+        break;
+    }
   }
 
   /// 显示导出对话框
