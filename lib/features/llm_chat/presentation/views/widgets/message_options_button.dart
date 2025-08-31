@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,19 +37,14 @@ class MessageOptionsButton extends ConsumerWidget {
       ),
       color: Theme.of(context).colorScheme.surface,
       shadowColor: Colors.black.withValues(alpha: 0.15),
-      // 添加延迟处理，避免在设备更新期间处理事件
-      onSelected: (option) {
-        // 使用 scheduleMicrotask 和 postFrameCallback 双重保护
-        scheduleMicrotask(() {
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (!context.mounted) return;
-            try {
-              await _handleMenuSelection(context, ref, option);
-            } catch (e) {
-              debugPrint('菜单处理异常: $e');
-            }
-          });
-        });
+      // 简化处理，避免过度的异步嵌套
+      onSelected: (option) async {
+        if (!context.mounted) return;
+        try {
+          await _handleMenuSelection(context, ref, option);
+        } catch (e) {
+          debugPrint('菜单处理异常: $e');
+        }
       },
       itemBuilder: (context) {
         final items = <PopupMenuEntry<_MessageOption>>[

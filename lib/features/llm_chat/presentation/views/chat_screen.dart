@@ -147,16 +147,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         
         // 检查是否真的有实质性变化，避免因UI重建触发的误滚动
         if (previous.length == current.length && previous.isNotEmpty && current.isNotEmpty) {
-          // 如果长度相同，检查内容是否真的发生了变化
-          bool hasContentChange = false;
+          // 如果长度相同，检查内容、时间戳是否真的发生了变化
+          bool hasRealChange = false;
           for (int i = 0; i < current.length; i++) {
-            if (previous[i].content != current[i].content) {
-              hasContentChange = true;
+            if (previous[i].id != current[i].id || 
+                previous[i].content != current[i].content ||
+                previous[i].timestamp != current[i].timestamp) {
+              hasRealChange = true;
               break;
             }
           }
-          // 如果没有实质性内容变化，不触发滚动
-          if (!hasContentChange) return;
+          // 如果没有实质性变化，不触发滚动
+          if (!hasRealChange) return;
         }
 
         // 如果消息数量增加了，则立即自动滚动（新消息）
