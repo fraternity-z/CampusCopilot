@@ -80,10 +80,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   /// 自动滚动到底部
   void _scrollToBottom({bool animate = true, bool gentle = false}) {
-    if (!_scrollController.hasClients) return;
+    if (!mounted || !_scrollController.hasClients) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!mounted || !_scrollController.hasClients) return;
+      
+      try {
         if (animate) {
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
@@ -94,22 +96,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         } else {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         }
+      } catch (e) {
+        // 忽略滚动过程中的异常，避免影响用户体验
+        debugPrint('滚动异常: $e');
       }
     });
   }
 
   /// 实时平滑滚动到底部（用于AI流式响应）
   void _scrollToBottomSmoothly() {
-    if (!_scrollController.hasClients) return;
+    if (!mounted || !_scrollController.hasClients) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!mounted || !_scrollController.hasClients) return;
+      
+      try {
         // 使用更短动画，降低频繁rebuild卡顿
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 80),
           curve: Curves.easeOutQuart,
         );
+      } catch (e) {
+        // 忽略滚动过程中的异常，避免影响用户体验
+        debugPrint('平滑滚动异常: $e');
       }
     });
   }
@@ -127,40 +137,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Widget build(BuildContext context) {
     super.build(context);
     
-    // 使用 ref.listen 的正确方式：它会自动处理重复注册问题
-    // 但我们添加额外的条件来避免不必要的滚动触发
+    // 使用 ref.listen 监听消息变化，避免在build期间进行状态更新
     ref.listen<List<ChatMessage>>(chatMessagesProvider, (previous, current) {
-      if (previous == null) return;
+      if (previous == null || !mounted) return;
       
-      // 检查是否真的有实质性变化，避免因UI重建触发的误滚动
-      if (previous.length == current.length && previous.isNotEmpty && current.isNotEmpty) {
-        // 如果长度相同，检查内容是否真的发生了变化
-        bool hasContentChange = false;
-        for (int i = 0; i < current.length; i++) {
-          if (previous[i].content != current[i].content) {
-            hasContentChange = true;
-            break;
+      // 使用 postFrameCallback 确保在布局完成后再进行滚动操作
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        
+        // 检查是否真的有实质性变化，避免因UI重建触发的误滚动
+        if (previous.length == current.length && previous.isNotEmpty && current.isNotEmpty) {
+          // 如果长度相同，检查内容是否真的发生了变化
+          bool hasContentChange = false;
+          for (int i = 0; i < current.length; i++) {
+            if (previous[i].content != current[i].content) {
+              hasContentChange = true;
+              break;
+            }
+          }
+          // 如果没有实质性内容变化，不触发滚动
+          if (!hasContentChange) return;
+        }
+
+        // 如果消息数量增加了，则立即自动滚动（新消息）
+        if (current.length > previous.length) {
+          _scrollToBottom();
+        }
+        // 如果最后一条消息的内容发生了变化（AI流式响应）
+        else if (current.isNotEmpty && previous.isNotEmpty) {
+          final currentLast = current.last;
+          final previousLast = previous.last;
+          if (currentLast.id == previousLast.id &&
+              currentLast.content != previousLast.content &&
+              _shouldAutoScroll()) {
+            // 实时平滑滚动：每次内容更新都进行平滑滚动
+            _scrollToBottomSmoothly();
           }
         }
-        // 如果没有实质性内容变化，不触发滚动
-        if (!hasContentChange) return;
-      }
-
-      // 如果消息数量增加了，则立即自动滚动（新消息）
-      if (current.length > previous.length) {
-        _scrollToBottom();
-      }
-      // 如果最后一条消息的内容发生了变化（AI流式响应）
-      else if (current.isNotEmpty && previous.isNotEmpty) {
-        final currentLast = current.last;
-        final previousLast = previous.last;
-        if (currentLast.id == previousLast.id &&
-            currentLast.content != previousLast.content &&
-            _shouldAutoScroll()) {
-          // 实时平滑滚动：每次内容更新都进行平滑滚动
-          _scrollToBottomSmoothly();
-        }
-      }
+      });
     });
 
     return GestureDetector(
