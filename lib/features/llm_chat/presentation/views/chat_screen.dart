@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +52,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   final FocusNode _inputFocusNode = FocusNode();
   bool _isInputFocused = false;
   bool _ragEnabled = false;
+  
+  // 添加滚动防抖机制
+  Timer? _scrollTimer;
 
   @override
   void initState() {
@@ -75,6 +79,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageController.dispose();
     _scrollController.dispose();
     _inputFocusNode.dispose();
+    _scrollTimer?.cancel();
     super.dispose();
   }
 
@@ -103,24 +108,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     });
   }
 
-  /// 实时平滑滚动到底部（用于AI流式响应）
+  /// 实时平滑滚动到底部（用于AI流式响应）- 带防抖机制
   void _scrollToBottomSmoothly() {
     if (!mounted || !_scrollController.hasClients) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 取消之前的滚动定时器，避免频繁滚动
+    _scrollTimer?.cancel();
+    
+    _scrollTimer = Timer(const Duration(milliseconds: 50), () {
       if (!mounted || !_scrollController.hasClients) return;
       
-      try {
-        // 使用更短动画，降低频繁rebuild卡顿
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 80),
-          curve: Curves.easeOutQuart,
-        );
-      } catch (e) {
-        // 忽略滚动过程中的异常，避免影响用户体验
-        debugPrint('平滑滚动异常: $e');
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        
+        try {
+          // 使用更短动画，降低频繁rebuild卡顿
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 80),
+            curve: Curves.easeOutQuart,
+          );
+        } catch (e) {
+          // 忽略滚动过程中的异常，避免影响用户体验
+          debugPrint('平滑滚动异常: $e');
+        }
+      });
     });
   }
 
@@ -128,9 +140,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   bool _shouldAutoScroll() {
     if (!_scrollController.hasClients) return true;
 
-    // 如果用户已经滚动到接近底部（距离底部不超过100像素），则自动滚动
+    // 严格判断：只有用户真正在底部时才允许自动滚动
+    // 使用更小的阈值（50像素）确保只有在真正接近底部时才滚动
     final position = _scrollController.position;
-    return position.maxScrollExtent - position.pixels < 100;
+    return position.maxScrollExtent - position.pixels < 50;
   }
 
   @override
@@ -139,42 +152,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     
     // 使用 ref.listen 监听消息变化，避免在build期间进行状态更新
     ref.listen<List<ChatMessage>>(chatMessagesProvider, (previous, current) {
-      if (previous == null || !mounted) return;
+      if (previous == null || !mounted || current.isEmpty) return;
       
-      // 使用 postFrameCallback 确保在布局完成后再进行滚动操作
+      // 简化滚动逻辑，只在必要时滚动
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_scrollController.hasClients) return;
         
-        // 检查是否真的有实质性变化，避免因UI重建触发的误滚动
-        if (previous.length == current.length && previous.isNotEmpty && current.isNotEmpty) {
-          // 如果长度相同，检查内容、时间戳是否真的发生了变化
-          bool hasRealChange = false;
-          for (int i = 0; i < current.length; i++) {
-            if (previous[i].id != current[i].id || 
-                previous[i].content != current[i].content ||
-                previous[i].timestamp != current[i].timestamp) {
-              hasRealChange = true;
-              break;
-            }
+        try {
+          // 只有在用户位于底部时才自动滚动
+          if (!_shouldAutoScroll()) return;
+          
+          // 如果消息数量增加了（新消息）
+          if (current.length > previous.length) {
+            _scrollToBottom(gentle: true);
           }
-          // 如果没有实质性变化，不触发滚动
-          if (!hasRealChange) return;
-        }
-
-        // 如果消息数量增加了，则立即自动滚动（新消息）
-        if (current.length > previous.length) {
-          _scrollToBottom();
-        }
-        // 如果最后一条消息的内容发生了变化（AI流式响应）
-        else if (current.isNotEmpty && previous.isNotEmpty) {
-          final currentLast = current.last;
-          final previousLast = previous.last;
-          if (currentLast.id == previousLast.id &&
-              currentLast.content != previousLast.content &&
-              _shouldAutoScroll()) {
-            // 实时平滑滚动：每次内容更新都进行平滑滚动
+          // 如果最后一条消息的内容发生了变化（AI流式响应）
+          else if (previous.isNotEmpty && 
+                   current.isNotEmpty && 
+                   current.last.id == previous.last.id &&
+                   current.last.content != previous.last.content) {
             _scrollToBottomSmoothly();
           }
+        } catch (e) {
+          debugPrint('消息滚动异常: $e');
         }
       });
     });
@@ -619,10 +619,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
         }
 
-        // 当消息列表首次加载或切换会话时，滚动到底部
+        // 当消息列表首次加载或切换会话时，简单滚动到底部
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients && messages.isNotEmpty) {
-            _scrollToBottom(animate: false);
+            try {
+              _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+            } catch (e) {
+              debugPrint('初次滚动异常: $e');
+            }
           }
         });
 
@@ -1886,8 +1890,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     ref.read(chatProvider.notifier).sendMessage(text);
     _messageController.clear();
 
-    // 发送消息后立即滚动到底部
-    _scrollToBottom();
+    // 发送消息后，只在用户原本就在底部时才滚动
+    if (_shouldAutoScroll()) {
+      _scrollToBottom();
+    }
   }
 
   /// 停止AI响应
