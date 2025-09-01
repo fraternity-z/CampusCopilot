@@ -176,15 +176,15 @@ msix_config:
 
 # 启动图标生成配置
 flutter_launcher_icons:
-  image_path: "assets/images/logo.png"
+  image_path: "assets/icons/app_icon.png"
   android: true
   ios: true
   web:
     generate: true
-    image_path: "assets/images/logo.png"
+    image_path: "assets/icons/app_icon.png"
   windows:
     generate: true
-    image_path: "assets/images/logo.png"
+    image_path: "assets/icons/app_icon.png"
 
 flutter:
   uses-material-design: true
