@@ -465,9 +465,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ needs.prepare.outputs.version }}
-        name: AnywhereChat ${{ needs.prepare.outputs.version }}
+        name: Campus Copilot ${{ needs.prepare.outputs.version }}
         body: |
-          # AnywhereChat ${{ needs.prepare.outputs.version }}
+          # Campus Copilot ${{ needs.prepare.outputs.version }}
 
           **发布时间**: ${{ steps.current-time.outputs.time }}
 
