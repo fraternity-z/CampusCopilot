@@ -157,7 +157,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       actions: [
         _buildModelSelector(),
         const SizedBox(width: 8),
-        const ModeToggleWidget(),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
@@ -861,54 +860,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// 构建助手头像
   Widget _buildAssistantAvatar(ChatMessage message) {
     final provider = _getProviderFromMessage(message);
-    Theme.of(context);
     
     // 尝试从模型名称获取厂商信息
     final vendor = ModelIconUtils.getVendorFromModelName(message.modelName);
-    Color avatarColor;
     Widget iconWidget;
-    
-    // 统一使用灰色背景，不使用花花绿绿的颜色
-    avatarColor = Colors.grey;
     
     if (vendor != null || provider != null) {
       iconWidget = ModelIconUtils.buildModelIcon(
         message.modelName,
-        size: 16,
-        color: Colors.white, // 头像中使用白色图标确保可见性
+        size: 24, // 稍微增大图标尺寸，因为没有背景装饰
         fallbackProvider: provider,
       );
     } else {
-      // 默认图标
+      // 默认图标，使用主题色
       iconWidget = Icon(
         Icons.auto_awesome,
-        size: 16,
-        color: Colors.white,
+        size: 24,
+        color: Theme.of(context).colorScheme.primary,
       );
     }
     
-    return Container(
+    return SizedBox(
       width: 38,
       height: 38,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            avatarColor.withValues(alpha: 0.8),
-            avatarColor,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: avatarColor.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: iconWidget,
+      child: Center(child: iconWidget),
     );
   }
 
@@ -1349,6 +1324,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         _buildRagAndSearchControls(),
                         const SizedBox(width: 12),
                         const ChatActionMenu(),
+                        const SizedBox(width: 8),
+                        const ModeToggleWidget(),
                         const Spacer(),
                         // 右侧语音和发送按钮组合
                         Row(
