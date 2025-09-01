@@ -24,6 +24,7 @@ import '../features/settings/presentation/views/provider_config_screen.dart';
 import '../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
 import '../features/learning_mode/presentation/views/learning_mode_settings_screen.dart';
+import '../features/daily_management/presentation/views/daily_dashboard_screen.dart';
 
 /// 侧边栏标签页状态管理
 final sidebarTabProvider = StateProvider<SidebarTab>(
@@ -296,6 +297,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/chat',
             name: 'chat',
             builder: (context, state) => const ChatScreen(),
+          ),
+
+          // 日常管理
+          GoRoute(
+            path: '/daily',
+            name: 'daily',
+            builder: (context, state) => const DailyDashboardScreen(),
           ),
 
           // 知识库

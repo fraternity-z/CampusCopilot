@@ -152,6 +152,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       centerTitle: true,
       actions: [
         IconButton(
+          icon: const Icon(Icons.calendar_today_outlined),
+          onPressed: () {
+            ref.read(chatScrollProvider.notifier).markUserInteraction();
+            context.go('/daily');
+          },
+          tooltip: '日常',
+        ),
+        IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
             ref.read(chatScrollProvider.notifier).markUserInteraction();
