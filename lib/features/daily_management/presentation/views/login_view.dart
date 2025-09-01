@@ -97,7 +97,13 @@ class _LoginViewState extends State<LoginView> {
   ).constrained(maxWidth: 400);
 
   Future<void> login() async {
-    bool isGood = true;
+    // 使用traintime_pda的登录逻辑
+    if (loginState == IDSLoginState.requesting) {
+      return;
+    }
+    
+    loginState = IDSLoginState.requesting;
+    
     ProgressDialog pd = ProgressDialog(context: context);
     pd.show(
       msg: "正在登录...",
@@ -107,89 +113,83 @@ class _LoginViewState extends State<LoginView> {
         completedMsg: "登录完成",
       ),
     );
-    EhallSession ses = EhallSession();
 
     try {
-      await ses.clearCookieJar();
-      log.warning(
-        "[login_view][login] "
-        "Have cleared login state.",
+      // 保存用户名密码到preferences
+      await preference.setString(
+        preference.Preference.idsAccount,
+        _idsAccountController.text,
       );
-    } on Exception {
-      log.warning(
-        "[login_view][login] "
-        "No clear state.",
+      await preference.setString(
+        preference.Preference.idsPassword,
+        _idsPasswordController.text,
       );
-    }
-
-    try {
-      await ses.loginEhall(
-        username: _idsAccountController.text,
-        password: _idsPasswordController.text,
-        onResponse: (int number, String status) => pd.update(
-          msg: status,
-          value: number,
-        ),
-        sliderCaptcha: (String cookieStr) {
-          return SliderCaptchaClientProvider(cookie: cookieStr).solve(context);
+      
+      // 使用IDSSession的checkAndLogin方法
+      await IDSSession().checkAndLogin(
+        target: "https://ehall.xidian.edu.cn/login?service="
+               "https://ehall.xidian.edu.cn/new/index.html",
+        sliderCaptcha: (String cookieStr) async {
+          await SliderCaptchaClientProvider(cookie: cookieStr).solve(context);
         },
       );
-      if (!mounted) return;
-        if (isGood == true) {
-          // 设置登录状态为成功
-          loginState = IDSLoginState.success;
-          preference.setString(
-            preference.Preference.idsAccount,
-            _idsAccountController.text,
-          );
-          preference.setString(
-            preference.Preference.idsPassword,
-            _idsPasswordController.text,
-          );        bool isPostGraduate = await ses.checkWhetherPostgraduate();
-        if (isPostGraduate) {
-          // 实现研究生信息获取
-          log.info("Postgraduate login successful, getting semester info");
-          try {
-            await PersonalInfoSession().getSemesterInfoYjspt();
-            log.info("Postgraduate semester info retrieved successfully");
-          } catch (e) {
-            log.warning("Failed to get postgraduate semester info: $e");
-            // 不阻断登录流程，继续执行
-          }
-        } else {
-          // 实现本科生信息获取
-          log.info("Undergraduate login successful, getting semester info");
-          try {
-            await PersonalInfoSession().getSemesterInfoEhall();
-            log.info("Undergraduate semester info retrieved successfully");
-          } catch (e) {
-            log.warning("Failed to get undergraduate semester info: $e");
-            // 不阻断登录流程，继续执行
-          }
-        }
-
-        if (mounted) {
-          if (pd.isOpen()) pd.close();
-          _showMessage("登录成功");
-
-          // 实现导航到主界面
-          log.info("Login successful, navigating to main interface");
-          // 保存登录状态和用户角色
+      
+      // 登录成功，设置状态
+      loginState = IDSLoginState.success;
+      log.info("[LoginView] Login successful, loginState set to success");
+      
+      if (mounted) {
+        pd.close();
+        _showMessage("登录成功");
+        
+        // 获取用户信息（不阻断登录流程）
+        try {
+          EhallSession ses = EhallSession();
+          bool isPostGraduate = await ses.checkWhetherPostgraduate();
           await preference.setBool(preference.Preference.role, isPostGraduate);
-
-          // 导航到主界面
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/main');
+          
+          if (isPostGraduate) {
+            log.info("Postgraduate login successful");
+            try {
+              await PersonalInfoSession().getSemesterInfoYjspt();
+              log.info("Postgraduate semester info retrieved successfully");
+            } catch (e) {
+              log.warning("Failed to get postgraduate semester info: $e");
+            }
+          } else {
+            log.info("Undergraduate login successful");
+            try {
+              await PersonalInfoSession().getSemesterInfoEhall();
+              log.info("Undergraduate semester info retrieved successfully");
+            } catch (e) {
+              log.warning("Failed to get undergraduate semester info: $e");
+            }
           }
+        } catch (e) {
+          log.warning("Failed to get user info: $e");
+        }
+        
+        // 返回成功
+        if (mounted) {
+          Navigator.of(context).pop(true);
         }
       }
-    } catch (e, s) {
-      isGood = false;
-      pd.close();
+      
+    } on PasswordWrongException {
+      loginState = IDSLoginState.passwordWrong;
       if (mounted) {
-        if (e is PasswordWrongException) {
-          _showMessage(e.msg);
-        } else if (e is LoginFailedException) {
+        pd.close();
+        _showMessage("密码错误");
+      }
+    } catch (e, s) {
+      loginState = IDSLoginState.fail;
+      log.warning(
+        "[LoginView] Login failed with error: $e\nStacktrace: $s",
+      );
+      
+      if (mounted) {
+        pd.close();
+        if (e is LoginFailedException) {
           _showMessage(e.msg);
         } else if (e is DioException) {
           if (e.message == null) {
@@ -202,10 +202,6 @@ class _LoginViewState extends State<LoginView> {
             _showMessage("登录失败：${e.message}");
           }
         } else {
-          log.warning(
-            "[login_view][login] "
-            "Login failed with error: \n$e\nStacktrace is:\n$s",
-          );
           _showMessage("登录失败：${e.toString().substring(0, min(e.toString().length, 120))}");
         }
       }

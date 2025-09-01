@@ -214,9 +214,11 @@ class IDSSession extends NetworkSession {
     if (onResponse != null) {
       onResponse(30, "login_process.get_encrypt");
     }
-    String keys = form
-        .firstWhere((element) => element.id == "pwdEncryptSalt")
-        .attributes["value"]!;
+    var pwdEncryptSaltElement = form.firstWhere(
+      (element) => element.id == "pwdEncryptSalt",
+      orElse: () => throw LoginFailedException(msg: "无法获取加密密钥，登录页面可能已更新"),
+    );
+    String keys = pwdEncryptSaltElement.attributes["value"]!;
     log.info(
       "[IDSSession][login] "
       "encrypt key: $keys.",
@@ -236,11 +238,11 @@ class IDSSession extends NetworkSession {
     };
 
     for (var i in _header) {
-      head[i] = form
-          .firstWhere(
-            (element) => element.attributes["name"] == i || element.id == i,
-          )
-          .attributes["value"]!;
+      var headerElement = form.firstWhere(
+        (element) => element.attributes["name"] == i || element.id == i,
+        orElse: () => throw LoginFailedException(msg: "无法获取登录参数 '$i'，登录页面可能已更新"),
+      );
+      head[i] = headerElement.attributes["value"]!;
     }
 
     if (onResponse != null) {

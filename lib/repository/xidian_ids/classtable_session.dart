@@ -106,7 +106,14 @@ class ClassTableFile extends EhallSession {
     /// AKA xnxqdm as [startyear][period] eg 20242 as
     var semesterCode = await dio
         .post(semesterCodeURL)
-        .then((value) => value.data["datas"]["kfdxnxqcx"]["rows"][0]["WID"]);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data["datas"] == null || data["datas"]["kfdxnxqcx"] == null ||
+              data["datas"]["kfdxnxqcx"]["rows"] == null || data["datas"]["kfdxnxqcx"]["rows"].isEmpty) {
+            throw Exception("无法获取研究生学期信息");
+          }
+          return data["datas"]["kfdxnxqcx"]["rows"][0]["WID"];
+        });
 
     DateTime now = DateTime.now();
     var currentWeek = await dio
@@ -166,6 +173,10 @@ class ClassTableFile extends EhallSession {
       }
     }
 
+    if (data["datas"] == null || data["datas"]["xspkjgcx"] == null ||
+        data["datas"]["xspkjgcx"]["rows"] == null) {
+      throw Exception("无法获取研究生课程表数据");
+    }
     qResult["rows"] = data["datas"]["xspkjgcx"]["rows"];
 
     var notOnTable = await dio
@@ -176,7 +187,13 @@ class ClassTableFile extends EhallSession {
             'XH': preference.getString(preference.Preference.idsAccount),
           },
         )
-        .then((value) => value.data['datas']['xswsckbkc']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['xswsckbkc'] == null) {
+            throw Exception("无法获取研究生未安排课程数据");
+          }
+          return data['datas']['xswsckbkc'];
+        });
     qResult["notArranged"] = notOnTable["rows"];
 
     ClassTableData toReturn = ClassTableData();
@@ -296,7 +313,14 @@ class ClassTableFile extends EhallSession {
         .post(
           "https://ehall.xidian.edu.cn/jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do",
         )
-        .then((value) => value.data['datas']['dqxnxq']['rows'][0]['DM']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['dqxnxq'] == null ||
+              data['datas']['dqxnxq']['rows'] == null || data['datas']['dqxnxq']['rows'].isEmpty) {
+            throw Exception("无法获取学期信息");
+          }
+          return data['datas']['dqxnxq']['rows'][0]['DM'];
+        });
     if (preference.getString(preference.Preference.currentSemester) !=
         semesterCode) {
       preference.setString(preference.Preference.currentSemester, semesterCode);
@@ -318,7 +342,14 @@ class ClassTableFile extends EhallSession {
             'XQ': semesterCode.split('-')[2],
           },
         )
-        .then((value) => value.data['datas']['cxjcs']['rows'][0]["XQKSRQ"]);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['cxjcs'] == null ||
+              data['datas']['cxjcs']['rows'] == null || data['datas']['cxjcs']['rows'].isEmpty) {
+            throw Exception("无法获取学期开始日期");
+          }
+          return data['datas']['cxjcs']['rows'][0]["XQKSRQ"];
+        });
     log.info(
       "[getClasstable][getEhall] "
       "Will get $semesterCode which start at $termStartDay.",
@@ -332,7 +363,13 @@ class ClassTableFile extends EhallSession {
             'XH': preference.getString(preference.Preference.idsAccount),
           },
         )
-        .then((value) => value.data['datas']['xskcb']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['xskcb'] == null) {
+            throw Exception("无法获取课程表数据");
+          }
+          return data['datas']['xskcb'];
+        });
     if (qResult['extParams']['code'] != 1) {
       log.warning(
         "[getClasstable][getEhall] "
@@ -369,7 +406,13 @@ class ClassTableFile extends EhallSession {
             'XH': preference.getString(preference.Preference.idsAccount),
           },
         )
-        .then((value) => value.data['datas']['cxxsllsywpk']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['cxxsllsywpk'] == null) {
+            throw Exception("无法获取未安排课程数据");
+          }
+          return data['datas']['cxxsllsywpk'];
+        });
 
     log.info("[getClasstable][getEhall] $notOnTable");
     qResult["notArranged"] = notOnTable["rows"];
@@ -391,7 +434,13 @@ class ClassTableFile extends EhallSession {
             '*order': "-SQSJ",
           },
         )
-        .then((value) => value.data['datas']['xsdkkc']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['xsdkkc'] == null) {
+            throw Exception("无法获取课程变更数据");
+          }
+          return data['datas']['xsdkkc'];
+        });
     if (qResult['extParams']['code'] != 1) {
       log.warning("[getClasstable][getEhall] ${qResult['extParams']['msg']}");
     }

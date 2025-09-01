@@ -7,6 +7,8 @@ import 'package:ai_assistant/repository/logger.dart';
 import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
+import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
+import 'login_view.dart';
 
 class ClassTableView extends StatefulWidget {
   const ClassTableView({super.key});
@@ -23,12 +25,29 @@ class _ClassTableViewState extends State<ClassTableView> {
   @override
   void initState() {
     super.initState();
-    // 延迟加载，避免在initState中使用context
+    // 检查登录状态，只有登录成功才自动加载课程表
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _loadClassTable();
+        _checkLoginAndLoad();
       }
     });
+  }
+  
+  Future<void> _checkLoginAndLoad() async {
+    // 检查真正的登录状态
+    log.info("[ClassTableView] Current loginState: $loginState, offline: $offline");
+    
+    if (loginState == IDSLoginState.success) {
+      // 已登录，加载课程表
+      log.info("User logged in, loading class table");
+      _loadClassTable();
+    } else {
+      // 未登录，显示登录提示
+      log.info("User not logged in (loginState: $loginState), showing login prompt");
+      if (mounted) {
+        _showMessage("请先登录后再查看课程表");
+      }
+    }
   }
 
   Future<void> _loadClassTable() async {
@@ -92,17 +111,50 @@ class _ClassTableViewState extends State<ClassTableView> {
     }
 
     if (_classTableData == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("暂无课程表数据"),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadClassTable,
-              child: const Text("重新加载"),
-            ),
-          ],
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("课程表"),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.schedule,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                loginState == IDSLoginState.success 
+                    ? "暂无课程表数据" 
+                    : "请先登录后查看课程表",
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 24),
+              if (loginState == IDSLoginState.success)
+                ElevatedButton(
+                  onPressed: _loadClassTable,
+                  child: const Text("加载课程表"),
+                )
+              else
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const LoginView(),
+                      ),
+                    ).then((result) {
+                      // 登录成功后自动刷新
+                      if (result == true && mounted) {
+                        _checkLoginAndLoad();
+                      }
+                    });
+                  },
+                  child: const Text("前往登录"),
+                ),
+            ],
+          ),
         ),
       );
     }

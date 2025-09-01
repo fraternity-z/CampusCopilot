@@ -111,7 +111,12 @@ class EhallSession extends IDSSession {
         "Transfer address: ${value.headers['location']![0]}.",
       );
 
-      return value.headers['location']![0].replaceAll(
+      var locationHeader = value.headers['location'];
+      if (locationHeader == null || locationHeader.isEmpty) {
+        throw GetInformationFailedException("无法获取应用重定向地址");
+      }
+
+      return locationHeader[0].replaceAll(
         RegExp(r';jsessionid=(.*)\?'),
         "?",
       );

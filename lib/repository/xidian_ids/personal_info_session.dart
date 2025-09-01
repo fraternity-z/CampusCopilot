@@ -40,9 +40,18 @@ class PersonalInfoSession extends EhallSession {
         .post(
           "https://yjspt.xidian.edu.cn/gsapp/sys/yjsemaphome/modules/pubWork/getUserInfo.do",
         )
-        .then((value) => value.data);
+        .then((value) {
+          var data = value.data;
+          if (data == null) {
+            throw GetInformationFailedException("无法获取研究生用户信息");
+          }
+          return data;
+        });
     if (detailed["code"] != "0") {
       throw GetInformationFailedException(detailed["msg"].toString());
+    }
+    if (detailed["data"] == null || detailed["data"]["xnxqdm"] == null) {
+      throw GetInformationFailedException("研究生用户信息数据结构异常");
     }
     await preference.setString(
       preference.Preference.currentSemester,
@@ -123,13 +132,23 @@ class PersonalInfoSession extends EhallSession {
             },
           ),
         )
-        .then((value) => value.data);
+        .then((value) {
+          var data = value.data;
+          if (data == null) {
+            throw GetInformationFailedException("无法获取宿舍信息");
+          }
+          return data;
+        });
     log.info(
       "[ehall_session][getDormInfoEhall] "
       "Storing the user information.",
     );
     if (detailed["returnCode"] != "#E000000000000") {
       throw GetInformationFailedException(detailed["description"]);
+    }
+
+    if (detailed["data"] == null || detailed["data"]["ZSDZ"] == null) {
+      throw GetInformationFailedException("宿舍信息数据结构异常");
     }
 
     return detailed["data"]["ZSDZ"].toString();
@@ -146,7 +165,14 @@ class PersonalInfoSession extends EhallSession {
         .post(
           "https://ehall.xidian.edu.cn/jwapp/sys/wdkb/modules/jshkcb/dqxnxq.do",
         )
-        .then((value) => value.data['datas']['dqxnxq']['rows'][0]['DM']);
+        .then((value) {
+          var data = value.data;
+          if (data == null || data['datas'] == null || data['datas']['dqxnxq'] == null ||
+              data['datas']['dqxnxq']['rows'] == null || data['datas']['dqxnxq']['rows'].isEmpty) {
+            throw GetInformationFailedException("无法获取本科生学期信息");
+          }
+          return data['datas']['dqxnxq']['rows'][0]['DM'];
+        });
     await preference.setString(
       preference.Preference.currentSemester,
       semesterCode,
