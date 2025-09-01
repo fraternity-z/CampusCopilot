@@ -1,0 +1,446 @@
+// Copyright 2023-2025 BenderBlog Rodriguez and contributors
+// Copyright 2025 Traintime PDA authors.
+// SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
+
+import 'package:flutter/foundation.dart';
+
+enum Source { empty, school, user }
+
+class NotArrangementClassDetail {
+  String name; // 名称
+  String? code; // 课程序号
+  String? number; // 班级序号
+  String? teacher; // 老师
+
+  NotArrangementClassDetail({
+    required this.name,
+    this.code,
+    this.number,
+    this.teacher,
+  });
+
+  factory NotArrangementClassDetail.from(NotArrangementClassDetail e) =>
+      NotArrangementClassDetail(
+        name: e.name,
+        code: e.code,
+        number: e.number,
+        teacher: e.teacher,
+      );
+
+  factory NotArrangementClassDetail.fromJson(Map<String, dynamic> json) {
+    return NotArrangementClassDetail(
+      name: json['name'] as String,
+      code: json['code'] as String?,
+      number: json['number'] as String?,
+      teacher: json['teacher'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'code': code,
+      'number': number,
+      'teacher': teacher,
+    };
+  }
+
+  @override
+  int get hashCode => name.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NotArrangementClassDetail &&
+      other.runtimeType == runtimeType &&
+      name == other.name;
+}
+
+class ClassDetail {
+  String name; // 名称
+  String? code; // 课程序号
+  String? number; // 班级序号
+
+  ClassDetail({required this.name, this.code, this.number});
+
+  factory ClassDetail.from(ClassDetail e) =>
+      ClassDetail(name: e.name, code: e.code, number: e.number);
+
+  factory ClassDetail.fromJson(Map<String, dynamic> json) {
+    return ClassDetail(
+      name: json['name'] as String,
+      code: json['code'] as String?,
+      number: json['number'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'code': code,
+      'number': number,
+    };
+  }
+
+  @override
+  int get hashCode => name.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ClassDetail &&
+      other.runtimeType == runtimeType &&
+      name == other.name;
+
+  @override
+  String toString() {
+    return "$name $code $number";
+  }
+}
+
+class TimeArrangement {
+  /// 课程索引（注：是 `ClassDetail` 的索引，不是 `TimeArrangement` 的索引）
+  int index;
+
+  /// 返回的是布尔类型列表，true 表示该周有课，false 表示该周无课
+  /// 绕过 Swift 字符串不好处理的代价就是 json 要大很多了......
+  List<bool> weekList; // 上课周次
+  String? teacher; // 老师
+  int day; // 星期几上课
+  int start; // 上课开始
+  int stop; // 上课结束
+  Source source; // 数据来源
+  String? classroom; // 上课教室
+
+  int get step => stop - start; // 上课长度
+
+  factory TimeArrangement.fromJson(Map<String, dynamic> json) {
+    return TimeArrangement(
+      index: json['index'] as int,
+      weekList: (json['week_list'] as List<dynamic>).map((e) => e as bool).toList(),
+      teacher: json['teacher'] as String?,
+      day: json['day'] as int,
+      start: json['start'] as int,
+      stop: json['stop'] as int,
+      source: Source.values[json['source'] as int],
+      classroom: json['classroom'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'index': index,
+      'week_list': weekList,
+      'teacher': teacher,
+      'day': day,
+      'start': start,
+      'stop': stop,
+      'source': source.index,
+      'classroom': classroom,
+    };
+  }
+
+  TimeArrangement({
+    required this.source,
+    required this.index,
+    required this.weekList,
+    this.classroom,
+    this.teacher,
+    required this.day,
+    required this.start,
+    required this.stop,
+  });
+
+  @override
+  String toString() => "$source $index $classroom $teacher";
+}
+
+class ClassTableData {
+  int semesterLength;
+  String semesterCode;
+  String termStartDay;
+  List<ClassDetail> classDetail;
+  List<ClassDetail> userDefinedDetail;
+  List<NotArrangementClassDetail> notArranged;
+  List<TimeArrangement> timeArrangement;
+  List<ClassChange> classChanges;
+
+  /// Only allowed to be used with classDetail
+  ClassDetail getClassDetail(TimeArrangement t) {
+    switch (t.source) {
+      case Source.school:
+        return classDetail[t.index];
+      case Source.user:
+        return userDefinedDetail[t.index];
+      case Source.empty:
+        throw NotImplementedException();
+    }
+  }
+
+  ClassTableData.from(ClassTableData c)
+    : this(
+        semesterLength: c.semesterLength,
+        semesterCode: c.semesterCode,
+        termStartDay: c.termStartDay,
+        classDetail: c.classDetail,
+        notArranged: c.notArranged,
+        timeArrangement: c.timeArrangement,
+        classChanges: c.classChanges,
+      );
+
+  ClassTableData({
+    this.semesterLength = 1,
+    this.semesterCode = "",
+    this.termStartDay = "",
+    List<ClassDetail>? classDetail,
+    List<ClassDetail>? userDefinedDetail,
+    List<NotArrangementClassDetail>? notArranged,
+    List<TimeArrangement>? timeArrangement,
+    List<ClassChange>? classChanges,
+  }) : classDetail = classDetail ?? [],
+       userDefinedDetail = userDefinedDetail ?? [],
+       notArranged = notArranged ?? [],
+       timeArrangement = timeArrangement ?? [],
+       classChanges = classChanges ?? [];
+
+  factory ClassTableData.fromJson(Map<String, dynamic> json) {
+    return ClassTableData(
+      semesterLength: json['semesterLength'] as int,
+      semesterCode: json['semesterCode'] as String,
+      termStartDay: json['termStartDay'] as String,
+      classDetail: (json['classDetail'] as List<dynamic>).map((e) => ClassDetail.fromJson(e as Map<String, dynamic>)).toList(),
+      userDefinedDetail: (json['userDefinedDetail'] as List<dynamic>).map((e) => ClassDetail.fromJson(e as Map<String, dynamic>)).toList(),
+      notArranged: (json['notArranged'] as List<dynamic>).map((e) => NotArrangementClassDetail.fromJson(e as Map<String, dynamic>)).toList(),
+      timeArrangement: (json['timeArrangement'] as List<dynamic>).map((e) => TimeArrangement.fromJson(e as Map<String, dynamic>)).toList(),
+      classChanges: (json['classChanges'] as List<dynamic>).map((e) => ClassChange.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'semesterLength': semesterLength,
+      'semesterCode': semesterCode,
+      'termStartDay': termStartDay,
+      'classDetail': classDetail.map((e) => e.toJson()).toList(),
+      'userDefinedDetail': userDefinedDetail.map((e) => e.toJson()).toList(),
+      'notArranged': notArranged.map((e) => e.toJson()).toList(),
+      'timeArrangement': timeArrangement.map((e) => e.toJson()).toList(),
+      'classChanges': classChanges.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+class NotImplementedException implements Exception {}
+
+enum ChangeType {
+  change, // 调课
+  stop, // 停课
+  patch, // 补课
+}
+
+class ClassChange {
+  final ChangeType type;
+
+  /// KCH 课程号
+  final String classCode;
+
+  /// KXH 班级号
+  final String classNumber;
+
+  /// KCM 课程名
+  final String className;
+
+  /// 来自 SKZC 原周次信息，可能是空
+  final List<bool>? originalAffectedWeeks;
+
+  /// 来自 XSKZC 新周次信息，可能是空
+  final List<bool>? newAffectedWeeks;
+
+  /// YSKJS 原先的老师
+  final String? originalTeacherData;
+
+  /// XSKJS 新换的老师
+  final String? newTeacherData;
+
+  /// KSJS-JSJC 原先的课次信息
+  final List<int> originalClassRange;
+
+  /// XKSJS-XJSJC 新的课次信息
+  final List<int> newClassRange;
+
+  /// SKXQ 原先的星期
+  final int? originalWeek;
+
+  /// XSKXQ 现在的星期
+  final int? newWeek;
+
+  /// JASMC 旧教室
+  final String? originalClassroom;
+
+  /// XJASMC 新教室
+  final String? newClassroom;
+
+  ClassChange({
+    required this.type,
+    required this.classCode,
+    required this.classNumber,
+    required this.className,
+    required this.originalAffectedWeeks,
+    required this.newAffectedWeeks,
+    required this.originalTeacherData,
+    required this.newTeacherData,
+    required this.originalClassRange,
+    required this.newClassRange,
+    required this.originalWeek,
+    required this.newWeek,
+    required this.originalClassroom,
+    required this.newClassroom,
+  });
+
+  /// 必须假设后台有问题，返回长度不一样的数组
+  /// 亏他们想得出来用 01 表示布尔信息，日子不是这么省的啊
+  List<int> get originalAffectedWeeksList {
+    if (originalAffectedWeeks == null) return [];
+    List<int> toReturn = [];
+    for (int i = 0; i < originalAffectedWeeks!.length; ++i) {
+      if (originalAffectedWeeks![i]) toReturn.add(i);
+    }
+    return toReturn;
+  }
+
+  List<int> get newAffectedWeeksList {
+    List<int> toReturn = [];
+    for (int i = 0; i < (newAffectedWeeks?.length ?? 0); ++i) {
+      if (newAffectedWeeks![i]) toReturn.add(i);
+    }
+    return toReturn;
+  }
+
+  String? get originalTeacher =>
+      originalTeacherData?.replaceAll(RegExp(r'(/|[0-9a-zA-z])'), '');
+
+  String? get newTeacher =>
+      newTeacherData?.replaceAll(RegExp(r'(/|[0-9a-zA-z])'), '');
+
+  String? get originalNewTeacher => newTeacherData;
+
+  bool get isTeacherChanged {
+    List<String> originalTeacherCode =
+        originalTeacherData?.replaceAll(' ', '').split(RegExp(r',|/')) ?? [];
+
+    originalTeacherCode.retainWhere(
+      (element) => element.contains(RegExp(r'([0-9])')),
+    );
+
+    List<String> newTeacherCode =
+        newTeacherData?.replaceAll(' ', '').split(RegExp(r',|/')) ?? [];
+
+    newTeacherCode.retainWhere(
+      (element) => element.contains(RegExp(r'([0-9])')),
+    );
+
+    return !listEquals(originalTeacherCode, newTeacherCode);
+  }
+
+  String get changeTypeString {
+    switch (type) {
+      case ChangeType.change:
+        return "调课";
+      case ChangeType.patch:
+        return "补课";
+      case ChangeType.stop:
+        return "停课";
+    }
+  }
+
+  factory ClassChange.fromJson(Map<String, dynamic> json) {
+    return ClassChange(
+      type: ChangeType.values[json['type'] as int],
+      classCode: json['classCode'] as String,
+      classNumber: json['classNumber'] as String,
+      className: json['className'] as String,
+      originalAffectedWeeks: json['originalAffectedWeeks'] != null ? (json['originalAffectedWeeks'] as List<dynamic>).map((e) => e as bool).toList() : null,
+      newAffectedWeeks: json['newAffectedWeeks'] != null ? (json['newAffectedWeeks'] as List<dynamic>).map((e) => e as bool).toList() : null,
+      originalTeacherData: json['originalTeacherData'] as String?,
+      newTeacherData: json['newTeacherData'] as String?,
+      originalClassRange: (json['originalClassRange'] as List<dynamic>).map((e) => e as int).toList(),
+      newClassRange: (json['newClassRange'] as List<dynamic>).map((e) => e as int).toList(),
+      originalWeek: json['originalWeek'] as int?,
+      newWeek: json['newWeek'] as int?,
+      originalClassroom: json['originalClassroom'] as String?,
+      newClassroom: json['newClassroom'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.index,
+      'classCode': classCode,
+      'classNumber': classNumber,
+      'className': className,
+      'originalAffectedWeeks': originalAffectedWeeks,
+      'newAffectedWeeks': newAffectedWeeks,
+      'originalTeacherData': originalTeacherData,
+      'newTeacherData': newTeacherData,
+      'originalClassRange': originalClassRange,
+      'newClassRange': newClassRange,
+      'originalWeek': originalWeek,
+      'newWeek': newWeek,
+      'originalClassroom': originalClassroom,
+      'newClassroom': newClassroom,
+    };
+  }
+}
+
+class UserDefinedClassData {
+  List<ClassDetail> userDefinedDetail;
+  List<TimeArrangement> timeArrangement;
+
+  UserDefinedClassData({
+    required this.userDefinedDetail,
+    required this.timeArrangement,
+  });
+
+  factory UserDefinedClassData.fromJson(Map<String, dynamic> json) {
+    return UserDefinedClassData(
+      userDefinedDetail: (json['userDefinedDetail'] as List<dynamic>).map((e) => ClassDetail.fromJson(e as Map<String, dynamic>)).toList(),
+      timeArrangement: (json['timeArrangement'] as List<dynamic>).map((e) => TimeArrangement.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+
+  UserDefinedClassData.empty()
+    : userDefinedDetail = [],
+      timeArrangement = [];
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userDefinedDetail': userDefinedDetail.map((e) => e.toJson()).toList(),
+      'timeArrangement': timeArrangement.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+// Time arrangements.
+// Even means start, odd means end.
+List<String> time = [
+  "08:30",
+  "09:15",
+  "09:20",
+  "10:05",
+  "10:25",
+  "11:10",
+  "11:15",
+  "12:00",
+  "14:00",
+  "14:45",
+  "14:50",
+  "15:35",
+  "15:55",
+  "16:40",
+  "16:45",
+  "17:30",
+  "19:00",
+  "19:45",
+  "19:55",
+  "20:35",
+  "20:40",
+  "21:25",
+];

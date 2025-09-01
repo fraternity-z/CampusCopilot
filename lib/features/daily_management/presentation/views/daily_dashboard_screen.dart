@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'login_view.dart';
+import 'classtable_view.dart';
 
 /// 日常管理界面
 /// 
@@ -130,7 +132,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         'subtitle': '管理您的课程安排',
         'icon': Icons.schedule_outlined,
         'color': Colors.blue,
-        'onTap': () => _showComingSoon('课程表'),
+        'onTap': () => _navigateToClassTable(),
       },
       {
         'title': '计划表',
@@ -144,7 +146,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         'subtitle': '管理个人资料',
         'icon': Icons.person_outline,
         'color': Colors.orange,
-        'onTap': () => _showComingSoon('个人信息'),
+        'onTap': () => _navigateToLogin(),
       },
       {
         'title': '设置',
@@ -343,6 +345,24 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
             child: const Text('知道了'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 导航到登录界面
+  void _navigateToLogin() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const LoginView(),
+      ),
+    );
+  }
+
+  /// 导航到课程表界面
+  void _navigateToClassTable() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ClassTableView(),
       ),
     );
   }
