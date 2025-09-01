@@ -61,6 +61,34 @@ class _ClassTableViewState extends State<ClassTableView> {
   }
   
   double _blockHeight(double count) => count * _availableHeight / 61;
+  
+  /// 计算当前是学期的第几周（0-based）
+  int get _getCurrentWeekIndex {
+    if (_classTableData == null || _classTableData!.termStartDay.isEmpty) {
+      return -1; // 无法确定，返回-1表示不高亮
+    }
+    
+    try {
+      DateTime termStart = DateTime.parse(_classTableData!.termStartDay);
+      DateTime now = DateTime.now();
+      
+      // 计算从学期开始到现在的天数
+      int daysDiff = now.difference(termStart).inDays;
+      
+      // 计算当前是第几周（0-based）
+      int currentWeek = daysDiff ~/ 7;
+      
+      // 确保在有效范围内
+      if (currentWeek < 0 || currentWeek >= _classTableData!.semesterLength) {
+        return -1; // 超出学期范围，不高亮
+      }
+      
+      return currentWeek;
+    } catch (e) {
+      log.error("Error calculating current week: $e");
+      return -1;
+    }
+  }
 
   @override
   void initState() {
@@ -448,7 +476,9 @@ class _ClassTableViewState extends State<ClassTableView> {
           ),
           // 星期标题
           ...List.generate(7, (index) {
-            final isToday = index == today;
+            // 只有当显示的周次是当前周，且今天是对应星期时才高亮
+            final isCurrentWeek = _currentWeek == _getCurrentWeekIndex;
+            final isToday = index == today && isCurrentWeek;
             return Expanded(
               child: Container(
                 alignment: Alignment.center,
@@ -491,11 +521,35 @@ class _ClassTableViewState extends State<ClassTableView> {
   }
 
   int _getDateForWeekDay(int weekDayIndex) {
-    final now = DateTime.now();
-    final currentWeekDay = now.weekday - 1; // 0-6
-    final daysFromMonday = weekDayIndex - currentWeekDay;
-    final targetDate = now.add(Duration(days: daysFromMonday));
-    return targetDate.day;
+    if (_classTableData == null || _classTableData!.termStartDay.isEmpty) {
+      // 如果没有课程表数据，返回当前日期
+      final now = DateTime.now();
+      final currentWeekDay = now.weekday - 1; // 0-6
+      final daysFromMonday = weekDayIndex - currentWeekDay;
+      final targetDate = now.add(Duration(days: daysFromMonday));
+      return targetDate.day;
+    }
+    
+    try {
+      // 根据学期开始日期和当前选中的周次计算日期
+      DateTime termStart = DateTime.parse(_classTableData!.termStartDay);
+      
+      // 计算目标周的星期一
+      DateTime targetWeekMonday = termStart.add(Duration(days: _currentWeek * 7));
+      
+      // 计算目标日期
+      DateTime targetDate = targetWeekMonday.add(Duration(days: weekDayIndex));
+      
+      return targetDate.day;
+    } catch (e) {
+      log.error("Error calculating date for week day: $e");
+      // 如果出错，回退到原来的逻辑
+      final now = DateTime.now();
+      final currentWeekDay = now.weekday - 1; // 0-6
+      final daysFromMonday = weekDayIndex - currentWeekDay;
+      final targetDate = now.add(Duration(days: daysFromMonday));
+      return targetDate.day;
+    }
   }
 
   Widget _buildTimeTableGrid() {
