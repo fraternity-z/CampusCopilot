@@ -69,30 +69,7 @@ class PersonaNotifier extends StateNotifier<PersonaState> {
         apiConfigId: 'default',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-      ),
-      Persona(
-        id: _uuid.v4(),
-        name: '编程专家',
-        description: '专业的编程助手，精通多种编程语言和技术',
-        systemPrompt:
-            '你是一个专业的编程助手，精通多种编程语言包括Python、JavaScript、Dart、Flutter等。请提供准确、实用的编程建议和代码示例。',
-        avatar: '💻',
-        isDefault: false,
-        apiConfigId: 'default',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Persona(
-        id: _uuid.v4(),
-        name: '写作助手',
-        description: '帮助您改善写作，提供创意和文案建议',
-        systemPrompt: '你是一个专业的写作助手，擅长各种文体的写作，包括技术文档、创意写作、商务文案等。请提供有建设性的写作建议。',
-        avatar: '✍️',
-        isDefault: false,
-        apiConfigId: 'default',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
+      ), 
     ];
 
     // 保存到数据库
