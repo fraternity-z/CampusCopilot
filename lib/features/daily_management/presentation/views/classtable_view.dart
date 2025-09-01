@@ -368,79 +368,288 @@ class _ClassTableViewState extends State<ClassTableView> {
   }
 
   Widget _buildClassTable() {
+    return Column(
+      children: [
+        // 顶部星期行
+        _buildWeekHeader(),
+        // 课程表主体
+        Expanded(
+          child: _buildTimeTableGrid(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeekHeader() {
+    const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    final now = DateTime.now();
+    final today = now.weekday - 1; // DateTime.weekday 返回1-7，我们需要0-6
+    
+    return Container(
+      height: 50,
+      color: Theme.of(context).cardColor,
+      child: Row(
+        children: [
+          // 左上角空白区域
+          SizedBox(
+            width: 50,
+            child: Center(
+              child: Text(
+                '${now.month}月',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          ),
+          // 星期标题
+          ...List.generate(7, (index) {
+            final isToday = index == today;
+            return Expanded(
+              child: Container(
+                alignment: Alignment.center,
+                decoration: isToday ? BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ) : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        weekDays[index],
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isToday ? Colors.white : Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        '${_getDateForWeekDay(index)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isToday ? Colors.white : Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  int _getDateForWeekDay(int weekDayIndex) {
+    final now = DateTime.now();
+    final currentWeekDay = now.weekday - 1; // 0-6
+    final daysFromMonday = weekDayIndex - currentWeekDay;
+    final targetDate = now.add(Duration(days: daysFromMonday));
+    return targetDate.day;
+  }
+
+  Widget _buildTimeTableGrid() {
+    return Container(
+      color: Colors.grey[100],
+      child: Row(
+        children: [
+          // 左侧时间列
+          _buildTimeColumn(),
+          // 课程网格
+          Expanded(
+            child: _buildCoursesGrid(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeColumn() {
+    return Container(
+      width: 50,
+      color: Theme.of(context).cardColor,
+      child: Column(
+        children: List.generate(11, (period) { // 改为11节课
+          return Expanded(
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${period + 1}',
+                      style: const TextStyle(
+                        fontSize: 12, // 减小字体
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_getTimeRange(period).isNotEmpty && !_getTimeRange(period).contains('休')) // 只在有时间且非休息时显示
+                      Text(
+                        _getTimeRange(period).replaceAll('\n', ' '), // 改为单行显示
+                        style: TextStyle(
+                          fontSize: 7, // 更小的字体
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCoursesGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7, // 7天
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 1,
+        mainAxisSpacing: 1,
       ),
-      itemCount: 7 * 12, // 7天 * 12节课
+      itemCount: 7 * 11, // 7天 * 11节课
       itemBuilder: (context, index) {
         int day = index % 7;
         int period = index ~/ 7;
-
+        
         List<TimeArrangement> classes = _getClassesForDayAndPeriod(day, period);
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey[200]!, width: 0.5),
+          ),
+          child: classes.isEmpty 
+            ? const SizedBox() 
+            : _buildClassCard(classes.first),
+        );
+      },
+    );
+  }
 
-        return Card(
-          margin: const EdgeInsets.all(2),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _getDayName(day),
-                  style: const TextStyle(
-                    fontSize: 12,
+  Widget _buildClassCard(TimeArrangement arrangement) {
+    ClassDetail classDetail = _classTableData!.getClassDetail(arrangement);
+    
+    // 根据课程名称生成颜色
+    Color cardColor = _getClassColor(classDetail.name);
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 根据可用空间调整字体大小
+        double fontSize = constraints.maxHeight > 60 ? 10 : 8;
+        double classroomFontSize = constraints.maxHeight > 60 ? 8 : 7;
+        
+        return Container(
+          margin: const EdgeInsets.all(1),
+          padding: EdgeInsets.all(constraints.maxHeight > 60 ? 4 : 2),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                offset: const Offset(0, 1),
+                blurRadius: 1,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  classDetail.name,
+                  style: TextStyle(
+                    fontSize: fontSize,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    height: 1.1, // 减小行高
                   ),
+                  maxLines: constraints.maxHeight > 60 ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  "${period + 1}",
-                  style: const TextStyle(fontSize: 10),
-                ),
-                if (classes.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: classes.length,
-                      itemBuilder: (context, classIndex) {
-                        TimeArrangement arrangement = classes[classIndex];
-                        ClassDetail classDetail = _classTableData!.getClassDetail(arrangement);
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 2),
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                classDetail.name,
-                                style: const TextStyle(fontSize: 10),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (arrangement.classroom != null)
-                                Text(
-                                  arrangement.classroom!,
-                                  style: const TextStyle(fontSize: 8),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
+              ),
+              if (arrangement.classroom != null && constraints.maxHeight > 40) ...[
+                const SizedBox(height: 1),
+                Flexible(
+                  child: Text(
+                    arrangement.classroom!,
+                    style: TextStyle(
+                      fontSize: classroomFontSize,
+                      color: Colors.white70,
+                      height: 1.0,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
     );
+  }
+
+  String _getTimeRange(int period) {
+    // 根据 classtable.dart 中的时间定义，每两个时间为一节课
+    // 索引: 0-1=第1节课, 2-3=第2节课, 4-5=第3节课, 6-7=第4节课
+    // 8-9=第5节课, 10-11=第6节课, 12-13=第7节课, 14-15=第8节课
+    // 16-17=第9节课, 18-19=第10节课, 20-21=第11节课
+    const times = [
+      "08:30", "09:15", "09:20", "10:05", "10:25", "11:10", "11:15", "12:00",
+      "14:00", "14:45", "14:50", "15:35", "15:55", "16:40", "16:45", "17:30",
+      "19:00", "19:45", "19:55", "20:35", "20:40", "21:25",
+    ];
+    
+    if (period < 0 || period >= 11) return ''; // 只有11节课
+    
+    int startIndex = period * 2;
+    if (startIndex >= times.length) return '';
+    
+    return times[startIndex];
+  }
+
+  Color _getClassColor(String className) {
+    // 根据课程名称哈希生成颜色
+    final colors = [
+      Colors.pink[300]!,
+      Colors.blue[300]!,
+      Colors.green[300]!,
+      Colors.orange[300]!,
+      Colors.purple[300]!,
+      Colors.teal[300]!,
+      Colors.indigo[300]!,
+      Colors.red[300]!,
+      Colors.cyan[300]!,
+      Colors.amber[300]!,
+    ];
+    
+    int hash = className.hashCode;
+    return colors[hash.abs() % colors.length];
   }
 
   List<TimeArrangement> _getClassesForDayAndPeriod(int day, int period) {
@@ -454,8 +663,4 @@ class _ClassTableViewState extends State<ClassTableView> {
     }).toList();
   }
 
-  String _getDayName(int day) {
-    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    return days[day];
-  }
 }
