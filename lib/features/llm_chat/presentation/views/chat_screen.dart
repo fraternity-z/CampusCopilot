@@ -16,6 +16,7 @@ import '../../../../core/widgets/elegant_notification.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../providers/chat_provider.dart';
+import '../providers/scroll_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'widgets/message_content_widget.dart';
@@ -48,13 +49,9 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen>
     with AutomaticKeepAliveClientMixin<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
   bool _isInputFocused = false;
   bool _ragEnabled = false;
-  
-  // 添加滚动防抖机制
-  Timer? _scrollTimer;
 
   @override
   void initState() {
@@ -77,107 +74,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   @override
   void dispose() {
     _messageController.dispose();
-    _scrollController.dispose();
     _inputFocusNode.dispose();
-    _scrollTimer?.cancel();
     super.dispose();
   }
 
-  /// 自动滚动到底部
-  void _scrollToBottom({bool animate = true, bool gentle = false}) {
-    if (!mounted || !_scrollController.hasClients) return;
+
+  /// 执行滚动操作
+  void _performScroll(ScrollController controller, List<ChatMessage> messages, {bool isStreaming = false}) {
+    if (!mounted || !controller.hasClients) return;
+
+    // 检查用户是否在底部
+    final position = controller.position;
+    final isAtBottom = position.maxScrollExtent - position.pixels < 50;
+    
+    if (!isAtBottom) return; // 用户不在底部，不自动滚动
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
+      if (!mounted || !controller.hasClients) return;
       
       try {
-        if (animate) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            // 自适应动画时长：长列表使用较短动画
-            duration: Duration(milliseconds: gentle ? 120 : 220),
-            curve: gentle ? Curves.easeInOut : Curves.easeOut,
-          );
-        } else {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        }
-      } catch (e) {
-        // 忽略滚动过程中的异常，避免影响用户体验
-        debugPrint('滚动异常: $e');
-      }
-    });
-  }
-
-  /// 实时平滑滚动到底部（用于AI流式响应）- 带防抖机制
-  void _scrollToBottomSmoothly() {
-    if (!mounted || !_scrollController.hasClients) return;
-
-    // 取消之前的滚动定时器，避免频繁滚动
-    _scrollTimer?.cancel();
-    
-    _scrollTimer = Timer(const Duration(milliseconds: 50), () {
-      if (!mounted || !_scrollController.hasClients) return;
-      
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scrollController.hasClients) return;
-        
-        try {
-          // 使用更短动画，降低频繁rebuild卡顿
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+        if (isStreaming) {
+          // 流式响应使用更快的动画
+          controller.animateTo(
+            controller.position.maxScrollExtent,
             duration: const Duration(milliseconds: 80),
             curve: Curves.easeOutQuart,
           );
-        } catch (e) {
-          // 忽略滚动过程中的异常，避免影响用户体验
-          debugPrint('平滑滚动异常: $e');
+        } else {
+          // 新消息使用平滑动画
+          controller.animateTo(
+            controller.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
         }
-      });
+      } catch (e) {
+        debugPrint('滚动操作异常: $e');
+      }
     });
-  }
-
-  /// 检查是否需要自动滚动
-  bool _shouldAutoScroll() {
-    if (!_scrollController.hasClients) return true;
-
-    // 严格判断：只有用户真正在底部时才允许自动滚动
-    // 使用更小的阈值（50像素）确保只有在真正接近底部时才滚动
-    final position = _scrollController.position;
-    return position.maxScrollExtent - position.pixels < 50;
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
-    // 使用 ref.listen 监听消息变化，避免在build期间进行状态更新
-    ref.listen<List<ChatMessage>>(chatMessagesProvider, (previous, current) {
-      if (previous == null || !mounted || current.isEmpty) return;
-      
-      // 简化滚动逻辑，只在必要时滚动
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scrollController.hasClients) return;
-        
-        try {
-          // 只有在用户位于底部时才自动滚动
-          if (!_shouldAutoScroll()) return;
-          
-          // 如果消息数量增加了（新消息）
-          if (current.length > previous.length) {
-            _scrollToBottom(gentle: true);
-          }
-          // 如果最后一条消息的内容发生了变化（AI流式响应）
-          else if (previous.isNotEmpty && 
-                   current.isNotEmpty && 
-                   current.last.id == previous.last.id &&
-                   current.last.content != previous.last.content) {
-            _scrollToBottomSmoothly();
-          }
-        } catch (e) {
-          debugPrint('消息滚动异常: $e');
-        }
-      });
-    });
 
     return GestureDetector(
       onTap: () {
@@ -202,6 +141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           ? IconButton(
               icon: const Icon(Icons.menu_rounded),
               onPressed: () {
+                ref.read(chatScrollProvider.notifier).markUserInteraction();
                 ref
                     .read(uiSettingsProvider.notifier)
                     .setSidebarCollapsed(false);
@@ -220,7 +160,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         const ModeToggleWidget(),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
-          onPressed: _showSettings,
+          onPressed: () {
+            ref.read(chatScrollProvider.notifier).markUserInteraction();
+            _showSettings();
+          },
           tooltip: '设置',
         ),
         const SizedBox(width: 8),
@@ -263,7 +206,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    // 阻止滚动传播
+                    ref.read(chatScrollProvider.notifier).markUserInteraction();
                     showDialog(
                       context: context,
                       barrierDismissible: true,
@@ -578,13 +521,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
-  /// 构建消息列表
+  /// 构建消息列表 - 使用新的滚动状态隔离机制
   Widget _buildMessageList() {
     return Consumer(
       builder: (context, ref, child) {
         final messages = ref.watch(chatMessagesProvider);
         final error = ref.watch(chatErrorProvider);
         final isSearching = ref.watch(chatSearchingProvider);
+        final scrollController = ref.watch(scrollControllerProvider);
+        final scrollNotifier = ref.read(chatScrollProvider.notifier);
 
         if (messages.isEmpty) {
           return Center(
@@ -619,13 +564,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
         }
 
-        // 当消息列表首次加载或切换会话时，简单滚动到底部
+        // 使用独立的滚动状态监听，避免UI状态变化触发滚动
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients && messages.isNotEmpty) {
-            try {
-              _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-            } catch (e) {
-              debugPrint('初次滚动异常: $e');
+          if (scrollController.hasClients && messages.isNotEmpty) {
+            // 检查是否需要滚动
+            if (scrollNotifier.shouldScrollForMessages(messages)) {
+              _performScroll(scrollController, messages, isStreaming: false);
             }
           }
         });
@@ -638,7 +582,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         return AnimationLimiter(
           child: ListView.builder(
             key: const PageStorageKey('chat_message_list'),
-            controller: _scrollController,
+            controller: scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             cacheExtent: 800,
             addAutomaticKeepAlives: true,
@@ -1377,8 +1321,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
-                            onTap: () =>
-                                _showAttachmentOptionsMenu(context, ref),
+                            onTap: () {
+                              ref.read(chatScrollProvider.notifier).markUserInteraction();
+                              _showAttachmentOptionsMenu(context, ref);
+                            },
                             child: Tooltip(
                               message: '添加附件',
                               child: Container(
@@ -1890,10 +1836,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     ref.read(chatProvider.notifier).sendMessage(text);
     _messageController.clear();
 
-    // 发送消息后，只在用户原本就在底部时才滚动
-    if (_shouldAutoScroll()) {
-      _scrollToBottom();
-    }
+    // 发送消息后触发滚动
+    ref.read(chatScrollProvider.notifier).triggerScroll();
   }
 
   /// 停止AI响应
@@ -2073,7 +2017,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           children: [
             // RAG控制图标
             GestureDetector(
-              onTap: () => _showRagControlMenu(context, ref),
+              onTap: () {
+                ref.read(chatScrollProvider.notifier).markUserInteraction();
+                _showRagControlMenu(context, ref);
+              },
               child: Tooltip(
                 message: 'RAG知识库控制',
                 child: Container(
@@ -2103,6 +2050,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             // AI 搜索开关按钮（颜色区分）
             GestureDetector(
               onTap: () async {
+                ref.read(chatScrollProvider.notifier).markUserInteraction();
                 final notifier = ref.read(searchConfigProvider.notifier);
                 final newEnabled = !searchEnabled;
                 await notifier.updateSearchEnabled(newEnabled);
