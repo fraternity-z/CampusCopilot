@@ -214,35 +214,156 @@ class _ClassTableViewState extends State<ClassTableView> {
   }
 
   Widget _buildWeekSelector() {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _classTableData!.semesterLength,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 50,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _currentWeek == index
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey[200],
-                foregroundColor: _currentWeek == index
-                    ? Colors.white
-                    : Colors.black,
-              ),
-              onPressed: () {
-                setState(() {
-                  _currentWeek = index;
-                });
-              },
-              child: Text("${index + 1}"),
+    return GestureDetector(
+      onHorizontalDragEnd: (DragEndDetails details) {
+        // 根据滑动方向切换周次
+        if (details.primaryVelocity != null) {
+          if (details.primaryVelocity! > 0) {
+            // 向右滑动，显示上一周
+            _previousWeek();
+          } else if (details.primaryVelocity! < 0) {
+            // 向左滑动，显示下一周
+            _nextWeek();
+          }
+        }
+      },
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: const Offset(0, 2),
+              blurRadius: 4,
             ),
-          );
-        },
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 左箭头按钮
+            IconButton(
+              onPressed: _previousWeek,
+              icon: const Icon(Icons.chevron_left),
+              iconSize: 28,
+              color: _currentWeek > 0 ? Theme.of(context).primaryColor : Colors.grey,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            ),
+            // 居中显示当前周次 - 下拉按钮样式
+            Expanded(
+              child: Center(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => _showWeekPicker(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        "第${_currentWeek + 1}周",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // 右箭头按钮
+            IconButton(
+              onPressed: _nextWeek,
+              icon: const Icon(Icons.chevron_right),
+              iconSize: 28,
+              color: _currentWeek < _classTableData!.semesterLength - 1
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _previousWeek() {
+    if (_currentWeek > 0) {
+      setState(() {
+        _currentWeek--;
+      });
+    }
+  }
+
+  void _nextWeek() {
+    if (_currentWeek < _classTableData!.semesterLength - 1) {
+      setState(() {
+        _currentWeek++;
+      });
+    }
+  }
+
+  void _showWeekPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("选择周次"),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 6, // 增加列数从4到6
+                childAspectRatio: 1.0, // 改为正方形
+                crossAxisSpacing: 6, // 减少间距
+                mainAxisSpacing: 6,
+              ),
+              itemCount: _classTableData!.semesterLength,
+              itemBuilder: (context, index) {
+                return Material(
+                  color: _currentWeek == index
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      setState(() {
+                        _currentWeek = index;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: Center(
+                      child: Text(
+                        "${index + 1}",
+                        style: TextStyle(
+                          color: _currentWeek == index
+                              ? Colors.white
+                              : Theme.of(context).textTheme.bodyLarge?.color,
+                          fontWeight: _currentWeek == index
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("取消"),
+            ),
+          ],
+        );
+      },
     );
   }
 
