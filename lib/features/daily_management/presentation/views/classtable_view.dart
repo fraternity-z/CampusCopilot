@@ -2,12 +2,33 @@
 // Copyright 2025 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:ai_assistant/repository/logger.dart';
 import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
 import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
+import 'class_organized_data.dart';
+import 'class_card.dart';
+
+// 从traintime_pda复制的常量
+// 时间列宽度
+// 顶部日期行高度
+
+// 颜色列表
+const List<MaterialColor> _colorList = [
+  Colors.pink,
+  Colors.blue,
+  Colors.green,
+  Colors.orange,
+  Colors.purple,
+  Colors.teal,
+  Colors.indigo,
+  Colors.red,
+  Colors.cyan,
+  Colors.amber,
+];
 
 class ClassTableView extends StatefulWidget {
   const ClassTableView({super.key});
@@ -20,6 +41,26 @@ class _ClassTableViewState extends State<ClassTableView> {
   ClassTableData? _classTableData;
   bool _isLoading = false;
   int _currentWeek = 1;
+  
+  // 从traintime_pda复制的辅助方法
+  double get _leftRow => 50.0;
+  // 课程区域的宽度（不包括时间列）
+  double get _courseAreaWidth => MediaQuery.of(context).size.width - _leftRow;
+  double get _blockWidth => _courseAreaWidth / 7;
+  
+  // 修复高度计算 - 使用固定的可用高度
+  double get _availableHeight {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final appBarHeight = kToolbarHeight;
+    final weekSelectorHeight = 56.0;
+    final weekHeaderHeight = 50.0;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
+    return screenHeight - appBarHeight - weekSelectorHeight - weekHeaderHeight - statusBarHeight - bottomPadding - 20; // 20为额外边距
+  }
+  
+  double _blockHeight(double count) => count * _availableHeight / 61;
 
   @override
   void initState() {
@@ -372,9 +413,11 @@ class _ClassTableViewState extends State<ClassTableView> {
       children: [
         // 顶部星期行
         _buildWeekHeader(),
-        // 课程表主体
+        // 课程表主体 - 加入滚动容器
         Expanded(
-          child: _buildTimeTableGrid(),
+          child: SingleChildScrollView(
+            child: _buildTimeTableGrid(),
+          ),
         ),
       ],
     );
@@ -462,205 +505,335 @@ class _ClassTableViewState extends State<ClassTableView> {
         children: [
           // 左侧时间列
           _buildTimeColumn(),
-          // 课程网格
+          // 课程网格 - 使用traintime_pda的Stack布局
           Expanded(
-            child: _buildCoursesGrid(),
+            child: _buildStackBasedCourseGrid(),
           ),
+        ],
+      ),
+    );
+  }
+  
+  /// 使用traintime_pda的Stack布局方式
+  Widget _buildStackBasedCourseGrid() {
+    List<Widget> allCourseCards = [];
+    
+    // 为每一天生成课程卡片
+    for (int dayIndex = 1; dayIndex <= 7; dayIndex++) {
+      List<ClassOrgainzedData> arrangedEvents = _getArrangement(
+        weekIndex: _currentWeek, 
+        dayIndex: dayIndex
+      );
+      
+      for (var courseData in arrangedEvents) {
+        allCourseCards.add(
+          Positioned(
+            top: _blockHeight(courseData.start),
+            height: _blockHeight(courseData.stop - courseData.start),
+            left: _blockWidth * (dayIndex - 1), // 移除_leftRow，课程区域从0开始
+            width: _blockWidth,
+            child: Container(
+              width: double.infinity, // 充满整个宽度
+              height: double.infinity, // 充满整个高度
+              child: ClassCard(detail: courseData),
+            ),
+          ),
+        );
+      }
+    }
+    
+    return SizedBox(
+      width: _courseAreaWidth, // 限制课程区域宽度
+      height: _availableHeight,
+      child: Stack(
+        children: [
+          // 背景网格
+          Row(
+            children: List.generate(7, (dayIndex) {
+              return Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(
+                        color: Colors.grey[200]!, 
+                        width: dayIndex == 6 ? 0 : 0.5,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    children: _buildBackgroundTimeBlocks(),
+                  ),
+                ),
+              );
+            }),
+          ),
+          // 课程卡片
+          ...allCourseCards,
         ],
       ),
     );
   }
 
   Widget _buildTimeColumn() {
+    // 按照traintime_pda的设计，时间列也需要对应时间块系统
     return Container(
       width: 50,
+      height: _availableHeight, // 固定高度
       color: Theme.of(context).cardColor,
       child: Column(
-        children: List.generate(11, (period) { // 改为11节课
-          return Expanded(
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
-                ),
+        children: _buildTimeSlots(),
+      ),
+    );
+  }
+  
+  List<Widget> _buildTimeSlots() {
+    List<Widget> timeSlots = [];
+    
+    // 按照traintime_pda的时间块系统构建时间列
+    for (int index = 0; index < 13; index++) {
+      double blockCount = (index != 4 && index != 9) ? 5 : 3; // 休息时间是3个块，课程时间是5个块
+      
+      late int courseNumber;
+      late String timeText;
+      
+      if ([0, 1, 2, 3].contains(index)) {
+        courseNumber = index + 1; // 1-4节
+        timeText = _getCourseTimeText(courseNumber);
+      } else if (index == 4) {
+        courseNumber = -1; // 午休
+        timeText = '午休';
+      } else if ([5, 6, 7, 8].contains(index)) {
+        courseNumber = index; // 5-8节
+        timeText = _getCourseTimeText(courseNumber);
+      } else if (index == 9) {
+        courseNumber = -2; // 晚休
+        timeText = '晚休';
+      } else {
+        courseNumber = index - 1; // 9-11节
+        timeText = _getCourseTimeText(courseNumber);
+      }
+      
+      timeSlots.add(
+        Expanded(
+          flex: blockCount.toInt(),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${period + 1}',
-                      style: const TextStyle(
-                        fontSize: 12, // 减小字体
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (_getTimeRange(period).isNotEmpty && !_getTimeRange(period).contains('休')) // 只在有时间且非休息时显示
-                      Text(
-                        _getTimeRange(period).replaceAll('\n', ' '), // 改为单行显示
-                        style: TextStyle(
-                          fontSize: 7, // 更小的字体
-                          color: Colors.grey[600],
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: _buildTimeSlotContent(courseNumber, timeText),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return timeSlots;
+  }
+  
+  Widget _buildTimeSlotContent(int courseNumber, String timeText) {
+    if (courseNumber == -1 || courseNumber == -2) {
+      // 休息时间
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          timeText,
+          style: const TextStyle(
+            fontSize: 9,
+            color: Colors.grey,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    } else {
+      // 正常课程时间 - 使用FittedBox防止溢出
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$courseNumber',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (timeText.isNotEmpty)
+              Text(
+                timeText,
+                style: TextStyle(
+                  fontSize: 6,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+          ],
+        ),
+      );
+    }
+  }
+  
+  String _getCourseTimeText(int courseNumber) {
+    // 返回课程时间文本
+    const times = [
+      "", // 0占位
+      "08:30\n09:15", // 1
+      "09:20\n10:05", // 2
+      "10:25\n11:10", // 3
+      "11:15\n12:00", // 4
+      "14:00\n14:45", // 5
+      "14:50\n15:35", // 6
+      "15:55\n16:40", // 7
+      "16:45\n17:30", // 8
+      "19:00\n19:45", // 9
+      "19:55\n20:35", // 10
+      "20:40\n21:25", // 11
+    ];
+    
+    if (courseNumber > 0 && courseNumber < times.length) {
+      return times[courseNumber];
+    }
+    return '';
+  }
+  
+  /// 从 traintime_pda 复制的核心方法
+  /// [weekIndex] start from 0 while [dayIndex] start from 1
+  List<ClassOrgainzedData> _getArrangement({
+    required int weekIndex,
+    required int dayIndex,
+  }) {
+    if (_classTableData == null) return [];
+    
+    /// Fetch all class in this range.
+    List<ClassOrgainzedData> events = [];
+
+    for (final i in _classTableData!.timeArrangement) {
+      if (i.weekList.length > weekIndex &&
+          i.weekList[weekIndex] &&
+          i.day == dayIndex) {
+        ClassDetail classDetail = _classTableData!.getClassDetail(i);
+        events.add(
+          ClassOrgainzedData.fromTimeArrangement(
+            i,
+            _colorList[_classTableData!.timeArrangement.indexOf(i) % _colorList.length],
+            classDetail.name,
+          ),
+        );
+      }
+    }
+
+    /// Sort it with the ascending order of start time.
+    events.sort((a, b) => a.start.compareTo(b.start));
+
+    /// The arrangement to use - 处理重叠课程
+    List<ClassOrgainzedData> arrangedEvents = [];
+
+    for (final event in events) {
+      final startTime = event.start;
+      final endTime = event.stop;
+
+      var eventIndex = -1;
+      final arrangeEventLen = arrangedEvents.length;
+
+      for (var i = 0; i < arrangeEventLen; i++) {
+        final arrangedEventStart = arrangedEvents[i].start;
+        final arrangedEventEnd = arrangedEvents[i].stop;
+
+        if (_checkIsOverlapping(
+          arrangedEventStart,
+          arrangedEventEnd,
+          startTime,
+          endTime,
+        )) {
+          eventIndex = i;
+          break;
+        }
+      }
+
+      if (eventIndex == -1) {
+        arrangedEvents.add(event);
+      } else {
+        final arrangedEventData = arrangedEvents[eventIndex];
+
+        final arrangedEventStart = arrangedEventData.start;
+        final arrangedEventEnd = arrangedEventData.stop;
+
+        final startDuration = math.min(startTime, arrangedEventStart);
+        final endDuration = math.max(endTime, arrangedEventEnd);
+
+        bool shouldNew =
+            (event.stop - event.start) >=
+            (arrangedEventData.stop - arrangedEventData.start);
+
+        final top = startDuration;
+        final bottom = endDuration;
+
+        final newEvent = ClassOrgainzedData(
+          start: top,
+          stop: bottom,
+          data: [...arrangedEventData.data, ...event.data],
+          color: shouldNew ? event.color : arrangedEventData.color,
+          name: shouldNew ? event.name : arrangedEventData.name,
+          place: shouldNew ? event.place : arrangedEventData.place,
+        );
+
+        arrangedEvents[eventIndex] = newEvent;
+      }
+    }
+
+    return arrangedEvents;
+  }
+  
+  bool _checkIsOverlapping(
+    double eStart1,
+    double eEnd1,
+    double eStart2,
+    double eEnd2,
+  ) =>
+      (eStart1 >= eStart2 && eStart1 < eEnd2) ||
+      (eEnd1 > eStart2 && eEnd1 <= eEnd2) ||
+      (eStart2 >= eStart1 && eStart2 < eEnd1) ||
+      (eEnd2 > eStart1 && eEnd2 <= eEnd1);
+
+
+  
+  List<Widget> _buildBackgroundTimeBlocks() {
+    List<Widget> blocks = [];
+    
+    // 按照时间列的结构构建背景块
+    for (int index = 0; index < 13; index++) {
+      int blockCount = (index != 4 && index != 9) ? 5 : 3;
+      
+      blocks.add(
+        Expanded(
+          flex: blockCount,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey[200]!, 
+                  width: index == 3 || index == 8 || index == 12 ? 1.0 : 0.5, // 大课间休息粗线
                 ),
               ),
             ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildCoursesGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7, // 7天
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 1,
-        mainAxisSpacing: 1,
-      ),
-      itemCount: 7 * 11, // 7天 * 11节课
-      itemBuilder: (context, index) {
-        int day = index % 7;
-        int period = index ~/ 7;
-        
-        List<TimeArrangement> classes = _getClassesForDayAndPeriod(day, period);
-        
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey[200]!, width: 0.5),
           ),
-          child: classes.isEmpty 
-            ? const SizedBox() 
-            : _buildClassCard(classes.first),
-        );
-      },
-    );
+        ),
+      );
+    }
+    
+    return blocks;
   }
 
-  Widget _buildClassCard(TimeArrangement arrangement) {
-    ClassDetail classDetail = _classTableData!.getClassDetail(arrangement);
-    
-    // 根据课程名称生成颜色
-    Color cardColor = _getClassColor(classDetail.name);
-    
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 根据可用空间调整字体大小
-        double fontSize = constraints.maxHeight > 60 ? 10 : 8;
-        double classroomFontSize = constraints.maxHeight > 60 ? 8 : 7;
-        
-        return Container(
-          margin: const EdgeInsets.all(1),
-          padding: EdgeInsets.all(constraints.maxHeight > 60 ? 4 : 2),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                offset: const Offset(0, 1),
-                blurRadius: 1,
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  classDetail.name,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.1, // 减小行高
-                  ),
-                  maxLines: constraints.maxHeight > 60 ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (arrangement.classroom != null && constraints.maxHeight > 40) ...[
-                const SizedBox(height: 1),
-                Flexible(
-                  child: Text(
-                    arrangement.classroom!,
-                    style: TextStyle(
-                      fontSize: classroomFontSize,
-                      color: Colors.white70,
-                      height: 1.0,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
+  
 
-  String _getTimeRange(int period) {
-    // 根据 classtable.dart 中的时间定义，每两个时间为一节课
-    // 索引: 0-1=第1节课, 2-3=第2节课, 4-5=第3节课, 6-7=第4节课
-    // 8-9=第5节课, 10-11=第6节课, 12-13=第7节课, 14-15=第8节课
-    // 16-17=第9节课, 18-19=第10节课, 20-21=第11节课
-    const times = [
-      "08:30", "09:15", "09:20", "10:05", "10:25", "11:10", "11:15", "12:00",
-      "14:00", "14:45", "14:50", "15:35", "15:55", "16:40", "16:45", "17:30",
-      "19:00", "19:45", "19:55", "20:35", "20:40", "21:25",
-    ];
-    
-    if (period < 0 || period >= 11) return ''; // 只有11节课
-    
-    int startIndex = period * 2;
-    if (startIndex >= times.length) return '';
-    
-    return times[startIndex];
-  }
 
-  Color _getClassColor(String className) {
-    // 根据课程名称哈希生成颜色
-    final colors = [
-      Colors.pink[300]!,
-      Colors.blue[300]!,
-      Colors.green[300]!,
-      Colors.orange[300]!,
-      Colors.purple[300]!,
-      Colors.teal[300]!,
-      Colors.indigo[300]!,
-      Colors.red[300]!,
-      Colors.cyan[300]!,
-      Colors.amber[300]!,
-    ];
-    
-    int hash = className.hashCode;
-    return colors[hash.abs() % colors.length];
-  }
 
-  List<TimeArrangement> _getClassesForDayAndPeriod(int day, int period) {
-    if (_classTableData == null) return [];
 
-    return _classTableData!.timeArrangement.where((arrangement) {
-      return arrangement.day == day &&
-             arrangement.start <= period &&
-             arrangement.stop > period &&
-             arrangement.weekList[_currentWeek];
-    }).toList();
-  }
 
 }

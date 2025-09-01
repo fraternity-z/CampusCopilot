@@ -15,7 +15,8 @@
       "Bash(flutter test:*)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Read(E:\\code\\traintime_pda/**)"
+      "Read(E:\\code\\traintime_pda/**)",
+      "Read(E:\\code\\traintime_pda\\lib/**)"
     ],
     "deny": [],
     "ask": []
