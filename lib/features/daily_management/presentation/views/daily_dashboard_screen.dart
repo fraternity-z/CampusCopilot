@@ -76,7 +76,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
+            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -84,7 +84,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -114,7 +114,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
           Text(
             '在这里管理您的课程表、计划安排和个人事务',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8),
+              color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -197,11 +197,11 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -214,7 +214,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -296,10 +296,10 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
