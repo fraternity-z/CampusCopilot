@@ -586,7 +586,7 @@ class _ClassTableViewState extends State<ClassTableView> {
             height: _blockHeight(courseData.stop - courseData.start),
             left: _blockWidth * (dayIndex - 1), // 移除_leftRow，课程区域从0开始
             width: _blockWidth,
-            child: Container(
+            child: SizedBox(
               width: double.infinity, // 充满整个宽度
               height: double.infinity, // 充满整个高度
               child: ClassCard(detail: courseData),
