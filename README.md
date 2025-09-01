@@ -1,40 +1,49 @@
-# AnywhereChat - 智能AI助手
+# Campus Copilot - 智能校园助手
 
-一个功能强大的跨平台AI助手应用，支持多模型对话、智能体管理、知识库检索和RAG增强等功能。
+一个专为西电校园生活设计的智能AI助手，集成多模态AI对话、课程管理、知识库检索、智能体管理等功能，让AI助手成为你的校园智能伙伴。
 
 ## ✨ 主要特性
 
+### 🎓 智能校园管理
+- **课程表管理**: 自动登录西电教务系统，获取个人课程安排
+- **实时课程状态**: 显示当前课程和下节课信息，支持课程时间智能提醒
+- **学期管理**: 自动识别学期时间，支持多学期课程数据缓存
+- **个人信息管理**: 统一的校园个人信息中心
+
 ### 🤖 多模态AI对话
-- **多供应商支持**: OpenAI、Google Gemini等主流AI服务
+- **多供应商支持**: OpenAI、Google Gemini、Anthropic Claude等主流AI服务
 - **流式对话**: 实时响应，支持思考链显示（o1、Gemini Thinking等）
-- **多模态支持**: 文本、图片、文档输入
+- **多模态支持**: 文本、图片、文档输入，支持各类文件格式
 - **上下文管理**: 可配置的上下文窗口管理（0-20条消息）
+- **智能搜索集成**: 集成多种搜索引擎，支持实时信息检索
 
 ### 👥 智能体管理
-- **个性化智能体**: 创建和管理不同角色的AI助手
-- **智能体分组**: 按类别组织智能体，支持拖拽排序
+- **个性化智能体**: 创建和管理不同角色的AI助手（学习助手、编程助手、写作助手等）
+- **智能体分组**: 按类别组织智能体，支持拖拽排序和分组管理
 - **系统提示词**: 自定义智能体行为和专业领域
-- **API配置绑定**: 每个智能体可绑定不同的API配置
+- **API配置绑定**: 每个智能体可绑定不同的API配置和模型
 
 ### 📚 知识库与RAG
-- **多知识库支持**: 创建和管理多个独立知识库
-- **文档管理**: 支持PDF、DOCX、TXT等多种格式
-- **智能分块**: 自动文档分块和向量化处理
-- **向量搜索**: 基于语义相似度的智能检索
-- **RAG增强**: 可选的检索增强生成功能
+- **多知识库支持**: 创建和管理多个独立知识库（课程资料、论文资料等）
+- **文档管理**: 支持PDF、DOCX、TXT等多种格式，支持批量处理
+- **智能分块**: 自动文档分块和向量化处理，优化检索效果
+- **向量搜索**: 基于ObjectBox本地向量数据库的语义检索
+- **RAG增强**: 可选的检索增强生成功能，提升AI回答准确性
 
 ### 🎨 界面特性
-- **卡片式图片显示**: 150x150px美观图片卡片
-- **全屏图片查看**: 支持缩放、平移的沉浸式查看
-- **代码高亮**: 多语言代码语法高亮显示
-- **数学公式**: LaTeX数学公式渲染支持
-- **Mermaid图表**: 流程图、时序图等图表渲染
+- **Modern Material Design**: Material Design 3设计语言
+- **卡片式布局**: 美观的卡片式信息展示
+- **全屏图片查看**: 支持缩放、平移的沉浸式图片查看
+- **代码高亮**: 多语言代码语法高亮显示，支持复制功能
+- **数学公式**: LaTeX数学公式完整渲染支持
+- **Mermaid图表**: 流程图、时序图、甘特图等图表渲染
 
 ### ⚙️ 高级设置
 - **模型参数**: 温度、最大Token、TopP等参数精确调节
-- **主题切换**: Material Design 3深色/浅色主题
-- **侧边栏管理**: 可折叠的侧边栏，智能按钮隐藏
-- **数据管理**: 完整的本地数据存储和管理
+- **主题切换**: Material Design 3深色/浅色主题自动适配
+- **侧边栏管理**: 可折叠的响应式侧边栏设计
+- **数据管理**: 完整的本地数据存储和备份功能
+- **MCP集成**: 支持MCP (Model Context Protocol) 服务器集成
 
 ## 🏗️ 技术架构
 
@@ -43,43 +52,88 @@
 - **Domain-Driven Design**: 领域驱动设计
 - **MVVM Pattern**: 使用Riverpod状态管理
 
-### 技术栈
-- **Flutter**: 跨平台UI框架
+### 核心技术栈
+- **Flutter**: 跨平台UI框架，Material Design 3
 - **Riverpod**: 状态管理和依赖注入
-- **Drift**: 本地数据库ORM
-- **Freezed**: 不可变数据类
-- **Go Router**: 路由管理
-- **HTTP**: 网络请求
+- **Drift**: 类型安全的本地数据库ORM (SQLite)
+- **ObjectBox**: 高性能本地向量数据库
+- **Freezed**: 不可变数据类生成
+- **Go Router**: 声明式路由管理
+- **Dio**: 强大的HTTP网络请求库
 
 ### 项目结构
 ```
 lib/
-├── app/                    # 应用入口和路由
-├── core/                   # 核心功能和工具
-├── data/                   # 数据层
-│   └── local/             # 本地数据库
-├── features/              # 功能模块
-│   ├── llm_chat/         # AI对话功能
-│   ├── persona_management/ # 智能体管理
-│   ├── knowledge_base/    # 知识库功能
-│   └── settings/         # 设置功能
-└── shared/               # 共享组件和工具
+├── app/                       # 应用入口和导航
+│   ├── navigation/           # 侧边栏和路由管理
+│   └── constants/            # 应用常量定义
+├── core/                      # 核心服务和工具
+│   ├── database/             # 数据库配置和迁移
+│   └── utils/                # 通用工具类
+├── data/                      # 数据层
+│   └── local/                # 本地数据库表定义
+├── features/                  # 功能模块（Clean Architecture）
+│   ├── daily_management/     # 校园日常管理
+│   │   ├── presentation/     # UI和状态管理
+│   │   └── services/         # 业务逻辑服务
+│   ├── llm_chat/            # AI对话功能
+│   │   ├── data/            # 数据层（API提供商）
+│   │   ├── domain/          # 领域层（实体和用例）
+│   │   └── presentation/    # 表现层（UI组件）
+│   ├── knowledge_base/      # 知识库RAG功能
+│   │   ├── data/            # 向量数据库和文档处理
+│   │   ├── domain/          # RAG核心逻辑
+│   │   └── presentation/    # 知识库管理界面
+│   ├── persona_management/  # 智能体管理
+│   ├── settings/            # 应用设置
+│   ├── course_schedule/     # 课程安排（西电教务）
+│   ├── learning_mode/       # 学习模式
+│   └── mcp_integration/     # MCP协议集成
+├── model/                     # 数据模型定义
+├── repository/               # 数据仓库和缓存
+└── shared/                   # 共享组件和工具
+    ├── widgets/             # 通用UI组件
+    └── utils/               # 共享工具函数
 ```
 
 ## 🚀 快速开始
 
 ### 环境要求
-- Flutter SDK >= 3.32.5
-- Dart SDK >= 3.8.1
+- Flutter SDK >= 3.8.1
+- Dart SDK >= 3.8.1  
 - Android Studio / VS Code
 - Git
+
+### 开发命令
+
+```bash
+# 安装依赖
+flutter pub get
+
+# 生成代码(Freezed、JSON序列化、Drift数据库)
+dart run build_runner build --delete-conflicting-outputs
+
+# 监听文件变化自动生成代码
+dart run build_runner watch --delete-conflicting-outputs
+
+# 运行应用
+flutter run
+
+# 运行测试
+flutter test
+
+# 构建发布
+flutter build apk --release      # Android
+flutter build windows --release  # Windows
+flutter build ios --release     # iOS
+```
 
 ### 安装步骤
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-repo/anywherechat.git
-cd anywherechat
+git clone https://github.com/your-repo/campus-copilot.git
+cd campus-copilot
 ```
 
 2. **安装依赖**
@@ -87,7 +141,7 @@ cd anywherechat
 flutter pub get
 ```
 
-3. **生成代码**
+3. **生成代码（重要）**
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
@@ -97,61 +151,83 @@ dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
-### 配置API密钥
+### 初始配置
 
+#### 1. API密钥配置
 1. 进入应用设置页面
 2. 选择要使用的AI供应商
 3. 输入相应的API密钥：
    - **OpenAI**: 在 [OpenAI Platform](https://platform.openai.com/) 获取
-   - **Google**: 在 [Google AI Studio](https://aistudio.google.com/) 获取
+   - **Google Gemini**: 在 [Google AI Studio](https://aistudio.google.com/) 获取
+   - **Anthropic Claude**: 在 [Anthropic Console](https://console.anthropic.com/) 获取
+
+#### 2. 西电教务系统配置（课程表功能）
+1. 进入日常管理 → 课程表
+2. 使用西电统一身份认证账号登录
+3. 系统将自动获取并缓存课程表数据
+4. 支持自动登录和7天数据缓存
 
 ## 📖 功能详解
 
-### AI对话功能
-- 创建新的聊天会话，支持多会话管理
-- 选择不同的智能体进行专业对话
-- 支持文本、图片、文档多模态输入
-- 实时流式响应，提升交互体验
-- 思考链过程展示（支持o1、Gemini Thinking等模型）
-- 卡片式图片显示，支持全屏查看
+### 🎓 校园日常管理
+- **智能课程表**: 自动从西电教务系统同步课程安排
+- **实时状态**: 显示当前正在上的课和下节课信息
+- **课程预览**: 卡片式展示今日课程概览和计划安排
+- **学期管理**: 自动识别学期周次，支持多学期数据
+- **登录记忆**: 支持登录信息保存，应用启动时自动登录
 
-### 智能体管理
-- 创建自定义智能体，定制AI角色
-- 设置系统提示词和专业领域
-- 智能体分组管理，支持拖拽排序
-- 绑定不同API配置，灵活切换模型
-- 智能体使用统计和管理
+### 🤖 AI对话功能
+- **多会话管理**: 创建和管理多个独立的对话会话
+- **智能体选择**: 从预设或自定义智能体中选择对话伙伴
+- **多模态输入**: 支持文本、图片、文档等多种输入方式
+- **实时流式响应**: 打字机效果的实时响应体验
+- **思考过程可视化**: 支持o1、Gemini Thinking等模型的思考过程展示
+- **上下文管理**: 可配置的对话历史管理（0-20条消息）
 
-### 知识库功能
-- 多知识库支持，独立管理不同领域文档
-- 上传文档（PDF、DOCX、TXT等多种格式）
-- 自动文档分块和向量化处理
-- 基于语义相似度的智能检索
-- 可选的RAG增强对话功能
-- 文档处理状态实时跟踪
+### 👥 智能体管理
+- **智能体创建**: 创建学习助手、编程助手、写作助手等角色
+- **分组管理**: 按专业、用途等维度组织智能体
+- **系统提示词**: 自定义智能体的行为模式和专业领域
+- **API绑定**: 为不同智能体配置专用的API和模型
+- **使用统计**: 跟踪智能体的使用频率和效果
+
+### 📚 知识库功能
+- **多知识库**: 为不同课程、项目创建独立的知识库
+- **文档上传**: 支持PDF、DOCX、TXT等格式的批量上传
+- **智能处理**: 自动文档分块、向量化和语义索引
+- **RAG检索**: 基于语义相似度的智能文档检索
+- **增强对话**: 在AI对话中自动检索相关知识增强回答
 
 ## 🔧 开发指南
 
 ### 添加新功能模块
 
-1. **创建功能目录**
+1. **创建功能目录**（遵循Clean Architecture）
 ```
 lib/features/your_feature/
 ├── data/              # 数据层
+│   ├── providers/     # API和数据提供商
+│   └── repositories/  # 数据仓库实现
 ├── domain/            # 领域层
+│   ├── entities/      # 业务实体
+│   ├── services/      # 业务服务
+│   └── repositories/  # 仓库接口
 └── presentation/      # 表现层
+    ├── providers/     # Riverpod状态管理
+    ├── views/         # UI页面
+    └── widgets/       # UI组件
 ```
 
 2. **实现分层架构**
-- **Data Layer**: 数据源、仓库实现
-- **Domain Layer**: 实体、用例、仓库接口
-- **Presentation Layer**: UI、状态管理、Provider
+- **Data Layer**: API集成、本地存储、缓存管理
+- **Domain Layer**: 业务逻辑、实体定义、服务接口
+- **Presentation Layer**: UI组件、状态管理、用户交互
 
-3. **添加路由**
-在 `app/app_router.dart` 中添加新路由
+3. **添加导航路由**
+在 `app/navigation/app_router.dart` 中添加新页面路由
 
-4. **注册依赖**
-在相应的Provider文件中注册依赖注入
+4. **注册依赖注入**
+在相应的Provider文件中使用Riverpod注册服务
 
 ### 数据库迁移
 
@@ -175,29 +251,39 @@ flutter test --coverage
 
 ## 📱 支持平台
 
-- ✅ **Windows**: 完整功能支持，主要开发平台（仅本地构建）
+- ✅ **Windows**: 完整功能支持，主要开发平台
 - ✅ **Android**: 完整功能支持，移动端体验优化
-- ✅ **iOS**: 完整功能支持
+- ✅ **iOS**: 完整功能支持，适配iOS设计规范
 - 🔄 **macOS**: 理论支持，未充分测试
 - 🔄 **Linux**: 理论支持，未充分测试
-- ❌ **Web**: 暂不支持（数据库限制）
+- ❌ **Web**: 暂不支持（ObjectBox向量数据库限制）
 
-> **注意**: Windows平台的GitHub Actions自动构建暂时移除，因为持续出现文件锁定问题。Windows用户可以通过本地构建获得完整功能。
+> **特殊说明**: 
+> - 西电教务系统集成功能主要面向西安电子科技大学学生
+> - 其他学校用户可以使用除课程表管理外的所有AI功能
 
 ## 🎯 核心功能演示
 
-### 知识库RAG功能
-1. **上传文档**: 支持拖拽上传多种格式文档
-2. **自动处理**: 智能分块、向量化、状态跟踪
-3. **语义搜索**: 基于向量相似度的智能搜索
-4. **RAG增强**: 对话中自动检索相关知识
+### 🎓 校园日常管理
+1. **登录西电教务**: 使用统一身份认证登录，自动获取课程表
+2. **智能课程预览**: 主页卡片显示当前课程和下节课信息
+3. **学期时间管理**: 自动识别当前学期周次，支持周次切换
+4. **课程详情查看**: 完整的课程时间表，支持时间段对齐显示
+5. **自动缓存**: 7天有效期的课程数据缓存，减少网络请求
 
-### 智能体对话
-1. **选择智能体**: 从预设或自定义智能体中选择
-2. **多模态输入**: 文本、图片、文档输入
-3. **实时响应**: 流式输出，思考过程可视化
-4. **上下文管理**: 可配置的对话历史管理（0-20条）
-5. **参数调节**: 温度、Token限制、TopP等参数实时调节
+### 📚 知识库RAG功能
+1. **多知识库管理**: 为不同课程、项目创建专门的知识库
+2. **批量文档上传**: 支持拖拽上传PDF、DOCX、TXT等格式
+3. **智能文档处理**: 自动分块、向量化，实时处理状态显示
+4. **语义搜索**: 基于ObjectBox的高性能向量相似度搜索
+5. **RAG增强对话**: 在AI对话中自动检索相关知识库内容
+
+### 🤖 智能体对话
+1. **智能体选择**: 从学习助手、编程助手等预设角色中选择
+2. **多模态交互**: 支持文本、图片、文档等多种输入方式
+3. **实时流式响应**: 打字机效果的实时AI回答生成
+4. **思考过程展示**: 支持o1、Gemini Thinking等模型的推理过程
+5. **参数精确调节**: 温度、最大Token、TopP等参数实时调节
 
 ## 🔧 配置说明
 
@@ -299,15 +385,19 @@ flutter test --coverage
 感谢以下开源项目和服务：
 
 - [Flutter](https://flutter.dev/) - 跨平台UI框架
-- [Riverpod](https://riverpod.dev/) - 状态管理解决方案
+- [Riverpod](https://riverpod.dev/) - 状态管理解决方案  
 - [Drift](https://drift.simonbinder.eu/) - 类型安全的数据库ORM
-- [OpenAI](https://openai.com/) - AI模型和API服务
-- [Google AI](https://ai.google/) - Gemini模型服务
+- [ObjectBox](https://objectbox.io/) - 高性能本地向量数据库
+- [traintime_pda](https://github.com/BenderBlog/traintime_pda) - Traintime PDA，又称 XDYou，是为西电学生设计的开源信息查询软件。
 
 ---
 
 <div align="center">
 
-**AnywhereChat** - 让AI助手无处不在 🚀
+**Campus Copilot** - 让AI助手成为你的校园智能伙伴 🎓🚀
+
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-0175C2?style=flat&logo=dart&logoColor=white)](https://dart.dev/)
+[![Material Design](https://img.shields.io/badge/Material%20Design-757575?style=flat&logo=material-design&logoColor=white)](https://material.io/design)
 
 </div>

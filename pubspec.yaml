@@ -1,5 +1,5 @@
 name: ai_assistant
-description: "模块化跨平台AI助手 - 支持多AI供应商、RAG知识库和智能体管理"
+description: "Campus Copilot - 智能校园助手，支持多AI供应商、RAG知识库和智能体管理"
 publish_to: 'none'
 
 # The following defines the version and build number for your application.
@@ -167,9 +167,9 @@ dev_dependencies:
 
 # MSIX配置 (Windows发布)
 msix_config:
-  display_name: AnywhereChat
-  publisher_display_name: AnywhereChat Team
-  identity_name: com.aiassistant.app
+  display_name: Campus Copilot
+  publisher_display_name: Campus Copilot Team
+  identity_name: com.campuscopilot.app
   msix_version: 1.0.0.0
   logo_path: assets/images/logo.png
   capabilities: 'internetClient,webcam'
