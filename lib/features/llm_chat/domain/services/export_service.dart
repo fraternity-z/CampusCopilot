@@ -195,6 +195,12 @@ class ExportService {
       ArchiveFile('word/document.xml', documentXml.length, documentXml),
     );
 
+    // 创建styles.xml样式定义
+    final stylesXml = _createStylesXml();
+    archive.addFile(
+      ArchiveFile('word/styles.xml', stylesXml.length, stylesXml),
+    );
+
     // 创建[Content_Types].xml
     final contentTypesXml = utf8.encode(
       '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -202,6 +208,7 @@ class ExportService {
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 </Types>''',
     );
     archive.addFile(
@@ -225,6 +232,7 @@ class ExportService {
     final docRelsXml = utf8.encode(
       '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>''',
     );
     archive.addFile(
@@ -242,6 +250,144 @@ class ExportService {
     return Uint8List.fromList(zipBytes);
   }
 
+  /// 创建样式定义
+  static List<int> _createStylesXml() {
+    final stylesXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <!-- 默认段落样式 -->
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:pPr>
+      <w:spacing w:after="0" w:line="240" w:lineRule="auto"/>
+    </w:pPr>
+    <w:rPr>
+      <w:rFonts w:ascii="Microsoft YaHei" w:eastAsia="Microsoft YaHei" w:hAnsi="Microsoft YaHei"/>
+      <w:sz w:val="22"/>
+      <w:szCs w:val="22"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 标题1样式 -->
+  <w:style w:type="paragraph" w:styleId="Title">
+    <w:name w:val="Title"/>
+    <w:pPr>
+      <w:jc w:val="center"/>
+      <w:spacing w:before="240" w:after="240"/>
+    </w:pPr>
+    <w:rPr>
+      <w:b/>
+      <w:color w:val="2F5496"/>
+      <w:sz w:val="36"/>
+      <w:szCs w:val="36"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 标题2样式 -->
+  <w:style w:type="paragraph" w:styleId="Heading2">
+    <w:name w:val="Heading 2"/>
+    <w:pPr>
+      <w:spacing w:before="240" w:after="120"/>
+    </w:pPr>
+    <w:rPr>
+      <w:b/>
+      <w:color w:val="2F5496"/>
+      <w:sz w:val="28"/>
+      <w:szCs w:val="28"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 用户消息样式 -->
+  <w:style w:type="paragraph" w:styleId="UserMessage">
+    <w:name w:val="User Message"/>
+    <w:pPr>
+      <w:spacing w:before="120" w:after="60"/>
+    </w:pPr>
+    <w:rPr>
+      <w:b/>
+      <w:color w:val="1F4E79"/>
+      <w:sz w:val="24"/>
+      <w:szCs w:val="24"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- AI消息样式 -->
+  <w:style w:type="paragraph" w:styleId="AIMessage">
+    <w:name w:val="AI Message"/>
+    <w:pPr>
+      <w:spacing w:before="120" w:after="60"/>
+    </w:pPr>
+    <w:rPr>
+      <w:b/>
+      <w:color w:val="70AD47"/>
+      <w:sz w:val="24"/>
+      <w:szCs w:val="24"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 代码块样式 -->
+  <w:style w:type="paragraph" w:styleId="CodeBlock">
+    <w:name w:val="Code Block"/>
+    <w:pPr>
+      <w:shd w:val="clear" w:color="auto" w:fill="F8F8F8"/>
+      <w:ind w:left="432" w:right="432"/>
+      <w:spacing w:before="120" w:after="120"/>
+    </w:pPr>
+    <w:rPr>
+      <w:rFonts w:ascii="Consolas" w:eastAsia="Microsoft YaHei" w:hAnsi="Consolas"/>
+      <w:color w:val="E74C3C"/>
+      <w:sz w:val="20"/>
+      <w:szCs w:val="20"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 思考过程样式 -->
+  <w:style w:type="paragraph" w:styleId="ThinkingProcess">
+    <w:name w:val="Thinking Process"/>
+    <w:pPr>
+      <w:shd w:val="clear" w:color="auto" w:fill="FFF2CC"/>
+      <w:ind w:left="432"/>
+      <w:spacing w:before="120" w:after="120"/>
+    </w:pPr>
+    <w:rPr>
+      <w:i/>
+      <w:color w:val="7F6000"/>
+      <w:sz w:val="20"/>
+      <w:szCs w:val="20"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 元数据样式 -->
+  <w:style w:type="paragraph" w:styleId="Metadata">
+    <w:name w:val="Metadata"/>
+    <w:pPr>
+      <w:spacing w:after="60"/>
+    </w:pPr>
+    <w:rPr>
+      <w:i/>
+      <w:color w:val="7C7C7C"/>
+      <w:sz w:val="18"/>
+      <w:szCs w:val="18"/>
+    </w:rPr>
+  </w:style>
+
+  <!-- 分隔线样式 -->
+  <w:style w:type="paragraph" w:styleId="Separator">
+    <w:name w:val="Separator"/>
+    <w:pPr>
+      <w:jc w:val="center"/>
+      <w:spacing w:before="120" w:after="120"/>
+    </w:pPr>
+    <w:rPr>
+      <w:color w:val="D0D0D0"/>
+      <w:sz w:val="18"/>
+      <w:szCs w:val="18"/>
+    </w:rPr>
+  </w:style>
+</w:styles>''';
+    
+    return utf8.encode(stylesXml);
+  }
+
   /// 创建document.xml内容
   static List<int> _createDocumentXml(Map<String, dynamic> data) {
     final buffer = StringBuffer();
@@ -250,9 +396,9 @@ class ExportService {
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>''');
 
-    // 标题
+    // 标题 - 使用Title样式
     buffer.write(
-      '<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t>${_escapeXml(data['title'])}</w:t></w:r></w:p>',
+      '<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>${_escapeXml(data['title'])}</w:t></w:r></w:p>',
     );
 
     // 空行
@@ -261,85 +407,185 @@ class ExportService {
     // 会话信息
     if (data['show_metadata'] == true) {
       buffer.write(
-        '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>会话信息</w:t></w:r></w:p>',
+        '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>📋 会话信息</w:t></w:r></w:p>',
       );
-      buffer.write(
-        '<w:p><w:r><w:t>会话ID: ${_escapeXml(data['session_id'])}</w:t></w:r></w:p>',
-      );
-      buffer.write(
-        '<w:p><w:r><w:t>创建时间: ${_escapeXml(data['created_at'])}</w:t></w:r></w:p>',
-      );
-      buffer.write(
-        '<w:p><w:r><w:t>消息总数: ${_escapeXml(data['message_count'])}</w:t></w:r></w:p>',
-      );
+      
+      // 元数据项目使用统一样式
+      final metadataItems = [
+        '🆔 会话ID: ${_escapeXml(data['session_id'])}',
+        '📅 创建时间: ${_escapeXml(data['created_at'])}',
+        '🕒 最后更新: ${_escapeXml(data['updated_at'])}',
+        '💬 消息总数: ${_escapeXml(data['message_count'])}',
+      ];
+      
       if (data['total_tokens'] != '0') {
-        buffer.write(
-          '<w:p><w:r><w:t>总Token数: ${_escapeXml(data['total_tokens'])}</w:t></w:r></w:p>',
-        );
+        metadataItems.add('🔢 总Token数: ${_escapeXml(data['total_tokens'])}');
       }
       if (data['tags'].toString().isNotEmpty) {
+        metadataItems.add('🏷️ 标签: ${_escapeXml(data['tags'])}');
+      }
+      
+      for (final item in metadataItems) {
         buffer.write(
-          '<w:p><w:r><w:t>标签: ${_escapeXml(data['tags'])}</w:t></w:r></w:p>',
+          '<w:p><w:pPr><w:pStyle w:val="Metadata"/></w:pPr><w:r><w:t>$item</w:t></w:r></w:p>',
         );
       }
       buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
     }
 
     // 聊天记录标题
-    buffer.write('<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>聊天记录</w:t></w:r></w:p>');
+    buffer.write('<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>💬 聊天记录</w:t></w:r></w:p>');
     buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
 
     // 消息内容
     final messages = data['messages'] as List<Map<String, dynamic>>;
-    for (final message in messages) {
-      // 角色和时间
+    for (int i = 0; i < messages.length; i++) {
+      final message = messages[i];
+      final isUser = message['role'] == '用户';
+      final styleId = isUser ? 'UserMessage' : 'AIMessage';
+      final icon = isUser ? '👤' : '🤖';
+
+      // 角色和时间标题
       buffer.write(
-        '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>${_escapeXml(message['role'])} (${_escapeXml(message['timestamp'])})</w:t></w:r></w:p>',
+        '<w:p><w:pPr><w:pStyle w:val="$styleId"/></w:pPr><w:r><w:t>$icon ${_escapeXml(message['role'])} (${_escapeXml(message['timestamp'])})</w:t></w:r></w:p>',
       );
 
-      // 消息内容（分段处理）
+      // 消息内容处理
       final content = message['content'] as String;
-      final lines = content.split('\n');
-      for (final line in lines) {
-        if (line.trim().isNotEmpty) {
-          buffer.write('<w:p><w:r><w:t>${_escapeXml(line)}</w:t></w:r></w:p>');
-        } else {
-          buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
-        }
-      }
+      _processMessageContent(buffer, content);
 
       // 思考过程
       if (message['has_thinking'] == true) {
         buffer.write(
-          '<w:p><w:r><w:rPr><w:i/></w:rPr><w:t>思考过程:</w:t></w:r></w:p>',
+          '<w:p><w:pPr><w:pStyle w:val="ThinkingProcess"/></w:pPr><w:r><w:t>🤔 思考过程:</w:t></w:r></w:p>',
         );
-        final thinkingLines = (message['thinking_content'] as String).split(
-          '\n',
+        final thinkingContent = message['thinking_content'] as String;
+        _processThinkingContent(buffer, thinkingContent);
+      }
+
+      // 附件图片
+      if (message['has_images'] == true) {
+        buffer.write(
+          '<w:p><w:pPr><w:pStyle w:val="Metadata"/></w:pPr><w:r><w:t>📷 包含图片附件</w:t></w:r></w:p>',
         );
-        for (final line in thinkingLines) {
-          buffer.write(
-            '<w:p><w:r><w:rPr><w:i/></w:rPr><w:t>${_escapeXml(line)}</w:t></w:r></w:p>',
-          );
-        }
       }
 
       // Token数
       if (message['has_tokens'] == true) {
         buffer.write(
-          '<w:p><w:r><w:rPr><w:i/></w:rPr><w:t>Token数: ${_escapeXml(message['token_count'])}</w:t></w:r></w:p>',
+          '<w:p><w:pPr><w:pStyle w:val="Metadata"/></w:pPr><w:r><w:t>🔢 Token数: ${_escapeXml(message['token_count'])}</w:t></w:r></w:p>',
         );
       }
 
-      // 分隔线
-      buffer.write(
-        '<w:p><w:r><w:t>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</w:t></w:r></w:p>',
-      );
-      buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
+      // 消息间分隔线（除了最后一条消息）
+      if (i < messages.length - 1) {
+        buffer.write(
+          '<w:p><w:pPr><w:pStyle w:val="Separator"/></w:pPr><w:r><w:t>────────────────────────────────────</w:t></w:r></w:p>',
+        );
+        buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
+      }
     }
 
     buffer.write('  </w:body></w:document>');
 
     return utf8.encode(buffer.toString());
+  }
+
+  /// 处理消息内容，保留格式化效果
+  static void _processMessageContent(StringBuffer buffer, String content) {
+    final lines = content.split('\n');
+    bool inCodeBlock = false;
+    String? currentCodeLanguage;
+    
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final trimmedLine = line.trim();
+      
+      // 检查代码块开始/结束
+      if (trimmedLine.startsWith('```')) {
+        if (!inCodeBlock) {
+          // 代码块开始
+          inCodeBlock = true;
+          currentCodeLanguage = trimmedLine.substring(3).trim();
+          if (currentCodeLanguage.isEmpty) {
+            currentCodeLanguage = 'text';
+          }
+          buffer.write(
+            '<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr><w:r><w:t>💻 代码块 ($currentCodeLanguage):</w:t></w:r></w:p>',
+          );
+        } else {
+          // 代码块结束
+          inCodeBlock = false;
+          currentCodeLanguage = null;
+          buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
+        }
+        continue;
+      }
+      
+      if (inCodeBlock) {
+        // 在代码块内
+        buffer.write(
+          '<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr><w:r><w:t>${_escapeXml(line)}</w:t></w:r></w:p>',
+        );
+      } else {
+        // 普通文本处理
+        if (trimmedLine.isEmpty) {
+          buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
+        } else if (trimmedLine.startsWith('# ')) {
+          // 一级标题
+          buffer.write(
+            '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>${_escapeXml(trimmedLine.substring(2))}</w:t></w:r></w:p>',
+          );
+        } else if (trimmedLine.startsWith('## ')) {
+          // 二级标题
+          buffer.write(
+            '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>▸ ${_escapeXml(trimmedLine.substring(3))}</w:t></w:r></w:p>',
+          );
+        } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+          // 列表项
+          buffer.write(
+            '<w:p><w:r><w:t>• ${_escapeXml(trimmedLine.substring(2))}</w:t></w:r></w:p>',
+          );
+        } else if (RegExp(r'^\d+\.').hasMatch(trimmedLine)) {
+          // 有序列表
+          buffer.write(
+            '<w:p><w:r><w:t>${_escapeXml(trimmedLine)}</w:t></w:r></w:p>',
+          );
+        } else {
+          // 普通段落，处理内联格式
+          final processedLine = _processInlineFormatting(line);
+          buffer.write(
+            '<w:p><w:r><w:t>$processedLine</w:t></w:r></w:p>',
+          );
+        }
+      }
+    }
+  }
+  
+  /// 处理思考内容
+  static void _processThinkingContent(StringBuffer buffer, String content) {
+    final lines = content.split('\n');
+    for (final line in lines) {
+      if (line.trim().isNotEmpty) {
+        buffer.write(
+          '<w:p><w:pPr><w:pStyle w:val="ThinkingProcess"/></w:pPr><w:r><w:t>${_escapeXml(line)}</w:t></w:r></w:p>',
+        );
+      } else {
+        buffer.write('<w:p><w:r><w:t></w:t></w:r></w:p>');
+      }
+    }
+  }
+  
+  /// 处理内联格式（粗体、斜体、代码等）
+  static String _processInlineFormatting(String text) {
+    // 保留基本的格式标记，让Word能够识别
+    text = text.replaceAll(RegExp(r'\*\*(.*?)\*\*'), r'【粗体】$1【/粗体】');
+    text = text.replaceAll(RegExp(r'\*(.*?)\*'), r'【斜体】$1【/斜体】');
+    text = text.replaceAll(RegExp(r'`(.*?)`'), r'【代码】$1【/代码】');
+    text = text.replaceAll(RegExp(r'!\[.*?\]\(.*?\)'), '【图片】');
+    text = text.replaceAll(RegExp(r'\[.*?\]\(.*?\)'), '【链接】');
+    
+    return _escapeXml(text);
   }
 
   /// XML转义
@@ -363,16 +609,9 @@ class ExportService {
     return content.trim();
   }
 
-  /// 处理DOCX内容
+  /// 处理DOCX内容 - 保留原始内容用于后续格式化处理
   static String _processDocxContent(String content) {
-    // 移除Markdown格式标记，保留纯文本
-    content = content.replaceAll(RegExp(r'\*\*(.*?)\*\*'), r'$1'); // 粗体
-    content = content.replaceAll(RegExp(r'\*(.*?)\*'), r'$1'); // 斜体
-    content = content.replaceAll(RegExp(r'`(.*?)`'), r'$1'); // 内联代码
-    content = content.replaceAll(RegExp(r'```[\s\S]*?```'), '[代码块]'); // 代码块
-    content = content.replaceAll(RegExp(r'!\[.*?\]\(.*?\)'), '[图片]'); // 图片
-    content = content.replaceAll(RegExp(r'\[.*?\]\(.*?\)'), '[链接]'); // 链接
-
+    // 不再移除Markdown格式，让后续的处理函数来处理格式化
     return content.trim();
   }
 
