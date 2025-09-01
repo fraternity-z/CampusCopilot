@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'login_view.dart';
 import 'classtable_view.dart';
+import 'profile_view.dart';
 
 /// 日常管理界面
 /// 
@@ -146,7 +146,7 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
         'subtitle': '管理个人资料',
         'icon': Icons.person_outline,
         'color': Colors.orange,
-        'onTap': () => _navigateToLogin(),
+        'onTap': () => _navigateToProfile(),
       },
       {
         'title': '设置',
@@ -349,11 +349,11 @@ class _DailyDashboardScreenState extends ConsumerState<DailyDashboardScreen> {
     );
   }
 
-  /// 导航到登录界面
-  void _navigateToLogin() {
+  /// 导航到个人信息界面
+  void _navigateToProfile() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const LoginView(),
+        builder: (context) => const ProfileView(),
       ),
     );
   }

@@ -8,6 +8,8 @@ import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'login_view.dart';
 
 class ClassTableView extends StatefulWidget {
@@ -38,9 +40,9 @@ class _ClassTableViewState extends State<ClassTableView> {
     log.info("[ClassTableView] Current loginState: $loginState, offline: $offline");
     
     if (loginState == IDSLoginState.success) {
-      // 已登录，加载课程表
-      log.info("User logged in, loading class table");
-      _loadClassTable();
+      // 已登录，优先从缓存加载课程表
+      log.info("User logged in, loading class table from cache first");
+      await _loadClassTableFromCache();
     } else {
       // 未登录，显示登录提示
       log.info("User not logged in (loginState: $loginState), showing login prompt");
@@ -50,12 +52,47 @@ class _ClassTableViewState extends State<ClassTableView> {
     }
   }
 
-  Future<void> _loadClassTable() async {
+  /// 从缓存加载课程表，如果缓存不存在则从网络获取
+  Future<void> _loadClassTableFromCache() async {
     if (!mounted) return;
     
     setState(() {
       _isLoading = true;
     });
+
+    try {
+      // 先尝试从缓存加载
+      ClassTableData? cachedData = await _getCachedClassTable();
+      
+      if (cachedData != null) {
+        log.info("[ClassTableView] Loaded class table from cache");
+        if (mounted) {
+          setState(() {
+            _classTableData = cachedData;
+            _isLoading = false;
+          });
+        }
+      } else {
+        log.info("[ClassTableView] No cached data found, fetching from network");
+        // 缓存不存在，从网络获取
+        await _loadClassTableFromNetwork(showSuccessMessage: false);
+      }
+    } catch (e) {
+      log.error("[ClassTableView] Failed to load from cache: $e");
+      // 缓存加载失败，从网络获取
+      await _loadClassTableFromNetwork(showSuccessMessage: false);
+    }
+  }
+
+  /// 从网络获取课程表并缓存
+  Future<void> _loadClassTableFromNetwork({bool showSuccessMessage = true}) async {
+    if (!mounted) return;
+    
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       ClassTableFile classTableFile = ClassTableFile();
@@ -64,22 +101,27 @@ class _ClassTableViewState extends State<ClassTableView> {
       ClassTableData data;
       
       if (isPostGraduate) {
-        log.info("Loading class table for postgraduate");
+        log.info("Loading class table for postgraduate from network");
         data = await classTableFile.getYjspt();
       } else {
-        log.info("Loading class table for undergraduate");
+        log.info("Loading class table for undergraduate from network");
         data = await classTableFile.getEhall();
       }
+
+      // 保存到缓存
+      await _saveClassTableToCache(data);
 
       if (mounted) {
         setState(() {
           _classTableData = data;
           _isLoading = false;
         });
-        _showMessage("课程表获取成功");
+        if (showSuccessMessage) {
+          _showMessage("课程表刷新成功");
+        }
       }
     } catch (e) {
-      log.error("Failed to load class table", e);
+      log.error("Failed to load class table from network", e);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -94,6 +136,39 @@ class _ClassTableViewState extends State<ClassTableView> {
       }
     }
   }
+
+  /// 从缓存获取课程表数据
+  Future<ClassTableData?> _getCachedClassTable() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? cachedJson = prefs.getString('cached_class_table');
+      
+      if (cachedJson != null) {
+        final Map<String, dynamic> jsonData = json.decode(cachedJson);
+        return ClassTableData.fromJson(jsonData);
+      }
+    } catch (e) {
+      log.error("[ClassTableView] Failed to get cached data: $e");
+    }
+    return null;
+  }
+
+  /// 保存课程表数据到缓存
+  Future<void> _saveClassTableToCache(ClassTableData data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String jsonData = json.encode(data.toJson());
+      await prefs.setString('cached_class_table', jsonData);
+      
+      // 保存缓存时间戳
+      await prefs.setInt('cached_class_table_timestamp', DateTime.now().millisecondsSinceEpoch);
+      
+      log.info("[ClassTableView] Class table cached successfully");
+    } catch (e) {
+      log.error("[ClassTableView] Failed to cache class table: $e");
+    }
+  }
+
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -134,7 +209,7 @@ class _ClassTableViewState extends State<ClassTableView> {
               const SizedBox(height: 24),
               if (loginState == IDSLoginState.success)
                 ElevatedButton(
-                  onPressed: _loadClassTable,
+                  onPressed: () => _loadClassTableFromNetwork(),
                   child: const Text("加载课程表"),
                 )
               else
@@ -164,8 +239,9 @@ class _ClassTableViewState extends State<ClassTableView> {
         title: const Text("课程表"),
         actions: [
           IconButton(
-            onPressed: _loadClassTable,
+            onPressed: () => _loadClassTableFromNetwork(),
             icon: const Icon(Icons.refresh),
+            tooltip: "刷新课程表",
           ),
         ],
       ),
