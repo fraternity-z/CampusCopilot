@@ -71,6 +71,7 @@ class _DailyMainScreenState extends ConsumerState<DailyMainScreen> {
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
+        physics: const BouncingScrollPhysics(), // 改进滑动物理效果
         children: const [
           DailyOverviewPage(), // 总览页面
           ProfileView(),       // 个人信息页面

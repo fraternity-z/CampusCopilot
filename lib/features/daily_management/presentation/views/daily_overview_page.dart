@@ -53,6 +53,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(), // 改进垂直滚动物理效果
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -23,12 +23,7 @@ class ProfileView extends StatefulWidget {
 class _ProfileViewState extends State<ProfileView> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("个人信息"),
-      ),
-      body: _buildBody(),
-    );
+    return _buildBody();
   }
 
   Widget _buildBody() {
@@ -47,6 +42,7 @@ class _ProfileViewState extends State<ProfileView> {
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
+      physics: const BouncingScrollPhysics(), // 改进垂直滚动物理效果
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
