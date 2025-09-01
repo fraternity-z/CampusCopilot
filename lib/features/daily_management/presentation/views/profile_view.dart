@@ -253,7 +253,7 @@ class _ProfileViewState extends State<ProfileView> {
   void _performLogout() async {
     try {
       // 清除登录状态
-      loginState = IDSLoginState.none;
+      await clearLoginState();
       
       // 清除保存的密码
       await preference.setString(preference.Preference.idsPassword, "");

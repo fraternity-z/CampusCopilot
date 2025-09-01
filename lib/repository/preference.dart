@@ -67,7 +67,9 @@ enum Preference {
   emptyClassroomLastChoice(
     key: "emptyClassroomLastChoice",
     type: "String",
-  ); // 空闲教室最后一次选择
+  ), // 空闲教室最后一次选择
+  autoLogin(key: "autoLogin", type: "bool"), // 是否启用自动登录
+  rememberLogin(key: "rememberLogin", type: "bool"); // 是否记住登录信息
 
   const Preference({required this.key, this.type = "String"});
 

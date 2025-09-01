@@ -46,6 +46,9 @@ class _LoginViewState extends State<LoginView> {
 
   /// Can I see the password?
   bool _couldNotView = true;
+  
+  /// Remember login info
+  bool _rememberLogin = true;
 
   Widget contentColumn() => Column(
     mainAxisAlignment: MainAxisAlignment.center,
@@ -74,6 +77,18 @@ class _LoginViewState extends State<LoginView> {
           ),
         ),
       ).center(),
+      const SizedBox(height: 16.0),
+      CheckboxListTile(
+        title: const Text("记住登录信息"),
+        subtitle: const Text("下次启动时自动登录"),
+        value: _rememberLogin,
+        onChanged: (value) {
+          setState(() {
+            _rememberLogin = value ?? false;
+          });
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+      ),
       SizedBox(height: width / height > 1.0 ? 16.0 : 64.0),
       FilledButton(
         style: FilledButton.styleFrom(
@@ -102,8 +117,9 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
     
-    loginState = IDSLoginState.requesting;
+    await setLoginState(IDSLoginState.requesting);
     
+    if (!mounted) return;
     ProgressDialog pd = ProgressDialog(context: context);
     pd.show(
       msg: "正在登录...",
@@ -115,15 +131,24 @@ class _LoginViewState extends State<LoginView> {
     );
 
     try {
-      // 保存用户名密码到preferences
+      // 根据用户选择保存登录信息
       await preference.setString(
         preference.Preference.idsAccount,
         _idsAccountController.text,
       );
-      await preference.setString(
-        preference.Preference.idsPassword,
-        _idsPasswordController.text,
-      );
+      
+      if (_rememberLogin) {
+        await preference.setString(
+          preference.Preference.idsPassword,
+          _idsPasswordController.text,
+        );
+        await preference.setBool(preference.Preference.rememberLogin, true);
+        await preference.setBool(preference.Preference.autoLogin, true);
+      } else {
+        await preference.setString(preference.Preference.idsPassword, "");
+        await preference.setBool(preference.Preference.rememberLogin, false);
+        await preference.setBool(preference.Preference.autoLogin, false);
+      }
       
       // 使用IDSSession的checkAndLogin方法
       await IDSSession().checkAndLogin(
@@ -135,7 +160,7 @@ class _LoginViewState extends State<LoginView> {
       );
       
       // 登录成功，设置状态
-      loginState = IDSLoginState.success;
+      await setLoginState(IDSLoginState.success);
       log.info("[LoginView] Login successful, loginState set to success");
       
       if (mounted) {
@@ -176,13 +201,13 @@ class _LoginViewState extends State<LoginView> {
       }
       
     } on PasswordWrongException {
-      loginState = IDSLoginState.passwordWrong;
+      await setLoginState(IDSLoginState.passwordWrong);
       if (mounted) {
         pd.close();
         _showMessage("密码错误");
       }
     } catch (e, s) {
-      loginState = IDSLoginState.fail;
+      await setLoginState(IDSLoginState.fail);
       log.warning(
         "[LoginView] Login failed with error: $e\nStacktrace: $s",
       );
@@ -225,6 +250,17 @@ class _LoginViewState extends State<LoginView> {
     var cachedAccount = preference.getString(preference.Preference.idsAccount);
     if (cachedAccount.isNotEmpty) {
       _idsAccountController.text = cachedAccount;
+    }
+    
+    // 初始化记住登录信息状态
+    _rememberLogin = preference.getBool(preference.Preference.rememberLogin);
+    
+    // 如果记住了登录信息，自动填充密码
+    if (_rememberLogin) {
+      var cachedPassword = preference.getString(preference.Preference.idsPassword);
+      if (cachedPassword.isNotEmpty) {
+        _idsPasswordController.text = cachedPassword;
+      }
     }
   }
 

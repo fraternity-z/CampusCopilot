@@ -15,6 +15,7 @@ import 'package:ai_assistant/repository/network_session.dart';
 import 'package:ai_assistant/repository/logger.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum IDSLoginState {
   none,
@@ -27,10 +28,121 @@ enum IDSLoginState {
   manual,
 }
 
-IDSLoginState loginState = IDSLoginState.none;
+IDSLoginState _loginState = IDSLoginState.none;
+
+/// 获取当前登录状态
+IDSLoginState get loginState => _loginState;
+
+/// 设置登录状态并持久化
+Future<void> setLoginState(IDSLoginState newState) async {
+  _loginState = newState;
+  await _saveLoginState(newState);
+  log.info("[IDSSession] Login state changed to: $newState");
+}
 
 bool get offline =>
-    loginState != IDSLoginState.success && loginState != IDSLoginState.manual;
+    _loginState != IDSLoginState.success && _loginState != IDSLoginState.manual;
+
+/// 保存登录状态到本地存储
+Future<void> _saveLoginState(IDSLoginState state) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('login_state', state.toString());
+  } catch (e) {
+    log.error("[IDSSession] Failed to save login state: $e");
+  }
+}
+
+/// 从本地存储恢复登录状态
+Future<void> restoreLoginState() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final stateString = prefs.getString('login_state');
+    
+    if (stateString != null) {
+      // 将字符串转换回枚举
+      for (IDSLoginState state in IDSLoginState.values) {
+        if (state.toString() == stateString) {
+          _loginState = state;
+          log.info("[IDSSession] Restored login state: $state");
+          return;
+        }
+      }
+    }
+    
+    // 如果没有保存的状态或解析失败，使用默认状态
+    _loginState = IDSLoginState.none;
+    log.info("[IDSSession] Using default login state: none");
+  } catch (e) {
+    log.error("[IDSSession] Failed to restore login state: $e");
+    _loginState = IDSLoginState.none;
+  }
+}
+
+/// 尝试自动登录（如果用户启用了自动登录且有保存的凭据）
+Future<bool> tryAutoLogin() async {
+  try {
+    // 检查是否启用自动登录
+    if (!preference.getBool(preference.Preference.autoLogin)) {
+      log.info("[IDSSession] Auto login is disabled");
+      return false;
+    }
+
+    // 检查是否有保存的登录凭据
+    final account = preference.getString(preference.Preference.idsAccount);
+    final password = preference.getString(preference.Preference.idsPassword);
+    
+    if (account.isEmpty || password.isEmpty) {
+      log.info("[IDSSession] No saved credentials found for auto login");
+      return false;
+    }
+
+    log.info("[IDSSession] Attempting auto login for account: $account");
+    
+    // 设置登录状态为请求中
+    await setLoginState(IDSLoginState.requesting);
+    
+    try {
+      // 尝试登录
+      await IDSSession().checkAndLogin(
+        target: "https://ehall.xidian.edu.cn/login?service=https://ehall.xidian.edu.cn/new/index.html",
+        sliderCaptcha: (String cookieStr) async {
+          await SliderCaptchaClientProvider(cookie: cookieStr).solve(null);
+        },
+      );
+      
+      // 登录成功
+      await setLoginState(IDSLoginState.success);
+      log.info("[IDSSession] Auto login successful");
+      return true;
+      
+    } on PasswordWrongException catch (e) {
+      log.warning("[IDSSession] Auto login failed - password wrong: ${e.msg}");
+      await setLoginState(IDSLoginState.passwordWrong);
+      return false;
+    } catch (e) {
+      log.warning("[IDSSession] Auto login failed: $e");
+      await setLoginState(IDSLoginState.fail);
+      return false;
+    }
+  } catch (e) {
+    log.error("[IDSSession] Error during auto login: $e");
+    await setLoginState(IDSLoginState.fail);
+    return false;
+  }
+}
+
+/// 清除登录状态
+Future<void> clearLoginState() async {
+  _loginState = IDSLoginState.none;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('login_state');
+    log.info("[IDSSession] Login state cleared");
+  } catch (e) {
+    log.error("[IDSSession] Failed to clear login state: $e");
+  }
+}
 
 class IDSSession extends NetworkSession {
   static final _idslock = Lock();

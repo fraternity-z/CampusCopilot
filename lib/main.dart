@@ -9,6 +9,7 @@ import 'app/app.dart';
 import 'shared/utils/keyboard_utils.dart';
 import 'repository/preference.dart' as preference;
 import 'repository/network_session.dart' as network;
+import 'repository/app_initialization.dart';
 
 /// 应用程序入口点
 ///
@@ -19,11 +20,15 @@ void main() async {
   // 初始化应用依赖
   await _initializePreferences();
   await _initializePaths();
-
+  
   // 配置系统UI样式
   _configureSystemUI();
 
+  // 启动应用
   runApp(const ProviderScope(child: AIAssistantApp()));
+  
+  // 异步初始化应用状态（登录和缓存）
+  AppInitializationManager.initialize();
 }
 
 /// 初始化应用偏好设置
@@ -59,6 +64,7 @@ Future<void> _initializePaths() async {
     network.supportPath = Directory.systemTemp;
   }
 }
+
 
 /// 配置系统UI样式
 void _configureSystemUI() {

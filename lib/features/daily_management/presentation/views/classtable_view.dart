@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:ai_assistant/repository/logger.dart';
 import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'login_view.dart';
 
 class ClassTableView extends StatefulWidget {
@@ -61,30 +58,33 @@ class _ClassTableViewState extends State<ClassTableView> {
     });
 
     try {
-      // 先尝试从缓存加载
-      ClassTableData? cachedData = await _getCachedClassTable();
+      // 使用新的缓存管理器
+      ClassTableFile classTableFile = ClassTableFile();
+      ClassTableData data = await classTableFile.getClassTableWithCache();
       
-      if (cachedData != null) {
-        log.info("[ClassTableView] Loaded class table from cache");
-        if (mounted) {
-          setState(() {
-            _classTableData = cachedData;
-            _isLoading = false;
-          });
-        }
-      } else {
-        log.info("[ClassTableView] No cached data found, fetching from network");
-        // 缓存不存在，从网络获取
-        await _loadClassTableFromNetwork(showSuccessMessage: false);
+      if (mounted) {
+        setState(() {
+          _classTableData = data;
+          _isLoading = false;
+        });
+        log.info("[ClassTableView] Class table loaded successfully");
       }
     } catch (e) {
-      log.error("[ClassTableView] Failed to load from cache: $e");
-      // 缓存加载失败，从网络获取
-      await _loadClassTableFromNetwork(showSuccessMessage: false);
+      log.error("[ClassTableView] Failed to load class table: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        String errorMessage = "获取课程表失败：$e";
+        if (e.toString().contains("Offline mode")) {
+          errorMessage = "网络连接异常，请检查登录状态后重试";
+        }
+        _showMessage(errorMessage);
+      }
     }
   }
 
-  /// 从网络获取课程表并缓存
+  /// 从网络强制刷新课程表
   Future<void> _loadClassTableFromNetwork({bool showSuccessMessage = true}) async {
     if (!mounted) return;
     
@@ -95,21 +95,9 @@ class _ClassTableViewState extends State<ClassTableView> {
     }
 
     try {
+      // 使用新的缓存管理器强制刷新
       ClassTableFile classTableFile = ClassTableFile();
-      // 根据用户类型选择获取方式
-      bool isPostGraduate = preference.getBool(preference.Preference.role);
-      ClassTableData data;
-      
-      if (isPostGraduate) {
-        log.info("Loading class table for postgraduate from network");
-        data = await classTableFile.getYjspt();
-      } else {
-        log.info("Loading class table for undergraduate from network");
-        data = await classTableFile.getEhall();
-      }
-
-      // 保存到缓存
-      await _saveClassTableToCache(data);
+      ClassTableData data = await classTableFile.getClassTableWithCache(forceRefresh: true);
 
       if (mounted) {
         setState(() {
@@ -121,53 +109,20 @@ class _ClassTableViewState extends State<ClassTableView> {
         }
       }
     } catch (e) {
-      log.error("Failed to load class table from network", e);
+      log.error("Failed to refresh class table from network", e);
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        String errorMessage = "获取课程表失败：$e";
+        String errorMessage = "刷新课程表失败：$e";
         if (e.toString().contains("Offline mode")) {
           errorMessage = "网络连接异常，请检查登录状态后重试";
-        } else if (e.toString().contains("request cancelled")) {
-          errorMessage = "请求被取消，请重新登录后重试";
         }
         _showMessage(errorMessage);
       }
     }
   }
 
-  /// 从缓存获取课程表数据
-  Future<ClassTableData?> _getCachedClassTable() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? cachedJson = prefs.getString('cached_class_table');
-      
-      if (cachedJson != null) {
-        final Map<String, dynamic> jsonData = json.decode(cachedJson);
-        return ClassTableData.fromJson(jsonData);
-      }
-    } catch (e) {
-      log.error("[ClassTableView] Failed to get cached data: $e");
-    }
-    return null;
-  }
-
-  /// 保存课程表数据到缓存
-  Future<void> _saveClassTableToCache(ClassTableData data) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String jsonData = json.encode(data.toJson());
-      await prefs.setString('cached_class_table', jsonData);
-      
-      // 保存缓存时间戳
-      await prefs.setInt('cached_class_table_timestamp', DateTime.now().millisecondsSinceEpoch);
-      
-      log.info("[ClassTableView] Class table cached successfully");
-    } catch (e) {
-      log.error("[ClassTableView] Failed to cache class table: $e");
-    }
-  }
 
 
   void _showMessage(String message) {

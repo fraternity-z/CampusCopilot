@@ -15,6 +15,7 @@ import 'package:ai_assistant/repository/network_session.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
+import 'package:ai_assistant/repository/classtable_cache_manager.dart';
 
 /// 课程表 4770397878132218
 class ClassTableFile extends EhallSession {
@@ -22,6 +23,58 @@ class ClassTableFile extends EhallSession {
   static const userDefinedClassName = "UserClass.json";
   static const partnerClassName = "darling.erc.json";
   static const decorationName = "decoration.jpg";
+
+  /// 获取课程表（优先使用缓存，必要时从网络获取）
+  Future<ClassTableData> getClassTableWithCache({bool forceRefresh = false}) async {
+    log.info("[ClassTableFile] Getting class table with cache, forceRefresh: $forceRefresh");
+
+    // 如果不强制刷新，尝试从缓存加载
+    if (!forceRefresh) {
+      final cachedData = await ClassTableCacheManager.loadClassTable();
+      if (cachedData != null) {
+        log.info("[ClassTableFile] Loaded class table from cache");
+        return cachedData;
+      }
+    }
+
+    // 从网络获取数据
+    log.info("[ClassTableFile] Loading class table from network");
+    ClassTableData classTable;
+    
+    try {
+      // 根据用户身份选择获取方式
+      final isPostgraduate = preference.getBool(preference.Preference.role);
+      if (isPostgraduate) {
+        classTable = await getYjspt();
+      } else {
+        classTable = await getEhall();
+      }
+
+      // 保存到缓存
+      await ClassTableCacheManager.saveClassTable(classTable);
+      log.info("[ClassTableFile] Class table saved to cache");
+      
+      return classTable;
+    } catch (e) {
+      log.error("[ClassTableFile] Failed to get class table from network: $e");
+      
+      // 网络获取失败，尝试使用过期的缓存数据
+      final cachedData = await ClassTableCacheManager.loadClassTable();
+      if (cachedData != null) {
+        log.warning("[ClassTableFile] Using expired cache data due to network error");
+        return cachedData;
+      }
+      
+      // 重新抛出异常
+      rethrow;
+    }
+  }
+
+  /// 清除缓存
+  Future<void> clearCache() async {
+    await ClassTableCacheManager.clearCache();
+    log.info("[ClassTableFile] Cache cleared");
+  }
 
   ClassTableData simplifyData(Map<String, dynamic> qResult) {
     ClassTableData toReturn = ClassTableData();
