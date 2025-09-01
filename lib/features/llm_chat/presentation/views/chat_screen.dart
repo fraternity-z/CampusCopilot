@@ -9,7 +9,6 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../shared/utils/keyboard_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'widgets/animated_title_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/services/image_service.dart';
 import '../../../../core/widgets/elegant_notification.dart';
@@ -134,7 +133,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// 构建应用栏
   PreferredSizeWidget _buildAppBar() {
     final isCollapsed = ref.watch(sidebarCollapsedProvider);
-    final session = ref.watch(currentChatSessionProvider);
 
     return AppBar(
       leading: isCollapsed
@@ -150,13 +148,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             )
           : null,
       automaticallyImplyLeading: false,
-      title: AnimatedTitleWidget(
-        title: session?.title ?? 'AI 助手',
-        style: Theme.of(context).appBarTheme.titleTextStyle,
-      ),
+      title: _buildModelSelector(),
+      centerTitle: true,
       actions: [
-        _buildModelSelector(),
-        const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
@@ -184,107 +178,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// 构建模型选择器
   Widget _buildModelSelector() {
     return Consumer(
-      key: const ValueKey('model_selector_consumer'), // 添加稳定的key
+      key: const ValueKey('model_selector_consumer'),
       builder: (context, ref, child) {
-        // 监听异步数据，但避免在点击时触发不必要的重建
         final allModelsAsync = ref.watch(databaseChatModelsProvider);
         final currentModelAsync = ref.watch(databaseCurrentModelProvider);
 
         return allModelsAsync.when(
           data: (allModels) => currentModelAsync.when(
-            data: (currentModel) => Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    ref.read(chatScrollProvider.notifier).markUserInteraction();
-                    showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (dialogContext) => ModelSelectorDialog(
-                        allModels: allModels,
-                        currentModel: currentModel,
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+            data: (currentModel) => Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  ref.read(chatScrollProvider.notifier).markUserInteraction();
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (dialogContext) => ModelSelectorDialog(
+                      allModels: allModels,
+                      currentModel: currentModel,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (currentModel != null) ...[
+                        Text(
+                          currentModel.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                          child: Icon(
-                            Icons.tune,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 8),
-                        if (currentModel != null) ...[
-                          Text(
-                            currentModel.name,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                      ] else ...[
+                        Text(
+                          '选择模型',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                        ] else ...[
-                          Text(
-                            '选择模型',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ],
-                    ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            loading: () => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: 0.3),
-                ),
-              ),
+            loading: () => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -299,23 +254,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   const SizedBox(width: 8),
                   Text(
                     '加载中...',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-            error: (_, _) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.error.withValues(alpha: 0.3),
-                ),
-              ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -327,7 +274,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   const SizedBox(width: 8),
                   Text(
                     '加载失败',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
@@ -335,16 +282,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               ),
             ),
           ),
-          loading: () => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outline.withValues(alpha: 0.3),
-              ),
-            ),
+          loading: () => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -359,23 +298,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 const SizedBox(width: 8),
                 Text(
                   '加载中...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
-          error: (_, _) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.error.withValues(alpha: 0.3),
-              ),
-            ),
+          error: (_, _) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -387,7 +318,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 const SizedBox(width: 8),
                 Text(
                   '加载失败',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
