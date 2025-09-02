@@ -194,8 +194,8 @@ class _LoginViewState extends State<LoginView> {
           log.warning("Failed to get user info: $e");
         }
         
-        // 返回成功
-        if (mounted) {
+        // 返回成功 - 添加安全检查
+        if (mounted && Navigator.of(context).canPop()) {
           Navigator.of(context).pop(true);
         }
       }
