@@ -78,8 +78,8 @@ dependencies:
   path: ^1.9.0
 
   # 本地持久化 - 向量数据库
-  objectbox: ^4.0.2
-  objectbox_flutter_libs: ^4.0.2
+  objectbox: ^4.1.0
+  objectbox_flutter_libs: ^4.1.0
 
   # 简单键值存储
   shared_preferences: ^2.5.3
