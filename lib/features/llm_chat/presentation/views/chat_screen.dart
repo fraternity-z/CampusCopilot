@@ -1139,7 +1139,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
             // 新的双层输入容器
             Container(
-              height: 96,
+              // 56(上层输入) + 4(间隙) + 40(下层工具)
+              height: 104,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(24),
@@ -1225,7 +1226,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
                   // 下层：工具区域 (40px)
                   Container(
-                    height: 32,
+                    height: 40,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
