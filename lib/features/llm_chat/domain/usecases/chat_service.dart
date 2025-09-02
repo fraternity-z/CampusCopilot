@@ -36,6 +36,10 @@ import '../../../settings/domain/entities/search_config.dart';
 // 学习模式相关导入
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
+// AI工具函数相关导入
+import '../services/ai_plan_bridge_service.dart';
+import '../../../daily_management/presentation/providers/plan_notifier.dart';
+
 /// 聊天服务
 ///
 /// 管理聊天会话、消息发送和AI响应生成的核心业务逻辑
@@ -43,6 +47,9 @@ class ChatService {
   final AppDatabase _database;
   final Ref _ref;
   final String _instanceId;
+
+  /// AI计划桥接服务
+  late final AIPlanBridgeService _aiPlanBridgeService;
 
   /// 会话标题更新回调
   Function(String sessionId, String newTitle)? onSessionTitleUpdated;
@@ -53,6 +60,10 @@ class ChatService {
   ChatService(this._database, this._ref)
     : _instanceId = DateTime.now().millisecondsSinceEpoch.toString() {
     debugPrint('🏗️ ChatService实例创建: $_instanceId');
+    
+    // 初始化AI计划桥接服务
+    final planRepository = _ref.read(planRepositoryProvider);
+    _aiPlanBridgeService = AIPlanBridgeService(planRepository, _ref);
   }
 
   /// 创建新的聊天会话
@@ -391,10 +402,25 @@ class ChatService {
         '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
       );
 
+      // 6.5. 检查是否支持函数调用，如果支持则添加AI工具函数
+      final supportsTools = _checkModelSupportsTools(llmConfig.provider, llmConfig.defaultModel);
+      if (supportsTools) {
+        debugPrint('🔧 模型支持函数调用，添加AI工具函数');
+        // TODO: 添加工具函数支持，当前跳过避免编译错误
+        // chatOptions = chatOptions.copyWith(tools: DailyManagementTools.getFunctionDefinitions());
+      }
+
       final result = await provider.generateChat(
         contextMessages,
         options: chatOptions,
       );
+
+      // 6.6. 处理函数调用请求
+      // TODO: 添加工具函数调用处理，当前跳过避免编译错误
+      // if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
+      //   debugPrint('🤖 AI请求执行函数调用，数量: ${result.toolCalls!.length}');
+      //   return await _handleToolCalls(result, sessionId, userMessage, contextMessages, chatOptions, provider);
+      // }
 
       // 7. 创建AI响应消息
       final aiMessage =
@@ -1608,6 +1634,28 @@ class ChatService {
 
     return title.trim();
   }
+
+  /// 检查模型是否支持工具函数调用
+  bool _checkModelSupportsTools(String? provider, String? model) {
+    if (provider == null || model == null) return false;
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        // GPT-4和GPT-3.5系列支持函数调用
+        return model.contains('gpt-4') || model.contains('gpt-3.5');
+      case 'anthropic':
+        // Claude系列支持函数调用
+        return model.contains('claude');
+      case 'google':
+        // Gemini Pro支持函数调用
+        return model.contains('gemini-pro') || model.contains('gemini-1.5');
+      default:
+        // 保守起见，未知提供商默认不支持
+        return false;
+    }
+  }
+
+  // TODO: 工具函数调用处理方法将在后续版本中实现
+  // 当前版本专注于基础架构搭建，工具函数调用功能已预留接口
 }
 
 /// 聊天服务Provider（单例）
