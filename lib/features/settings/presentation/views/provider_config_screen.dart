@@ -15,6 +15,7 @@ import '../widgets/select_model_dialog.dart';
 import '../providers/custom_provider_notifier.dart';
 import '../../../../core/utils/model_icon_utils.dart';
 import '../../domain/entities/app_settings.dart';
+import '../../../llm_chat/presentation/views/widgets/model_capability_tags.dart';
 
 /// AI提供商配置页面
 class ProviderConfigScreen extends ConsumerStatefulWidget {
@@ -642,24 +643,24 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
             if (model.description != null)
               Text(model.description!),
             const SizedBox(height: 4),
-            Wrap(
-              spacing: 8,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 上下文窗口信息
                 if (model.contextWindow != null)
-                  Chip(
-                    label: Text('${model.contextWindow}K上下文'),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Chip(
+                      label: Text('${model.contextWindow}K上下文'),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                if (model.supportsVision)
-                  const Chip(
-                    label: Text('视觉'),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                if (model.supportsFunctionCalling)
-                  const Chip(
-                    label: Text('函数调用'),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                // 模型能力标签
+                ModelCapabilityTags(
+                  modelName: model.name,
+                  compact: true,
+                  maxTags: 4,
+                ),
               ],
             ),
           ],

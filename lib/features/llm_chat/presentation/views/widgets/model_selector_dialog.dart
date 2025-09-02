@@ -6,6 +6,9 @@ import '../../../../settings/domain/entities/app_settings.dart';
 import '../../../../settings/presentation/providers/settings_provider.dart';
 import '../../../../../core/utils/model_icon_utils.dart';
 import '../../../../../app/widgets/dialog_styles.dart';
+import '../../../domain/entities/model_capabilities.dart';
+import '../../../domain/utils/model_capability_checker.dart';
+import 'model_capability_tags.dart';
 
 /// AIProvider扩展方法，提供UI相关的辅助功能
 extension AIProviderUIHelpers on AIProvider {
@@ -82,24 +85,32 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
     List<ModelInfoWithProvider> models,
   ) {
     return models.where((model) {
-      // 排除嵌入模型类型
-      if (model.type.toLowerCase() == 'embedding') {
+      // 使用新的能力检测系统
+      final capabilities = ModelCapabilityChecker.getModelCapabilities(model.id);
+      
+      // 必须支持chat能力
+      if (!capabilities.contains(ModelCapabilityType.chat)) {
         return false;
       }
-
-      // 排除名称或ID中包含 "embedding" 的模型（不区分大小写）
-      final nameContainsEmbedding = model.name.toLowerCase().contains(
-        'embedding',
-      );
-      final idContainsEmbedding = model.id.toLowerCase().contains('embedding');
-
-      if (nameContainsEmbedding || idContainsEmbedding) {
+      
+      // 排除纯嵌入模型
+      if (capabilities.length == 1 && 
+          capabilities.contains(ModelCapabilityType.embedding)) {
         return false;
       }
-
-      // 只保留聊天相关的模型类型
-      final chatTypes = ['chat', 'multimodal', 'text', 'completion'];
-      return chatTypes.contains(model.type.toLowerCase());
+      
+      // 排除纯重排序模型
+      if (capabilities.length == 1 && 
+          capabilities.contains(ModelCapabilityType.rerank)) {
+        return false;
+      }
+      
+      // 排除不支持的模型类型
+      if (ModelCapabilityChecker.isUnsupportedModel(model.id)) {
+        return false;
+      }
+      
+      return true;
     }).toList();
   }
 
@@ -565,74 +576,11 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
                   ),
                 ),
 
-                // 功能标签
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (model.supportsVision) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.visibility,
-                              size: 10,
-                              color: Colors.purple.shade600,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '视觉',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.purple.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    if (model.supportsFunctionCalling) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.functions,
-                              size: 10,
-                              color: Colors.blue.shade600,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '函数',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.blue.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                // 模型能力标签
+                ModelCapabilityTags(
+                  modelName: model.id,
+                  compact: true,
+                  maxTags: 3,
                 ),
               ],
             ),
