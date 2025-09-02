@@ -29,11 +29,25 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         // 打印数据库统计信息
         final stats = _objectBoxManager.getDatabaseStats();
         debugPrint('📊 数据库统计: $stats');
+        
+        // 检验数据库健康状态
+        if (!_objectBoxManager.isHealthy) {
+          debugPrint('⚠️ 数据库初始化后健康检查失败');
+          return false;
+        }
+      } else {
+        debugPrint('❌ ObjectBox 数据库管理器初始化失败');
       }
 
       return success;
     } catch (e) {
       debugPrint('❌ ObjectBox 向量数据库客户端初始化失败: $e');
+      
+      // 如果是模式不匹配错误，提供友好提示
+      if (e.toString().contains('does not match existing UID')) {
+        debugPrint('💡 提示：数据库模式已更新，原有数据将被清理以确保兼容性');
+      }
+      
       return false;
     }
   }

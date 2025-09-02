@@ -42,8 +42,29 @@ class ObjectBoxManager {
       // 获取数据库目录
       final dbDirectory = await _getDatabaseDirectory();
 
-      // 创建 Store
-      _store = await openStore(directory: dbDirectory);
+      // 尝试创建 Store
+      try {
+        _store = await openStore(directory: dbDirectory);
+      } catch (e) {
+        // 检查是否是模式不匹配错误
+        if (e.toString().contains('does not match existing UID') || 
+            e.toString().contains('failed to create store')) {
+          debugPrint('🔧 检测到数据库模式不匹配，尝试自动重建...');
+          
+          // 删除现有数据库文件并重新创建
+          final dbDir = Directory(dbDirectory);
+          if (await dbDir.exists()) {
+            await dbDir.delete(recursive: true);
+            debugPrint('🗑️ 已清理不兼容的数据库文件');
+          }
+          
+          // 重新创建数据库
+          _store = await openStore(directory: dbDirectory);
+          debugPrint('✅ 数据库重建成功');
+        } else {
+          rethrow;
+        }
+      }
 
       // 初始化 Box
       _collectionBox = _store!.box<VectorCollectionEntity>();
