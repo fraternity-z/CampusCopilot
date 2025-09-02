@@ -12,8 +12,6 @@ class AppSettings with _$AppSettings {
     /// OpenAI API配置
     OpenAIConfig? openaiConfig,
 
-    /// OpenAI Responses API配置
-    OpenAIResponsesConfig? openaiResponsesConfig,
 
     /// Google Gemini API配置
     GeminiConfig? geminiConfig,
@@ -78,35 +76,6 @@ class OpenAIConfig with _$OpenAIConfig {
       _$OpenAIConfigFromJson(json);
 }
 
-/// OpenAI Responses API配置
-@freezed
-class OpenAIResponsesConfig with _$OpenAIResponsesConfig {
-  const factory OpenAIResponsesConfig({
-    /// API密钥
-    required String apiKey,
-
-    /// 基础URL（可选，用于代理）
-    String? baseUrl,
-
-    /// 组织ID（可选）
-    String? organizationId,
-
-    /// 默认模型
-    @Default('gpt-4o') String defaultModel,
-
-    /// 是否启用Web搜索工具
-    @Default(false) bool enableWebSearch,
-
-    /// 推理努力程度（用于o3/o4-mini等模型）
-    String? reasoningEffort,
-
-    /// 最大推理令牌数
-    int? maxReasoningTokens,
-  }) = _OpenAIResponsesConfig;
-
-  factory OpenAIResponsesConfig.fromJson(Map<String, dynamic> json) =>
-      _$OpenAIResponsesConfigFromJson(json);
-}
 
 /// Google Gemini配置
 @freezed
@@ -216,7 +185,6 @@ class OllamaConfig with _$OllamaConfig {
 /// AI提供商枚举
 enum AIProvider {
   openai,
-  openaiResponses,
   gemini,
   claude,
   deepseek,

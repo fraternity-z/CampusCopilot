@@ -56,7 +56,6 @@ class ModelIconUtils {
   static String? getSvgPathFromProvider(AIProvider provider) {
     switch (provider) {
       case AIProvider.openai:
-      case AIProvider.openaiResponses:
         return 'assets/logos/openai.svg';
       case AIProvider.gemini:
         return 'assets/logos/Gemini.svg';
@@ -78,8 +77,6 @@ class ModelIconUtils {
     switch (provider) {
       case AIProvider.openai:
         return Icons.psychology;
-      case AIProvider.openaiResponses:
-        return Icons.psychology_alt;
       case AIProvider.gemini:
         return Icons.auto_awesome;
       case AIProvider.claude:
@@ -100,8 +97,6 @@ class ModelIconUtils {
     switch (provider) {
       case AIProvider.openai:
         return const Color(0xFF10B981);
-      case AIProvider.openaiResponses:
-        return const Color(0xFF059669);
       case AIProvider.gemini:
         return const Color(0xFF4285F4);
       case AIProvider.claude:
@@ -360,8 +355,6 @@ class ModelIconUtils {
     switch (provider) {
       case AIProvider.openai:
         return 'OpenAI';
-      case AIProvider.openaiResponses:
-        return 'OpenAI Responses';
       case AIProvider.gemini:
         return 'Google Gemini';
       case AIProvider.claude:
