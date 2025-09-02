@@ -65,7 +65,8 @@ class ModeToggleWidget extends ConsumerWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        // 增加垂直内边距，避免中文字符在加粗时被裁剪
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isActive
@@ -86,6 +87,8 @@ class ModeToggleWidget extends ConsumerWidget {
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
+                // 提高行高，避免中文下沿被裁剪；不强制 Strut，保持字体自然度量
+                height: 1.25,
                 color: isActive 
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurfaceVariant,
