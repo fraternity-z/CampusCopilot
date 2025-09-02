@@ -24,13 +24,8 @@ class GeneralSettingsScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(title: const Text('常规设置'), elevation: 0),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-            ),
-          ),
+          // 使用主题背景，适配深/浅色
+          color: Theme.of(context).colorScheme.surface,
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -61,10 +56,12 @@ class GeneralSettingsScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        // 使用主题表面色
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          // 使用主题描边色
+          color: Theme.of(context).colorScheme.outlineVariant,
           width: 1,
         ),
         boxShadow: [
@@ -313,10 +310,12 @@ class GeneralSettingsScreen extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        // 使用主题表面色
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          // 使用主题描边色
+          color: Theme.of(context).colorScheme.outlineVariant,
           width: 1,
         ),
         boxShadow: [

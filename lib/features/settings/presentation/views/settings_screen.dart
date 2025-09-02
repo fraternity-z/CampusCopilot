@@ -29,13 +29,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-            ),
-          ),
+          // 使用主题的背景色以适配深/浅色模式
+          color: Theme.of(context).colorScheme.surface,
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -120,10 +115,12 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        // 使用主题的表面色，确保在深色模式下显示正确
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          // 使用主题的分隔/描边色
+          color: Theme.of(context).colorScheme.outlineVariant,
           width: 1,
         ),
         boxShadow: [
@@ -168,14 +165,16 @@ class SettingsScreen extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1A1A1A),
+                              // 使用主题的前景色
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF666666),
+                          // 使用主题的次要前景色
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

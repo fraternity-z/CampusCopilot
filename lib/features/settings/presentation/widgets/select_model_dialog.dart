@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../app/widgets/dialog_styles.dart';
 
 import '../../../llm_chat/domain/providers/llm_provider.dart';
 
@@ -132,17 +133,7 @@ class _SelectModelDialogState extends State<SelectModelDialog> {
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: DialogStyles.dialogDecoration(context),
         child: Column(
           children: [
             _buildHeader(context),
@@ -160,7 +151,7 @@ class _SelectModelDialogState extends State<SelectModelDialog> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: DialogStyles.headerFooterColor(context),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Row(
@@ -225,7 +216,7 @@ class _SelectModelDialogState extends State<SelectModelDialog> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceContainer,
+          fillColor: DialogStyles.headerFooterColor(context),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
@@ -498,7 +489,7 @@ class _SelectModelDialogState extends State<SelectModelDialog> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: DialogStyles.headerFooterColor(context),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Row(
