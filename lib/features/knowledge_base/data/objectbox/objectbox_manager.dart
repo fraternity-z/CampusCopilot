@@ -144,4 +144,33 @@ class ObjectBoxManager {
       debugPrint('❌ 清理 ObjectBox 数据库失败: $e');
     }
   }
+
+  /// 重建数据库（修复Schema不匹配问题）
+  Future<bool> rebuildDatabase() async {
+    try {
+      debugPrint('🔄 开始重建ObjectBox数据库...');
+      
+      // 关闭现有连接
+      await close();
+      
+      // 删除数据库文件
+      final dbDirectory = await _getDatabaseDirectory();
+      final dbDir = Directory(dbDirectory);
+      if (await dbDir.exists()) {
+        await dbDir.delete(recursive: true);
+        debugPrint('🗑️ 已删除旧数据库文件');
+      }
+      
+      // 重新初始化
+      final success = await initialize();
+      if (success) {
+        debugPrint('✅ ObjectBox数据库重建成功，HNSW索引已启用');
+      }
+      
+      return success;
+    } catch (e) {
+      debugPrint('❌ 重建数据库失败: $e');
+      return false;
+    }
+  }
 }

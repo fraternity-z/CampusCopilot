@@ -17,8 +17,15 @@ class VectorDocumentEntity {
   @Index()
   String collectionName;
 
-  /// 向量数据（支持HNSW索引）
-  /// 注意：向量维度需要在运行时动态设置
+  /// 向量数据（使用HNSW索引进行高性能近似最近邻搜索）
+  /// 使用余弦距离算法，支持1536维向量（OpenAI embedding标准）
+  /// 配置优化参数：neighborsPerNode=32, indexingSearchCount=200
+  @HnswIndex(
+    dimensions: 1536,
+    distanceType: VectorDistanceType.cosine,
+    neighborsPerNode: 32,
+    indexingSearchCount: 200,
+  )
   @Property(type: PropertyType.floatVector)
   List<double>? vector;
 

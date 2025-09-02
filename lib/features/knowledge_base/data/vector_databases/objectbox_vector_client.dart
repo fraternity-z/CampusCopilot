@@ -349,7 +349,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     final startTime = DateTime.now();
 
     try {
-      debugPrint('🔍 ObjectBox 向量搜索: $collectionName (limit: $limit)');
+      debugPrint('🔍 ObjectBox 原生向量搜索: $collectionName (limit: $limit)');
 
       if (!_isInitialized) {
         debugPrint('⚠️ 向量数据库未初始化');
@@ -363,15 +363,18 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       final documentBox = _objectBoxManager.documentBox;
 
-      // 获取集合中的所有文档
-      final query = documentBox
-          .query(VectorDocumentEntity_.collectionName.equals(collectionName))
-          .build();
-      final documents = query.find();
+      // 使用ObjectBox原生HNSW向量搜索
+      final query = documentBox.query(
+        VectorDocumentEntity_.collectionName.equals(collectionName) &
+        VectorDocumentEntity_.vector.nearestNeighborsF32(queryVector, limit),
+      ).build();
+      
+      // 执行带分数的查询
+      final resultsWithScores = query.findWithScores();
       query.close();
 
-      if (documents.isEmpty) {
-        debugPrint('⚠️ 集合中没有向量数据: $collectionName');
+      if (resultsWithScores.isEmpty) {
+        debugPrint('⚠️ 集合中没有找到匹配的向量: $collectionName');
         return VectorSearchResult(
           items: [],
           totalResults: 0,
@@ -379,65 +382,117 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         );
       }
 
-      // 计算相似度并排序
-      final results = <VectorSearchResultWrapper>[];
-
-      for (final document in documents) {
+      // 转换为VectorSearchItem
+      final items = <VectorSearchItem>[];
+      
+      for (final result in resultsWithScores) {
+        final document = result.object;
+        final distance = result.score;
+        
+        // 跳过无效向量
         if (document.vector == null || document.vector!.isEmpty) {
           continue;
         }
+        
+        // 将ObjectBox的距离转换为相似度分数
+        // 对于余弦距离：similarity = 1 - distance
+        // 但ObjectBox可能返回的是余弦距离的平方，需要根据实际情况调整
+        final similarity = math.max(0.0, 1.0 - distance);
+        
+        // 应用分数阈值过滤
+        if (scoreThreshold == null || similarity >= scoreThreshold) {
+          final metadata = document.metadata != null
+              ? jsonDecode(document.metadata!) as Map<String, dynamic>
+              : <String, dynamic>{};
 
-        try {
-          final similarity = _cosineSimilarity(queryVector, document.vector!);
-
-          // 应用分数阈值过滤
-          if (scoreThreshold == null || similarity >= scoreThreshold) {
-            results.add(
-              VectorSearchResultWrapper(document: document, score: similarity),
-            );
-          }
-        } catch (e) {
-          debugPrint('⚠️ 跳过无效向量: ${document.documentId} - $e');
+          items.add(VectorSearchItem(
+            id: document.documentId,
+            vector: document.vector!,
+            metadata: metadata,
+            score: similarity,
+          ));
         }
       }
 
-      // 按相似度排序（降序）
-      results.sort((a, b) => b.score.compareTo(a.score));
-
-      // 限制结果数量
-      final limitedResults = results.take(limit).toList();
-
-      // 转换为VectorSearchItem
-      final items = limitedResults.map((result) {
-        final metadata = result.document.metadata != null
-            ? jsonDecode(result.document.metadata!) as Map<String, dynamic>
-            : <String, dynamic>{};
-
-        return VectorSearchItem(
-          id: result.document.documentId,
-          vector: result.document.vector!,
-          metadata: metadata,
-          score: result.score,
-        );
-      }).toList();
-
       final searchTime = _calculateSearchTime(startTime);
-      debugPrint('✅ 搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
+      debugPrint('✅ HNSW搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
 
       return VectorSearchResult(
         items: items,
-        totalResults: results.length,
+        totalResults: items.length,
         searchTime: searchTime,
       );
     } catch (e) {
-      final searchTime = _calculateSearchTime(startTime);
-      final error = '向量搜索异常: $e';
+      _calculateSearchTime(startTime);
+      final error = 'HNSW向量搜索异常: $e';
       debugPrint('❌ $error');
-      return VectorSearchResult(
-        items: [],
-        totalResults: 0,
-        searchTime: searchTime,
-        error: error,
+      
+      // 检查是否是HNSW索引配置错误（OBX_ERROR code 10002）
+      if (e.toString().contains('10002')) {
+        debugPrint('🔧 检测到HNSW索引配置问题，尝试重建数据库...');
+        final rebuildSuccess = await _objectBoxManager.rebuildDatabase();
+        
+        if (rebuildSuccess) {
+          debugPrint('✅ 数据库重建成功，重试HNSW搜索...');
+          // 重新初始化客户端状态
+          _isInitialized = true;
+          
+          // 重试一次HNSW搜索
+          try {
+            final documentBox = _objectBoxManager.documentBox;
+            final query = documentBox.query(
+              VectorDocumentEntity_.collectionName.equals(collectionName) &
+              VectorDocumentEntity_.vector.nearestNeighborsF32(queryVector, limit),
+            ).build();
+            
+            final resultsWithScores = query.findWithScores();
+            query.close();
+
+            final items = <VectorSearchItem>[];
+            for (final result in resultsWithScores) {
+              final document = result.object;
+              final distance = result.score;
+              
+              if (document.vector == null || document.vector!.isEmpty) continue;
+              
+              final similarity = math.max(0.0, 1.0 - distance);
+              if (scoreThreshold == null || similarity >= scoreThreshold) {
+                final metadata = document.metadata != null
+                    ? jsonDecode(document.metadata!) as Map<String, dynamic>
+                    : <String, dynamic>{};
+
+                items.add(VectorSearchItem(
+                  id: document.documentId,
+                  vector: document.vector!,
+                  metadata: metadata,
+                  score: similarity,
+                ));
+              }
+            }
+
+            final searchTime = _calculateSearchTime(startTime);
+            debugPrint('✅ HNSW重试搜索成功，找到 ${items.length} 个结果');
+
+            return VectorSearchResult(
+              items: items,
+              totalResults: items.length,
+              searchTime: searchTime,
+            );
+          } catch (retryError) {
+            debugPrint('❌ HNSW重试仍失败: $retryError');
+            // 继续执行下面的回退逻辑
+          }
+        }
+      }
+      
+      // 如果重建失败或不是索引问题，回退到传统搜索方式
+      debugPrint('🔄 回退到传统相似度计算搜索...');
+      return _fallbackSearch(
+        collectionName: collectionName,
+        queryVector: queryVector,
+        limit: limit,
+        scoreThreshold: scoreThreshold,
+        startTime: startTime,
       );
     }
   }
@@ -715,7 +770,88 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
   // === 私有辅助方法 ===
 
-  /// 计算余弦相似度
+
+  /// 回退搜索方式：当HNSW搜索失败时使用传统相似度计算
+  Future<VectorSearchResult> _fallbackSearch({
+    required String collectionName,
+    required List<double> queryVector,
+    required int limit,
+    double? scoreThreshold,
+    required DateTime startTime,
+  }) async {
+    try {
+      final documentBox = _objectBoxManager.documentBox;
+      
+      // 获取集合中的所有文档
+      final query = documentBox
+          .query(VectorDocumentEntity_.collectionName.equals(collectionName))
+          .build();
+      final documents = query.find();
+      query.close();
+
+      if (documents.isEmpty) {
+        return VectorSearchResult(
+          items: [],
+          totalResults: 0,
+          searchTime: _calculateSearchTime(startTime),
+        );
+      }
+
+      // 计算相似度并排序
+      final results = <VectorSearchResultWrapper>[];
+
+      for (final document in documents) {
+        if (document.vector == null || document.vector!.isEmpty) {
+          continue;
+        }
+
+        try {
+          final similarity = _cosineSimilarity(queryVector, document.vector!);
+
+          if (scoreThreshold == null || similarity >= scoreThreshold) {
+            results.add(
+              VectorSearchResultWrapper(document: document, score: similarity),
+            );
+          }
+        } catch (e) {
+          debugPrint('⚠️ 跳过无效向量: ${document.documentId} - $e');
+        }
+      }
+
+      // 按相似度排序（降序）
+      results.sort((a, b) => b.score.compareTo(a.score));
+      final limitedResults = results.take(limit).toList();
+
+      // 转换为VectorSearchItem
+      final items = limitedResults.map((result) {
+        final metadata = result.document.metadata != null
+            ? jsonDecode(result.document.metadata!) as Map<String, dynamic>
+            : <String, dynamic>{};
+
+        return VectorSearchItem(
+          id: result.document.documentId,
+          vector: result.document.vector!,
+          metadata: metadata,
+          score: result.score,
+        );
+      }).toList();
+
+      return VectorSearchResult(
+        items: items,
+        totalResults: results.length,
+        searchTime: _calculateSearchTime(startTime),
+      );
+    } catch (e) {
+      return VectorSearchResult(
+        items: [],
+        totalResults: 0,
+        searchTime: _calculateSearchTime(startTime),
+        error: '回退搜索失败: $e',
+      );
+    }
+  }
+
+  /// 计算余弦相似度（用于回退情况）
   double _cosineSimilarity(List<double> a, List<double> b) {
     if (a.length != b.length) {
       throw ArgumentError('向量维度不匹配: ${a.length} != ${b.length}');
