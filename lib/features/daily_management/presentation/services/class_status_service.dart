@@ -105,7 +105,7 @@ class ClassStatusService {
       final course = todayCourses[i];
       
       // 判断是否为当前课程
-      if (currentPeriod >= course.startPeriod && currentPeriod <= course.endPeriod) {
+      if (currentPeriod > 0 && currentPeriod >= course.startPeriod && currentPeriod <= course.endPeriod) {
         currentClass = ClassStatus(
           courseName: course.name,
           classroom: course.classroom,
@@ -113,15 +113,55 @@ class ClassStatusService {
           timeRange: _getTimeRangeText(course.startPeriod, course.endPeriod),
         );
       }
-      // 查找下节课
-      else if (currentPeriod < course.startPeriod) {
-        nextClass = ClassStatus(
-          courseName: course.name,
-          classroom: course.classroom,
-          teacher: course.teacher,
-          timeRange: _getTimeRangeText(course.startPeriod, course.endPeriod),
-        );
-        break; // 找到第一个未来的课程就退出
+    }
+    
+    // 查找下节课 - 分情况处理
+    if (currentPeriod == -999) {
+      // 当天课程全部结束，尝试找明天第一节课
+      final tomorrow = now.add(const Duration(days: 1));
+      final tomorrowWeek = _getCurrentWeekIndex(data, tomorrow);
+      final tomorrowDay = tomorrow.weekday;
+      
+      if (tomorrowWeek >= 0 && tomorrowWeek < data.semesterLength) {
+        List<_CourseInfo> tomorrowCourses = _getTodayCourses(data, tomorrowWeek, tomorrowDay);
+        if (tomorrowCourses.isNotEmpty) {
+          tomorrowCourses.sort((a, b) => a.startPeriod.compareTo(b.startPeriod));
+          final firstTomorrowClass = tomorrowCourses.first;
+          nextClass = ClassStatus(
+            courseName: "${firstTomorrowClass.name} (明日)",
+            classroom: firstTomorrowClass.classroom,
+            teacher: firstTomorrowClass.teacher,
+            timeRange: _getTimeRangeText(firstTomorrowClass.startPeriod, firstTomorrowClass.endPeriod),
+          );
+        }
+      }
+    } else {
+      // 查找今天剩余的课程
+      for (final course in todayCourses) {
+        // 如果当前时间早于课程开始时间，或者是课间时间且课程还未开始
+        bool isNextClass = false;
+        
+        if (currentPeriod == -1) {
+          // 早于第一节课，第一节课就是下节课
+          isNextClass = true;
+        } else if (currentPeriod > 0) {
+          // 正在上课，查找下一个课程
+          isNextClass = course.startPeriod > currentPeriod;
+        } else if (currentPeriod < 0 && currentPeriod != -999) {
+          // 在课间时间，查找下一个课程
+          int lastFinishedPeriod = -currentPeriod;
+          isNextClass = course.startPeriod > lastFinishedPeriod;
+        }
+        
+        if (isNextClass) {
+          nextClass = ClassStatus(
+            courseName: course.name,
+            classroom: course.classroom,
+            teacher: course.teacher,
+            timeRange: _getTimeRangeText(course.startPeriod, course.endPeriod),
+          );
+          break; // 找到第一个未来的课程就退出
+        }
       }
     }
     
@@ -160,6 +200,11 @@ class ClassStatusService {
   }
   
   /// 计算当前时间对应的课程节次
+  /// 返回值：
+  /// - 正数(1-11)：表示正在上第几节课
+  /// - 负数：表示不在上课时间，但可以用于判断下节课
+  /// - -1：早于第1节课开始时间
+  /// - -999：晚于最后一节课结束时间
   static int _getCurrentPeriod(DateTime now) {
     final hour = now.hour;
     final minute = now.minute;
@@ -181,16 +226,42 @@ class ClassStatusService {
       [20 * 60 + 40, 21 * 60 + 25], // 11: 20:40-21:25
     ];
     
+    // 检查是否正在上课
     for (int i = 1; i < periodTimes.length; i++) {
       final timeRange = periodTimes[i];
       if (timeRange != null && 
           currentMinutes >= timeRange[0] && 
           currentMinutes <= timeRange[1]) {
-        return i;
+        return i; // 正在上第i节课
       }
     }
     
-    return -1; // 不在任何课程时间内
+    // 不在上课时间，判断时间位置
+    // 如果早于第1节课开始时间
+    if (currentMinutes < periodTimes[1]![0]) {
+      return -1;
+    }
+    
+    // 如果晚于最后一节课结束时间
+    if (currentMinutes > periodTimes[11]![1]) {
+      return -999;
+    }
+    
+    // 在课间时间，返回刚刚结束的课程节次的负数
+    for (int i = 1; i < periodTimes.length; i++) {
+      final timeRange = periodTimes[i];
+      if (timeRange != null && currentMinutes > timeRange[1]) {
+        // 检查是否在下一节课开始之前
+        if (i + 1 < periodTimes.length) {
+          final nextTimeRange = periodTimes[i + 1];
+          if (nextTimeRange != null && currentMinutes < nextTimeRange[0]) {
+            return -i; // 在第i节课和第i+1节课之间的课间时间
+          }
+        }
+      }
+    }
+    
+    return -1; // 默认返回
   }
   
   /// 获取时间范围文本
@@ -209,7 +280,11 @@ class ClassStatusService {
     if (currentClass != null) {
       return "正在上课：${currentClass.courseName}";
     } else if (nextClass != null) {
-      return "下节课：${nextClass.courseName}";
+      if (nextClass.courseName.contains("(明日)")) {
+        return "今日课程已结束，明日：${nextClass.courseName.replaceAll(" (明日)", "")}";
+      } else {
+        return "下节课：${nextClass.courseName}";
+      }
     } else if (hasClassToday) {
       return "今日课程已结束";
     } else {
