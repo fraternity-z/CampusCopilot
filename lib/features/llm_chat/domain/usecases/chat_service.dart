@@ -8,7 +8,10 @@ import '../../../../app/app_router.dart';
 import '../entities/chat_message.dart';
 import '../entities/chat_session.dart';
 import '../providers/llm_provider.dart';
+import '../entities/model_capabilities.dart';
 import '../../data/providers/llm_provider_factory.dart';
+
+import '../utils/model_capability_checker.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
@@ -32,7 +35,6 @@ import '../../../settings/domain/entities/search_config.dart';
 
 // 学习模式相关导入
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
-import '../utils/vision_model_checker.dart';
 
 /// 聊天服务
 ///
@@ -485,13 +487,13 @@ class ChatService {
       debugPrint('🔧 LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 检查是否有图片但模型不支持视觉
-      if (imageUrls.isNotEmpty && !VisionModelChecker.isVisionModel(llmConfig.defaultModel)) {
-        final warningMessage = VisionModelChecker.getVisionWarningMessage(llmConfig.defaultModel);
+      if (imageUrls.isNotEmpty && !ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.vision)) {
+        final warningMessage = '模型 ${llmConfig.defaultModel ?? "当前模型"} 不支持视觉功能，无法处理图片内容';
         debugPrint('⚠️ 视觉模型检查失败: $warningMessage');
         
         // 创建警告消息
         final warningAIMessage = ChatMessageFactory.createErrorMessage(
-          content: warningMessage ?? '当前模型不支持图片处理，请切换到支持视觉功能的模型',
+          content: warningMessage,
           chatSessionId: sessionId,
           parentMessageId: userMessage.id,
         );
