@@ -99,6 +99,43 @@ class EmbeddingService {
     return generateEmbeddings(texts: [text], config: config);
   }
 
+  /// 为查询语句生成单个向量（模块化封装）
+  /// 返回首个向量；失败或为空时返回 null
+  Future<List<double>?> getQueryEmbedding({
+    required String query,
+    required KnowledgeBaseConfig config,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    try {
+      if (query.trim().isEmpty) {
+        debugPrint('⚠️ 空查询，跳过向量生成');
+        return null;
+      }
+
+      final result = await generateSingleEmbedding(
+        text: query,
+        config: config,
+      ).timeout(timeout, onTimeout: () {
+        throw TimeoutException('查询向量生成超时');
+      });
+
+      if (!result.isSuccess || result.embeddings.isEmpty) {
+        debugPrint('❌ 查询向量生成失败或为空: ${result.error ?? 'no-embedding'}');
+        return null;
+      }
+
+      final embedding = result.embeddings.first;
+      if (embedding.isEmpty) {
+        debugPrint('⚠️ 查询向量为空');
+        return null;
+      }
+      return embedding;
+    } catch (e) {
+      debugPrint('💥 getQueryEmbedding 异常: $e');
+      return null;
+    }
+  }
+
   /// 批量为文本块生成嵌入向量（性能优化版）
   Future<EmbeddingGenerationResult> generateEmbeddingsForChunks({
     required List<String> chunks,
