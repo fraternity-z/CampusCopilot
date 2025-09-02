@@ -90,24 +90,24 @@ class VectorSearchService {
         debugPrint('📚 限定知识库: $knowledgeBaseId');
       }
 
-      // 1. 为查询生成嵌入向量
+      // 1. 为查询生成嵌入向量（使用模块化封装）
       debugPrint('🧮 生成查询嵌入向量...');
-      final queryEmbeddingResult = await _embeddingService
-          .generateSingleEmbedding(text: query, config: config);
+      final queryEmbedding = await _embeddingService.getQueryEmbedding(
+        query: query,
+        config: config,
+      );
 
-      if (!queryEmbeddingResult.isSuccess) {
-        debugPrint('❌ 生成查询嵌入向量失败: ${queryEmbeddingResult.error}');
+      if (queryEmbedding == null) {
+        debugPrint('❌ 查询嵌入向量生成失败或为空');
         return VectorSearchResult(
           items: [],
-          error: '生成查询嵌入向量失败: ${queryEmbeddingResult.error}',
+          error: '生成查询嵌入向量失败或为空，请检查嵌入服务/配置',
           totalResults: 0,
           searchTime: _calculateSearchTime(startTime),
         );
       }
 
       debugPrint('✅ 查询嵌入向量生成成功');
-
-      final queryEmbedding = queryEmbeddingResult.embeddings.first;
 
       // 2. 获取指定知识库的有嵌入向量的文本块（优化查询）
       debugPrint('📚 获取文本块...');

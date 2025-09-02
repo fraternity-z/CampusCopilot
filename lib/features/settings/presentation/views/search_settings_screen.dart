@@ -12,13 +12,8 @@ class SearchSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('AI 搜索设置'), elevation: 0),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-          ),
-        ),
+        // 使用主题背景，适配深/浅色
+        color: Theme.of(context).colorScheme.surface,
         child: const SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.all(16),

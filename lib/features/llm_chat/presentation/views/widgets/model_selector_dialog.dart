@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../settings/domain/entities/app_settings.dart';
 import '../../../../settings/presentation/providers/settings_provider.dart';
 import '../../../../../core/utils/model_icon_utils.dart';
+import '../../../../../app/widgets/dialog_styles.dart';
 
 /// AIProvider扩展方法，提供UI相关的辅助功能
 extension AIProviderUIHelpers on AIProvider {
@@ -133,17 +134,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: DialogStyles.dialogDecoration(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -151,7 +142,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
+                color: DialogStyles.headerFooterColor(context),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
@@ -283,7 +274,7 @@ class _ModelSelectorDialogState extends ConsumerState<ModelSelectorDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
+                color: DialogStyles.headerFooterColor(context),
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(24),
                 ),

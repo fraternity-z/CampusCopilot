@@ -1141,28 +1141,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             Container(
               height: 96,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(24),
                 border: _isInputFocused
                     ? Border.all(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
                         width: 1.5,
                       )
                     : Border.all(
-                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.50),
                         width: 1,
                       ),
                 boxShadow: [
                   BoxShadow(
                     color: _isInputFocused
-                        ? const Color(0xFF8B5CF6).withValues(alpha: 0.08)
-                        : const Color(0xFF64748B).withValues(alpha: 0.04),
+                        ? Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12)
+                        : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.06),
                     blurRadius: _isInputFocused ? 16 : 8,
                     offset: const Offset(0, 4),
                     spreadRadius: _isInputFocused ? 0 : 0,
                   ),
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
+                    color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                     spreadRadius: 0,
@@ -1772,9 +1772,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.20),
+              blurRadius: 16,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: SafeArea(
           child: Column(
@@ -1786,7 +1793,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
