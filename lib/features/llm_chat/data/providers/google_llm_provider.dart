@@ -246,7 +246,7 @@ class GoogleLlmProvider extends LlmProvider {
   ) {
     final bool hasImages = messages.any((m) => m.imageUrls.isNotEmpty);
     final String modelName = hasImages
-        ? 'gemini-pro-vision'
+        ? 'gemini-1.5-pro' // 使用更新的支持视觉的模型
         : (options?.model ?? config.defaultModel ?? 'gemini-pro');
 
     // 为包含 system 指令的场景构建带 systemInstruction 的模型实例
@@ -274,16 +274,38 @@ class GoogleLlmProvider extends LlmProvider {
               parts.add(
                 google_ai.DataPart('image/*', uri.data!.contentAsBytes()),
               );
+            } else if (url.startsWith('data:image/')) {
+              // 直接处理base64格式的图片
+              try {
+                final urlParts = url.split(',');
+                if (urlParts.length == 2) {
+                  final header = urlParts[0]; // data:image/jpeg;base64
+                  final base64Data = urlParts[1];
+                  final mimeType = header.split(';')[0].split(':')[1]; // image/jpeg
+                  
+                  // 将base64解码为字节数据
+                  final bytes = base64Decode(base64Data);
+                  parts.add(
+                    google_ai.DataPart(mimeType, bytes),
+                  );
+                } else {
+                  parts.add(google_ai.TextPart('[图片格式错误]'));
+                }
+              } catch (e) {
+                debugPrint('ℹ️ Google Provider 处理base64图片失败: $e');
+                parts.add(google_ai.TextPart('[图片处理失败]'));
+              }
             } else {
-              // 无法直接读取字节，降级为文本提示，避免空 contents 触发 400
+              // 其他格式（文件路径或URL），降级为文本提示
               parts.add(
                 google_ai.TextPart(
-                  '[image:${uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'inline'}]',
+                  '[图片:${uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'inline'}]',
                 ),
               );
             }
-          } catch (_) {
-            parts.add(google_ai.TextPart('[image]'));
+          } catch (e) {
+            debugPrint('ℹ️ Google Provider 处理图片URL失败: $e, URL: $url');
+            parts.add(google_ai.TextPart('[图片]'));
           }
         }
         if (text.isNotEmpty) {
