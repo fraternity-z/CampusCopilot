@@ -177,7 +177,44 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      // 首先获取文档的所有chunk ID（在删除之前）
+      final chunks = await _database.getChunksByDocument(documentId);
+      
+      // 删除向量数据库中的相关数据
+      if (chunks.isNotEmpty) {
+        try {
+          final vectorService = await _ref.read(unifiedVectorSearchServiceProvider.future);
+          if (vectorService is EnhancedVectorSearchService) {
+            final currentKnowledgeBase = _ref
+                .read(multiKnowledgeBaseProvider)
+                .currentKnowledgeBase;
+            final knowledgeBaseId = currentKnowledgeBase?.id ?? 'default_kb';
+            
+            await vectorService.deleteDocumentVectors(
+              knowledgeBaseId: knowledgeBaseId,
+              chunkIds: chunks.map((chunk) => chunk.id).toList(),
+            );
+          }
+        } catch (e) {
+          debugPrint('⚠️ 删除向量数据失败，但继续删除文档记录: $e');
+        }
+      }
+      
+      // 删除文档相关的文本块
+      await _database.deleteChunksByDocument(documentId);
+      
+      // 最后删除文档记录
       await _database.deleteKnowledgeDocument(documentId);
+      
+      // 更新知识库统计信息
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      if (currentKnowledgeBase != null) {
+        await _ref.read(multiKnowledgeBaseProvider.notifier)
+            .refreshStats(currentKnowledgeBase.id);
+      }
+      
       await _loadDocuments();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -327,8 +364,48 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      // 首先获取所有文档的chunk ID（在删除之前）
+      final allChunkIds = <String>[];
       for (final doc in state.documents) {
+        final chunks = await _database.getChunksByDocument(doc.id);
+        allChunkIds.addAll(chunks.map((chunk) => chunk.id));
+      }
+      
+      // 清空向量数据库
+      if (allChunkIds.isNotEmpty) {
+        try {
+          final vectorService = await _ref.read(unifiedVectorSearchServiceProvider.future);
+          if (vectorService is EnhancedVectorSearchService) {
+            final currentKnowledgeBase = _ref
+                .read(multiKnowledgeBaseProvider)
+                .currentKnowledgeBase;
+            final knowledgeBaseId = currentKnowledgeBase?.id ?? 'default_kb';
+            
+            await vectorService.deleteDocumentVectors(
+              knowledgeBaseId: knowledgeBaseId,
+              chunkIds: allChunkIds,
+            );
+          }
+        } catch (e) {
+          debugPrint('⚠️ 清空向量数据库失败，但继续清空文档记录: $e');
+        }
+      }
+      
+      // 删除所有文档及其相关数据
+      for (final doc in state.documents) {
+        // 删除文档相关的文本块
+        await _database.deleteChunksByDocument(doc.id);
+        // 删除文档记录
         await _database.deleteKnowledgeDocument(doc.id);
+      }
+      
+      // 更新知识库统计信息
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      if (currentKnowledgeBase != null) {
+        await _ref.read(multiKnowledgeBaseProvider.notifier)
+            .refreshStats(currentKnowledgeBase.id);
       }
 
       await _loadDocuments();
