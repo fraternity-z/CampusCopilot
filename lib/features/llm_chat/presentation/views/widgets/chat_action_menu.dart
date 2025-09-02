@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../shared/widgets/modern_button.dart';
 import '../../providers/chat_provider.dart';
 // 删除AI搜索切换相关的导入，开关已移动到输入区
 import '../../../../../core/widgets/elegant_notification.dart';
@@ -127,7 +126,7 @@ class ChatActionMenu extends ConsumerWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.6),
+                        .withValues(alpha: 0.6),
                   ),
                 ),
               ],

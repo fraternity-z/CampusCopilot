@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 
@@ -330,7 +331,7 @@ class _KnowledgeBaseManagementScreenState
             onPressed: () {
               Navigator.of(context).pop();
               // 导航到设置页面
-              Navigator.of(context).pushNamed('/settings');
+              context.go('/settings');
             },
             child: const Text('去设置'),
           ),
