@@ -29,7 +29,9 @@ class ChatActionMenu extends ConsumerWidget {
         ),
       ),
       tooltip: '更多操作',
-      offset: const Offset(0, -200), // 向上弹出
+      // 避免使用过大的负偏移导致被上层深色背景/遮罩裁剪
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
@@ -37,6 +39,7 @@ class ChatActionMenu extends ConsumerWidget {
         PopupMenuItem<String>(
           value: 'export_conversation',
           child: _buildMenuItem(
+            context: context,
             icon: Icons.download_outlined,
             title: '导出对话',
             subtitle: '保存完整对话记录',
@@ -47,6 +50,7 @@ class ChatActionMenu extends ConsumerWidget {
         PopupMenuItem<String>(
           value: 'clear_chat',
           child: _buildMenuItem(
+            context: context,
             icon: Icons.clear_all,
             title: '清空对话',
             subtitle: '删除当前页面所有消息',
@@ -56,6 +60,7 @@ class ChatActionMenu extends ConsumerWidget {
         PopupMenuItem<String>(
           value: 'clear_context',
           child: _buildMenuItem(
+            context: context,
             icon: Icons.refresh_outlined,
             title: '清除上下文',
             subtitle: '下条对话不包含历史',
@@ -66,6 +71,7 @@ class ChatActionMenu extends ConsumerWidget {
         PopupMenuItem<String>(
           value: 'settings',
           child: _buildMenuItem(
+            context: context,
             icon: Icons.settings_outlined,
             title: '设置',
             subtitle: '应用配置和偏好',
@@ -79,6 +85,7 @@ class ChatActionMenu extends ConsumerWidget {
 
   /// 构建菜单项
   Widget _buildMenuItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -105,18 +112,22 @@ class ChatActionMenu extends ConsumerWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF1A1A1A),
+                    // 使用主题色，确保深色/浅色模式下都有良好对比
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF666666),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                   ),
                 ),
               ],
@@ -129,20 +140,23 @@ class ChatActionMenu extends ConsumerWidget {
 
   /// 处理菜单操作
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
-    switch (action) {
-      case 'export_conversation':
-        _showExportDialog(context, ref);
-        break;
-      case 'clear_chat':
-        _showClearChatDialog(context, ref);
-        break;
-      case 'clear_context':
-        _showClearContextDialog(context, ref);
-        break;
-      case 'settings':
-        _navigateToSettings(context);
-        break;
-    }
+    // 使用下一帧再执行，避免与 PopupMenu 的遮罩层产生覆盖/重叠
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      switch (action) {
+        case 'export_conversation':
+          _showExportDialog(context, ref);
+          break;
+        case 'clear_chat':
+          _showClearChatDialog(context, ref);
+          break;
+        case 'clear_context':
+          _showClearContextDialog(context, ref);
+          break;
+        case 'settings':
+          _navigateToSettings(context);
+          break;
+      }
+    });
   }
 
   /// 显示导出对话框
@@ -293,6 +307,10 @@ class ChatActionMenu extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        scrollable: true,
         title: const Row(
           children: [
             Icon(Icons.clear_all, color: Colors.orange),
@@ -306,8 +324,7 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          ModernButton(
-            text: '确定清空',
+          ElevatedButton(
             onPressed: () {
               ref.read(chatProvider.notifier).clearChat();
               Navigator.of(context).pop();
@@ -317,7 +334,11 @@ class ChatActionMenu extends ConsumerWidget {
                 duration: const Duration(seconds: 2),
               );
             },
-            style: ModernButtonStyle.danger,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定清空'),
           ),
         ],
       ),
@@ -330,6 +351,10 @@ class ChatActionMenu extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        scrollable: true,
         title: const Row(
           children: [
             Icon(Icons.refresh_outlined, color: Colors.blue),
@@ -345,8 +370,7 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          ModernButton(
-            text: '确定清除',
+          ElevatedButton(
             onPressed: () {
               ref.read(chatProvider.notifier).clearContext();
               Navigator.of(context).pop();
@@ -356,7 +380,11 @@ class ChatActionMenu extends ConsumerWidget {
                 duration: const Duration(seconds: 3),
               );
             },
-            style: ModernButtonStyle.primary,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定清除'),
           ),
         ],
       ),
