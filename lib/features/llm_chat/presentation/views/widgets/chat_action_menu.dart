@@ -309,7 +309,7 @@ class ChatActionMenu extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         scrollable: true,
         title: const Row(
           children: [
@@ -324,8 +324,7 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          ModernButton(
-            text: '确定清空',
+          ElevatedButton(
             onPressed: () {
               ref.read(chatProvider.notifier).clearChat();
               Navigator.of(context).pop();
@@ -335,7 +334,11 @@ class ChatActionMenu extends ConsumerWidget {
                 duration: const Duration(seconds: 2),
               );
             },
-            style: ModernButtonStyle.danger,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定清空'),
           ),
         ],
       ),
@@ -350,7 +353,7 @@ class ChatActionMenu extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         scrollable: true,
         title: const Row(
           children: [
@@ -367,8 +370,7 @@ class ChatActionMenu extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('取消'),
           ),
-          ModernButton(
-            text: '确定清除',
+          ElevatedButton(
             onPressed: () {
               ref.read(chatProvider.notifier).clearContext();
               Navigator.of(context).pop();
@@ -378,7 +380,11 @@ class ChatActionMenu extends ConsumerWidget {
                 duration: const Duration(seconds: 3),
               );
             },
-            style: ModernButtonStyle.primary,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定清除'),
           ),
         ],
       ),
