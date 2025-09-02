@@ -40,7 +40,7 @@ class ClassTableView extends StatefulWidget {
 class _ClassTableViewState extends State<ClassTableView> {
   ClassTableData? _classTableData;
   bool _isLoading = false;
-  int _currentWeek = 1;
+  int _currentWeek = 0; // 默认为0，后续会根据实际情况设置
   
   // 从traintime_pda复制的辅助方法
   double get _leftRow => 50.0;

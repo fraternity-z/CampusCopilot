@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -18,6 +17,7 @@ import 'tables/knowledge_base_configs_table.dart';
 import 'tables/knowledge_bases_table.dart';
 import 'tables/custom_models_table.dart';
 import 'tables/general_settings_table.dart';
+import 'tables/plans_table.dart';
 
 part 'app_database.g.dart';
 
@@ -41,6 +41,7 @@ part 'app_database.g.dart';
     KnowledgeBaseConfigsTable,
     CustomModelsTable,
     GeneralSettingsTable,
+    PlansTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -68,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
   _activeSessionsQuery;
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 2; // 增加版本号以支持增量迁移
 
   @override
   MigrationStrategy get migration {
@@ -78,378 +79,15 @@ class AppDatabase extends _$AppDatabase {
         await _insertDefaultData();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // 使用事务包裹所有迁移，防止中途失败导致部分状态丢失
-        await transaction(() async {
-          if (from < 2) {
-            await m.createTable(personaGroupsTable);
-            await m.createTable(customModelsTable);
-          }
-          if (from < 3) {
-            try {
-              await m.addColumn(customModelsTable, customModelsTable.configId);
-            } catch (_) {
-              await m.createTable(customModelsTable);
-            }
-          }
-          if (from < 4) {
-            try {
-              await m.addColumn(
-                chatMessagesTable,
-                chatMessagesTable.thinkingContent,
-              );
-              await m.addColumn(
-                chatMessagesTable,
-                chatMessagesTable.thinkingComplete,
-              );
-              await m.addColumn(chatMessagesTable, chatMessagesTable.modelName);
-            } catch (e) {
-              debugPrint('Failed to add thinking chain columns: $e');
-            }
-          }
-          if (from < 5) {
-            try {
-              await m.createTable(knowledgeBaseConfigsTable);
-              await m.createTable(knowledgeDocumentsTable);
-              await m.createTable(knowledgeChunksTable);
-            } catch (e) {
-              debugPrint('Failed to create knowledge base tables: $e');
-            }
-          }
-          if (from < 6) {
-            try {
-              // 添加自定义提供商支持字段
-              await m.addColumn(
-                llmConfigsTable,
-                llmConfigsTable.isCustomProvider,
-              );
-              await m.addColumn(
-                llmConfigsTable,
-                llmConfigsTable.apiCompatibilityType,
-              );
-              await m.addColumn(
-                llmConfigsTable,
-                llmConfigsTable.customProviderName,
-              );
-              await m.addColumn(
-                llmConfigsTable,
-                llmConfigsTable.customProviderDescription,
-              );
-              await m.addColumn(
-                llmConfigsTable,
-                llmConfigsTable.customProviderIcon,
-              );
-            } catch (e) {
-              debugPrint('Failed to add custom provider columns: $e');
-            }
-          }
-          if (from < 7) {
-            try {
-              // 添加常规设置表
-              await m.createTable(generalSettingsTable);
-            } catch (e) {
-              debugPrint('Failed to create general settings table: $e');
-            }
-          }
-          if (from < 8) {
-            try {
-              // 确保知识库表存在（为早期版本用户补充创建）
-              await m.createTable(knowledgeDocumentsTable);
-              await m.createTable(knowledgeChunksTable);
-              await m.createTable(knowledgeBaseConfigsTable);
-            } catch (e) {
-              debugPrint('Failed to ensure knowledge base tables exist: $e');
-            }
-          }
-          if (from < 9) {
-            try {
-              // 创建知识库表
-              await m.createTable(knowledgeBasesTable);
-
-              // 为现有表添加知识库ID字段
-              await m.addColumn(
-                knowledgeDocumentsTable,
-                knowledgeDocumentsTable.knowledgeBaseId,
-              );
-              await m.addColumn(
-                knowledgeChunksTable,
-                knowledgeChunksTable.knowledgeBaseId,
-              );
-
-              // 创建默认知识库
-              // 首先检查是否有知识库配置
-              final configResult = await customSelect(
-                'SELECT id FROM knowledge_base_configs_table LIMIT 1',
-              ).getSingleOrNull();
-
-              final defaultConfigId =
-                  configResult?.data['id'] ?? 'default_config';
-
-              // 如果没有配置，先创建一个默认配置
-              if (configResult == null) {
-                await customStatement('''
-                  INSERT INTO knowledge_base_configs_table (
-                    id, name, embedding_model_id, embedding_model_name,
-                    embedding_model_provider, chunk_size, chunk_overlap,
-                    created_at, updated_at
-                  ) VALUES (
-                    'default_config', '默认配置', 'text-embedding-3-small',
-                    'Text Embedding 3 Small', 'openai', 1000, 200,
-                    datetime('now'), datetime('now')
-                  )
-                ''');
-              }
-
-              await customStatement('''
-                INSERT OR IGNORE INTO knowledge_bases_table (
-                  id, name, description, icon, color, config_id, document_count, chunk_count,
-                  is_default, is_enabled, created_at, updated_at
-                ) VALUES (
-                  'default_kb', '默认知识库', '系统默认知识库', 'folder', '#2196F3',
-                  '$defaultConfigId',
-                  0, 0, 1, 1, datetime('now'), datetime('now')
-                )
-              ''');
-
-              // 将现有文档和文本块关联到默认知识库
-              await customStatement('''
-                UPDATE knowledge_documents_table
-                SET knowledge_base_id = 'default_kb'
-                WHERE knowledge_base_id IS NULL
-              ''');
-
-              await customStatement('''
-                UPDATE knowledge_chunks_table
-                SET knowledge_base_id = 'default_kb'
-                WHERE knowledge_base_id IS NULL
-              ''');
-            } catch (e) {
-              debugPrint('Failed to migrate to multi-knowledge base: $e');
-            }
-          }
-          if (from < 10) {
-            try {
-              debugPrint('🔄 执行数据库版本10迁移...');
-
-              // 检查并修复知识库表结构
-              await customStatement('''
-                CREATE TABLE IF NOT EXISTS knowledge_bases_table_new (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  name TEXT NOT NULL,
-                  description TEXT,
-                  icon TEXT,
-                  color TEXT,
-                  config_id TEXT NOT NULL,
-                  document_count INTEGER NOT NULL DEFAULT 0,
-                  chunk_count INTEGER NOT NULL DEFAULT 0,
-                  is_default BOOLEAN NOT NULL DEFAULT 0,
-                  is_enabled BOOLEAN NOT NULL DEFAULT 1,
-                  created_at INTEGER NOT NULL,
-                  updated_at INTEGER NOT NULL,
-                  last_used_at INTEGER
-                )
-              ''');
-
-              // 检查并修复文档表结构
-              await customStatement('''
-                CREATE TABLE IF NOT EXISTS knowledge_documents_table_new (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  knowledge_base_id TEXT NOT NULL,
-                  name TEXT NOT NULL,
-                  type TEXT NOT NULL,
-                  size INTEGER NOT NULL,
-                  file_path TEXT NOT NULL,
-                  file_hash TEXT NOT NULL,
-                  chunks INTEGER NOT NULL DEFAULT 0,
-                  status TEXT NOT NULL DEFAULT 'pending',
-                  index_progress REAL NOT NULL DEFAULT 0.0,
-                  uploaded_at INTEGER NOT NULL,
-                  processed_at INTEGER,
-                  metadata TEXT,
-                  error_message TEXT
-                )
-              ''');
-
-              // 检查并修复文本块表结构
-              await customStatement('''
-                CREATE TABLE IF NOT EXISTS knowledge_chunks_table_new (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  knowledge_base_id TEXT NOT NULL,
-                  document_id TEXT NOT NULL,
-                  content TEXT NOT NULL,
-                  chunk_index INTEGER NOT NULL,
-                  character_count INTEGER NOT NULL,
-                  token_count INTEGER NOT NULL,
-                  embedding TEXT,
-                  created_at INTEGER NOT NULL
-                )
-              ''');
-
-              // 迁移现有数据（如果存在）
-              // 检查旧表是否存在，如果存在则迁移数据
-              final tablesResult = await customSelect('''
-                SELECT name FROM sqlite_master
-                WHERE type='table' AND name IN ('knowledge_documents_table', 'knowledge_chunks_table')
-              ''').get();
-
-              final hasDocTable = tablesResult.any(
-                (row) => row.data['name'] == 'knowledge_documents_table',
-              );
-              final hasChunkTable = tablesResult.any(
-                (row) => row.data['name'] == 'knowledge_chunks_table',
-              );
-
-              if (hasDocTable) {
-                // 迁移文档数据，为所有记录设置默认知识库ID
-                await customStatement('''
-                  INSERT OR IGNORE INTO knowledge_documents_table_new
-                  SELECT
-                    id,
-                    'default_kb' as knowledge_base_id,
-                    name, type, size, file_path, file_hash, chunks, status,
-                    index_progress, uploaded_at, processed_at, metadata, error_message
-                  FROM knowledge_documents_table
-                ''');
-              }
-
-              if (hasChunkTable) {
-                // 迁移文本块数据，为所有记录设置默认知识库ID
-                await customStatement('''
-                  INSERT OR IGNORE INTO knowledge_chunks_table_new
-                  SELECT
-                    id,
-                    'default_kb' as knowledge_base_id,
-                    document_id, content, chunk_index, character_count,
-                    token_count, embedding, created_at
-                  FROM knowledge_chunks_table
-                ''');
-              }
-
-              // 替换旧表
-              await customStatement(
-                'DROP TABLE IF EXISTS knowledge_documents_table',
-              );
-              await customStatement(
-                'DROP TABLE IF EXISTS knowledge_chunks_table',
-              );
-              await customStatement(
-                'ALTER TABLE knowledge_documents_table_new RENAME TO knowledge_documents_table',
-              );
-              await customStatement(
-                'ALTER TABLE knowledge_chunks_table_new RENAME TO knowledge_chunks_table',
-              );
-
-              // 确保默认知识库存在
-              await _ensureDefaultKnowledgeBase();
-
-              debugPrint('✅ 数据库版本10迁移完成');
-            } catch (e) {
-              debugPrint('❌ 数据库版本10迁移失败: $e');
-            }
-          }
-          if (from < 11) {
-            try {
-              debugPrint('🔄 执行数据库版本11迁移（修复版本10问题）...');
-
-              // 直接删除可能存在问题的旧表，重新创建
-              await customStatement(
-                'DROP TABLE IF EXISTS knowledge_documents_table',
-              );
-              await customStatement(
-                'DROP TABLE IF EXISTS knowledge_chunks_table',
-              );
-              await customStatement(
-                'DROP TABLE IF EXISTS knowledge_bases_table',
-              );
-
-              // 重新创建所有知识库相关表
-              await customStatement('''
-                CREATE TABLE knowledge_bases_table (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  name TEXT NOT NULL,
-                  description TEXT,
-                  icon TEXT,
-                  color TEXT,
-                  config_id TEXT NOT NULL,
-                  document_count INTEGER NOT NULL DEFAULT 0,
-                  chunk_count INTEGER NOT NULL DEFAULT 0,
-                  is_default BOOLEAN NOT NULL DEFAULT 0,
-                  is_enabled BOOLEAN NOT NULL DEFAULT 1,
-                  created_at INTEGER NOT NULL,
-                  updated_at INTEGER NOT NULL,
-                  last_used_at INTEGER
-                )
-              ''');
-
-              await customStatement('''
-                CREATE TABLE knowledge_documents_table (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  knowledge_base_id TEXT NOT NULL,
-                  name TEXT NOT NULL,
-                  type TEXT NOT NULL,
-                  size INTEGER NOT NULL,
-                  file_path TEXT NOT NULL,
-                  file_hash TEXT NOT NULL,
-                  chunks INTEGER NOT NULL DEFAULT 0,
-                  status TEXT NOT NULL DEFAULT 'pending',
-                  index_progress REAL NOT NULL DEFAULT 0.0,
-                  uploaded_at INTEGER NOT NULL,
-                  processed_at INTEGER,
-                  metadata TEXT,
-                  error_message TEXT
-                )
-              ''');
-
-              await customStatement('''
-                CREATE TABLE knowledge_chunks_table (
-                  id TEXT NOT NULL PRIMARY KEY,
-                  knowledge_base_id TEXT NOT NULL,
-                  document_id TEXT NOT NULL,
-                  content TEXT NOT NULL,
-                  chunk_index INTEGER NOT NULL,
-                  character_count INTEGER NOT NULL,
-                  token_count INTEGER NOT NULL,
-                  embedding TEXT,
-                  created_at INTEGER NOT NULL
-                )
-              ''');
-
-              // 确保默认知识库存在
-              await _ensureDefaultKnowledgeBase();
-
-              debugPrint('✅ 数据库版本11迁移完成');
-            } catch (e) {
-              debugPrint('❌ 数据库版本11迁移失败: $e');
-            }
-          }
-          if (from < 12) {
-            try {
-              debugPrint('🔄 执行数据库版本12迁移（添加图片支持）...');
-
-              // 添加 imageUrls 列到 chat_messages_table
-              await m.addColumn(chatMessagesTable, chatMessagesTable.imageUrls);
-
-              debugPrint('✅ 数据库版本12迁移完成');
-            } catch (e) {
-              debugPrint('❌ 数据库版本12迁移失败: $e');
-              // 如果添加列失败，可能是因为列已经存在，这是正常的
-              debugPrint('这可能是因为列已经存在，继续执行...');
-            }
-          }
-          if (from < 13) {
-            try {
-              debugPrint('🔄 执行数据库版本13迁移（添加图片支持）...');
-
-              // 添加 imageUrls 列到 chat_messages_table
-              await m.addColumn(chatMessagesTable, chatMessagesTable.imageUrls);
-
-              debugPrint('✅ 数据库版本13迁移完成');
-            } catch (e) {
-              debugPrint('❌ 数据库版本13迁移失败: $e');
-              // 如果添加列失败，可能是因为列已经存在，这是正常的
-              debugPrint('这可能是因为列已经存在，继续执行...');
-            }
-          }
-        });
+        // 智能迁移策略：支持增量迁移和开发阶段重建
+        if (from == 1 && to == 2) {
+          // 版本1到2的增量迁移
+          await _migrateFromV1ToV2(m);
+        } else {
+          // 开发阶段：如果版本差异较大，询问是否重建
+          // 生产环境：应该实现具体的迁移逻辑
+          await _handleComplexMigration(m, from, to);
+        }
       },
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
@@ -1272,59 +910,417 @@ class AppDatabase extends _$AppDatabase {
     return {for (final result in results) result.key: result.value};
   }
 
-  /// 确保默认知识库存在
-  Future<void> _ensureDefaultKnowledgeBase() async {
-    try {
-      debugPrint('🔧 检查默认知识库...');
+  // ==================== 计划管理相关查询 ====================
 
-      // 检查是否已存在默认知识库
-      final existingKb = await customSelect(
-        'SELECT id FROM knowledge_bases_table WHERE id = ?',
-        variables: [Variable.withString('default_kb')],
-      ).getSingleOrNull();
+  /// 获取所有计划
+  Future<List<PlansTableData>> getAllPlans() {
+    return (select(plansTable)
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+        .get();
+  }
 
-      if (existingKb != null) {
-        debugPrint('✅ 默认知识库已存在');
-        return;
-      }
+  /// 根据ID获取计划
+  Future<PlansTableData?> getPlanById(int id) {
+    return (select(plansTable)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
 
-      // 检查是否有知识库配置
-      final configResult = await customSelect(
-        'SELECT id FROM knowledge_base_configs_table LIMIT 1',
-      ).getSingleOrNull();
+  /// 创建计划
+  Future<int> createPlan(PlansTableCompanion plan) {
+    return into(plansTable).insert(plan);
+  }
 
-      final defaultConfigId = configResult?.data['id'] ?? 'default_config';
+  /// 更新计划
+  Future<int> updatePlan(int id, PlansTableCompanion plan) {
+    return (update(plansTable)..where((t) => t.id.equals(id))).write(plan);
+  }
 
-      // 如果没有配置，先创建默认配置
-      if (configResult == null) {
-        await customStatement('''
-          INSERT INTO knowledge_base_configs_table (
-            id, name, embedding_model_id, embedding_model_name,
-            embedding_model_provider, chunk_size, chunk_overlap,
-            created_at, updated_at
-          ) VALUES (
-            'default_config', '默认配置', 'text-embedding-3-small',
-            'Text Embedding 3 Small', 'openai', 1000, 200,
-            ${DateTime.now().millisecondsSinceEpoch}, ${DateTime.now().millisecondsSinceEpoch}
-          )
-        ''');
-      }
+  /// 删除计划
+  Future<int> deletePlan(int id) {
+    return (delete(plansTable)..where((t) => t.id.equals(id))).go();
+  }
 
-      // 创建默认知识库
+  /// 批量删除计划
+  Future<void> deletePlans(List<int> ids) async {
+    if (ids.isEmpty) return;
+    await (delete(plansTable)..where((t) => t.id.isIn(ids))).go();
+  }
+
+  /// 根据状态获取计划
+  Future<List<PlansTableData>> getPlansByStatus(String status) {
+    return (select(plansTable)
+          ..where((t) => t.status.equals(status))
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+        .get();
+  }
+
+  /// 根据日期获取计划
+  Future<List<PlansTableData>> getPlansByDate(DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
+    return (select(plansTable)
+          ..where((t) => t.planDate.isBiggerOrEqualValue(startOfDay) & 
+                        t.planDate.isSmallerThanValue(endOfDay))
+          ..orderBy([(t) => OrderingTerm.asc(t.startTime)]))
+        .get();
+  }
+
+  /// 搜索计划
+  Future<List<PlansTableData>> searchPlans(String query) {
+    final lowerQuery = query.toLowerCase();
+    return (select(plansTable)..where(
+          (t) =>
+              t.title.lower().contains(lowerQuery) |
+              t.description.lower().contains(lowerQuery) |
+              t.tags.contains(query),
+        ))
+        .get();
+  }
+
+  /// 更新计划状态
+  Future<int> updatePlanStatus(int id, String status) {
+    final now = DateTime.now();
+    final updates = PlansTableCompanion(
+      status: Value(status),
+      updatedAt: Value(now),
+    );
+    
+    // 如果是完成状态，设置完成时间
+    if (status == 'completed') {
+      final updatesWithCompletion = updates.copyWith(
+        completedAt: Value(now),
+        progress: const Value(100),
+      );
+      return (update(plansTable)..where((t) => t.id.equals(id)))
+          .write(updatesWithCompletion);
+    }
+    
+    return (update(plansTable)..where((t) => t.id.equals(id))).write(updates);
+  }
+
+  /// 更新计划进度
+  Future<int> updatePlanProgress(int id, int progress) {
+    final now = DateTime.now();
+    final updates = PlansTableCompanion(
+      progress: Value(progress),
+      updatedAt: Value(now),
+    );
+    
+    // 如果进度达到100%，自动设为完成状态
+    if (progress >= 100) {
+      final updatesWithCompletion = updates.copyWith(
+        status: const Value('completed'),
+        completedAt: Value(now),
+      );
+      return (update(plansTable)..where((t) => t.id.equals(id)))
+          .write(updatesWithCompletion);
+    }
+    
+    return (update(plansTable)..where((t) => t.id.equals(id))).write(updates);
+  }
+
+  /// 版本1到2的增量迁移
+  Future<void> _migrateFromV1ToV2(Migrator m) async {
+    // 在版本1到2之间，如果没有结构变化，可以直接创建新表
+    // 这里可以添加具体的迁移逻辑，比如添加新列、索引等
+    await m.createAll();
+  }
+
+  /// 手动重置数据库（用于开发调试或用户主动重置）
+  Future<void> resetDatabase() async {
+    await transaction(() async {
+      // 删除所有表
+      await customStatement('DROP TABLE IF EXISTS llm_configs_table');
+      await customStatement('DROP TABLE IF EXISTS personas_table');
+      await customStatement('DROP TABLE IF EXISTS persona_groups_table');
+      await customStatement('DROP TABLE IF EXISTS chat_sessions_table');
+      await customStatement('DROP TABLE IF EXISTS chat_messages_table');
+      await customStatement('DROP TABLE IF EXISTS knowledge_bases_table');
+      await customStatement('DROP TABLE IF EXISTS knowledge_documents_table');
+      await customStatement('DROP TABLE IF EXISTS knowledge_chunks_table');
+      await customStatement('DROP TABLE IF EXISTS knowledge_base_configs_table');
+      await customStatement('DROP TABLE IF EXISTS custom_models_table');
+      await customStatement('DROP TABLE IF EXISTS general_settings_table');
+      await customStatement('DROP TABLE IF EXISTS plans_table');
+
+      // 重新创建所有表
       await customStatement('''
-        INSERT INTO knowledge_bases_table (
-          id, name, description, icon, color, config_id, document_count, chunk_count,
-          is_default, is_enabled, created_at, updated_at
-        ) VALUES (
-          'default_kb', '默认知识库', '系统默认知识库', 'folder', '#2196F3',
-          '$defaultConfigId',
-          0, 0, 1, 1, ${DateTime.now().millisecondsSinceEpoch}, ${DateTime.now().millisecondsSinceEpoch}
+        CREATE TABLE llm_configs_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          apiKey TEXT,
+          defaultModel TEXT,
+          defaultEmbeddingModel TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isEnabled INTEGER NOT NULL DEFAULT 0,
+          isCustomProvider INTEGER NOT NULL DEFAULT 0,
+          baseUrl TEXT,
+          customHeaders TEXT,
+          timeout INTEGER,
+          maxRetries INTEGER,
+          rateLimitRequests INTEGER,
+          rateLimitWindowMs INTEGER
         )
       ''');
 
-      debugPrint('✅ 默认知识库创建成功');
-    } catch (e) {
-      debugPrint('❌ 创建默认知识库失败: $e');
+      await customStatement('''
+        CREATE TABLE personas_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          systemPrompt TEXT,
+          apiConfigId TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          category TEXT,
+          isDefault INTEGER NOT NULL DEFAULT 0,
+          usageCount INTEGER NOT NULL DEFAULT 0,
+          lastUsedAt TEXT,
+          tags TEXT,
+          isEnabled INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE persona_groups_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isExpanded INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE chat_sessions_table (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          personaId TEXT NOT NULL,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isArchived INTEGER NOT NULL DEFAULT 0,
+          lastMessageAt TEXT,
+          messageCount INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE chat_messages_table (
+          id TEXT PRIMARY KEY,
+          chatSessionId TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'sent',
+          metadata TEXT,
+          FOREIGN KEY (chatSessionId) REFERENCES chat_sessions_table (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE knowledge_bases_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          embeddingModel TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isEnabled INTEGER NOT NULL DEFAULT 1,
+          isDefault INTEGER NOT NULL DEFAULT 0,
+          documentCount INTEGER NOT NULL DEFAULT 0,
+          chunkCount INTEGER NOT NULL DEFAULT 0,
+          metadata TEXT
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE knowledge_documents_table (
+          id TEXT PRIMARY KEY,
+          knowledgeBaseId TEXT NOT NULL,
+          fileName TEXT NOT NULL,
+          filePath TEXT,
+          fileSize INTEGER,
+          mimeType TEXT,
+          uploadedAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'processing',
+          checksum TEXT,
+          metadata TEXT,
+          FOREIGN KEY (knowledgeBaseId) REFERENCES knowledge_bases_table (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE knowledge_chunks_table (
+          id TEXT PRIMARY KEY,
+          documentId TEXT NOT NULL,
+          knowledgeBaseId TEXT NOT NULL,
+          content TEXT NOT NULL,
+          embedding TEXT,
+          chunkIndex INTEGER NOT NULL,
+          metadata TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          FOREIGN KEY (documentId) REFERENCES knowledge_documents_table (id) ON DELETE CASCADE,
+          FOREIGN KEY (knowledgeBaseId) REFERENCES knowledge_bases_table (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE knowledge_base_configs_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          chunkSize INTEGER NOT NULL DEFAULT 1000,
+          chunkOverlap INTEGER NOT NULL DEFAULT 200,
+          embeddingModel TEXT,
+          similarityThreshold REAL NOT NULL DEFAULT 0.7,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isDefault INTEGER NOT NULL DEFAULT 0,
+          metadata TEXT
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE custom_models_table (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          modelId TEXT NOT NULL,
+          contextWindow INTEGER,
+          maxTokens INTEGER,
+          supportsFunctionCalling INTEGER NOT NULL DEFAULT 0,
+          supportsVision INTEGER NOT NULL DEFAULT 0,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          isEnabled INTEGER NOT NULL DEFAULT 1,
+          configId TEXT,
+          metadata TEXT
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE general_settings_table (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        )
+      ''');
+
+      await customStatement('''
+        CREATE TABLE plans_table (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          description TEXT,
+          planDate TEXT NOT NULL,
+          startTime TEXT,
+          endTime TEXT,
+          status TEXT NOT NULL DEFAULT 'pending',
+          priority TEXT NOT NULL DEFAULT 'medium',
+          progress INTEGER NOT NULL DEFAULT 0,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          completedAt TEXT,
+          tags TEXT,
+          reminderTime TEXT
+        )
+      ''');
+
+      // 创建索引
+      await customStatement('CREATE INDEX idx_personas_category ON personas_table(category)');
+      await customStatement('CREATE INDEX idx_personas_isDefault ON personas_table(isDefault)');
+      await customStatement('CREATE INDEX idx_chat_sessions_personaId ON chat_sessions_table(personaId)');
+      await customStatement('CREATE INDEX idx_chat_sessions_updatedAt ON chat_sessions_table(updatedAt)');
+      await customStatement('CREATE INDEX idx_chat_messages_sessionId ON chat_messages_table(chatSessionId)');
+      await customStatement('CREATE INDEX idx_knowledge_documents_baseId ON knowledge_documents_table(knowledgeBaseId)');
+      await customStatement('CREATE INDEX idx_knowledge_chunks_documentId ON knowledge_chunks_table(documentId)');
+      await customStatement('CREATE INDEX idx_knowledge_chunks_baseId ON knowledge_chunks_table(knowledgeBaseId)');
+      await customStatement('CREATE INDEX idx_custom_models_provider ON custom_models_table(provider)');
+      await customStatement('CREATE INDEX idx_plans_date ON plans_table(planDate)');
+      await customStatement('CREATE INDEX idx_plans_status ON plans_table(status)');
+
+      // 插入默认数据
+      await _insertDefaultData();
+    });
+  }
+
+  /// 处理复杂的迁移情况
+  Future<void> _handleComplexMigration(Migrator m, int from, int to) async {
+    // 检查是否是开发环境（通过环境变量或其他方式）
+    const isDevelopment = bool.fromEnvironment('dart.vm.product') == false;
+
+    if (isDevelopment && from < to) {
+      // 开发环境：重建数据库但保留重要数据
+      await transaction(() async {
+        // 备份重要数据（如果需要）
+        final settings = await customSelect('SELECT * FROM general_settings_table').get();
+        final personas = await customSelect('SELECT * FROM personas_table WHERE isDefault = 1').get();
+
+        // 删除所有表
+        await customStatement('DROP TABLE IF EXISTS llm_configs_table');
+        await customStatement('DROP TABLE IF EXISTS personas_table');
+        await customStatement('DROP TABLE IF EXISTS persona_groups_table');
+        await customStatement('DROP TABLE IF EXISTS chat_sessions_table');
+        await customStatement('DROP TABLE IF EXISTS chat_messages_table');
+        await customStatement('DROP TABLE IF EXISTS knowledge_bases_table');
+        await customStatement('DROP TABLE IF EXISTS knowledge_documents_table');
+        await customStatement('DROP TABLE IF EXISTS knowledge_chunks_table');
+        await customStatement('DROP TABLE IF EXISTS knowledge_base_configs_table');
+        await customStatement('DROP TABLE IF EXISTS custom_models_table');
+        await customStatement('DROP TABLE IF EXISTS general_settings_table');
+        await customStatement('DROP TABLE IF EXISTS plans_table');
+
+        // 重新创建所有表
+        await m.createAll();
+
+        // 恢复重要数据
+        if (settings.isNotEmpty) {
+          for (final setting in settings) {
+            await customInsert(
+              'INSERT OR REPLACE INTO general_settings_table (key, value, updatedAt) VALUES (?, ?, ?)',
+              variables: [
+                Variable<String>(setting.data['key']),
+                Variable<String>(setting.data['value']),
+                Variable<DateTime>(DateTime.now()),
+              ],
+            );
+          }
+        }
+
+        // 恢复默认智能体
+        if (personas.isNotEmpty) {
+          for (final persona in personas) {
+            await customInsert(
+              'INSERT OR IGNORE INTO personas_table (id, name, description, systemPrompt, apiConfigId, createdAt, updatedAt, category, isDefault) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              variables: [
+                Variable<String>(persona.data['id']),
+                Variable<String>(persona.data['name']),
+                Variable<String>(persona.data['description']),
+                Variable<String>(persona.data['systemPrompt']),
+                Variable<String>(persona.data['apiConfigId']),
+                Variable<DateTime>(DateTime.parse(persona.data['createdAt'])),
+                Variable<DateTime>(DateTime.now()),
+                Variable<String>(persona.data['category']),
+                Variable<bool>(persona.data['isDefault'] == 1),
+              ],
+            );
+          }
+        }
+
+        // 重新插入默认数据
+        await _insertDefaultData();
+      });
+    } else {
+      // 生产环境：抛出错误，需要手动处理迁移
+      throw Exception(
+        '不支持从版本 $from 迁移到版本 $to。'
+        '请联系开发团队获取支持，或手动备份数据后重新安装应用。'
+      );
     }
   }
 }

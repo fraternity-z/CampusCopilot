@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'classtable_view.dart';
+import 'plan_list_page.dart';
+import 'create_plan_page.dart';
 import '../services/class_status_service.dart';
+import '../providers/plan_notifier.dart';
+import '../../domain/entities/plan_entity.dart';
 
 /// 日常总览页面
 /// 
@@ -339,7 +343,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () => _showComingSoon('计划表'),
+        onTap: _navigateToPlanList,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
@@ -389,7 +393,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
                   ),
                 ],
               ),
-              // 计划表预览信息（TODO占位符）
+              // 今日计划预览
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,
@@ -410,8 +414,10 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
     );
   }
 
-  /// 构建计划表预览（TODO占位符）
+  /// 构建计划表预览
   Widget _buildPlannerPreview() {
+    final todayPlans = ref.watch(todayPlansProvider);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -433,19 +439,42 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
                 ),
               ),
             ),
+            Text(
+              '${todayPlans.length}项',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        // TODO项目列表占位符
-        _buildTodoItemPlaceholder('完成项目文档撰写', true),
-        _buildTodoItemPlaceholder('参与团队会议讨论', false),
-        _buildTodoItemPlaceholder('复习算法与数据结构', false),
+        
+        if (todayPlans.isEmpty)
+          _buildEmptyPlanItem()
+        else
+          ...todayPlans.take(3).map((plan) => _buildPlanItem(plan)),
+          
+        if (todayPlans.length > 3)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '...还有${todayPlans.length - 3}项计划',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  /// 构建TODO项目占位符
-  Widget _buildTodoItemPlaceholder(String title, bool isCompleted) {
+  /// 构建计划项目
+  Widget _buildPlanItem(PlanEntity plan) {
+    final isCompleted = plan.status == PlanStatus.completed;
+    final priority = plan.priority;
+    
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
@@ -458,7 +487,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
             decoration: BoxDecoration(
               color: isCompleted ? Colors.green : Colors.transparent,
               border: Border.all(
-                color: Colors.green,
+                color: _getPriorityColor(priority),
                 width: 1.5,
               ),
               borderRadius: BorderRadius.circular(2),
@@ -473,20 +502,86 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                decoration: isCompleted ? TextDecoration.lineThrough : null,
-                color: isCompleted
-                    ? Theme.of(context).colorScheme.onSurfaceVariant
-                    : null,
-                fontSize: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  plan.title,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    color: isCompleted
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : null,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (plan.startTime != null && plan.endTime != null)
+                  Text(
+                    '${_formatTime(plan.startTime!)} - ${_formatTime(plan.endTime!)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (!isCompleted)
+            Container(
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _getPriorityColor(priority),
+                shape: BoxShape.circle,
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建空计划项
+  Widget _buildEmptyPlanItem() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.event_available,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '今天暂无计划，点击添加第一个计划',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// 获取优先级颜色
+  Color _getPriorityColor(PlanPriority priority) {
+    switch (priority) {
+      case PlanPriority.high:
+        return Colors.red;
+      case PlanPriority.medium:
+        return Colors.orange;
+      case PlanPriority.low:
+        return Colors.green;
+    }
+  }
+
+  /// 格式化时间
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   /// 构建快捷操作
@@ -508,7 +603,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
                 title: '新建计划',
                 icon: Icons.add_task,
                 color: Colors.blue,
-                onTap: () => _showComingSoon('新建计划'),
+                onTap: _navigateToCreatePlan,
               ),
             ),
             const SizedBox(width: 12),
@@ -517,7 +612,7 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
                 title: '查看今日',
                 icon: Icons.today,
                 color: Colors.green,
-                onTap: () => _showComingSoon('查看今日'),
+                onTap: _navigateToPlanList,
               ),
             ),
           ],
@@ -566,37 +661,30 @@ class _DailyOverviewPageState extends ConsumerState<DailyOverviewPage> {
     );
   }
 
-  /// 显示即将推出提示
-  void _showComingSoon(String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.construction,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            const Text('即将推出'),
-          ],
-        ),
-        content: Text('$feature 功能正在开发中，敬请期待！'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 导航到课程表界面
   void _navigateToClassTable() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const ClassTableView(),
+      ),
+    );
+  }
+
+  /// 导航到计划列表界面
+  void _navigateToPlanList() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PlanListPage(),
+      ),
+    );
+  }
+
+  /// 导航到创建计划界面
+  void _navigateToCreatePlan() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CreatePlanPage(),
       ),
     );
   }
