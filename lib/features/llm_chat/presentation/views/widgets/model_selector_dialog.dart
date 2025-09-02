@@ -28,8 +28,6 @@ extension AIProviderUIHelpers on AIProvider {
     switch (this) {
       case AIProvider.openai:
         return 'OpenAI';
-      case AIProvider.openaiResponses:
-        return 'OpenAI Responses';
       case AIProvider.gemini:
         return 'Google Gemini';
       case AIProvider.claude:

@@ -23,10 +23,6 @@ mixin _$AppSettings {
   /// OpenAI API配置
   OpenAIConfig? get openaiConfig => throw _privateConstructorUsedError;
 
-  /// OpenAI Responses API配置
-  OpenAIResponsesConfig? get openaiResponsesConfig =>
-      throw _privateConstructorUsedError;
-
   /// Google Gemini API配置
   GeminiConfig? get geminiConfig => throw _privateConstructorUsedError;
 
@@ -78,7 +74,6 @@ abstract class $AppSettingsCopyWith<$Res> {
   @useResult
   $Res call(
       {OpenAIConfig? openaiConfig,
-      OpenAIResponsesConfig? openaiResponsesConfig,
       GeminiConfig? geminiConfig,
       ClaudeConfig? claudeConfig,
       DeepSeekConfig? deepseekConfig,
@@ -93,7 +88,6 @@ abstract class $AppSettingsCopyWith<$Res> {
       ThinkingChainSettings thinkingChainSettings});
 
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
-  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig;
   $GeminiConfigCopyWith<$Res>? get geminiConfig;
   $ClaudeConfigCopyWith<$Res>? get claudeConfig;
   $DeepSeekConfigCopyWith<$Res>? get deepseekConfig;
@@ -119,7 +113,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
   @override
   $Res call({
     Object? openaiConfig = freezed,
-    Object? openaiResponsesConfig = freezed,
     Object? geminiConfig = freezed,
     Object? claudeConfig = freezed,
     Object? deepseekConfig = freezed,
@@ -138,10 +131,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.openaiConfig
           : openaiConfig // ignore: cast_nullable_to_non_nullable
               as OpenAIConfig?,
-      openaiResponsesConfig: freezed == openaiResponsesConfig
-          ? _value.openaiResponsesConfig
-          : openaiResponsesConfig // ignore: cast_nullable_to_non_nullable
-              as OpenAIResponsesConfig?,
       geminiConfig: freezed == geminiConfig
           ? _value.geminiConfig
           : geminiConfig // ignore: cast_nullable_to_non_nullable
@@ -202,19 +191,6 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
 
     return $OpenAIConfigCopyWith<$Res>(_value.openaiConfig!, (value) {
       return _then(_value.copyWith(openaiConfig: value) as $Val);
-    });
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig {
-    if (_value.openaiResponsesConfig == null) {
-      return null;
-    }
-
-    return $OpenAIResponsesConfigCopyWith<$Res>(_value.openaiResponsesConfig!,
-        (value) {
-      return _then(_value.copyWith(openaiResponsesConfig: value) as $Val);
     });
   }
 
@@ -326,7 +302,6 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
   @useResult
   $Res call(
       {OpenAIConfig? openaiConfig,
-      OpenAIResponsesConfig? openaiResponsesConfig,
       GeminiConfig? geminiConfig,
       ClaudeConfig? claudeConfig,
       DeepSeekConfig? deepseekConfig,
@@ -342,8 +317,6 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
 
   @override
   $OpenAIConfigCopyWith<$Res>? get openaiConfig;
-  @override
-  $OpenAIResponsesConfigCopyWith<$Res>? get openaiResponsesConfig;
   @override
   $GeminiConfigCopyWith<$Res>? get geminiConfig;
   @override
@@ -376,7 +349,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? openaiConfig = freezed,
-    Object? openaiResponsesConfig = freezed,
     Object? geminiConfig = freezed,
     Object? claudeConfig = freezed,
     Object? deepseekConfig = freezed,
@@ -395,10 +367,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.openaiConfig
           : openaiConfig // ignore: cast_nullable_to_non_nullable
               as OpenAIConfig?,
-      openaiResponsesConfig: freezed == openaiResponsesConfig
-          ? _value.openaiResponsesConfig
-          : openaiResponsesConfig // ignore: cast_nullable_to_non_nullable
-              as OpenAIResponsesConfig?,
       geminiConfig: freezed == geminiConfig
           ? _value.geminiConfig
           : geminiConfig // ignore: cast_nullable_to_non_nullable
@@ -456,7 +424,6 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
 class _$AppSettingsImpl implements _AppSettings {
   const _$AppSettingsImpl(
       {this.openaiConfig,
-      this.openaiResponsesConfig,
       this.geminiConfig,
       this.claudeConfig,
       this.deepseekConfig,
@@ -476,10 +443,6 @@ class _$AppSettingsImpl implements _AppSettings {
   /// OpenAI API配置
   @override
   final OpenAIConfig? openaiConfig;
-
-  /// OpenAI Responses API配置
-  @override
-  final OpenAIResponsesConfig? openaiResponsesConfig;
 
   /// Google Gemini API配置
   @override
@@ -537,7 +500,7 @@ class _$AppSettingsImpl implements _AppSettings {
 
   @override
   String toString() {
-    return 'AppSettings(openaiConfig: $openaiConfig, openaiResponsesConfig: $openaiResponsesConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, thinkingChainSettings: $thinkingChainSettings)';
+    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, thinkingChainSettings: $thinkingChainSettings)';
   }
 
   @override
@@ -547,8 +510,6 @@ class _$AppSettingsImpl implements _AppSettings {
             other is _$AppSettingsImpl &&
             (identical(other.openaiConfig, openaiConfig) ||
                 other.openaiConfig == openaiConfig) &&
-            (identical(other.openaiResponsesConfig, openaiResponsesConfig) ||
-                other.openaiResponsesConfig == openaiResponsesConfig) &&
             (identical(other.geminiConfig, geminiConfig) ||
                 other.geminiConfig == geminiConfig) &&
             (identical(other.claudeConfig, claudeConfig) ||
@@ -580,7 +541,6 @@ class _$AppSettingsImpl implements _AppSettings {
   int get hashCode => Object.hash(
       runtimeType,
       openaiConfig,
-      openaiResponsesConfig,
       geminiConfig,
       claudeConfig,
       deepseekConfig,
@@ -611,7 +571,6 @@ class _$AppSettingsImpl implements _AppSettings {
 abstract class _AppSettings implements AppSettings {
   const factory _AppSettings(
       {final OpenAIConfig? openaiConfig,
-      final OpenAIResponsesConfig? openaiResponsesConfig,
       final GeminiConfig? geminiConfig,
       final ClaudeConfig? claudeConfig,
       final DeepSeekConfig? deepseekConfig,
@@ -632,10 +591,6 @@ abstract class _AppSettings implements AppSettings {
 
   /// OpenAI API配置
   OpenAIConfig? get openaiConfig;
-  @override
-
-  /// OpenAI Responses API配置
-  OpenAIResponsesConfig? get openaiResponsesConfig;
   @override
 
   /// Google Gemini API配置
@@ -914,319 +869,6 @@ abstract class _OpenAIConfig implements OpenAIConfig {
   @JsonKey(ignore: true)
   _$$OpenAIConfigImplCopyWith<_$OpenAIConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
-}
-
-OpenAIResponsesConfig _$OpenAIResponsesConfigFromJson(
-    Map<String, dynamic> json) {
-  return _OpenAIResponsesConfig.fromJson(json);
-}
-
-/// @nodoc
-mixin _$OpenAIResponsesConfig {
-  /// API密钥
-  String get apiKey => throw _privateConstructorUsedError;
-
-  /// 基础URL（可选，用于代理）
-  String? get baseUrl => throw _privateConstructorUsedError;
-
-  /// 组织ID（可选）
-  String? get organizationId => throw _privateConstructorUsedError;
-
-  /// 默认模型
-  String get defaultModel => throw _privateConstructorUsedError;
-
-  /// 是否启用Web搜索工具
-  bool get enableWebSearch => throw _privateConstructorUsedError;
-
-  /// 推理努力程度（用于o3/o4-mini等模型）
-  String? get reasoningEffort => throw _privateConstructorUsedError;
-
-  /// 最大推理令牌数
-  int? get maxReasoningTokens => throw _privateConstructorUsedError;
-
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
-  $OpenAIResponsesConfigCopyWith<OpenAIResponsesConfig> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class $OpenAIResponsesConfigCopyWith<$Res> {
-  factory $OpenAIResponsesConfigCopyWith(OpenAIResponsesConfig value,
-          $Res Function(OpenAIResponsesConfig) then) =
-      _$OpenAIResponsesConfigCopyWithImpl<$Res, OpenAIResponsesConfig>;
-  @useResult
-  $Res call(
-      {String apiKey,
-      String? baseUrl,
-      String? organizationId,
-      String defaultModel,
-      bool enableWebSearch,
-      String? reasoningEffort,
-      int? maxReasoningTokens});
-}
-
-/// @nodoc
-class _$OpenAIResponsesConfigCopyWithImpl<$Res,
-        $Val extends OpenAIResponsesConfig>
-    implements $OpenAIResponsesConfigCopyWith<$Res> {
-  _$OpenAIResponsesConfigCopyWithImpl(this._value, this._then);
-
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? apiKey = null,
-    Object? baseUrl = freezed,
-    Object? organizationId = freezed,
-    Object? defaultModel = null,
-    Object? enableWebSearch = null,
-    Object? reasoningEffort = freezed,
-    Object? maxReasoningTokens = freezed,
-  }) {
-    return _then(_value.copyWith(
-      apiKey: null == apiKey
-          ? _value.apiKey
-          : apiKey // ignore: cast_nullable_to_non_nullable
-              as String,
-      baseUrl: freezed == baseUrl
-          ? _value.baseUrl
-          : baseUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      organizationId: freezed == organizationId
-          ? _value.organizationId
-          : organizationId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      defaultModel: null == defaultModel
-          ? _value.defaultModel
-          : defaultModel // ignore: cast_nullable_to_non_nullable
-              as String,
-      enableWebSearch: null == enableWebSearch
-          ? _value.enableWebSearch
-          : enableWebSearch // ignore: cast_nullable_to_non_nullable
-              as bool,
-      reasoningEffort: freezed == reasoningEffort
-          ? _value.reasoningEffort
-          : reasoningEffort // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxReasoningTokens: freezed == maxReasoningTokens
-          ? _value.maxReasoningTokens
-          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ) as $Val);
-  }
-}
-
-/// @nodoc
-abstract class _$$OpenAIResponsesConfigImplCopyWith<$Res>
-    implements $OpenAIResponsesConfigCopyWith<$Res> {
-  factory _$$OpenAIResponsesConfigImplCopyWith(
-          _$OpenAIResponsesConfigImpl value,
-          $Res Function(_$OpenAIResponsesConfigImpl) then) =
-      __$$OpenAIResponsesConfigImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call(
-      {String apiKey,
-      String? baseUrl,
-      String? organizationId,
-      String defaultModel,
-      bool enableWebSearch,
-      String? reasoningEffort,
-      int? maxReasoningTokens});
-}
-
-/// @nodoc
-class __$$OpenAIResponsesConfigImplCopyWithImpl<$Res>
-    extends _$OpenAIResponsesConfigCopyWithImpl<$Res,
-        _$OpenAIResponsesConfigImpl>
-    implements _$$OpenAIResponsesConfigImplCopyWith<$Res> {
-  __$$OpenAIResponsesConfigImplCopyWithImpl(_$OpenAIResponsesConfigImpl _value,
-      $Res Function(_$OpenAIResponsesConfigImpl) _then)
-      : super(_value, _then);
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? apiKey = null,
-    Object? baseUrl = freezed,
-    Object? organizationId = freezed,
-    Object? defaultModel = null,
-    Object? enableWebSearch = null,
-    Object? reasoningEffort = freezed,
-    Object? maxReasoningTokens = freezed,
-  }) {
-    return _then(_$OpenAIResponsesConfigImpl(
-      apiKey: null == apiKey
-          ? _value.apiKey
-          : apiKey // ignore: cast_nullable_to_non_nullable
-              as String,
-      baseUrl: freezed == baseUrl
-          ? _value.baseUrl
-          : baseUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      organizationId: freezed == organizationId
-          ? _value.organizationId
-          : organizationId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      defaultModel: null == defaultModel
-          ? _value.defaultModel
-          : defaultModel // ignore: cast_nullable_to_non_nullable
-              as String,
-      enableWebSearch: null == enableWebSearch
-          ? _value.enableWebSearch
-          : enableWebSearch // ignore: cast_nullable_to_non_nullable
-              as bool,
-      reasoningEffort: freezed == reasoningEffort
-          ? _value.reasoningEffort
-          : reasoningEffort // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxReasoningTokens: freezed == maxReasoningTokens
-          ? _value.maxReasoningTokens
-          : maxReasoningTokens // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _$OpenAIResponsesConfigImpl implements _OpenAIResponsesConfig {
-  const _$OpenAIResponsesConfigImpl(
-      {required this.apiKey,
-      this.baseUrl,
-      this.organizationId,
-      this.defaultModel = 'gpt-4o',
-      this.enableWebSearch = false,
-      this.reasoningEffort,
-      this.maxReasoningTokens});
-
-  factory _$OpenAIResponsesConfigImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OpenAIResponsesConfigImplFromJson(json);
-
-  /// API密钥
-  @override
-  final String apiKey;
-
-  /// 基础URL（可选，用于代理）
-  @override
-  final String? baseUrl;
-
-  /// 组织ID（可选）
-  @override
-  final String? organizationId;
-
-  /// 默认模型
-  @override
-  @JsonKey()
-  final String defaultModel;
-
-  /// 是否启用Web搜索工具
-  @override
-  @JsonKey()
-  final bool enableWebSearch;
-
-  /// 推理努力程度（用于o3/o4-mini等模型）
-  @override
-  final String? reasoningEffort;
-
-  /// 最大推理令牌数
-  @override
-  final int? maxReasoningTokens;
-
-  @override
-  String toString() {
-    return 'OpenAIResponsesConfig(apiKey: $apiKey, baseUrl: $baseUrl, organizationId: $organizationId, defaultModel: $defaultModel, enableWebSearch: $enableWebSearch, reasoningEffort: $reasoningEffort, maxReasoningTokens: $maxReasoningTokens)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$OpenAIResponsesConfigImpl &&
-            (identical(other.apiKey, apiKey) || other.apiKey == apiKey) &&
-            (identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl) &&
-            (identical(other.organizationId, organizationId) ||
-                other.organizationId == organizationId) &&
-            (identical(other.defaultModel, defaultModel) ||
-                other.defaultModel == defaultModel) &&
-            (identical(other.enableWebSearch, enableWebSearch) ||
-                other.enableWebSearch == enableWebSearch) &&
-            (identical(other.reasoningEffort, reasoningEffort) ||
-                other.reasoningEffort == reasoningEffort) &&
-            (identical(other.maxReasoningTokens, maxReasoningTokens) ||
-                other.maxReasoningTokens == maxReasoningTokens));
-  }
-
-  @JsonKey(ignore: true)
-  @override
-  int get hashCode => Object.hash(runtimeType, apiKey, baseUrl, organizationId,
-      defaultModel, enableWebSearch, reasoningEffort, maxReasoningTokens);
-
-  @JsonKey(ignore: true)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
-      get copyWith => __$$OpenAIResponsesConfigImplCopyWithImpl<
-          _$OpenAIResponsesConfigImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OpenAIResponsesConfigImplToJson(
-      this,
-    );
-  }
-}
-
-abstract class _OpenAIResponsesConfig implements OpenAIResponsesConfig {
-  const factory _OpenAIResponsesConfig(
-      {required final String apiKey,
-      final String? baseUrl,
-      final String? organizationId,
-      final String defaultModel,
-      final bool enableWebSearch,
-      final String? reasoningEffort,
-      final int? maxReasoningTokens}) = _$OpenAIResponsesConfigImpl;
-
-  factory _OpenAIResponsesConfig.fromJson(Map<String, dynamic> json) =
-      _$OpenAIResponsesConfigImpl.fromJson;
-
-  @override
-
-  /// API密钥
-  String get apiKey;
-  @override
-
-  /// 基础URL（可选，用于代理）
-  String? get baseUrl;
-  @override
-
-  /// 组织ID（可选）
-  String? get organizationId;
-  @override
-
-  /// 默认模型
-  String get defaultModel;
-  @override
-
-  /// 是否启用Web搜索工具
-  bool get enableWebSearch;
-  @override
-
-  /// 推理努力程度（用于o3/o4-mini等模型）
-  String? get reasoningEffort;
-  @override
-
-  /// 最大推理令牌数
-  int? get maxReasoningTokens;
-  @override
-  @JsonKey(ignore: true)
-  _$$OpenAIResponsesConfigImplCopyWith<_$OpenAIResponsesConfigImpl>
-      get copyWith => throw _privateConstructorUsedError;
 }
 
 GeminiConfig _$GeminiConfigFromJson(Map<String, dynamic> json) {

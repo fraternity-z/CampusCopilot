@@ -11,10 +11,6 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
       openaiConfig: json['openaiConfig'] == null
           ? null
           : OpenAIConfig.fromJson(json['openaiConfig'] as Map<String, dynamic>),
-      openaiResponsesConfig: json['openaiResponsesConfig'] == null
-          ? null
-          : OpenAIResponsesConfig.fromJson(
-              json['openaiResponsesConfig'] as Map<String, dynamic>),
       geminiConfig: json['geminiConfig'] == null
           ? null
           : GeminiConfig.fromJson(json['geminiConfig'] as Map<String, dynamic>),
@@ -57,7 +53,6 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
     <String, dynamic>{
       'openaiConfig': instance.openaiConfig,
-      'openaiResponsesConfig': instance.openaiResponsesConfig,
       'geminiConfig': instance.geminiConfig,
       'claudeConfig': instance.claudeConfig,
       'deepseekConfig': instance.deepseekConfig,
@@ -80,7 +75,6 @@ const _$ThemeModeEnumMap = {
 
 const _$AIProviderEnumMap = {
   AIProvider.openai: 'openai',
-  AIProvider.openaiResponses: 'openaiResponses',
   AIProvider.gemini: 'gemini',
   AIProvider.claude: 'claude',
   AIProvider.deepseek: 'deepseek',
@@ -103,30 +97,6 @@ Map<String, dynamic> _$$OpenAIConfigImplToJson(_$OpenAIConfigImpl instance) =>
       'baseUrl': instance.baseUrl,
       'defaultModel': instance.defaultModel,
       'organizationId': instance.organizationId,
-    };
-
-_$OpenAIResponsesConfigImpl _$$OpenAIResponsesConfigImplFromJson(
-        Map<String, dynamic> json) =>
-    _$OpenAIResponsesConfigImpl(
-      apiKey: json['apiKey'] as String,
-      baseUrl: json['baseUrl'] as String?,
-      organizationId: json['organizationId'] as String?,
-      defaultModel: json['defaultModel'] as String? ?? 'gpt-4o',
-      enableWebSearch: json['enableWebSearch'] as bool? ?? false,
-      reasoningEffort: json['reasoningEffort'] as String?,
-      maxReasoningTokens: (json['maxReasoningTokens'] as num?)?.toInt(),
-    );
-
-Map<String, dynamic> _$$OpenAIResponsesConfigImplToJson(
-        _$OpenAIResponsesConfigImpl instance) =>
-    <String, dynamic>{
-      'apiKey': instance.apiKey,
-      'baseUrl': instance.baseUrl,
-      'organizationId': instance.organizationId,
-      'defaultModel': instance.defaultModel,
-      'enableWebSearch': instance.enableWebSearch,
-      'reasoningEffort': instance.reasoningEffort,
-      'maxReasoningTokens': instance.maxReasoningTokens,
     };
 
 _$GeminiConfigImpl _$$GeminiConfigImplFromJson(Map<String, dynamic> json) =>

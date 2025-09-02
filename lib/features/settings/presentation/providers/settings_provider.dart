@@ -54,11 +54,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
-  /// 更新OpenAI Responses配置
-  Future<void> updateOpenAIResponsesConfig(OpenAIResponsesConfig config) async {
-    state = state.copyWith(openaiResponsesConfig: config);
-    await _saveSettings();
-  }
 
   /// 更新Claude配置
   Future<void> updateClaudeConfig(ClaudeConfig config) async {
@@ -173,10 +168,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   /// 验证OpenAI Responses配置
-  bool validateOpenAIResponsesConfig() {
-    final config = state.openaiResponsesConfig;
-    return config != null && config.apiKey.isNotEmpty;
-  }
 
   /// 验证Claude配置
   bool validateClaudeConfig() {
@@ -220,9 +211,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
     if (validateOpenAIConfig()) {
       providers.add(AIProvider.openai);
-    }
-    if (validateOpenAIResponsesConfig()) {
-      providers.add(AIProvider.openaiResponses);
     }
     if (validateGeminiConfig()) {
       providers.add(AIProvider.gemini);
@@ -329,13 +317,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
                 : OpenAIConfig(apiKey: '', defaultModel: modelId),
           );
           break;
-        case AIProvider.openaiResponses:
-          updatedState = updatedState.copyWith(
-            openaiResponsesConfig: updatedState.openaiResponsesConfig != null
-                ? updatedState.openaiResponsesConfig!.copyWith(defaultModel: modelId)
-                : OpenAIResponsesConfig(apiKey: '', defaultModel: modelId),
-          );
-          break;
         case AIProvider.gemini:
           updatedState = updatedState.copyWith(
             geminiConfig: updatedState.geminiConfig != null
@@ -438,10 +419,6 @@ final openaiConfigValidProvider = Provider<bool>((ref) {
 });
 
 /// OpenAI Responses配置有效性Provider
-final openaiResponsesConfigValidProvider = Provider<bool>((ref) {
-  final notifier = ref.read(settingsProvider.notifier);
-  return notifier.validateOpenAIResponsesConfig();
-});
 
 /// Claude配置有效性Provider
 final claudeConfigValidProvider = Provider<bool>((ref) {
@@ -722,8 +699,6 @@ class ModelInfoWithProvider {
     switch (provider) {
       case AIProvider.openai:
         return 'OpenAI';
-      case AIProvider.openaiResponses:
-        return 'OpenAI Responses';
       case AIProvider.claude:
         return 'Anthropic';
       case AIProvider.gemini:
@@ -773,9 +748,6 @@ final databaseCurrentModelProvider = FutureProvider<ModelInfoWithProvider?>((
   switch (currentProvider) {
     case AIProvider.openai:
       defaultModel = settings.openaiConfig?.defaultModel;
-      break;
-    case AIProvider.openaiResponses:
-      defaultModel = settings.openaiResponsesConfig?.defaultModel;
       break;
     case AIProvider.gemini:
       defaultModel = settings.geminiConfig?.defaultModel;

@@ -32,6 +32,7 @@ import '../../../settings/domain/entities/search_config.dart';
 
 // 学习模式相关导入
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
+import '../utils/vision_model_checker.dart';
 
 /// 聊天服务
 ///
@@ -337,6 +338,7 @@ class ChatService {
         sessionId,
         session.config,
         enhancedUserMessage: enhancedPrompt != content ? enhancedPrompt : null,
+        currentImageUrls: [], // 非流式版本暂时不支持图片，需要后续扩展
       );
       // 当上下文窗口设置为0时，仍需确保当前用户输入被传递给模型
       if (contextMessages.isEmpty) {
@@ -482,11 +484,32 @@ class ChatService {
       final llmConfig = await _getLlmConfigById(persona.apiConfigId);
       debugPrint('🔧 LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
+      // 检查是否有图片但模型不支持视觉
+      if (imageUrls.isNotEmpty && !VisionModelChecker.isVisionModel(llmConfig.defaultModel)) {
+        final warningMessage = VisionModelChecker.getVisionWarningMessage(llmConfig.defaultModel);
+        debugPrint('⚠️ 视觉模型检查失败: $warningMessage');
+        
+        // 创建警告消息
+        final warningAIMessage = ChatMessageFactory.createErrorMessage(
+          content: warningMessage ?? '当前模型不支持图片处理，请切换到支持视觉功能的模型',
+          chatSessionId: sessionId,
+          parentMessageId: userMessage.id,
+        );
+        
+        await _database.insertMessage(_messageToCompanion(warningAIMessage));
+        yield warningAIMessage;
+        return;
+      }
+
       // 4. 创建LLM Provider
       final provider = LlmProviderFactory.createProvider(
         llmConfig.toLlmConfig(),
       );
       debugPrint('🤖 AI Provider已创建');
+      
+      if (imageUrls.isNotEmpty) {
+        debugPrint('🖼️ 发送包含${imageUrls.length}张图片的消息到模型: ${llmConfig.defaultModel}');
+      }
 
       // 4.5. 检查是否需要RAG增强
       String enhancedPrompt = content;
@@ -627,14 +650,26 @@ class ChatService {
               enhancedUserMessage: enhancedPrompt != content
                   ? enhancedPrompt
                   : null,
+              currentImageUrls: imageUrls, // 传递图片URLs
             )
           : [
-              // 如果不包含上下文，只使用当前用户消息
-              ChatMessageFactory.createUserMessage(
-                content: enhancedPrompt,
-                chatSessionId: sessionId,
-                parentMessageId: parentMessageId,
-              ),
+              // 如果不包含上下文，只使用当前用户消息（包含图片）
+              imageUrls.isNotEmpty
+                  ? ChatMessage(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      content: enhancedPrompt,
+                      isFromUser: true,
+                      timestamp: DateTime.now(),
+                      chatSessionId: sessionId,
+                      type: MessageType.image,
+                      imageUrls: imageUrls,
+                      parentMessageId: parentMessageId,
+                    )
+                  : ChatMessageFactory.createUserMessage(
+                      content: enhancedPrompt,
+                      chatSessionId: sessionId,
+                      parentMessageId: parentMessageId,
+                    ),
             ];
       if (contextMessages.isEmpty) {
         contextMessages.add(
@@ -1013,6 +1048,7 @@ class ChatService {
     String sessionId,
     ChatSessionConfig? config, {
     String? enhancedUserMessage,
+    List<String> currentImageUrls = const [], // 新增：当前消息的图片URLs
   }) async {
     // 从侧边栏参数获取上下文长度
     final params = _ref.read(modelParametersProvider);
@@ -1044,6 +1080,34 @@ class ChatService {
           content: enhancedUserMessage,
         );
       }
+    }
+
+    // 如果当前消息包含图片，需要添加到上下文中
+    if (currentImageUrls.isNotEmpty) {
+      // 创建包含图片的用户消息
+      final imageMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: enhancedUserMessage ?? '',
+        isFromUser: true,
+        timestamp: DateTime.now(),
+        chatSessionId: sessionId,
+        type: MessageType.image,
+        imageUrls: currentImageUrls,
+      );
+      
+      // 如果上下文为空或最后一条不是用户消息，直接添加
+      if (filteredMessages.isEmpty || !filteredMessages.last.isFromUser) {
+        filteredMessages.add(imageMessage);
+      } else {
+        // 替换最后一条用户消息，保留图片信息
+        filteredMessages[filteredMessages.length - 1] = filteredMessages.last.copyWith(
+          imageUrls: currentImageUrls,
+          type: MessageType.image,
+          content: enhancedUserMessage ?? filteredMessages.last.content,
+        );
+      }
+      
+      debugPrint('🖼️ 添加图片到上下文消息: ${currentImageUrls.length}张图片');
     }
 
     return filteredMessages;

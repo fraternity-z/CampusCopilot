@@ -1001,8 +1001,6 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     switch (providerId.toLowerCase()) {
       case 'openai':
         return AIProvider.openai;
-      case 'openai_responses':
-        return AIProvider.openaiResponses;
       case 'google':
       case 'gemini':
         return AIProvider.gemini;
@@ -1659,8 +1657,6 @@ class _ModelManagementDialogState extends ConsumerState<ModelManagementDialog> {
     switch (apiType) {
       case 'OpenAI':
         return ModelIconUtils.buildProviderIcon(AIProvider.openai, size: 20);
-      case 'OpenAI-Response':
-        return ModelIconUtils.buildProviderIcon(AIProvider.openaiResponses, size: 20);
       case 'Anthropic':
         return ModelIconUtils.buildProviderIcon(AIProvider.claude, size: 20);
       case 'Gemini':

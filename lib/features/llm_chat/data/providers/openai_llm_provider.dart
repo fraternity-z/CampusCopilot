@@ -95,6 +95,8 @@ class OpenAiLlmProvider extends LlmProvider {
           name: 'gpt-4o',
           type: ModelType.chat,
           supportsStreaming: true,
+          supportsVision: true, // 支持视觉功能
+          supportsFunctionCalling: true,
         ),
         ModelInfo(
           id: 'text-embedding-3-small',
