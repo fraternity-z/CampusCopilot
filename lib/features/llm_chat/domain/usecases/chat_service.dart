@@ -378,8 +378,9 @@ class ChatService {
       }
 
       // 6.5. 检查是否支持函数调用，如果支持则添加AI工具函数
-      final supportsTools = _checkModelSupportsTools(llmConfig.provider, llmConfig.defaultModel);
+      final supportsTools = ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.functionCalling);
       List<ToolDefinition>? tools;
+      debugPrint('🔧 工具支持检查: model=${llmConfig.defaultModel}, supportsTools=$supportsTools');
       if (supportsTools) {
         debugPrint('🔧 模型支持函数调用，添加AI工具函数');
         // 将 DailyManagementTools 的函数定义转换为 ToolDefinition
@@ -391,6 +392,11 @@ class ChatService {
           );
         }).toList();
         debugPrint('🛠️ 已添加${tools.length}个工具函数');
+        debugPrint('🛠️ 工具函数列表: ${tools.map((t) => t.name).join(', ')}');
+      } else {
+        debugPrint('⚠️ 模型不支持函数调用: ${llmConfig.defaultModel}');
+        final capabilities = ModelCapabilityChecker.getModelCapabilities(llmConfig.defaultModel);
+        debugPrint('🔍 模型能力: ${capabilities.map((c) => c.name).join(', ')}');
       }
 
       debugPrint('🔍 llmConfig.defaultModel 实际值: "${llmConfig.defaultModel}"');
@@ -1638,24 +1644,6 @@ class ChatService {
     return title.trim();
   }
 
-  /// 检查模型是否支持工具函数调用
-  bool _checkModelSupportsTools(String? provider, String? model) {
-    if (provider == null || model == null) return false;
-    switch (provider.toLowerCase()) {
-      case 'openai':
-        // GPT-4和GPT-3.5系列支持函数调用
-        return model.contains('gpt-4') || model.contains('gpt-3.5');
-      case 'anthropic':
-        // Claude系列支持函数调用
-        return model.contains('claude');
-      case 'google':
-        // Gemini Pro支持函数调用
-        return model.contains('gemini-pro') || model.contains('gemini-1.5');
-      default:
-        // 保守起见，未知提供商默认不支持
-        return false;
-    }
-  }
 
   /// 处理工具函数调用
   Future<ChatMessage> _handleToolCalls(

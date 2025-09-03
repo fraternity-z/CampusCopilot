@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show json;
 
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter/foundation.dart';
@@ -129,6 +130,16 @@ class OpenAiLlmProvider extends LlmProvider {
       
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
       
+      // 转换工具函数
+      List<ChatCompletionTool>? tools;
+      if (options?.tools != null && options!.tools!.isNotEmpty) {
+        tools = _convertToOpenAITools(options.tools!);
+        debugPrint('🔧 转换后的工具函数数量: ${tools.length}');
+        for (final tool in tools) {
+          debugPrint('🔧 工具函数: ${tool.function.name} - ${tool.function.description}');
+        }
+      }
+
       final request = CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(model),
         messages: openAIMessages,
@@ -139,6 +150,8 @@ class OpenAiLlmProvider extends LlmProvider {
         stop: options?.stopSequences != null 
             ? ChatCompletionStop.listString(options!.stopSequences!) 
             : null,
+        // 添加工具函数支持
+        tools: tools,
       );
 
       final chatCompletion = await _client.createChatCompletion(request: request);
@@ -154,7 +167,20 @@ class OpenAiLlmProvider extends LlmProvider {
       final originalContent = choice.message.content ?? '';
 
       debugPrint('🧠 接收完整响应内容: 长度=${originalContent.length}');
-
+      debugPrint('🧠 完成原因: ${choice.finishReason?.name}');
+      
+      // 处理工具调用
+      final toolCalls = _convertToToolCalls(choice.message.toolCalls);
+      if (toolCalls.isNotEmpty) {
+        debugPrint('🔧 检测到 ${toolCalls.length} 个工具调用');
+        for (final call in toolCalls) {
+          debugPrint('🔧 工具调用: ${call.name} (${call.id})');
+          debugPrint('🔧 参数: ${call.arguments}');
+        }
+      } else if (choice.message.toolCalls?.isNotEmpty == true) {
+        debugPrint('⚠️ 原始工具调用存在但转换后为空: ${choice.message.toolCalls?.length}');
+      }
+      
       return ChatResult(
         content: originalContent, // 保存完整内容，UI层面分离显示
         model: model,
@@ -164,6 +190,7 @@ class OpenAiLlmProvider extends LlmProvider {
           totalTokens: usage?.totalTokens ?? 0,
         ),
         finishReason: _convertFinishReason(choice.finishReason?.name),
+        toolCalls: toolCalls, // 添加工具调用结果
       );
     } catch (e) {
       throw _handleOpenAIError(e);
@@ -183,6 +210,13 @@ class OpenAiLlmProvider extends LlmProvider {
       
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
       
+      // 转换工具函数
+      List<ChatCompletionTool>? tools;
+      if (options?.tools != null && options!.tools!.isNotEmpty) {
+        tools = _convertToOpenAITools(options.tools!);
+        debugPrint('🔧 流式响应 - 转换后的工具函数数量: ${tools.length}');
+      }
+
       final request = CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(model),
         messages: openAIMessages,
@@ -193,12 +227,15 @@ class OpenAiLlmProvider extends LlmProvider {
         stop: options?.stopSequences != null 
             ? ChatCompletionStop.listString(options!.stopSequences!) 
             : null,
+        // 添加工具函数支持
+        tools: tools,
         stream: true,
       );
 
       final stream = _client.createChatCompletionStream(request: request);
 
       String accumulatedContent = ''; // 累积完整原始内容
+      List<ToolCall> accumulatedToolCalls = []; // 累积工具调用
 
       await for (final chunk in stream) {
         if (chunk.choices?.isEmpty ?? true) continue;
@@ -219,8 +256,17 @@ class OpenAiLlmProvider extends LlmProvider {
           );
         }
 
+        // 处理工具调用增量（流式响应中工具调用通常在最后一个chunk中）
+        if (delta?.toolCalls != null && delta!.toolCalls!.isNotEmpty) {
+          final deltaToolCalls = _convertStreamToolCalls(delta.toolCalls!);
+          if (deltaToolCalls.isNotEmpty) {
+            // 流式响应中工具调用通常是完整的，直接设置
+            accumulatedToolCalls.addAll(deltaToolCalls);
+          }
+        }
+
         if (choice.finishReason != null) {
-          debugPrint('🧠 流式响应完成: 内容长度=${accumulatedContent.length}');
+          debugPrint('🧠 流式响应完成: 内容长度=${accumulatedContent.length}, 工具调用=${accumulatedToolCalls.length}');
 
           yield StreamedChatResult(
             content: accumulatedContent, // 保存完整内容，UI层面分离显示
@@ -232,6 +278,7 @@ class OpenAiLlmProvider extends LlmProvider {
               totalTokens: accumulatedContent.split(' ').length,
             ),
             finishReason: _convertFinishReason(choice.finishReason?.name),
+            toolCalls: accumulatedToolCalls.isNotEmpty ? accumulatedToolCalls : null, // 添加工具调用
           );
         }
       }
@@ -417,7 +464,80 @@ class OpenAiLlmProvider extends LlmProvider {
     return openAIMessages;
   }
 
-  // 工具调用功能暂时移除，等待OpenAI包API稳定
+  /// 将ToolDefinition转换为OpenAI工具格式
+  List<ChatCompletionTool> _convertToOpenAITools(List<ToolDefinition> tools) {
+    return tools.map((tool) {
+      return ChatCompletionTool(
+        type: ChatCompletionToolType.function,
+        function: FunctionObject(
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        ),
+      );
+    }).toList();
+  }
+
+  /// 将OpenAI工具调用转换为ToolCall格式（非流式）
+  List<ToolCall> _convertToToolCalls(List<ChatCompletionMessageToolCall>? openAiToolCalls) {
+    if (openAiToolCalls == null || openAiToolCalls.isEmpty) {
+      return [];
+    }
+
+    return openAiToolCalls.map((toolCall) {
+      // 解析函数参数
+      Map<String, dynamic> arguments = {};
+      try {
+        final argumentsStr = toolCall.function.arguments;
+        if (argumentsStr.isNotEmpty) {
+          arguments = json.decode(argumentsStr) as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('⚠️ 解析工具调用参数失败: $e, 原始参数: ${toolCall.function.arguments}');
+        // 如果JSON解析失败，尝试作为字符串处理
+        arguments = {'raw_arguments': toolCall.function.arguments};
+      }
+
+      debugPrint('🔧 转换工具调用: ${toolCall.function.name}, 参数: $arguments');
+
+      return ToolCall(
+        id: toolCall.id,
+        name: toolCall.function.name,
+        arguments: arguments,
+      );
+    }).toList();
+  }
+
+  /// 将流式工具调用转换为ToolCall格式
+  List<ToolCall> _convertStreamToolCalls(List<ChatCompletionStreamMessageToolCallChunk>? streamToolCalls) {
+    if (streamToolCalls == null || streamToolCalls.isEmpty) {
+      return [];
+    }
+
+    return streamToolCalls.map((toolCall) {
+      // 解析函数参数
+      Map<String, dynamic> arguments = {};
+      try {
+        final argumentsStr = toolCall.function?.arguments;
+        if (argumentsStr != null && argumentsStr.isNotEmpty) {
+          arguments = json.decode(argumentsStr) as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('⚠️ 解析流式工具调用参数失败: $e, 原始参数: ${toolCall.function?.arguments}');
+        // 如果JSON解析失败，尝试作为字符串处理
+        arguments = {'raw_arguments': toolCall.function?.arguments ?? ''};
+      }
+
+      final functionName = toolCall.function?.name ?? 'unknown';
+      debugPrint('🔧 转换流式工具调用: $functionName, 参数: $arguments');
+
+      return ToolCall(
+        id: toolCall.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        name: functionName,
+        arguments: arguments,
+      );
+    }).toList();
+  }
 
   /// 转换完成原因
   FinishReason _convertFinishReason(String? reason) {
