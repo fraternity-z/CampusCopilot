@@ -36,6 +36,10 @@ import '../../../settings/domain/entities/search_config.dart';
 // 学习模式相关导入
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
+// AI工具函数相关导入
+import '../tools/daily_management_tools.dart';
+import '../../presentation/providers/ai_plan_bridge_provider.dart';
+
 
 /// 聊天服务
 ///
@@ -373,6 +377,22 @@ class ChatService {
         mergedCustom['enableModelNativeSearch'] = true;
       }
 
+      // 6.5. 检查是否支持函数调用，如果支持则添加AI工具函数
+      final supportsTools = _checkModelSupportsTools(llmConfig.provider, llmConfig.defaultModel);
+      List<ToolDefinition>? tools;
+      if (supportsTools) {
+        debugPrint('🔧 模型支持函数调用，添加AI工具函数');
+        // 将 DailyManagementTools 的函数定义转换为 ToolDefinition
+        tools = DailyManagementTools.getFunctionDefinitions().map((funcDef) {
+          return ToolDefinition(
+            name: funcDef['name'] as String,
+            description: funcDef['description'] as String,
+            parameters: funcDef['parameters'] as Map<String, dynamic>,
+          );
+        }).toList();
+        debugPrint('🛠️ 已添加${tools.length}个工具函数');
+      }
+
       debugPrint('🔍 llmConfig.defaultModel 实际值: "${llmConfig.defaultModel}"');
       debugPrint('🔍 llmConfig.defaultModel 是否为空: ${llmConfig.defaultModel?.isEmpty ?? true}');
       
@@ -387,19 +407,12 @@ class ChatService {
         ),
         maxReasoningTokens: params.maxReasoningTokens,
         customParams: mergedCustom.isNotEmpty ? mergedCustom : null,
+        tools: tools, // 添加工具函数
       );
 
       debugPrint(
         '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
       );
-
-      // 6.5. 检查是否支持函数调用，如果支持则添加AI工具函数
-      final supportsTools = _checkModelSupportsTools(llmConfig.provider, llmConfig.defaultModel);
-      if (supportsTools) {
-        debugPrint('🔧 模型支持函数调用，添加AI工具函数');
-        // TODO: 添加工具函数支持，当前跳过避免编译错误
-        // chatOptions = chatOptions.copyWith(tools: DailyManagementTools.getFunctionDefinitions());
-      }
 
       final result = await provider.generateChat(
         contextMessages,
@@ -407,11 +420,10 @@ class ChatService {
       );
 
       // 6.6. 处理函数调用请求
-      // TODO: 添加工具函数调用处理，当前跳过避免编译错误
-      // if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
-      //   debugPrint('🤖 AI请求执行函数调用，数量: ${result.toolCalls!.length}');
-      //   return await _handleToolCalls(result, sessionId, userMessage, contextMessages, chatOptions, provider);
-      // }
+      if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
+        debugPrint('🤖 AI请求执行函数调用，数量: ${result.toolCalls!.length}');
+        return await _handleToolCalls(result, sessionId, userMessage, contextMessages, chatOptions, provider);
+      }
 
       // 7. 创建AI响应消息
       final aiMessage =
@@ -1645,8 +1657,309 @@ class ChatService {
     }
   }
 
-  // TODO: 工具函数调用处理方法将在后续版本中实现
-  // 当前版本专注于基础架构搭建，工具函数调用功能已预留接口
+  /// 处理工具函数调用
+  Future<ChatMessage> _handleToolCalls(
+    ChatResult result,
+    String sessionId,
+    ChatMessage userMessage,
+    List<ChatMessage> contextMessages,
+    ChatOptions chatOptions,
+    LlmProvider provider,
+  ) async {
+    debugPrint('🛠️ 开始处理工具函数调用');
+    
+    try {
+      // 获取AI计划桥接服务
+      final bridgeService = _ref.read(aiPlanBridgeServiceProvider);
+      final aiToolsNotifier = _ref.read(aiToolsStateProvider.notifier);
+      final activeFunctionCallNotifier = _ref.read(activeFunctionCallProvider.notifier);
+      final statisticsNotifier = _ref.read(aiToolsStatisticsProvider.notifier);
+      
+      // 记录工具函数执行开始
+      aiToolsNotifier.setExecuting(true);
+      
+      // 存储所有函数调用结果
+      final List<Map<String, dynamic>> functionResults = [];
+      
+      // 逐一处理每个函数调用
+      for (final toolCall in result.toolCalls!) {
+        final startTime = DateTime.now();
+        
+        debugPrint('🔧 执行函数: ${toolCall.name}');
+        debugPrint('📋 函数参数: ${toolCall.arguments}');
+        
+        // 记录活跃函数调用
+        activeFunctionCallNotifier.startFunctionCall(
+          toolCall.name,
+          toolCall.arguments,
+          sessionId: sessionId,
+        );
+        
+        try {
+          // 执行函数调用
+          final functionResult = await bridgeService.handleFunctionCall(
+            toolCall.name,
+            toolCall.arguments,
+          );
+          
+          final executionTime = DateTime.now().difference(startTime);
+          
+          if (functionResult.success) {
+            debugPrint('✅ 函数执行成功: ${toolCall.name}');
+            debugPrint('📊 执行结果: ${functionResult.data}');
+            
+            // 记录成功统计
+            statisticsNotifier.recordSuccess(toolCall.name, executionTime);
+            
+            functionResults.add({
+              'function_name': toolCall.name,
+              'call_id': toolCall.id,
+              'success': true,
+              'result': functionResult.data,
+              'message': functionResult.message,
+              'execution_time_ms': executionTime.inMilliseconds,
+            });
+          } else {
+            debugPrint('❌ 函数执行失败: ${toolCall.name}');
+            debugPrint('💥 错误信息: ${functionResult.error}');
+            
+            // 记录失败统计
+            statisticsNotifier.recordFailure(toolCall.name, executionTime);
+            
+            functionResults.add({
+              'function_name': toolCall.name,
+              'call_id': toolCall.id,
+              'success': false,
+              'error': functionResult.error,
+              'execution_time_ms': executionTime.inMilliseconds,
+            });
+          }
+        } catch (e) {
+          final executionTime = DateTime.now().difference(startTime);
+          debugPrint('💥 函数调用异常: ${toolCall.name} - $e');
+          
+          // 记录失败统计
+          statisticsNotifier.recordFailure(toolCall.name, executionTime);
+          
+          functionResults.add({
+            'function_name': toolCall.name,
+            'call_id': toolCall.id,
+            'success': false,
+            'error': '函数调用异常: ${e.toString()}',
+            'execution_time_ms': executionTime.inMilliseconds,
+          });
+        } finally {
+          // 结束活跃函数调用记录
+          activeFunctionCallNotifier.endFunctionCall();
+        }
+      }
+      
+      // 构建AI响应内容，包含原始内容和函数执行结果
+      final functionResultsText = _formatFunctionResults(functionResults);
+      final aiContent = result.content.isNotEmpty 
+          ? '${result.content}\n\n$functionResultsText'
+          : functionResultsText;
+      
+      // 创建包含函数调用结果的AI消息
+      final aiMessage = ChatMessageFactory.createAIMessage(
+        content: aiContent,
+        chatSessionId: sessionId,
+        parentMessageId: userMessage.id,
+        tokenCount: result.tokenUsage.totalTokens,
+      ).copyWith(
+        modelName: chatOptions.model,
+        thinkingContent: result.thinkingContent,
+        thinkingComplete: result.thinkingContent != null,
+        // 可以在metadata中保存详细的函数调用信息
+        metadata: {
+          'function_calls': functionResults,
+          'tool_calls_count': result.toolCalls!.length,
+        },
+      );
+      
+      // 清除执行状态
+      aiToolsNotifier.setExecuting(false);
+      aiToolsNotifier.clearError();
+      
+      debugPrint('🎯 工具函数调用处理完成，执行了${functionResults.length}个函数');
+      
+      return aiMessage;
+      
+    } catch (e, stackTrace) {
+      debugPrint('💥 处理工具函数调用时发生错误: $e');
+      debugPrint('📍 错误堆栈: $stackTrace');
+      
+      // 更新错误状态
+      final aiToolsNotifier = _ref.read(aiToolsStateProvider.notifier);
+      aiToolsNotifier.setError('工具函数调用处理失败: ${e.toString()}');
+      
+      // 创建错误消息
+      return ChatMessageFactory.createErrorMessage(
+        content: '抱歉，执行工具函数时出现错误：${e.toString()}',
+        chatSessionId: sessionId,
+        parentMessageId: userMessage.id,
+      );
+    }
+  }
+  
+  /// 格式化函数执行结果为用户可读的文本
+  String _formatFunctionResults(List<Map<String, dynamic>> functionResults) {
+    final buffer = StringBuffer();
+    buffer.writeln('📋 **函数执行结果:**\n');
+    
+    for (int i = 0; i < functionResults.length; i++) {
+      final result = functionResults[i];
+      final functionName = result['function_name'] as String;
+      final success = result['success'] as bool;
+      final executionTime = result['execution_time_ms'] as int;
+      
+      buffer.writeln('${i + 1}. **${DailyManagementTools.getFunctionDescription(functionName)}**');
+      
+      if (success) {
+        buffer.writeln('   ✅ 执行成功 (${executionTime}ms)');
+        
+        final message = result['message'] as String?;
+        if (message != null && message.isNotEmpty) {
+          buffer.writeln('   📄 $message');
+        }
+        
+        // 根据函数类型格式化结果数据
+        _formatFunctionData(buffer, functionName, result['result']);
+      } else {
+        buffer.writeln('   ❌ 执行失败 (${executionTime}ms)');
+        final error = result['error'] as String?;
+        if (error != null && error.isNotEmpty) {
+          buffer.writeln('   💥 错误: $error');
+        }
+      }
+      
+      buffer.writeln();
+    }
+    
+    return buffer.toString();
+  }
+  
+  /// 格式化特定函数的数据结果
+  void _formatFunctionData(StringBuffer buffer, String functionName, dynamic data) {
+    if (data == null) return;
+    
+    switch (functionName) {
+      case 'read_course_schedule':
+        _formatCourseScheduleData(buffer, data);
+        break;
+      case 'get_study_plans':
+        _formatStudyPlansData(buffer, data);
+        break;
+      case 'analyze_course_workload':
+        _formatWorkloadAnalysisData(buffer, data);
+        break;
+      case 'create_study_plan':
+      case 'update_study_plan':
+        _formatPlanOperationData(buffer, data);
+        break;
+      default:
+        // 通用格式化
+        if (data is Map) {
+          final summary = data['message'] ?? data['summary'] ?? '';
+          if (summary.isNotEmpty) {
+            buffer.writeln('   📝 $summary');
+          }
+        }
+    }
+  }
+  
+  /// 格式化课程表数据
+  void _formatCourseScheduleData(StringBuffer buffer, Map<String, dynamic> data) {
+    final courses = data['courses'] as List?;
+    if (courses == null || courses.isEmpty) {
+      buffer.writeln('   📚 暂无课程安排');
+      return;
+    }
+    
+    buffer.writeln('   📚 找到 ${courses.length} 门课程:');
+    for (final course in courses.take(3)) { // 最多显示3门课程
+      final name = course['course_name'] ?? '未知课程';
+      final time = course['time'] ?? '';
+      final teacher = course['teacher'] ?? '';
+      final classroom = course['classroom'] ?? '';
+      
+      buffer.write('     • $name');
+      if (time.isNotEmpty) buffer.write(' ($time)');
+      if (teacher.isNotEmpty) buffer.write(' - $teacher');
+      if (classroom.isNotEmpty) buffer.write(' @ $classroom');
+      buffer.writeln();
+    }
+    
+    if (courses.length > 3) {
+      buffer.writeln('     ... 以及其他 ${courses.length - 3} 门课程');
+    }
+  }
+  
+  /// 格式化学习计划数据
+  void _formatStudyPlansData(StringBuffer buffer, Map<String, dynamic> data) {
+    final plans = data['plans'] as List?;
+    if (plans == null || plans.isEmpty) {
+      buffer.writeln('   📋 暂无学习计划');
+      return;
+    }
+    
+    buffer.writeln('   📋 找到 ${plans.length} 个计划:');
+    for (final plan in plans.take(3)) { // 最多显示3个计划
+      final title = plan['title'] ?? '未知计划';
+      final status = plan['status'] ?? '';
+      final progress = plan['progress'] ?? 0;
+      final priority = plan['priority'] ?? '';
+      
+      buffer.write('     • $title');
+      if (status.isNotEmpty) {
+        final statusEmoji = status == 'completed' ? '✅' : 
+                           status == 'in_progress' ? '🔄' : '⏸️';
+        buffer.write(' $statusEmoji');
+      }
+      if (progress > 0) buffer.write(' ($progress%)');
+      if (priority.isNotEmpty && priority != 'medium') {
+        final priorityEmoji = priority == 'high' ? '🔴' : '🟡';
+        buffer.write(' $priorityEmoji');
+      }
+      buffer.writeln();
+    }
+    
+    if (plans.length > 3) {
+      buffer.writeln('     ... 以及其他 ${plans.length - 3} 个计划');
+    }
+  }
+  
+  /// 格式化工作量分析数据
+  void _formatWorkloadAnalysisData(StringBuffer buffer, Map<String, dynamic> data) {
+    final summary = data['summary'] as String?;
+    if (summary != null && summary.isNotEmpty) {
+      buffer.writeln('   📊 $summary');
+    }
+    
+    final recommendations = data['recommendations'] as List?;
+    if (recommendations != null && recommendations.isNotEmpty) {
+      buffer.writeln('   💡 建议:');
+      for (final recommendation in recommendations.take(2)) {
+        buffer.writeln('     • $recommendation');
+      }
+      if (recommendations.length > 2) {
+        buffer.writeln('     ... 以及其他 ${recommendations.length - 2} 条建议');
+      }
+    }
+  }
+  
+  /// 格式化计划操作数据
+  void _formatPlanOperationData(StringBuffer buffer, Map<String, dynamic> data) {
+    final planTitle = data['title'] as String?;
+    final planId = data['plan_id'] as String?;
+    
+    if (planTitle != null) {
+      buffer.writeln('   📌 计划: $planTitle');
+    }
+    if (planId != null) {
+      buffer.writeln('   🆔 ID: ${planId.substring(0, 8)}...');
+    }
+  }
 }
 
 /// 聊天服务Provider（单例）
