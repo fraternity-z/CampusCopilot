@@ -78,8 +78,8 @@ dependencies:
   path: ^1.9.0
 
   # 本地持久化 - 向量数据库
-  objectbox: ^4.0.2
-  objectbox_flutter_libs: ^4.0.2
+  objectbox: ^4.1.0
+  objectbox_flutter_libs: ^4.1.0
 
   # 简单键值存储
   shared_preferences: ^2.5.3
@@ -89,7 +89,7 @@ dependencies:
   json_annotation: ^4.9.0
 
   # AI供应商SDK
-  dart_openai: ^5.1.0
+  openai_dart: ^0.5.4+1
   google_generative_ai: ^0.4.3
   anthropic_sdk_dart: ^0.2.1
 

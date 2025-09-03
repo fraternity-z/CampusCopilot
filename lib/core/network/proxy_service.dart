@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 
 import 'dio_client.dart';
 import 'proxy_config.dart';
 import '../../features/settings/presentation/providers/general_settings_provider.dart';
+import '../../shared/utils/debug_log.dart';
 
 /// 代理服务
 ///
@@ -21,9 +21,7 @@ class ProxyService {
       _dioClient.updateProxyConfig(config);
       _lastConfig = config;
 
-      if (kDebugMode) {
-        debugPrint('🌐 代理服务已更新配置: ${config.mode.displayName}');
-      }
+      debugLog(() => '🌐 代理服务已更新配置: ${config.mode.displayName}');
     }
   }
 

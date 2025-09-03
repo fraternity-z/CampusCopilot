@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '../../../../shared/utils/debug_log.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../objectbox.g.dart'; // ObjectBox 生成的代码
@@ -33,31 +33,52 @@ class ObjectBoxManager {
   Future<bool> initialize() async {
     try {
       if (_store != null) {
-        debugPrint('🔄 ObjectBox 数据库已经初始化');
+        debugLog(() =>'🔄 ObjectBox 数据库已经初始化');
         return true;
       }
 
-      debugPrint('🔌 初始化 ObjectBox 数据库...');
+      debugLog(() =>'🔌 初始化 ObjectBox 数据库...');
 
       // 获取数据库目录
       final dbDirectory = await _getDatabaseDirectory();
 
-      // 创建 Store
-      _store = await openStore(directory: dbDirectory);
+      // 尝试创建 Store
+      try {
+        _store = await openStore(directory: dbDirectory);
+      } catch (e) {
+        // 检查是否是模式不匹配错误
+        if (e.toString().contains('does not match existing UID') || 
+            e.toString().contains('failed to create store')) {
+          debugLog(() =>'🔧 检测到数据库模式不匹配，尝试自动重建...');
+          
+          // 删除现有数据库文件并重新创建
+          final dbDir = Directory(dbDirectory);
+          if (await dbDir.exists()) {
+            await dbDir.delete(recursive: true);
+            debugLog(() =>'🗑️ 已清理不兼容的数据库文件');
+          }
+          
+          // 重新创建数据库
+          _store = await openStore(directory: dbDirectory);
+          debugLog(() =>'✅ 数据库重建成功');
+        } else {
+          rethrow;
+        }
+      }
 
       // 初始化 Box
       _collectionBox = _store!.box<VectorCollectionEntity>();
       _documentBox = _store!.box<VectorDocumentEntity>();
 
-      debugPrint('✅ ObjectBox 数据库初始化成功');
-      debugPrint('📊 数据库路径: $dbDirectory');
-      debugPrint('📊 集合数量: ${_collectionBox!.count()}');
-      debugPrint('📊 文档数量: ${_documentBox!.count()}');
+      debugLog(() =>'✅ ObjectBox 数据库初始化成功');
+      debugLog(() =>'📊 数据库路径: $dbDirectory');
+      debugLog(() =>'📊 集合数量: ${_collectionBox!.count()}');
+      debugLog(() =>'📊 文档数量: ${_documentBox!.count()}');
 
       return true;
     } catch (e, stackTrace) {
-      debugPrint('❌ ObjectBox 数据库初始化失败: $e');
-      debugPrint('Stack trace: $stackTrace');
+      debugLog(() =>'❌ ObjectBox 数据库初始化失败: $e');
+      debugLog(() =>'Stack trace: $stackTrace');
       return false;
     }
   }
@@ -70,10 +91,10 @@ class ObjectBoxManager {
         _store = null;
         _collectionBox = null;
         _documentBox = null;
-        debugPrint('🔌 ObjectBox 数据库连接已关闭');
+        debugLog(() =>'🔌 ObjectBox 数据库连接已关闭');
       }
     } catch (e) {
-      debugPrint('❌ 关闭 ObjectBox 数据库失败: $e');
+      debugLog(() =>'❌ 关闭 ObjectBox 数据库失败: $e');
     }
   }
 
@@ -139,9 +160,38 @@ class ObjectBoxManager {
     try {
       await _documentBox!.removeAllAsync();
       await _collectionBox!.removeAllAsync();
-      debugPrint('🧹 ObjectBox 数据库已清理');
+      debugLog(() =>'🧹 ObjectBox 数据库已清理');
     } catch (e) {
-      debugPrint('❌ 清理 ObjectBox 数据库失败: $e');
+      debugLog(() =>'❌ 清理 ObjectBox 数据库失败: $e');
+    }
+  }
+
+  /// 重建数据库（修复Schema不匹配问题）
+  Future<bool> rebuildDatabase() async {
+    try {
+      debugLog(() =>'🔄 开始重建ObjectBox数据库...');
+      
+      // 关闭现有连接
+      await close();
+      
+      // 删除数据库文件
+      final dbDirectory = await _getDatabaseDirectory();
+      final dbDir = Directory(dbDirectory);
+      if (await dbDir.exists()) {
+        await dbDir.delete(recursive: true);
+        debugLog(() =>'🗑️ 已删除旧数据库文件');
+      }
+      
+      // 重新初始化
+      final success = await initialize();
+      if (success) {
+        debugLog(() =>'✅ ObjectBox数据库重建成功，HNSW索引已启用');
+      }
+      
+      return success;
+    } catch (e) {
+      debugLog(() =>'❌ 重建数据库失败: $e');
+      return false;
     }
   }
 }

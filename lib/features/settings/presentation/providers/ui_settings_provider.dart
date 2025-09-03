@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/local/app_database.dart';
+import '../../../../shared/utils/debug_log.dart';
 
 import '../../../../core/di/database_providers.dart';
 
@@ -68,12 +68,12 @@ class UISettingsNotifier extends StateNotifier<UISettingsState> {
         isLoading: false,
       );
 
-      debugPrint(
+      debugLog(() =>
         '🎨 UI设置已加载: 侧边栏折叠=${state.sidebarCollapsed}, 宽度=${state.sidebarWidth}',
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: '加载UI设置失败: $e');
-      debugPrint('❌ 加载UI设置失败: $e');
+      debugLog(() =>'❌ 加载UI设置失败: $e');
     }
   }
 
@@ -85,10 +85,10 @@ class UISettingsNotifier extends StateNotifier<UISettingsState> {
         collapsed.toString(),
       );
       state = state.copyWith(sidebarCollapsed: collapsed);
-      debugPrint('🎨 侧边栏折叠状态已保存: $collapsed');
+      debugLog(() =>'🎨 侧边栏折叠状态已保存: $collapsed');
     } catch (e) {
       state = state.copyWith(error: '保存侧边栏设置失败: $e');
-      debugPrint('❌ 保存侧边栏折叠状态失败: $e');
+      debugLog(() =>'❌ 保存侧边栏折叠状态失败: $e');
     }
   }
 
@@ -97,10 +97,10 @@ class UISettingsNotifier extends StateNotifier<UISettingsState> {
     try {
       await _database.setSetting(UISettingsKeys.sidebarWidth, width.toString());
       state = state.copyWith(sidebarWidth: width);
-      debugPrint('🎨 侧边栏宽度已保存: $width');
+      debugLog(() =>'🎨 侧边栏宽度已保存: $width');
     } catch (e) {
       state = state.copyWith(error: '保存侧边栏宽度失败: $e');
-      debugPrint('❌ 保存侧边栏宽度失败: $e');
+      debugLog(() =>'❌ 保存侧边栏宽度失败: $e');
     }
   }
 

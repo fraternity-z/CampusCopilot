@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
+import '../../../../shared/utils/debug_log.dart';
 
 import '../../../../objectbox.g.dart'; // ObjectBox 生成的代码
 import '../../domain/services/vector_database_interface.dart';
@@ -19,21 +19,35 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
   @override
   Future<bool> initialize() async {
     try {
-      debugPrint('🔌 初始化 ObjectBox 向量数据库客户端...');
+      debugLog(() =>'🔌 初始化 ObjectBox 向量数据库客户端...');
 
       final success = await _objectBoxManager.initialize();
       if (success) {
         _isInitialized = true;
-        debugPrint('✅ ObjectBox 向量数据库客户端初始化成功');
+        debugLog(() =>'✅ ObjectBox 向量数据库客户端初始化成功');
 
         // 打印数据库统计信息
         final stats = _objectBoxManager.getDatabaseStats();
-        debugPrint('📊 数据库统计: $stats');
+        debugLog(() =>'📊 数据库统计: $stats');
+        
+        // 检验数据库健康状态
+        if (!_objectBoxManager.isHealthy) {
+          debugLog(() =>'⚠️ 数据库初始化后健康检查失败');
+          return false;
+        }
+      } else {
+        debugLog(() =>'❌ ObjectBox 数据库管理器初始化失败');
       }
 
       return success;
     } catch (e) {
-      debugPrint('❌ ObjectBox 向量数据库客户端初始化失败: $e');
+      debugLog(() =>'❌ ObjectBox 向量数据库客户端初始化失败: $e');
+      
+      // 如果是模式不匹配错误，提供友好提示
+      if (e.toString().contains('does not match existing UID')) {
+        debugLog(() =>'💡 提示：数据库模式已更新，原有数据将被清理以确保兼容性');
+      }
+      
       return false;
     }
   }
@@ -43,7 +57,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     if (_isInitialized) {
       await _objectBoxManager.close();
       _isInitialized = false;
-      debugPrint('🔌 ObjectBox 向量数据库客户端连接已关闭');
+      debugLog(() =>'🔌 ObjectBox 向量数据库客户端连接已关闭');
     }
   }
 
@@ -60,7 +74,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      debugPrint(
+      debugLog(() =>
         '📁 创建 ObjectBox 向量集合: $collectionName (维度: $vectorDimension)',
       );
 
@@ -93,7 +107,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
 
       final id = collectionBox.put(collection);
-      debugPrint('✅ 向量集合创建成功: $collectionName (ID: $id)');
+      debugLog(() =>'✅ 向量集合创建成功: $collectionName (ID: $id)');
 
       return VectorCollectionResult(
         success: true,
@@ -107,7 +121,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
     } catch (e) {
       final error = '创建向量集合异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorCollectionResult(success: false, error: error);
     }
   }
@@ -115,7 +129,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
   @override
   Future<VectorOperationResult> deleteCollection(String collectionName) async {
     try {
-      debugPrint('🗑️ 删除 ObjectBox 向量集合: $collectionName');
+      debugLog(() =>'🗑️ 删除 ObjectBox 向量集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -148,17 +162,17 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       if (documents.isNotEmpty) {
         final documentIds = documents.map((doc) => doc.id).toList();
         documentBox.removeMany(documentIds);
-        debugPrint('🗑️ 删除了 ${documents.length} 个向量文档');
+        debugLog(() =>'🗑️ 删除了 ${documents.length} 个向量文档');
       }
 
       // 删除集合
       collectionBox.remove(collection.id);
 
-      debugPrint('✅ 向量集合删除成功: $collectionName');
+      debugLog(() =>'✅ 向量集合删除成功: $collectionName');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '删除向量集合异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -177,7 +191,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       return exists;
     } catch (e) {
-      debugPrint('❌ 检查集合存在性失败: $e');
+      debugLog(() =>'❌ 检查集合存在性失败: $e');
       return false;
     }
   }
@@ -225,7 +239,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         updatedAt: collection.updatedAt,
       );
     } catch (e) {
-      debugPrint('❌ 获取集合信息失败: $e');
+      debugLog(() =>'❌ 获取集合信息失败: $e');
       return null;
     }
   }
@@ -236,7 +250,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required List<VectorDocument> documents,
   }) async {
     try {
-      debugPrint('📝 插入 ${documents.length} 个向量到集合: $collectionName');
+      debugLog(() =>'📝 插入 ${documents.length} 个向量到集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -280,11 +294,11 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       // 批量插入/更新
       documentBox.putMany(entities);
 
-      debugPrint('✅ 向量插入成功');
+      debugLog(() =>'✅ 向量插入成功');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '插入向量异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -304,7 +318,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required List<String> documentIds,
   }) async {
     try {
-      debugPrint('🗑️ 删除 ${documentIds.length} 个向量从集合: $collectionName');
+      debugLog(() =>'🗑️ 删除 ${documentIds.length} 个向量从集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -329,11 +343,11 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         }
       }
 
-      debugPrint('✅ 向量删除成功，删除了 $removedCount 个向量');
+      debugLog(() =>'✅ 向量删除成功，删除了 $removedCount 个向量');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '删除向量异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -349,10 +363,10 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     final startTime = DateTime.now();
 
     try {
-      debugPrint('🔍 ObjectBox 向量搜索: $collectionName (limit: $limit)');
+      debugLog(() =>'🔍 ObjectBox 原生向量搜索: $collectionName (limit: $limit)');
 
       if (!_isInitialized) {
-        debugPrint('⚠️ 向量数据库未初始化');
+        debugLog(() =>'⚠️ 向量数据库未初始化');
         return VectorSearchResult(
           items: [],
           totalResults: 0,
@@ -363,15 +377,18 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       final documentBox = _objectBoxManager.documentBox;
 
-      // 获取集合中的所有文档
-      final query = documentBox
-          .query(VectorDocumentEntity_.collectionName.equals(collectionName))
-          .build();
-      final documents = query.find();
+      // 使用ObjectBox原生HNSW向量搜索
+      final query = documentBox.query(
+        VectorDocumentEntity_.collectionName.equals(collectionName) &
+        VectorDocumentEntity_.vector.nearestNeighborsF32(queryVector, limit),
+      ).build();
+      
+      // 执行带分数的查询
+      final resultsWithScores = query.findWithScores();
       query.close();
 
-      if (documents.isEmpty) {
-        debugPrint('⚠️ 集合中没有向量数据: $collectionName');
+      if (resultsWithScores.isEmpty) {
+        debugLog(() =>'⚠️ 集合中没有找到匹配的向量: $collectionName');
         return VectorSearchResult(
           items: [],
           totalResults: 0,
@@ -379,65 +396,117 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         );
       }
 
-      // 计算相似度并排序
-      final results = <VectorSearchResultWrapper>[];
-
-      for (final document in documents) {
+      // 转换为VectorSearchItem
+      final items = <VectorSearchItem>[];
+      
+      for (final result in resultsWithScores) {
+        final document = result.object;
+        final distance = result.score;
+        
+        // 跳过无效向量
         if (document.vector == null || document.vector!.isEmpty) {
           continue;
         }
+        
+        // 将ObjectBox的距离转换为相似度分数
+        // 对于余弦距离：similarity = 1 - distance
+        // 但ObjectBox可能返回的是余弦距离的平方，需要根据实际情况调整
+        final similarity = math.max(0.0, 1.0 - distance);
+        
+        // 应用分数阈值过滤
+        if (scoreThreshold == null || similarity >= scoreThreshold) {
+          final metadata = document.metadata != null
+              ? jsonDecode(document.metadata!) as Map<String, dynamic>
+              : <String, dynamic>{};
 
-        try {
-          final similarity = _cosineSimilarity(queryVector, document.vector!);
-
-          // 应用分数阈值过滤
-          if (scoreThreshold == null || similarity >= scoreThreshold) {
-            results.add(
-              VectorSearchResultWrapper(document: document, score: similarity),
-            );
-          }
-        } catch (e) {
-          debugPrint('⚠️ 跳过无效向量: ${document.documentId} - $e');
+          items.add(VectorSearchItem(
+            id: document.documentId,
+            vector: document.vector!,
+            metadata: metadata,
+            score: similarity,
+          ));
         }
       }
 
-      // 按相似度排序（降序）
-      results.sort((a, b) => b.score.compareTo(a.score));
-
-      // 限制结果数量
-      final limitedResults = results.take(limit).toList();
-
-      // 转换为VectorSearchItem
-      final items = limitedResults.map((result) {
-        final metadata = result.document.metadata != null
-            ? jsonDecode(result.document.metadata!) as Map<String, dynamic>
-            : <String, dynamic>{};
-
-        return VectorSearchItem(
-          id: result.document.documentId,
-          vector: result.document.vector!,
-          metadata: metadata,
-          score: result.score,
-        );
-      }).toList();
-
       final searchTime = _calculateSearchTime(startTime);
-      debugPrint('✅ 搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
+      debugLog(() =>'✅ HNSW搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
 
       return VectorSearchResult(
         items: items,
-        totalResults: results.length,
+        totalResults: items.length,
         searchTime: searchTime,
       );
     } catch (e) {
-      final searchTime = _calculateSearchTime(startTime);
-      final error = '向量搜索异常: $e';
-      debugPrint('❌ $error');
-      return VectorSearchResult(
-        items: [],
-        totalResults: 0,
-        searchTime: searchTime,
-        error: error,
+      _calculateSearchTime(startTime);
+      final error = 'HNSW向量搜索异常: $e';
+      debugLog(() =>'❌ $error');
+      
+      // 检查是否是HNSW索引配置错误（OBX_ERROR code 10002）
+      if (e.toString().contains('10002')) {
+        debugLog(() =>'🔧 检测到HNSW索引配置问题，尝试重建数据库...');
+        final rebuildSuccess = await _objectBoxManager.rebuildDatabase();
+        
+        if (rebuildSuccess) {
+          debugLog(() =>'✅ 数据库重建成功，重试HNSW搜索...');
+          // 重新初始化客户端状态
+          _isInitialized = true;
+          
+          // 重试一次HNSW搜索
+          try {
+            final documentBox = _objectBoxManager.documentBox;
+            final query = documentBox.query(
+              VectorDocumentEntity_.collectionName.equals(collectionName) &
+              VectorDocumentEntity_.vector.nearestNeighborsF32(queryVector, limit),
+            ).build();
+            
+            final resultsWithScores = query.findWithScores();
+            query.close();
+
+            final items = <VectorSearchItem>[];
+            for (final result in resultsWithScores) {
+              final document = result.object;
+              final distance = result.score;
+              
+              if (document.vector == null || document.vector!.isEmpty) continue;
+              
+              final similarity = math.max(0.0, 1.0 - distance);
+              if (scoreThreshold == null || similarity >= scoreThreshold) {
+                final metadata = document.metadata != null
+                    ? jsonDecode(document.metadata!) as Map<String, dynamic>
+                    : <String, dynamic>{};
+
+                items.add(VectorSearchItem(
+                  id: document.documentId,
+                  vector: document.vector!,
+                  metadata: metadata,
+                  score: similarity,
+                ));
+              }
+            }
+
+            final searchTime = _calculateSearchTime(startTime);
+            debugLog(() =>'✅ HNSW重试搜索成功，找到 ${items.length} 个结果');
+
+            return VectorSearchResult(
+              items: items,
+              totalResults: items.length,
+              searchTime: searchTime,
+            );
+          } catch (retryError) {
+            debugLog(() =>'❌ HNSW重试仍失败: $retryError');
+            // 继续执行下面的回退逻辑
+          }
+        }
+      }
+      
+      // 如果重建失败或不是索引问题，回退到传统搜索方式
+      debugLog(() =>'🔄 回退到传统相似度计算搜索...');
+      return _fallbackSearch(
+        collectionName: collectionName,
+        queryVector: queryVector,
+        limit: limit,
+        scoreThreshold: scoreThreshold,
+        startTime: startTime,
       );
     }
   }
@@ -496,7 +565,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         metadata: metadata,
       );
     } catch (e) {
-      debugPrint('❌ 获取向量失败: $e');
+      debugLog(() =>'❌ 获取向量失败: $e');
       return null;
     }
   }
@@ -539,7 +608,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       return results;
     } catch (e) {
-      debugPrint('❌ 批量获取向量失败: $e');
+      debugLog(() =>'❌ 批量获取向量失败: $e');
       return [];
     }
   }
@@ -588,7 +657,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         },
       );
     } catch (e) {
-      debugPrint('❌ 获取集合统计失败: $e');
+      debugLog(() =>'❌ 获取集合统计失败: $e');
       rethrow;
     }
   }
@@ -599,7 +668,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required String backupPath,
   }) async {
     try {
-      debugPrint('💾 备份 ObjectBox 向量集合: $collectionName 到 $backupPath');
+      debugLog(() =>'💾 备份 ObjectBox 向量集合: $collectionName 到 $backupPath');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -640,7 +709,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       final backupSize = await _calculateFileSize(backupFile);
 
-      debugPrint('✅ 集合备份完成: $collectionName');
+      debugLog(() =>'✅ 集合备份完成: $collectionName');
 
       return VectorBackupResult(
         success: true,
@@ -650,7 +719,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
     } catch (e) {
       final error = '备份异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorBackupResult(
         success: false,
         documentCount: 0,
@@ -666,7 +735,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required String backupPath,
   }) async {
     try {
-      debugPrint('🔄 恢复 ObjectBox 向量集合: $collectionName 从 $backupPath');
+      debugLog(() =>'🔄 恢复 ObjectBox 向量集合: $collectionName 从 $backupPath');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -704,18 +773,99 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       documentBox.putMany(documents);
 
-      debugPrint('✅ 集合恢复完成');
+      debugLog(() =>'✅ 集合恢复完成');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '恢复异常: $e';
-      debugPrint('❌ $error');
+      debugLog(() =>'❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
 
   // === 私有辅助方法 ===
 
-  /// 计算余弦相似度
+
+  /// 回退搜索方式：当HNSW搜索失败时使用传统相似度计算
+  Future<VectorSearchResult> _fallbackSearch({
+    required String collectionName,
+    required List<double> queryVector,
+    required int limit,
+    double? scoreThreshold,
+    required DateTime startTime,
+  }) async {
+    try {
+      final documentBox = _objectBoxManager.documentBox;
+      
+      // 获取集合中的所有文档
+      final query = documentBox
+          .query(VectorDocumentEntity_.collectionName.equals(collectionName))
+          .build();
+      final documents = query.find();
+      query.close();
+
+      if (documents.isEmpty) {
+        return VectorSearchResult(
+          items: [],
+          totalResults: 0,
+          searchTime: _calculateSearchTime(startTime),
+        );
+      }
+
+      // 计算相似度并排序
+      final results = <VectorSearchResultWrapper>[];
+
+      for (final document in documents) {
+        if (document.vector == null || document.vector!.isEmpty) {
+          continue;
+        }
+
+        try {
+          final similarity = _cosineSimilarity(queryVector, document.vector!);
+
+          if (scoreThreshold == null || similarity >= scoreThreshold) {
+            results.add(
+              VectorSearchResultWrapper(document: document, score: similarity),
+            );
+          }
+        } catch (e) {
+          debugLog(() =>'⚠️ 跳过无效向量: ${document.documentId} - $e');
+        }
+      }
+
+      // 按相似度排序（降序）
+      results.sort((a, b) => b.score.compareTo(a.score));
+      final limitedResults = results.take(limit).toList();
+
+      // 转换为VectorSearchItem
+      final items = limitedResults.map((result) {
+        final metadata = result.document.metadata != null
+            ? jsonDecode(result.document.metadata!) as Map<String, dynamic>
+            : <String, dynamic>{};
+
+        return VectorSearchItem(
+          id: result.document.documentId,
+          vector: result.document.vector!,
+          metadata: metadata,
+          score: result.score,
+        );
+      }).toList();
+
+      return VectorSearchResult(
+        items: items,
+        totalResults: results.length,
+        searchTime: _calculateSearchTime(startTime),
+      );
+    } catch (e) {
+      return VectorSearchResult(
+        items: [],
+        totalResults: 0,
+        searchTime: _calculateSearchTime(startTime),
+        error: '回退搜索失败: $e',
+      );
+    }
+  }
+
+  /// 计算余弦相似度（用于回退情况）
   double _cosineSimilarity(List<double> a, List<double> b) {
     if (a.length != b.length) {
       throw ArgumentError('向量维度不匹配: ${a.length} != ${b.length}');

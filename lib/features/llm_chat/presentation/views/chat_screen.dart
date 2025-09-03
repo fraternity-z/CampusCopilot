@@ -7,6 +7,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
+import '../../../../shared/utils/debug_log.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -108,7 +109,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
         }
       } catch (e) {
-        debugPrint('滚动操作异常: $e');
+        debugLog(() => '滚动操作异常: $e');
       }
     });
   }
@@ -1735,7 +1736,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           // 添加到聊天状态
           chatNotifier.addProcessedImage(imageResult);
         } catch (e) {
-          debugPrint('处理图片文件失败: ${file.name}, 错误: $e');
+          debugLog(() => '处理图片文件失败: ${file.name}, 错误: $e');
           // 继续处理其他图片
         }
       }

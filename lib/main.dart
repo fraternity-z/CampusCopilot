@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'app/app.dart';
 import 'shared/utils/keyboard_utils.dart';
+import 'shared/utils/debug_log.dart';
 import 'repository/preference.dart' as preference;
 import 'repository/network_session.dart' as network;
 import 'repository/app_initialization.dart';
@@ -44,7 +45,7 @@ Future<void> _initializePreferences() async {
     // 初始化PackageInfo
     preference.packageInfo = await PackageInfo.fromPlatform();
   } catch (e) {
-    debugPrint('❌ 初始化偏好设置失败: $e');
+    debugLog(() => '❌ 初始化偏好设置失败: $e');
     // 如果初始化失败，使用默认的SharedPreferences
     preference.prefs = await SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(),
@@ -57,9 +58,9 @@ Future<void> _initializePaths() async {
   try {
     // 初始化应用支持目录
     network.supportPath = await getApplicationSupportDirectory();
-    debugPrint('📁 应用支持目录已初始化: ${network.supportPath.path}');
+    debugLog(() => '📁 应用支持目录已初始化: ${network.supportPath.path}');
   } catch (e) {
-    debugPrint('❌ 初始化应用路径失败: $e');
+    debugLog(() => '❌ 初始化应用路径失败: $e');
     // 使用临时目录作为备用方案
     network.supportPath = Directory.systemTemp;
   }

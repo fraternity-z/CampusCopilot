@@ -21,54 +21,54 @@ export 'package:objectbox/objectbox.dart'; // so that callers only have to impor
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-      id: const obx_int.IdUid(1, 4459934307494889475),
+      id: const obx_int.IdUid(1, 1206433104921672804),
       name: 'VectorCollectionEntity',
-      lastPropertyId: const obx_int.IdUid(9, 4459668095892156696),
+      lastPropertyId: const obx_int.IdUid(9, 1974443586411315680),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(1, 3248838367420270523),
+            id: const obx_int.IdUid(1, 4534626498371626670),
             name: 'id',
             type: 6,
             flags: 1),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(2, 7874956072637413074),
+            id: const obx_int.IdUid(2, 6616868246043862318),
             name: 'collectionName',
             type: 9,
             flags: 2080,
-            indexId: const obx_int.IdUid(1, 1307349783517777265)),
+            indexId: const obx_int.IdUid(1, 6954108395241008279)),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(3, 8392636195095174556),
+            id: const obx_int.IdUid(3, 5881989560486252253),
             name: 'vectorDimension',
             type: 6,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(4, 1507422902658866108),
+            id: const obx_int.IdUid(4, 907873243126122735),
             name: 'description',
             type: 9,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(5, 6097884907819546080),
+            id: const obx_int.IdUid(5, 4906663713888304465),
             name: 'documentCount',
             type: 6,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(6, 4941899692888055682),
+            id: const obx_int.IdUid(6, 735835908715317616),
             name: 'createdAt',
             type: 10,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(7, 2544437008335576318),
+            id: const obx_int.IdUid(7, 6775336685026346021),
             name: 'updatedAt',
             type: 10,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(8, 8556303806851248524),
+            id: const obx_int.IdUid(8, 1776829318811570282),
             name: 'metadata',
             type: 9,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(9, 4459668095892156696),
+            id: const obx_int.IdUid(9, 1974443586411315680),
             name: 'isEnabled',
             type: 1,
             flags: 0)
@@ -76,45 +76,52 @@ final _entities = <obx_int.ModelEntity>[
       relations: <obx_int.ModelRelation>[],
       backlinks: <obx_int.ModelBacklink>[]),
   obx_int.ModelEntity(
-      id: const obx_int.IdUid(2, 8430527117949909134),
+      id: const obx_int.IdUid(2, 864461294787344910),
       name: 'VectorDocumentEntity',
-      lastPropertyId: const obx_int.IdUid(7, 2929257100603542662),
+      lastPropertyId: const obx_int.IdUid(7, 6500166740808942654),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(1, 8880651477977259009),
+            id: const obx_int.IdUid(1, 7827802638778185806),
             name: 'id',
             type: 6,
             flags: 1),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(2, 1778479024197302793),
+            id: const obx_int.IdUid(2, 1317272550423249855),
             name: 'documentId',
             type: 9,
             flags: 2080,
-            indexId: const obx_int.IdUid(2, 2567439885417587416)),
+            indexId: const obx_int.IdUid(2, 6255899501593352814)),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(3, 872630008812898502),
+            id: const obx_int.IdUid(3, 9084761502688872016),
             name: 'collectionName',
             type: 9,
             flags: 2048,
-            indexId: const obx_int.IdUid(3, 870606289129943582)),
+            indexId: const obx_int.IdUid(3, 7385150513528467558)),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(4, 2390889748652821694),
+            id: const obx_int.IdUid(4, 8824357999337221596),
             name: 'vector',
             type: 28,
-            flags: 0),
+            flags: 8,
+            indexId: const obx_int.IdUid(4, 7667037511000446945),
+            hnswParams: obx_int.ModelHnswParams(
+              dimensions: 1536,
+              neighborsPerNode: 32,
+              indexingSearchCount: 200,
+              distanceType: 2,
+            )),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(5, 7990644778222772372),
+            id: const obx_int.IdUid(5, 1373751540180252372),
             name: 'metadata',
             type: 9,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(6, 5045478097231967448),
+            id: const obx_int.IdUid(6, 9188354569723271311),
             name: 'createdAt',
             type: 10,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(7, 2929257100603542662),
+            id: const obx_int.IdUid(7, 6500166740808942654),
             name: 'updatedAt',
             type: 10,
             flags: 0)
@@ -158,8 +165,8 @@ Future<obx.Store> openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(2, 8430527117949909134),
-      lastIndexId: const obx_int.IdUid(3, 870606289129943582),
+      lastEntityId: const obx_int.IdUid(2, 864461294787344910),
+      lastIndexId: const obx_int.IdUid(4, 7667037511000446945),
       lastRelationId: const obx_int.IdUid(0, 0),
       lastSequenceId: const obx_int.IdUid(0, 0),
       retiredEntityUids: const [],
@@ -350,8 +357,8 @@ class VectorDocumentEntity_ {
       obx.QueryStringProperty<VectorDocumentEntity>(_entities[1].properties[2]);
 
   /// See [VectorDocumentEntity.vector].
-  static final vector = obx.QueryDoubleVectorProperty<VectorDocumentEntity>(
-      _entities[1].properties[3]);
+  static final vector =
+      obx.QueryHnswProperty<VectorDocumentEntity>(_entities[1].properties[3]);
 
   /// See [VectorDocumentEntity.metadata].
   static final metadata =

@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:convert';
+
+import '../../shared/utils/debug_log.dart';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
@@ -181,11 +182,9 @@ class DioClient {
       // 重新配置HTTP适配器以应用新的代理设置
       _configureHttpAdapter();
 
-      if (kDebugMode) {
-        debugPrint('🌐 代理配置已更新: ${config.mode.displayName}');
-        if (config.isCustom && config.isValid) {
-          debugPrint('🌐 代理地址: ${config.host}:${config.port}');
-        }
+      debugLog(() => '🌐 代理配置已更新: ${config.mode.displayName}');
+      if (config.isCustom && config.isValid) {
+        debugLog(() => '🌐 代理地址: ${config.host}:${config.port}');
       }
     }
   }
@@ -379,32 +378,23 @@ class DioClient {
 class _LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // 只在Debug模式下记录日志
-    if (kDebugMode) {
-      debugPrint('🚀 REQUEST: ${options.method} ${options.uri}');
-      if (options.data != null) {
-        debugPrint('📤 DATA: ${options.data}');
-      }
+    debugLog(() => '🚀 REQUEST: ${options.method} ${options.uri}');
+    if (options.data != null) {
+      debugLog(() => '📤 DATA: ${options.data}');
     }
     super.onRequest(options, handler);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    if (kDebugMode) {
-      debugPrint(
-        '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
-      );
-    }
+    debugLog(() => '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}');
     super.onResponse(response, handler);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (kDebugMode) {
-      debugPrint('❌ ERROR: ${err.type} ${err.requestOptions.uri}');
-      debugPrint('📝 MESSAGE: ${err.message}');
-    }
+    debugLog(() => '❌ ERROR: ${err.type} ${err.requestOptions.uri}');
+    debugLog(() => '📝 MESSAGE: ${err.message}');
     super.onError(err, handler);
   }
 }
@@ -507,9 +497,9 @@ class _PerformanceMonitor {
   void record(String method, int durationMs) {
     _count++;
     _totalMs += durationMs;
-    if (kDebugMode && _count % 50 == 0) {
+    if (_count % 50 == 0) {
       final avg = (_totalMs / _count).toStringAsFixed(0);
-      debugPrint('📈 平均接口耗时: ${avg}ms (样本: $_count)');
+      debugLog(() => '📈 平均接口耗时: ${avg}ms (样本: $_count)');
     }
   }
 }

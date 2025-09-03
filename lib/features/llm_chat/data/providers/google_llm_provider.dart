@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
+
+import '../../../../shared/utils/debug_log.dart';
 
 import 'package:google_generative_ai/google_generative_ai.dart' as google_ai;
 
@@ -70,7 +71,7 @@ class GoogleLlmProvider extends LlmProvider {
         }
       }
     } catch (e) {
-      debugPrint('获取Gemini模型列表失败，使用预定义列表: $e');
+      debugLog(() => '获取Gemini模型列表失败，使用预定义列表: $e');
     }
 
     // 回退到预定义模型列表
@@ -292,7 +293,7 @@ class GoogleLlmProvider extends LlmProvider {
                   parts.add(google_ai.TextPart('[图片格式错误]'));
                 }
               } catch (e) {
-                debugPrint('ℹ️ Google Provider 处理base64图片失败: $e');
+                debugLog(() => 'ℹ️ Google Provider 处理base64图片失败: $e');
                 parts.add(google_ai.TextPart('[图片处理失败]'));
               }
             } else {
@@ -304,7 +305,7 @@ class GoogleLlmProvider extends LlmProvider {
               );
             }
           } catch (e) {
-            debugPrint('ℹ️ Google Provider 处理图片URL失败: $e, URL: $url');
+            debugLog(() => 'ℹ️ Google Provider 处理图片URL失败: $e, URL: $url');
             parts.add(google_ai.TextPart('[图片]'));
           }
         }

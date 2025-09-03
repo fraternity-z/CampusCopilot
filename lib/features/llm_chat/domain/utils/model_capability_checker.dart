@@ -2,7 +2,6 @@ import '../entities/model_capabilities.dart';
 
 /// 模型能力检查器
 /// 
-/// 参考CherryStudio实现，提供统一的模型能力检测机制
 class ModelCapabilityChecker {
   
   // ==================== 视觉模型检测 ====================

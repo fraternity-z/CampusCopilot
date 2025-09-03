@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,6 +15,10 @@ import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
 import '../../../learning_mode/domain/services/learning_session_service.dart';
 import '../../../learning_mode/domain/entities/learning_session.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../domain/utils/model_capability_checker.dart';
+import '../../domain/entities/model_capabilities.dart';
+import '../../../../shared/utils/debug_log.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -37,7 +40,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     
     // 设置搜索状态回调
     _chatService.onSearchStatusChanged = _onSearchStatusChanged;
-    debugPrint('🔗 ChatNotifier: 已设置会话标题更新回调');
+    debugLog(() => '🔗 ChatNotifier: 已设置会话标题更新回调');
   }
 
   /// 初始化方法
@@ -68,20 +71,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 处理搜索状态变化回调
   void _onSearchStatusChanged(bool isSearching) {
-    debugPrint('🔍 搜索状态变化: $isSearching');
+    debugLog(() => '🔍 搜索状态变化: $isSearching');
     state = state.copyWith(isSearching: isSearching);
   }
 
   /// 处理会话标题更新（自动命名回调）
   void _onSessionTitleUpdated(String sessionId, String newTitle) {
-    debugPrint('🔄 收到会话标题更新回调: sessionId=$sessionId, newTitle=$newTitle');
-    debugPrint('🔄 当前会话ID: ${state.currentSession?.id}');
-    debugPrint('🔄 会话列表数量: ${state.sessions.length}');
+    debugLog(() => '🔄 收到会话标题更新回调: sessionId=$sessionId, newTitle=$newTitle');
+    debugLog(() => '🔄 当前会话ID: ${state.currentSession?.id}');
+    debugLog(() => '🔄 会话列表数量: ${state.sessions.length}');
 
     // 更新会话列表中的对应会话
     final updatedSessions = state.sessions.map((session) {
       if (session.id == sessionId) {
-        debugPrint('🔄 找到匹配的会话，更新标题: ${session.title} → $newTitle');
+        debugLog(() => '🔄 找到匹配的会话，更新标题: ${session.title} → $newTitle');
         return session.updateTitle(newTitle);
       }
       return session;
@@ -90,7 +93,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 更新当前会话（如果是当前会话）
     ChatSession? updatedCurrentSession = state.currentSession;
     if (state.currentSession?.id == sessionId) {
-      debugPrint('🔄 更新当前会话标题: ${state.currentSession?.title} → $newTitle');
+      debugLog(() => '🔄 更新当前会话标题: ${state.currentSession?.title} → $newTitle');
       updatedCurrentSession = state.currentSession!.updateTitle(newTitle);
     }
 
@@ -101,9 +104,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
       currentSession: updatedCurrentSession,
     );
 
-    debugPrint('🔄 UI状态已更新完成');
-    debugPrint('🔄 更新前当前会话标题: ${oldState.currentSession?.title}');
-    debugPrint('🔄 更新后当前会话标题: ${state.currentSession?.title}');
+    debugLog(() => '🔄 UI状态已更新完成');
+    final oldTitle = oldState.currentSession?.title;
+    debugLog(() => '🔄 更新前当前会话标题: $oldTitle');
+    debugLog(() => '🔄 更新后当前会话标题: ${state.currentSession?.title}');
   }
 
   /// 选择会话
@@ -269,7 +273,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
       
-      debugPrint('🎓 学习模式重新生成: ${learningModeState.style.displayName}');
+      debugLog(() => '🎓 学习模式重新生成: ${learningModeState.style.displayName}');
     }
     
     // 检查是否有当前会话
@@ -317,13 +321,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (messageChunk.isFromUser && isFirstUserMessage) {
             // 跳过第一个用户消息，因为我们不需要重复添加
             isFirstUserMessage = false;
-            debugPrint('🔍 重新生成：跳过流中的用户消息');
+            debugLog(() => '🔍 重新生成：跳过流中的用户消息');
             return;
           }
 
           // 额外保护：如果流中还有其他用户消息，也要跳过
           if (messageChunk.isFromUser) {
-            debugPrint('⚠️ 重新生成：检测到额外的用户消息，跳过以保护原始内容');
+            debugLog(() => '⚠️ 重新生成：检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 
@@ -448,18 +452,32 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 判断是否应该使用图像生成服务
   bool _shouldUseImageGeneration(String text) {
-    // 1. 首先检查文本是否包含明确的图像生成指令
-    if (_isImageGenerationPrompt(text)) {
-      debugPrint('🔍 检测到图像生成指令: $text');
+    // 首先检查当前选择的模型是否支持图像生成
+    try {
+      final currentModel = _ref.read(databaseCurrentModelProvider).whenOrNull(data: (model) => model);
+      if (currentModel == null) {
+        debugLog(() => '🔍 当前没有选择模型，不使用图像生成');
+        return false;
+      }
+      
+      // 检查当前模型是否具有图像生成能力
+      final hasImageGenCapability = ModelCapabilityChecker.hasCapability(
+        currentModel.id, 
+        ModelCapabilityType.imageGeneration
+      );
+      
+      if (!hasImageGenCapability) {
+        debugLog(() => '🔍 当前模型 ${currentModel.name} 不支持图像生成，跳过');
+        return false;
+      }
+      
+      debugLog(() => '🎨 当前模型 ${currentModel.name} 支持图像生成，自动启用图像生成功能');
       return true;
+      
+    } catch (e) {
+      debugLog(() => '❌ 检查模型图像生成能力时出错: $e');
+      return false;
     }
-    
-    // 2. 未来可以添加更多检测逻辑，比如：
-    // - 检查当前选择的模型是否为图像模型
-    // - 检查用户偏好设置
-    // - 检查上下文信息等
-    
-    return false;
   }
 
 
@@ -468,38 +486,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return false; // 先简化为false，让AI在学习提示词中自己判断
   }
 
-  /// 判断是否为图像生成指令
-  bool _isImageGenerationPrompt(String text) {
-    final lowerText = text.toLowerCase().trim();
-    
-    // 中文图像生成指令
-    final chineseKeywords = [
-      '画', '绘制', '绘画', '画一', '画个', '画出', '生成图', '创建图', '制作图', 
-      '图像', '图片', '插画', '素描', '水彩', '油画', '漫画', '卡通',
-    ];
-    
-    // 英文图像生成指令
-    final englishKeywords = [
-      'draw', 'paint', 'create', 'generate', 'make', 'design', 'sketch', 
-      'illustrate', 'render', 'produce', 'image of', 'picture of', 'art of',
-      'painting of', 'drawing of', 'illustration of',
-    ];
-    
-    // 检查是否以这些关键词开头或包含这些关键词
-    for (final keyword in chineseKeywords) {
-      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
-        return true;
-      }
-    }
-    
-    for (final keyword in englishKeywords) {
-      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
-        return true;
-      }
-    }
-    
-    return false;
-  }
 
   /// 带占位符的图像生成（内部使用）
   Future<void> _generateImageWithPlaceholder(String prompt, String placeholderId) async {
@@ -560,7 +546,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       // 使用和聊天相同的配置获取逻辑：通过会话 → 智能体 → API配置
       final llmConfig = await _chatService.getSessionLlmConfig(currentSession.id);
-      debugPrint('🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
+      debugLog(() => '🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 直接使用LLM配置的信息
       String? apiKey = llmConfig.apiKey;
@@ -571,8 +557,43 @@ class ChatNotifier extends StateNotifier<ChatState> {
         throw Exception('配置 "${llmConfig.name}" 的API密钥为空，请检查配置');
       }
 
-      debugPrint('🎨 使用 $configType 配置生成图片');
-      debugPrint('🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
+      debugLog(() => '🎨 使用 $configType 配置生成图片');
+      debugLog(() => '🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
+      
+      // 获取具有图像生成能力的模型
+      String? imageGenerationModel;
+      try {
+        // 首先尝试获取当前选中的模型
+        final currentModel = await _ref.read(databaseCurrentModelProvider.future);
+        if (currentModel != null && 
+            ModelCapabilityChecker.hasCapability(
+              currentModel.id, 
+              ModelCapabilityType.imageGeneration
+            )) {
+          imageGenerationModel = currentModel.id;
+          debugLog(() => '🎯 使用当前选中的图像生成模型: $imageGenerationModel');
+        } else {
+          // 如果当前模型不支持图像生成，查找可用的图像生成模型
+          final allModels = await _ref.read(databaseAvailableModelsProvider.future);
+          final imageGenModels = allModels.where((model) => 
+            ModelCapabilityChecker.hasCapability(
+              model.id, 
+              ModelCapabilityType.imageGeneration
+            )
+          ).toList();
+          
+          if (imageGenModels.isNotEmpty) {
+            imageGenerationModel = imageGenModels.first.id;
+            debugLog(() => '🔍 自动选择第一个可用的图像生成模型: $imageGenerationModel');
+          } else {
+            debugLog(() => '⚠️ 没有找到支持图像生成的模型，使用默认模型');
+            imageGenerationModel = 'dall-e-3'; // 回退到默认模型
+          }
+        }
+      } catch (e) {
+        debugLog(() => '❌ 获取图像生成模型失败: $e，使用默认模型');
+        imageGenerationModel = 'dall-e-3'; // 回退到默认模型
+      }
       
       // 生成图片
       final results = await _imageGenerationService.generateImages(
@@ -581,6 +602,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         size: size,
         quality: quality,
         style: style,
+        model: imageGenerationModel,
         apiKey: apiKey,
         baseUrl: baseUrl,
       );
@@ -628,7 +650,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }
       }
     } catch (e) {
-      debugPrint('❌ 图片生成失败: $e');
+      debugLog(() => '❌ 图片生成失败: $e');
       
       // 创建错误消息
       final errorMessage = ChatMessage(
@@ -668,7 +690,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           );
         }
       } catch (dbError) {
-        debugPrint('❌ 保存错误消息失败: $dbError');
+        debugLog(() => '❌ 保存错误消息失败: $dbError');
         // 如果数据库操作也失败，处理占位符并设置全局错误状态
         if (placeholderId != null) {
           final messagesWithoutPlaceholder = state.messages.where((m) => m.id != placeholderId).toList();
@@ -700,7 +722,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           LearningSessionService.isLearningQuestion(text)) {
         // 开始新的学习会话
         learningModeNotifier.startLearningSession(text);
-        debugPrint('🎓 开始新的学习会话');
+        debugLog(() => '🎓 开始新的学习会话');
       }
       
       // 简化逻辑：检查用户是否明确要求答案或到达最后一轮
@@ -713,8 +735,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           (learningModeState.currentSession!.currentRound + 1) == learningModeState.currentSession!.maxRounds;
       final shouldGiveFinalAnswer = userWantsDirectAnswer || reachedMaxRounds || willReachMaxRounds;
       
-      debugPrint('🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
-      debugPrint('🔍 用户消息: "$text"');
+      debugLog(() => '🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
+      debugLog(() => '🔍 用户消息: "$text"');
       
       // 如果在学习会话中，推进轮数（用户发送消息时推进）
       if (learningModeState.currentSession != null && learningModeState.currentSession!.status == LearningSessionStatus.active) {
@@ -722,7 +744,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         learningModeNotifier.advanceLearningSession('user-message-temp'); // 临时ID，后面会被替换
         // 重新获取更新后的状态
         final updatedLearningModeState = _ref.read(learningModeProvider);
-        debugPrint('🎓 用户发送消息，推进到第 ${updatedLearningModeState.currentSession?.currentRound ?? 0} 轮');
+        debugLog(() => '🎓 用户发送消息，推进到第 ${updatedLearningModeState.currentSession?.currentRound ?? 0} 轮');
       }
       
       // 如果用户要求答案或达到最大轮数，标记会话状态
@@ -732,7 +754,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           status: LearningSessionStatus.active, // 保持active状态直到AI回复完成
         );
         learningModeNotifier.updateCurrentSession(updatedSession);
-        debugPrint('🎓 将在本轮给出完整答案');
+        debugLog(() => '🎓 将在本轮给出完整答案');
       }
       
       // 构建学习模式消息（传递是否应该给出最终答案的信息）
@@ -752,13 +774,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
       
-      debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}');
+      debugLog(() => '🎓 学习模式已激活: ${learningModeState.style.displayName}');
     }
     
     // 智能路由：检查是否应该使用图像生成
     final isImageGeneration = _shouldUseImageGeneration(text);
     if (isImageGeneration) {
-      debugPrint('🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
+      debugLog(() => '🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
     }
     
     // 检查是否有当前会话，如果没有则创建新会话
@@ -929,7 +951,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // 检查是否是图像生成指令
       if (isImageGeneration) {
-        debugPrint('🎨 开始图像生成流程');
+        debugLog(() => '🎨 开始图像生成流程');
         
         // 为图像生成创建特殊的AI占位符消息
         final imageAiPlaceholder = aiPlaceholderSend.copyWith(
@@ -974,13 +996,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (messageChunk.isFromUser && isFirstUserMessage) {
             // 跳过第一个用户消息，因为我们已经在UI中显示了原始用户消息
             isFirstUserMessage = false;
-            debugPrint('🔍 跳过流中的用户消息，保持显示原始内容');
+            debugLog(() => '🔍 跳过流中的用户消息，保持显示原始内容');
             return;
           }
 
           // 额外保护：如果流中还有其他用户消息，也要跳过，防止替换原始用户消息
           if (messageChunk.isFromUser) {
-            debugPrint('⚠️ 检测到额外的用户消息，跳过以保护原始内容');
+            debugLog(() => '⚠️ 检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 
@@ -1233,7 +1255,7 @@ $wrappedMessage
           learningModeNotifier.endCurrentSession(
             userRequested: currentSession.userRequestedAnswer,
           );
-          debugPrint('🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
+          debugLog(() => '🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
           
           // 添加学习会话结束分割线
           _addLearningSessionEndDivider();
@@ -1249,7 +1271,7 @@ $wrappedMessage
     // 检查是否需要重置提问步骤（当学生得到完整理解时）
     if (aiResponse.contains('很好') || aiResponse.contains('正确') || aiResponse.contains('理解得很棒')) {
       // 可以考虑重置或调整学习进度
-      debugPrint('🎓 学生理解程度良好，学习模式响应已处理');
+      debugLog(() => '🎓 学生理解程度良好，学习模式响应已处理');
     }
   }
 
@@ -1274,7 +1296,7 @@ $wrappedMessage
       messages: [...state.messages, dividerMessage],
     );
 
-    debugPrint('🎓 已添加学习会话结束分割线');
+    debugLog(() => '🎓 已添加学习会话结束分割线');
   }
 }
 

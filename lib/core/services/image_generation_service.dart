@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:dart_openai/dart_openai.dart';
+import '../../shared/utils/debug_log.dart';
+import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:http/http.dart' as http;
@@ -17,6 +17,8 @@ class ImageGenerationService {
       ImageGenerationService._internal();
   factory ImageGenerationService() => _instance;
   ImageGenerationService._internal();
+  
+  openai.OpenAIClient? _client;
 
   /// 生成图片
   Future<List<GeneratedImageResult>> generateImages({
@@ -25,14 +27,17 @@ class ImageGenerationService {
     ImageSize size = ImageSize.size1024x1024,
     ImageQuality quality = ImageQuality.standard,
     ImageStyle style = ImageStyle.vivid,
-    String model = 'dall-e-3',
+    String? model, // 改为可空，让调用方传递具体模型
     String? apiKey,
     String? baseUrl,
   }) async {
+    // 如果没有指定模型，默认使用DALL-E 3
+    final finalModel = model ?? 'dall-e-3';
+    
     try {
-      debugPrint('🎨 开始生成图片: $prompt');
-      debugPrint('🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
-      debugPrint('🤖 模型: $model');
+  debugLog(() => '🎨 开始生成图片: $prompt');
+  debugLog(() => '🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
+  debugLog(() => '🤖 模型: $finalModel');
 
       // 验证参数
       if (prompt.trim().isEmpty) {
@@ -44,15 +49,13 @@ class ImageGenerationService {
       }
 
       // DALL-E 3 只支持生成1张图片
-      if (model == 'dall-e-3' && count > 1) {
+      if (finalModel == 'dall-e-3' && count > 1) {
         count = 1;
-        debugPrint('⚠️ DALL-E 3 只支持生成1张图片，已调整为1张');
+  debugLog(() => '⚠️ DALL-E 3 只支持生成1张图片，已调整为1张');
       }
 
-      // 设置 OpenAI 配置
-      if (apiKey != null) {
-        OpenAI.apiKey = apiKey;
-      }
+      // 设置 OpenAI 客户端
+      String? finalBaseUrl;
       if (baseUrl != null) {
         // 修复baseUrl重复/v1的问题
         String cleanBaseUrl = baseUrl.trim();
@@ -62,33 +65,43 @@ class ImageGenerationService {
           cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
         }
         
-        // 如果用户已经配置了/v1，则移除它，因为dart_openai会自动添加
-        if (cleanBaseUrl.endsWith('/v1')) {
-          cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 3);
+        // 确保以/v1结尾，因为openai_dart需要完整的URL
+        if (!cleanBaseUrl.endsWith('/v1')) {
+          cleanBaseUrl += '/v1';
         }
         
-        OpenAI.baseUrl = cleanBaseUrl;
-        debugPrint('🔧 设置图像生成 baseUrl: $cleanBaseUrl (原始: $baseUrl)');
+  finalBaseUrl = cleanBaseUrl;
+  debugLog(() => '🔧 设置图像生成 baseUrl: $cleanBaseUrl (原始: $baseUrl)');
       }
-
-      // 调用 OpenAI API - 兼容NewAPI等第三方端点
-      final response = await OpenAI.instance.image.create(
-        prompt: prompt,
-        n: count,
-        size: _mapImageSize(size),
-        responseFormat: OpenAIImageResponseFormat.url,
-        model: model,
-        // 根据模型和端点决定是否添加这些参数，以提高NewAPI兼容性
-        // 注意：某些dart_openai版本可能不支持这些参数，暂时注释掉以确保兼容性
-        // quality: _shouldUseAdvancedParams(model, baseUrl) 
-        //     ? (quality == ImageQuality.hd ? 'hd' : 'standard')
-        //     : null,
-        // style: _shouldUseAdvancedParams(model, baseUrl) 
-        //     ? (style == ImageStyle.vivid ? 'vivid' : 'natural')
-        //     : null,
+      
+      _client = openai.OpenAIClient(
+        apiKey: apiKey ?? '',
+        baseUrl: finalBaseUrl,
       );
 
-      debugPrint('✅ 图片生成成功，共${response.data.length}张');
+      if (_client == null) {
+        throw ImageGenerationException('OpenAI客户端未初始化');
+      }
+      
+      // 调用 OpenAI API - 兼容NewAPI等第三方端点
+      final request = openai.CreateImageRequest(
+        prompt: prompt,
+        model: _mapModel(finalModel),
+        n: count,
+        size: _mapImageSizeToApiEnum(size),
+        responseFormat: openai.ImageResponseFormat.url,
+        // 根据模型和端点决定是否添加这些参数，以提高NewAPI兼容性
+        quality: _shouldUseAdvancedParams(finalModel, baseUrl) 
+            ? _mapImageQuality(quality)
+            : null,
+        style: _shouldUseAdvancedParams(finalModel, baseUrl) 
+            ? _mapImageStyle(style)
+            : null,
+      );
+      
+      final response = await _client!.createImage(request: request);
+
+  debugLog(() => '✅ 图片生成成功，共${response.data.length}张');
 
       // 处理响应
       final results = <GeneratedImageResult>[];
@@ -112,7 +125,7 @@ class ImageGenerationService {
               size: size,
               quality: quality,
               style: style,
-              model: model,
+              model: finalModel,
               createdAt: DateTime.now(),
             ),
           );
@@ -121,8 +134,8 @@ class ImageGenerationService {
 
       return results;
     } catch (e) {
-      debugPrint('❌ 图片生成失败: $e');
-      
+      debugLog(() => '❌ 图片生成失败: $e');
+
       // 特殊处理NewAPI兼容性错误
       final errorMsg = e.toString().toLowerCase();
       if (errorMsg.contains('unsupported') || 
@@ -131,19 +144,21 @@ class ImageGenerationService {
           errorMsg.contains('bad request')) {
         
         // 如果使用了高级参数且出现错误，尝试使用基础参数重试
-        if (_shouldUseAdvancedParams(model, baseUrl)) {
-          debugPrint('🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
+        if (_shouldUseAdvancedParams(finalModel, baseUrl)) {
+          debugLog(() => '🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
           try {
-            final retryResponse = await OpenAI.instance.image.create(
+            final retryRequest = openai.CreateImageRequest(
               prompt: prompt,
+              model: _mapModel(finalModel),
               n: count,
-              size: _mapImageSize(size),
-              responseFormat: OpenAIImageResponseFormat.url,
-              model: model,
+              size: _mapImageSizeToApiEnum(size),
+              responseFormat: openai.ImageResponseFormat.url,
               // 不使用高级参数重试
             );
             
-            debugPrint('✅ 使用基础参数重试成功，共${retryResponse.data.length}张');
+            final retryResponse = await _client!.createImage(request: retryRequest);
+            
+            debugLog(() => '✅ 使用基础参数重试成功，共${retryResponse.data.length}张');
             
             // 处理重试成功的响应
             final results = <GeneratedImageResult>[];
@@ -166,7 +181,7 @@ class ImageGenerationService {
                     size: size,
                     quality: ImageQuality.standard, // 使用默认质量
                     style: ImageStyle.natural, // 使用默认风格
-                    model: model,
+                    model: finalModel,
                     createdAt: DateTime.now(),
                   ),
                 );
@@ -174,7 +189,7 @@ class ImageGenerationService {
             }
             return results;
           } catch (retryError) {
-            debugPrint('❌ 重试也失败了: $retryError');
+            debugLog(() => '❌ 重试也失败了: $retryError');
             throw ImageGenerationException('图片生成失败，NewAPI端点可能不支持此模型或参数: $retryError');
           }
         }
@@ -207,139 +222,6 @@ class ImageGenerationService {
     }
   }
 
-  /// 编辑图片
-  Future<List<GeneratedImageResult>> editImage({
-    required File image,
-    required String prompt,
-    File? mask,
-    int count = 1,
-    ImageSize size = ImageSize.size1024x1024,
-  }) async {
-    try {
-      debugPrint('🖼️ 开始编辑图片: $prompt');
-
-      // 验证参数
-      if (!await image.exists()) {
-        throw ImageGenerationException('图片文件不存在');
-      }
-
-      if (prompt.trim().isEmpty) {
-        throw ImageGenerationException('编辑提示词不能为空');
-      }
-
-      // 调用 OpenAI API
-      final response = await OpenAI.instance.image.edit(
-        prompt: prompt,
-        image: image,
-        mask: mask,
-        n: count,
-        size: _mapImageSize(size),
-        responseFormat: OpenAIImageResponseFormat.url,
-      );
-
-      debugPrint('✅ 图片编辑成功，共${response.data.length}张');
-
-      // 处理响应
-      final results = <GeneratedImageResult>[];
-      for (int i = 0; i < response.data.length; i++) {
-        final imageData = response.data[i];
-
-        if (imageData.url != null) {
-          // 下载并缓存图片
-          final cachedImage = await _downloadAndCacheImage(
-            imageData.url!,
-            'edit_$prompt',
-            i,
-          );
-
-          results.add(
-            GeneratedImageResult(
-              url: imageData.url!,
-              localPath: cachedImage.path,
-              prompt: prompt,
-              size: size,
-              quality: ImageQuality.standard,
-              style: ImageStyle.natural,
-              model: 'dall-e-2', // 编辑功能使用 DALL-E 2
-              createdAt: DateTime.now(),
-              isEdit: true,
-            ),
-          );
-        }
-      }
-
-      return results;
-    } catch (e) {
-      debugPrint('❌ 图片编辑失败: $e');
-      if (e is ImageGenerationException) {
-        rethrow;
-      }
-      throw ImageGenerationException('图片编辑失败: $e');
-    }
-  }
-
-  /// 生成图片变体
-  Future<List<GeneratedImageResult>> createVariations({
-    required File image,
-    int count = 1,
-    ImageSize size = ImageSize.size1024x1024,
-  }) async {
-    try {
-      debugPrint('🔄 开始生成图片变体');
-
-      // 验证参数
-      if (!await image.exists()) {
-        throw ImageGenerationException('图片文件不存在');
-      }
-
-      // 调用 OpenAI API
-      final response = await OpenAI.instance.image.variation(
-        image: image,
-        n: count,
-        size: _mapImageSize(size),
-        responseFormat: OpenAIImageResponseFormat.url,
-      );
-
-      debugPrint('✅ 图片变体生成成功，共${response.data.length}张');
-
-      // 处理响应
-      final results = <GeneratedImageResult>[];
-      for (int i = 0; i < response.data.length; i++) {
-        final imageData = response.data[i];
-
-        if (imageData.url != null) {
-          // 下载并缓存图片
-          final cachedImage = await _downloadAndCacheImage(
-            imageData.url!,
-            'variation',
-            i,
-          );
-
-          results.add(
-            GeneratedImageResult(
-              url: imageData.url!,
-              localPath: cachedImage.path,
-              prompt: 'Image variation',
-              size: size,
-              quality: ImageQuality.standard,
-              style: ImageStyle.natural,
-              model: 'dall-e-2', // 变体功能使用 DALL-E 2
-              createdAt: DateTime.now(),
-              isVariation: true,
-            ),
-          );
-        }
-      }
-
-      return results;
-    } catch (e) {
-      debugPrint('❌ 图片变体生成失败: $e');
-      if (e is ImageGenerationException) {
-        rethrow;
-      }
-      throw ImageGenerationException('图片变体生成失败: $e');
-    }
-  }
 
   /// 下载并缓存图片
   Future<File> _downloadAndCacheImage(
@@ -369,13 +251,13 @@ class ImageGenerationService {
       if (response.statusCode == 200) {
         final file = File(filePath);
         await file.writeAsBytes(response.bodyBytes);
-        debugPrint('📁 图片已缓存: $filePath');
+          debugLog(() => '📁 图片已缓存: $filePath');
         return file;
       } else {
         throw ImageGenerationException('下载图片失败: HTTP ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ 缓存图片失败: $e');
+  debugLog(() => '❌ 缓存图片失败: $e');
       throw ImageGenerationException('缓存图片失败: $e');
     }
   }
@@ -407,23 +289,55 @@ class ImageGenerationService {
     }
     
     // 对于未知模型或第三方端点，默认不使用高级参数以提高兼容性
-    debugPrint('🔧 第三方端点检测到，禁用高级参数以提高兼容性: $baseUrl');
+  debugLog(() => '🔧 第三方端点检测到，禁用高级参数以提高兼容性: $baseUrl');
     return false;
   }
 
-  /// 映射图片尺寸
-  OpenAIImageSize _mapImageSize(ImageSize size) {
+  /// 映射模型
+  openai.CreateImageRequestModel? _mapModel(String model) {
+    switch (model.toLowerCase()) {
+      case 'dall-e-2':
+        return openai.CreateImageRequestModel.model(openai.ImageModels.dallE2);
+      case 'dall-e-3':
+        return openai.CreateImageRequestModel.model(openai.ImageModels.dallE3);
+      default:
+        return openai.CreateImageRequestModel.model(openai.ImageModels.dallE3);
+    }
+  }
+  
+  /// 映射图片尺寸到API枚举
+  openai.ImageSize? _mapImageSizeToApiEnum(ImageSize size) {
     switch (size) {
       case ImageSize.size256x256:
-        return OpenAIImageSize.size256;
+        return openai.ImageSize.v256x256;
       case ImageSize.size512x512:
-        return OpenAIImageSize.size512;
+        return openai.ImageSize.v512x512; 
       case ImageSize.size1024x1024:
-        return OpenAIImageSize.size1024;
+        return openai.ImageSize.v1024x1024;
       case ImageSize.size1792x1024:
-        return OpenAIImageSize.size1792Horizontal;
+        return openai.ImageSize.v1792x1024;
       case ImageSize.size1024x1792:
-        return OpenAIImageSize.size1792Vertical;
+        return openai.ImageSize.v1024x1792;
+    }
+  }
+  
+  /// 映射图片质量
+  openai.ImageQuality? _mapImageQuality(ImageQuality quality) {
+    switch (quality) {
+      case ImageQuality.standard:
+        return openai.ImageQuality.standard;
+      case ImageQuality.hd:
+        return openai.ImageQuality.hd;
+    }
+  }
+  
+  /// 映射图片风格
+  openai.ImageStyle? _mapImageStyle(ImageStyle style) {
+    switch (style) {
+      case ImageStyle.natural:
+        return openai.ImageStyle.natural;
+      case ImageStyle.vivid:
+        return openai.ImageStyle.vivid;
     }
   }
 
@@ -435,10 +349,10 @@ class ImageGenerationService {
 
       if (await cacheDir.exists()) {
         await cacheDir.delete(recursive: true);
-        debugPrint('🗑️ 图片缓存已清理');
+  debugLog(() => '🗑️ 图片缓存已清理');
       }
     } catch (e) {
-      debugPrint('❌ 清理缓存失败: $e');
+  debugLog(() => '❌ 清理缓存失败: $e');
     }
   }
 }
@@ -469,8 +383,6 @@ class GeneratedImageResult {
   final ImageStyle style;
   final String model;
   final DateTime createdAt;
-  final bool isEdit;
-  final bool isVariation;
 
   GeneratedImageResult({
     required this.url,
@@ -482,8 +394,6 @@ class GeneratedImageResult {
     required this.style,
     required this.model,
     required this.createdAt,
-    this.isEdit = false,
-    this.isVariation = false,
   });
 
   /// 获取尺寸描述
@@ -502,12 +412,6 @@ class GeneratedImageResult {
     }
   }
 
-  /// 获取类型描述
-  String get typeDescription {
-    if (isEdit) return '图片编辑';
-    if (isVariation) return '图片变体';
-    return '图片生成';
-  }
 }
 
 /// 图片生成异常

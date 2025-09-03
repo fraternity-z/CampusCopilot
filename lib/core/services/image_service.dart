@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../../shared/utils/debug_log.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -31,13 +32,13 @@ class ImageService {
       );
 
       if (images.length > maxImages) {
-        debugPrint('选择的图片数量超过限制，只处理前$maxImages张');
+        debugLog(() =>'选择的图片数量超过限制，只处理前$maxImages张');
         return await _processImages(images.take(maxImages).toList());
       }
 
       return await _processImages(images);
     } catch (e) {
-      debugPrint('从相册选择图片失败: $e');
+      debugLog(() =>'从相册选择图片失败: $e');
       throw ImageServiceException('选择图片失败: $e');
     }
   }
@@ -61,7 +62,7 @@ class ImageService {
       final results = await _processImages([image]);
       return results.isNotEmpty ? results.first : null;
     } catch (e) {
-      debugPrint('拍摄照片失败: $e');
+      debugLog(() =>'拍摄照片失败: $e');
       throw ImageServiceException('拍摄照片失败: $e');
     }
   }
@@ -85,7 +86,7 @@ class ImageService {
       final results = await _processImages([image]);
       return results.isNotEmpty ? results.first : null;
     } catch (e) {
-      debugPrint('选择图片失败: $e');
+      debugLog(() =>'选择图片失败: $e');
       throw ImageServiceException('选择图片失败: $e');
     }
   }
@@ -104,7 +105,7 @@ class ImageService {
         final result = await _processImage(image);
         results.add(result);
       } catch (e) {
-        debugPrint('处理图片失败: ${image.name}, 错误: $e');
+        debugLog(() =>'处理图片失败: ${image.name}, 错误: $e');
         // 继续处理其他图片，不因为单张图片失败而中断
       }
     }
@@ -168,7 +169,7 @@ class ImageService {
 
       return file.path;
     } catch (e) {
-      debugPrint('保存图片失败: $e');
+      debugLog(() =>'保存图片失败: $e');
       throw ImageServiceException('保存图片失败: $e');
     }
   }
@@ -199,7 +200,7 @@ class ImageService {
       final base64 = base64Encode(bytes);
       return 'data:$mimeType;base64,$base64';
     } catch (e) {
-      debugPrint('转换Base64失败: $e');
+      debugLog(() =>'转换Base64失败: $e');
       throw ImageServiceException('转换图片格式失败: $e');
     }
   }
@@ -229,13 +230,13 @@ class ImageService {
             // 删除7天前的文件
             if (age.inDays > 7) {
               await file.delete();
-              debugPrint('删除过期图片文件: ${file.path}');
+              debugLog(() =>'删除过期图片文件: ${file.path}');
             }
           }
         }
       }
     } catch (e) {
-      debugPrint('清理临时文件失败: $e');
+      debugLog(() =>'清理临时文件失败: $e');
     }
   }
 }

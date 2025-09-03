@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
+import '../../../../shared/utils/debug_log.dart';
 import 'package:drift/drift.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -177,7 +177,44 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      // 首先获取文档的所有chunk ID（在删除之前）
+      final chunks = await _database.getChunksByDocument(documentId);
+      
+      // 删除向量数据库中的相关数据
+      if (chunks.isNotEmpty) {
+        try {
+          final vectorService = await _ref.read(unifiedVectorSearchServiceProvider.future);
+          if (vectorService is EnhancedVectorSearchService) {
+            final currentKnowledgeBase = _ref
+                .read(multiKnowledgeBaseProvider)
+                .currentKnowledgeBase;
+            final knowledgeBaseId = currentKnowledgeBase?.id ?? 'default_kb';
+            
+            await vectorService.deleteDocumentVectors(
+              knowledgeBaseId: knowledgeBaseId,
+              chunkIds: chunks.map((chunk) => chunk.id).toList(),
+            );
+          }
+        } catch (e) {
+          debugLog(() => '⚠️ 删除向量数据失败，但继续删除文档记录: $e');
+        }
+      }
+      
+      // 删除文档相关的文本块
+      await _database.deleteChunksByDocument(documentId);
+      
+      // 最后删除文档记录
       await _database.deleteKnowledgeDocument(documentId);
+      
+      // 更新知识库统计信息
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      if (currentKnowledgeBase != null) {
+        await _ref.read(multiKnowledgeBaseProvider.notifier)
+            .refreshStats(currentKnowledgeBase.id);
+      }
+      
       await _loadDocuments();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -212,7 +249,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
             vectorSearchServiceTypeProvider.future,
           );
 
-          debugPrint('🔍 使用向量搜索服务: ${serviceType.name}');
+          debugLog(() => '🔍 使用向量搜索服务: ${serviceType.name}');
 
           if (vectorSearchService is EnhancedVectorSearchService) {
             // 使用增强向量搜索服务
@@ -267,11 +304,11 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
               await _fallbackTextSearch(query);
             }
           } else {
-            debugPrint('❌ 未知的向量搜索服务类型');
+            debugLog(() => '❌ 未知的向量搜索服务类型');
             await _fallbackTextSearch(query);
           }
         } catch (e) {
-          debugPrint('❌ 向量搜索失败，回退到简单搜索: $e');
+          debugLog(() => '❌ 向量搜索失败，回退到简单搜索: $e');
           await _fallbackTextSearch(query);
         }
       } else {
@@ -327,8 +364,48 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      // 首先获取所有文档的chunk ID（在删除之前）
+      final allChunkIds = <String>[];
       for (final doc in state.documents) {
+        final chunks = await _database.getChunksByDocument(doc.id);
+        allChunkIds.addAll(chunks.map((chunk) => chunk.id));
+      }
+      
+      // 清空向量数据库
+      if (allChunkIds.isNotEmpty) {
+        try {
+          final vectorService = await _ref.read(unifiedVectorSearchServiceProvider.future);
+          if (vectorService is EnhancedVectorSearchService) {
+            final currentKnowledgeBase = _ref
+                .read(multiKnowledgeBaseProvider)
+                .currentKnowledgeBase;
+            final knowledgeBaseId = currentKnowledgeBase?.id ?? 'default_kb';
+            
+            await vectorService.deleteDocumentVectors(
+              knowledgeBaseId: knowledgeBaseId,
+              chunkIds: allChunkIds,
+            );
+          }
+        } catch (e) {
+          debugLog(() => '⚠️ 清空向量数据库失败，但继续清空文档记录: $e');
+        }
+      }
+      
+      // 删除所有文档及其相关数据
+      for (final doc in state.documents) {
+        // 删除文档相关的文本块
+        await _database.deleteChunksByDocument(doc.id);
+        // 删除文档记录
         await _database.deleteKnowledgeDocument(doc.id);
+      }
+      
+      // 更新知识库统计信息
+      final currentKnowledgeBase = _ref
+          .read(multiKnowledgeBaseProvider)
+          .currentKnowledgeBase;
+      if (currentKnowledgeBase != null) {
+        await _ref.read(multiKnowledgeBaseProvider.notifier)
+            .refreshStats(currentKnowledgeBase.id);
       }
 
       await _loadDocuments();

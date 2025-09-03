@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 
@@ -1625,7 +1626,7 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
             onPressed: () {
               Navigator.of(context).pop();
               // 导航到模型设置页面
-              Navigator.of(context).pushNamed('/settings');
+              context.go('/settings');
             },
             child: const Text('去设置'),
           ),

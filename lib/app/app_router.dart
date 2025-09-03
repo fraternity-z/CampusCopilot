@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../shared/utils/debug_log.dart';
 
 import '../shared/widgets/keyboard_dismissible_wrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -117,10 +118,10 @@ class ModelParametersNotifier extends StateNotifier<ModelParameters> {
         final parametersMap =
             json.decode(parametersJson) as Map<String, dynamic>;
         state = ModelParameters.fromJson(parametersMap);
-        debugPrint('📊 模型参数已加载: ${state.toJson()}');
+        debugLog(() =>'📊 模型参数已加载: ${state.toJson()}');
       }
     } catch (e) {
-      debugPrint('❌ 加载模型参数失败: $e');
+      debugLog(() =>'❌ 加载模型参数失败: $e');
     }
   }
 
@@ -130,9 +131,9 @@ class ModelParametersNotifier extends StateNotifier<ModelParameters> {
       final prefs = await SharedPreferences.getInstance();
       final parametersJson = json.encode(state.toJson());
       await prefs.setString('model_parameters', parametersJson);
-      debugPrint('💾 模型参数已保存: ${state.toJson()}');
+      debugLog(() =>'💾 模型参数已保存: ${state.toJson()}');
     } catch (e) {
-      debugPrint('❌ 保存模型参数失败: $e');
+      debugLog(() =>'❌ 保存模型参数失败: $e');
     }
   }
 
