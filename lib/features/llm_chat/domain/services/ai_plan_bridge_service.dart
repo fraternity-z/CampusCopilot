@@ -278,9 +278,11 @@ class AIPlanBridgeService {
       // 根据不同条件查询
       if (status != null) {
         plans = await _planRepository.getPlansByStatus(status);
-      } else if (type != null) {
+      } else if (arguments['type'] != null) {
+        // type 总是非空，所以检查原始参数
         plans = await _planRepository.getPlansByType(type);
-      } else if (priority != null) {
+      } else if (arguments['priority'] != null) {
+        // priority 总是非空，所以检查原始参数
         plans = await _planRepository.getPlansByPriority(priority);
       } else if (startDateStr != null && endDateStr != null) {
         final startDate = DateTime.parse(startDateStr);

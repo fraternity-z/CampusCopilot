@@ -36,9 +36,6 @@ import '../../../settings/domain/entities/search_config.dart';
 // 学习模式相关导入
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
-// AI工具函数相关导入
-import '../services/ai_plan_bridge_service.dart';
-import '../../../daily_management/presentation/providers/plan_notifier.dart';
 
 /// 聊天服务
 ///
@@ -48,8 +45,6 @@ class ChatService {
   final Ref _ref;
   final String _instanceId;
 
-  /// AI计划桥接服务
-  late final AIPlanBridgeService _aiPlanBridgeService;
 
   /// 会话标题更新回调
   Function(String sessionId, String newTitle)? onSessionTitleUpdated;
@@ -60,10 +55,6 @@ class ChatService {
   ChatService(this._database, this._ref)
     : _instanceId = DateTime.now().millisecondsSinceEpoch.toString() {
     debugPrint('🏗️ ChatService实例创建: $_instanceId');
-    
-    // 初始化AI计划桥接服务
-    final planRepository = _ref.read(planRepositoryProvider);
-    _aiPlanBridgeService = AIPlanBridgeService(planRepository, _ref);
   }
 
   /// 创建新的聊天会话
