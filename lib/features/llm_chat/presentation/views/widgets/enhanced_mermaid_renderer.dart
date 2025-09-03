@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'mermaid_layout_manager.dart';
 
 /// Mermaid官方主题配色方案
 /// 严格按照官方theme-default.js实现
@@ -121,12 +122,14 @@ class EnhancedMermaidRenderer extends StatelessWidget {
     );
   }
 
-  /// 构建图表内容（支持缩放和滚动）
+  /// 构建图表内容（使用响应式布局管理器）
   Widget _buildDiagramContent(
     BuildContext context,
     Map<String, dynamic> parsedData,
   ) {
     final canvasHeight = _calculateCanvasHeight(parsedData);
+    final nodes = parsedData['nodes'] as List<Map<String, String>>;
+    final connections = parsedData['connections'] as List<Map<String, String>>;
 
     Widget diagramWidget;
     switch (parsedData['type']) {
@@ -153,36 +156,32 @@ class EnhancedMermaidRenderer extends StatelessWidget {
         );
     }
 
-    // 普通显示，点击可放大
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: () => _showFullscreen(context, parsedData),
-          child: SizedBox(
-            height: math.min(canvasHeight + 40, 400), // 限制默认高度
-            width: double.infinity,
-            child: diagramWidget,
-          ),
-        ),
-        // 工具栏
-        Positioned(top: 8, right: 8, child: _buildToolbar(context, parsedData)),
-        // 点击放大提示
-        Positioned(
-          bottom: 8,
-          right: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              '点击放大',
-              style: TextStyle(color: Colors.white, fontSize: 12),
+    // 计算合理的内容尺寸
+    final contentWidth = _calculateCanvasWidth(parsedData);
+    
+    // 使用响应式布局管理器
+    return ResponsiveMermaidContainer(
+      contentSize: Size(contentWidth, canvasHeight),
+      nodeCount: nodes.length,
+      connectionCount: connections.length,
+      child: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => _showFullscreen(context, parsedData),
+            child: SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: diagramWidget,
             ),
           ),
-        ),
-      ],
+          // 工具栏
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _buildToolbar(context, parsedData),
+          ),
+        ],
+      ),
     );
   }
 
@@ -537,6 +536,20 @@ class EnhancedMermaidRenderer extends StatelessWidget {
   /// 检查节点是否已存在
   bool _nodeExists(List<Map<String, String>> nodes, String id) {
     return nodes.any((node) => node['id'] == id);
+  }
+
+  /// 计算画布宽度
+  double _calculateCanvasWidth(Map<String, dynamic> parsedData) {
+    final nodes = parsedData['nodes'] as List<Map<String, String>>;
+    
+    // 基于节点数量计算合理的宽度
+    final nodesPerRow = math.min(3, math.max(1, nodes.length)); // 每行1-3个节点
+    final nodeWidth = 280.0; // 单个节点的估算宽度
+    final horizontalSpacing = 40.0; // 节点间间距
+    
+    final totalWidth = nodesPerRow * nodeWidth + (nodesPerRow - 1) * horizontalSpacing + 80.0; // 加上边距
+    
+    return math.max(400.0, totalWidth); // 最小宽度400
   }
 
   /// 计算画布高度
