@@ -236,6 +236,10 @@ class OpenAiLlmProvider extends LlmProvider {
 
       String accumulatedContent = ''; // 累积完整原始内容
       List<ToolCall> accumulatedToolCalls = []; // 累积工具调用
+      
+      // 用于累积工具调用片段的Map
+      // key: index, value: {id, name, arguments}
+      final Map<int, Map<String, dynamic>> toolCallFragments = {};
 
       await for (final chunk in stream) {
         if (chunk.choices?.isEmpty ?? true) continue;
@@ -256,16 +260,77 @@ class OpenAiLlmProvider extends LlmProvider {
           );
         }
 
-        // 处理工具调用增量（流式响应中工具调用通常在最后一个chunk中）
+        // 处理工具调用增量（流式响应中工具调用是片段化传输的）
         if (delta?.toolCalls != null && delta!.toolCalls!.isNotEmpty) {
-          final deltaToolCalls = _convertStreamToolCalls(delta.toolCalls!);
-          if (deltaToolCalls.isNotEmpty) {
-            // 流式响应中工具调用通常是完整的，直接设置
-            accumulatedToolCalls.addAll(deltaToolCalls);
+          for (final toolCallChunk in delta.toolCalls!) {
+            final index = toolCallChunk.index ?? 0;
+            
+            // 初始化或获取该索引的工具调用累积数据
+            if (!toolCallFragments.containsKey(index)) {
+              toolCallFragments[index] = {
+                'id': '',
+                'name': '',
+                'arguments': '',
+              };
+            }
+            
+            final fragment = toolCallFragments[index]!;
+            
+            // 累积ID
+            if (toolCallChunk.id != null && toolCallChunk.id!.isNotEmpty) {
+              fragment['id'] = toolCallChunk.id!;
+            }
+            
+            // 累积函数名
+            if (toolCallChunk.function?.name != null && 
+                toolCallChunk.function!.name!.isNotEmpty) {
+              fragment['name'] = toolCallChunk.function!.name!;
+            }
+            
+            // 累积参数片段
+            if (toolCallChunk.function?.arguments != null) {
+              fragment['arguments'] = 
+                  (fragment['arguments'] as String) + toolCallChunk.function!.arguments!;
+            }
           }
         }
 
         if (choice.finishReason != null) {
+          // 在流结束时处理累积的工具调用片段
+          if (toolCallFragments.isNotEmpty) {
+            for (final entry in toolCallFragments.entries) {
+              final fragment = entry.value;
+              final id = fragment['id'] as String;
+              final name = fragment['name'] as String;
+              final argumentsStr = fragment['arguments'] as String;
+              
+              // 只处理有效的工具调用（必须有ID和函数名）
+              if (id.isNotEmpty && name.isNotEmpty) {
+                Map<String, dynamic> arguments = {};
+                try {
+                  if (argumentsStr.isNotEmpty) {
+                    arguments = json.decode(argumentsStr) as Map<String, dynamic>;
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ 解析工具调用参数失败: $e');
+                  debugPrint('⚠️ 原始参数: $argumentsStr');
+                  arguments = {'raw_arguments': argumentsStr};
+                }
+                
+                debugPrint('🔧 转换流式工具调用: $name');
+                debugPrint('📋 参数: $arguments');
+                
+                accumulatedToolCalls.add(ToolCall(
+                  id: id,
+                  name: name,
+                  arguments: arguments,
+                ));
+              } else {
+                debugPrint('⚠️ 跳过不完整的工具调用: id=$id, name=$name');
+              }
+            }
+          }
+          
           debugPrint('🧠 流式响应完成: 内容长度=${accumulatedContent.length}, 工具调用=${accumulatedToolCalls.length}');
 
           yield StreamedChatResult(
@@ -508,50 +573,6 @@ class OpenAiLlmProvider extends LlmProvider {
     }).toList();
   }
 
-  /// 将流式工具调用转换为ToolCall格式
-  List<ToolCall> _convertStreamToolCalls(List<ChatCompletionStreamMessageToolCallChunk>? toolCalls) {
-    if (toolCalls == null || toolCalls.isEmpty) {
-      return [];
-    }
-    
-    // 过滤掉无效的工具调用（没有函数名或函数对象为空的）
-    final validToolCalls = toolCalls.where((toolCall) {
-      final hasValidName = toolCall.function?.name != null && 
-                           toolCall.function!.name!.isNotEmpty;
-      if (!hasValidName) {
-        debugPrint('⚠️ 跳过无效的工具调用: id=${toolCall.id}, function=${toolCall.function}');
-      }
-      return hasValidName;
-    }).toList();
-    
-    if (validToolCalls.isEmpty) {
-      return [];
-    }
-    
-    return validToolCalls.map((toolCall) {
-      // 尝试解析参数
-      Map<String, dynamic> arguments = {};
-      try {
-        final argumentsStr = toolCall.function?.arguments;
-        if (argumentsStr != null && argumentsStr.isNotEmpty) {
-          arguments = json.decode(argumentsStr) as Map<String, dynamic>;
-        }
-      } catch (e) {
-        debugPrint('⚠️ 解析流式工具调用参数失败: $e, 原始参数: ${toolCall.function?.arguments}');
-        // 如果JSON解析失败，尝试作为字符串处理
-        arguments = {'raw_arguments': toolCall.function?.arguments ?? ''};
-      }
-
-      final functionName = toolCall.function!.name!;
-      debugPrint('🔧 转换流式工具调用: $functionName, 参数: $arguments');
-
-      return ToolCall(
-        id: toolCall.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        name: functionName,
-        arguments: arguments,
-      );
-    }).toList();
-  }
 
   /// 转换完成原因
   FinishReason _convertFinishReason(String? reason) {

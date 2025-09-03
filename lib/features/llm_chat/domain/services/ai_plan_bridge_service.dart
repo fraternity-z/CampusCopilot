@@ -211,7 +211,7 @@ class AIPlanBridgeService {
         }
         
         // 检查是否包含课程相关标签
-        final tags = plan.tags ?? [];
+        final tags = plan.tags;
         final description = plan.description ?? '';
         return tags.any((tag) => 
           tag.contains('课程') || 
