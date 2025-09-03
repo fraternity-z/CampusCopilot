@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dart_openai/dart_openai.dart';
+import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/chat_message.dart';
@@ -9,8 +9,10 @@ import '../../../../core/exceptions/app_exceptions.dart';
 
 /// OpenAI LLM Provider实现
 ///
-/// 使用dart_openai包实现与OpenAI API的交互
+/// 使用openai_dart包实现与OpenAI API的交互
 class OpenAiLlmProvider extends LlmProvider {
+  late final OpenAIClient _client;
+  
   OpenAiLlmProvider(super.config) {
     _initializeOpenAI();
   }
@@ -20,29 +22,31 @@ class OpenAiLlmProvider extends LlmProvider {
 
   /// 初始化OpenAI配置
   void _initializeOpenAI() {
-    OpenAI.apiKey = config.apiKey;
-
-    if (config.baseUrl != null) {
+    String? baseUrl = config.baseUrl;
+    
+    if (baseUrl != null) {
       // 修复baseUrl重复/v1的问题
-      String cleanBaseUrl = config.baseUrl!.trim();
+      String cleanBaseUrl = baseUrl.trim();
       
       // 移除末尾的斜杠
       if (cleanBaseUrl.endsWith('/')) {
         cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
       }
       
-      // 如果用户已经配置了/v1，则移除它，因为dart_openai会自动添加
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 3);
+      // 确保以/v1结尾，因为openai_dart需要完整的URL
+      if (!cleanBaseUrl.endsWith('/v1')) {
+        cleanBaseUrl += '/v1';
       }
       
-      OpenAI.baseUrl = cleanBaseUrl;
-      debugPrint('🔧 设置OpenAI baseUrl: $cleanBaseUrl (原始: ${config.baseUrl})');
+      baseUrl = cleanBaseUrl;
+      debugPrint('🔧 设置OpenAI baseUrl: $baseUrl (原始: ${config.baseUrl})');
     }
 
-    if (config.organizationId != null) {
-      OpenAI.organization = config.organizationId;
-    }
+    _client = OpenAIClient(
+      apiKey: config.apiKey,
+      baseUrl: baseUrl,
+      organization: config.organizationId,
+    );
   }
 
   // ===== 缓存模型列表，减少频繁的网络请求 =====
@@ -62,7 +66,8 @@ class OpenAiLlmProvider extends LlmProvider {
 
     try {
       // 调用 OpenAI 列出模型 API
-      final models = await OpenAI.instance.model.list();
+      final response = await _client.listModels();
+      final models = response.data;
 
       // 仅取可用的模型 id，生成 ModelInfo（其它字段用默认）
       final List<ModelInfo> result = models.map((m) {
@@ -121,35 +126,22 @@ class OpenAiLlmProvider extends LlmProvider {
         messages,
         options?.systemPrompt,
       );
-      // 防御：如果消息体为空，补一条最小用户消息，避免下游兼容端点报 contents/messages 为空
-      if (openAIMessages.isEmpty) {
-        openAIMessages.add(
-          OpenAIChatCompletionChoiceMessageModel(
-            role: OpenAIChatMessageRole.user,
-            content: [
-              OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                options?.systemPrompt?.isNotEmpty == true
-                    ? options!.systemPrompt!
-                    : '请根据系统指令继续回答。',
-              ),
-            ],
-          ),
-        );
-      }
+      
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
-
-      final chatCompletion = await OpenAI.instance.chat.create(
-        model: model,
+      
+      final request = CreateChatCompletionRequest(
+        model: ChatCompletionModel.modelId(model),
         messages: openAIMessages,
         temperature: options?.temperature ?? 0.7,
         maxTokens: options?.maxTokens ?? 2048,
-        // 不传 topP，避免与部分兼容模型不兼容
         frequencyPenalty: options?.frequencyPenalty ?? 0.0,
         presencePenalty: options?.presencePenalty ?? 0.0,
-        stop: options?.stopSequences,
-        // 暂时移除工具调用功能
-        // tools: options?.tools?.map(_convertToOpenAITool).toList(),
+        stop: options?.stopSequences != null 
+            ? ChatCompletionStop.listString(options!.stopSequences!) 
+            : null,
       );
+
+      final chatCompletion = await _client.createChatCompletion(request: request);
 
       if (chatCompletion.choices.isEmpty) {
         throw ApiException('OpenAI API返回了空的选择列表');
@@ -159,9 +151,7 @@ class OpenAiLlmProvider extends LlmProvider {
       final usage = chatCompletion.usage;
 
       // 保存完整的原始内容
-      final originalContent = choice.message.content?.isNotEmpty == true
-          ? choice.message.content!.first.text ?? ''
-          : '';
+      final originalContent = choice.message.content ?? '';
 
       debugPrint('🧠 接收完整响应内容: 长度=${originalContent.length}');
 
@@ -169,13 +159,11 @@ class OpenAiLlmProvider extends LlmProvider {
         content: originalContent, // 保存完整内容，UI层面分离显示
         model: model,
         tokenUsage: TokenUsage(
-          inputTokens: usage.promptTokens,
-          outputTokens: usage.completionTokens,
-          totalTokens: usage.totalTokens,
+          inputTokens: usage?.promptTokens ?? 0,
+          outputTokens: usage?.completionTokens ?? 0,
+          totalTokens: usage?.totalTokens ?? 0,
         ),
-        finishReason: _convertFinishReason(choice.finishReason),
-        // 暂时移除工具调用功能
-        // toolCalls: choice.message.toolCalls?.map(_convertToolCall).toList(),
+        finishReason: _convertFinishReason(choice.finishReason?.name),
       );
     } catch (e) {
       throw _handleOpenAIError(e);
@@ -192,58 +180,43 @@ class OpenAiLlmProvider extends LlmProvider {
         messages,
         options?.systemPrompt,
       );
-      if (openAIMessages.isEmpty) {
-        openAIMessages.add(
-          OpenAIChatCompletionChoiceMessageModel(
-            role: OpenAIChatMessageRole.user,
-            content: [
-              OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                options?.systemPrompt?.isNotEmpty == true
-                    ? options!.systemPrompt!
-                    : '请根据系统指令继续回答。',
-              ),
-            ],
-          ),
-        );
-      }
+      
       final model = options?.model ?? config.defaultModel ?? 'gpt-3.5-turbo';
-
-      final stream = OpenAI.instance.chat.createStream(
-        model: model,
+      
+      final request = CreateChatCompletionRequest(
+        model: ChatCompletionModel.modelId(model),
         messages: openAIMessages,
         temperature: options?.temperature ?? 0.7,
         maxTokens: options?.maxTokens ?? 2048,
-        // 不传 topP，避免与部分兼容模型不兼容
         frequencyPenalty: options?.frequencyPenalty ?? 0.0,
         presencePenalty: options?.presencePenalty ?? 0.0,
-        stop: options?.stopSequences,
-        // 暂时移除工具调用功能
-        // tools: options?.tools?.map(_convertToOpenAITool).toList(),
+        stop: options?.stopSequences != null 
+            ? ChatCompletionStop.listString(options!.stopSequences!) 
+            : null,
+        stream: true,
       );
+
+      final stream = _client.createChatCompletionStream(request: request);
 
       String accumulatedContent = ''; // 累积完整原始内容
 
       await for (final chunk in stream) {
-        if (chunk.choices.isEmpty) continue;
+        if (chunk.choices?.isEmpty ?? true) continue;
 
-        final choice = chunk.choices.first;
+        final choice = chunk.choices!.first;
         final delta = choice.delta;
 
         // 处理内容增量
-        if (delta.content != null && delta.content!.isNotEmpty) {
-          final OpenAIChatCompletionChoiceMessageContentItemModel?
-          firstContent = delta.content!.first;
-          final String? deltaText = firstContent?.text;
-          if (deltaText != null && deltaText.isNotEmpty) {
-            accumulatedContent += deltaText;
+        final deltaContent = delta?.content;
+        if (deltaContent != null && deltaContent.isNotEmpty) {
+          accumulatedContent += deltaContent;
 
-            yield StreamedChatResult(
-              delta: deltaText,
-              content: accumulatedContent, // 保存完整内容
-              isDone: false,
-              model: model,
-            );
-          }
+          yield StreamedChatResult(
+            delta: deltaContent,
+            content: accumulatedContent, // 保存完整内容
+            isDone: false,
+            model: model,
+          );
         }
 
         if (choice.finishReason != null) {
@@ -258,7 +231,7 @@ class OpenAiLlmProvider extends LlmProvider {
               outputTokens: accumulatedContent.split(' ').length,
               totalTokens: accumulatedContent.split(' ').length,
             ),
-            finishReason: _convertFinishReason(choice.finishReason),
+            finishReason: _convertFinishReason(choice.finishReason?.name),
           );
         }
       }
@@ -275,8 +248,12 @@ class OpenAiLlmProvider extends LlmProvider {
       debugPrint('🔗 OpenAI嵌入请求: 模型=$model, 文本数量=${texts.length}');
       debugPrint('🌐 API端点: ${config.baseUrl ?? 'https://api.openai.com'}');
 
-      final embedding = await OpenAI.instance.embedding
-          .create(model: model, input: texts)
+      final request = CreateEmbeddingRequest(
+        model: EmbeddingModel.modelId(model),
+        input: EmbeddingInput.listString(texts),
+      );
+
+      final embedding = await _client.createEmbedding(request: request)
           .timeout(
             const Duration(minutes: 2), // 2分钟超时
             onTimeout: () {
@@ -294,8 +271,10 @@ class OpenAiLlmProvider extends LlmProvider {
       // 安全地处理嵌入数据
       final embeddings = <List<double>>[];
       for (final item in embedding.data) {
-        if (item.embeddings.isNotEmpty) {
-          embeddings.add(item.embeddings);
+        // 根据文档，应该使用 embeddingVector 而不是 embedding
+        final embeddingVector = item.embeddingVector;
+        if (embeddingVector.isNotEmpty) {
+          embeddings.add(embeddingVector);
         } else {
           debugPrint('⚠️ 发现空的嵌入向量，跳过');
         }
@@ -330,7 +309,7 @@ class OpenAiLlmProvider extends LlmProvider {
   @override
   Future<bool> validateConfig() async {
     try {
-      await OpenAI.instance.model.list();
+      await _client.listModels();
       return true;
     } catch (e) {
       return false;
@@ -345,121 +324,92 @@ class OpenAiLlmProvider extends LlmProvider {
 
   @override
   void dispose() {
-    // OpenAI SDK不需要特殊的清理
+    _client.endSession();
   }
 
   /// 转换为OpenAI消息格式
-  List<OpenAIChatCompletionChoiceMessageModel> _convertToOpenAIMessages(
+  List<ChatCompletionMessage> _convertToOpenAIMessages(
     List<ChatMessage> messages,
     String? systemPrompt,
   ) {
-    final openAIMessages = <OpenAIChatCompletionChoiceMessageModel>[];
-    bool hasContentMessage = false; // 是否存在至少一条非空内容消息
+    final openAIMessages = <ChatCompletionMessage>[];
 
     // 添加系统提示词（放在最前）
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
       openAIMessages.add(
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.system,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              systemPrompt,
-            ),
-          ],
+        ChatCompletionMessage.system(
+          content: systemPrompt,
         ),
       );
     }
 
-    // 转换聊天消息（跳过空内容项）
+    // 转换聊天消息
     for (final message in messages) {
-      final contentItems =
-          <OpenAIChatCompletionChoiceMessageContentItemModel>[];
-
-      // 添加文本内容
-      if (message.content.isNotEmpty) {
-        contentItems.add(
-          OpenAIChatCompletionChoiceMessageContentItemModel.text(
-            message.content,
-          ),
-        );
+      if (message.content.isEmpty && message.imageUrls.isEmpty) {
+        continue; // 跳过空消息
       }
 
-      // 添加图片内容（如果有）
       if (message.imageUrls.isNotEmpty) {
+        // 多模态消息（文本 + 图片）
+        final contentParts = <ChatCompletionMessageContentPart>[];
+        
+        // 添加文本内容
+        if (message.content.isNotEmpty) {
+          contentParts.add(
+            ChatCompletionMessageContentPart.text(text: message.content),
+          );
+        }
+        
+        // 添加图片内容
         for (final imageUrl in message.imageUrls) {
-          // 检查是否是base64格式的图片
-          if (imageUrl.startsWith('data:image/')) {
-            contentItems.add(
-              OpenAIChatCompletionChoiceMessageContentItemModel.imageUrl(
-                imageUrl,
+          if (imageUrl.startsWith('data:image/') || imageUrl.startsWith('http')) {
+            contentParts.add(
+              ChatCompletionMessageContentPart.image(
+                imageUrl: ChatCompletionMessageImageUrl(
+                  url: imageUrl,
+                ),
               ),
             );
-          } else if (imageUrl.startsWith('file://')) {
-            // 如果是文件路径，需要转换为base64
-            // 这里暂时跳过，因为需要异步读取文件
-            debugPrint('⚠️ 文件路径格式的图片暂不支持: $imageUrl');
           } else {
-            // 假设是URL或base64字符串
-            contentItems.add(
-              OpenAIChatCompletionChoiceMessageContentItemModel.imageUrl(
-                imageUrl,
-              ),
-            );
+            debugPrint('⚠️ 不支持的图片格式: $imageUrl');
           }
         }
-      }
-
-      // 仅在存在内容项时才追加，避免空 content 触发下游错误
-      if (contentItems.isNotEmpty) {
-        hasContentMessage = true;
+        
+        if (contentParts.isNotEmpty) {
+          openAIMessages.add(
+            message.isFromUser
+                ? ChatCompletionMessage.user(
+                    content: ChatCompletionUserMessageContent.parts(contentParts),
+                  )
+                : ChatCompletionMessage.assistant(
+                    content: message.content,
+                  ),
+          );
+        }
+      } else {
+        // 纯文本消息
         openAIMessages.add(
-          OpenAIChatCompletionChoiceMessageModel(
-            role: message.isFromUser
-                ? OpenAIChatMessageRole.user
-                : OpenAIChatMessageRole.assistant,
-            content: contentItems,
-          ),
+          message.isFromUser
+              ? ChatCompletionMessage.user(
+                  content: ChatCompletionUserMessageContent.string(message.content),
+                )
+              : ChatCompletionMessage.assistant(
+                  content: message.content,
+                ),
         );
       }
     }
 
-    // 若最终没有任何有效内容消息，补一条最小用户消息作为兜底
-    if (!hasContentMessage) {
+    // 如果没有有效消息，添加一个默认消息
+    if (openAIMessages.isEmpty ||
+        openAIMessages.every((m) => m.role == ChatCompletionMessageRole.system)) {
       openAIMessages.add(
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.user,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              (systemPrompt != null && systemPrompt.isNotEmpty)
-                  ? systemPrompt
-                  : '请根据系统指令继续回答。',
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 强化保障：确保最后一条是当前用户输入（部分网关更依赖最后一条 user 内容）
-    final ChatMessage lastUserInput = messages.lastWhere(
-      (m) => m.isFromUser,
-      orElse: () => ChatMessage(
-        id: 'fallback',
-        content: '',
-        isFromUser: true,
-        timestamp: DateTime.now(),
-        chatSessionId: 'fallback',
-      ),
-    );
-    final latestUserText = (lastUserInput.content).trim();
-    if (latestUserText.isNotEmpty) {
-      openAIMessages.add(
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.user,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              latestUserText,
-            ),
-          ],
+        ChatCompletionMessage.user(
+          content: ChatCompletionUserMessageContent.string(
+            systemPrompt?.isNotEmpty == true
+                ? '请根据上述系统指令回答。'
+                : '你好！',
+          ),
         ),
       );
     }
