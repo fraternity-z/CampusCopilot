@@ -68,6 +68,8 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                   subtitle: Text(currentTheme),
                   trailing: DropdownButton<String>(
                     value: currentTheme,
+                    borderRadius: BorderRadius.circular(12),
+                    dropdownColor: Theme.of(context).colorScheme.surface,
                     items: const [
                       DropdownMenuItem(value: '跟随系统', child: Text('跟随系统')),
                       DropdownMenuItem(value: '浅色', child: Text('浅色')),
