@@ -27,14 +27,17 @@ class ImageGenerationService {
     ImageSize size = ImageSize.size1024x1024,
     ImageQuality quality = ImageQuality.standard,
     ImageStyle style = ImageStyle.vivid,
-    String model = 'dall-e-3',
+    String? model, // 改为可空，让调用方传递具体模型
     String? apiKey,
     String? baseUrl,
   }) async {
+    // 如果没有指定模型，默认使用DALL-E 3
+    final finalModel = model ?? 'dall-e-3';
+    
     try {
       debugPrint('🎨 开始生成图片: $prompt');
       debugPrint('🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
-      debugPrint('🤖 模型: $model');
+      debugPrint('🤖 模型: $finalModel');
 
       // 验证参数
       if (prompt.trim().isEmpty) {
@@ -46,7 +49,7 @@ class ImageGenerationService {
       }
 
       // DALL-E 3 只支持生成1张图片
-      if (model == 'dall-e-3' && count > 1) {
+      if (finalModel == 'dall-e-3' && count > 1) {
         count = 1;
         debugPrint('⚠️ DALL-E 3 只支持生成1张图片，已调整为1张');
       }
@@ -83,15 +86,15 @@ class ImageGenerationService {
       // 调用 OpenAI API - 兼容NewAPI等第三方端点
       final request = openai.CreateImageRequest(
         prompt: prompt,
-        model: _mapModel(model),
+        model: _mapModel(finalModel),
         n: count,
         size: _mapImageSizeToApiEnum(size),
         responseFormat: openai.ImageResponseFormat.url,
         // 根据模型和端点决定是否添加这些参数，以提高NewAPI兼容性
-        quality: _shouldUseAdvancedParams(model, baseUrl) 
+        quality: _shouldUseAdvancedParams(finalModel, baseUrl) 
             ? _mapImageQuality(quality)
             : null,
-        style: _shouldUseAdvancedParams(model, baseUrl) 
+        style: _shouldUseAdvancedParams(finalModel, baseUrl) 
             ? _mapImageStyle(style)
             : null,
       );
@@ -122,7 +125,7 @@ class ImageGenerationService {
               size: size,
               quality: quality,
               style: style,
-              model: model,
+              model: finalModel,
               createdAt: DateTime.now(),
             ),
           );
@@ -141,12 +144,12 @@ class ImageGenerationService {
           errorMsg.contains('bad request')) {
         
         // 如果使用了高级参数且出现错误，尝试使用基础参数重试
-        if (_shouldUseAdvancedParams(model, baseUrl)) {
+        if (_shouldUseAdvancedParams(finalModel, baseUrl)) {
           debugPrint('🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
           try {
             final retryRequest = openai.CreateImageRequest(
               prompt: prompt,
-              model: _mapModel(model),
+              model: _mapModel(finalModel),
               n: count,
               size: _mapImageSizeToApiEnum(size),
               responseFormat: openai.ImageResponseFormat.url,
@@ -178,7 +181,7 @@ class ImageGenerationService {
                     size: size,
                     quality: ImageQuality.standard, // 使用默认质量
                     style: ImageStyle.natural, // 使用默认风格
-                    model: model,
+                    model: finalModel,
                     createdAt: DateTime.now(),
                   ),
                 );

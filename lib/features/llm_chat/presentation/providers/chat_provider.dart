@@ -16,6 +16,9 @@ import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
 import '../../../learning_mode/domain/services/learning_session_service.dart';
 import '../../../learning_mode/domain/entities/learning_session.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../domain/utils/model_capability_checker.dart';
+import '../../domain/entities/model_capabilities.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -574,6 +577,41 @@ class ChatNotifier extends StateNotifier<ChatState> {
       debugPrint('🎨 使用 $configType 配置生成图片');
       debugPrint('🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
       
+      // 获取具有图像生成能力的模型
+      String? imageGenerationModel;
+      try {
+        // 首先尝试获取当前选中的模型
+        final currentModel = await _ref.read(databaseCurrentModelProvider.future);
+        if (currentModel != null && 
+            ModelCapabilityChecker.hasCapability(
+              currentModel.id, 
+              ModelCapabilityType.imageGeneration
+            )) {
+          imageGenerationModel = currentModel.id;
+          debugPrint('🎯 使用当前选中的图像生成模型: $imageGenerationModel');
+        } else {
+          // 如果当前模型不支持图像生成，查找可用的图像生成模型
+          final allModels = await _ref.read(databaseAvailableModelsProvider.future);
+          final imageGenModels = allModels.where((model) => 
+            ModelCapabilityChecker.hasCapability(
+              model.id, 
+              ModelCapabilityType.imageGeneration
+            )
+          ).toList();
+          
+          if (imageGenModels.isNotEmpty) {
+            imageGenerationModel = imageGenModels.first.id;
+            debugPrint('🔍 自动选择第一个可用的图像生成模型: $imageGenerationModel');
+          } else {
+            debugPrint('⚠️ 没有找到支持图像生成的模型，使用默认模型');
+            imageGenerationModel = 'dall-e-3'; // 回退到默认模型
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ 获取图像生成模型失败: $e，使用默认模型');
+        imageGenerationModel = 'dall-e-3'; // 回退到默认模型
+      }
+      
       // 生成图片
       final results = await _imageGenerationService.generateImages(
         prompt: prompt,
@@ -581,6 +619,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         size: size,
         quality: quality,
         style: style,
+        model: imageGenerationModel,
         apiKey: apiKey,
         baseUrl: baseUrl,
       );
