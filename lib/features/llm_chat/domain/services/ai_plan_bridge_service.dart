@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../tools/daily_management_tools.dart';
-import '../../../daily_management/domain/entities/plan_entity.dart';
-import '../../../daily_management/domain/repositories/plan_repository.dart';
+import 'package:ai_assistant/features/daily_management/domain/entities/plan_entity.dart';
+import 'package:ai_assistant/features/daily_management/domain/repositories/plan_repository.dart';
+import 'package:ai_assistant/repository/classtable_cache_manager.dart';
+import 'package:intl/intl.dart';
 
 /// AI计划桥接服务
 /// 
@@ -63,172 +65,341 @@ class AIPlanBridgeService {
   }
 
   /// 处理读取课程表函数
-  Future<FunctionCallResult> _handleReadCourseSchedule(
-    Map<String, dynamic> arguments,
-  ) async {
+  Future<FunctionCallResult> _handleReadCourseSchedule(Map<String, dynamic> arguments) async {
     try {
-      final startDate = arguments['start_date'] as String?;
-      final endDate = arguments['end_date'] as String?;
-      final dayOfWeek = arguments['day_of_week'] as int?;
-
-      debugPrint('📅 读取课程表 - 开始日期: $startDate, 结束日期: $endDate, 星期: $dayOfWeek');
-
-      // 解析日期范围
-      DateTime startDateTime;
-      DateTime endDateTime;
-      
-      if (startDate != null && endDate != null) {
-        try {
-          startDateTime = DateTime.parse(startDate);
-          endDateTime = DateTime.parse(endDate);
-        } catch (e) {
-          return FunctionCallResult.failure(error: '日期格式错误，请使用YYYY-MM-DD格式');
-        }
-      } else {
-        // 默认查询本周的课程
-        final now = DateTime.now();
-        final weekDay = now.weekday;
-        startDateTime = now.subtract(Duration(days: weekDay - 1)); // 本周一
-        endDateTime = startDateTime.add(Duration(days: 6)); // 本周日
-      }
-
-      // 从计划仓库查询课程相关的计划
-      var coursePlans = await _planRepository.getPlansByDateRange(startDateTime, endDateTime);
-      
-      // 过滤出课程类型的计划
-      coursePlans = coursePlans.where((plan) => 
-        plan.type == PlanType.study || 
-        plan.courseId != null ||
-        plan.title.toLowerCase().contains('课程') ||
-        plan.title.toLowerCase().contains('课') ||
-        plan.title.toLowerCase().contains('class') ||
-        plan.description?.toLowerCase().contains('课程') == true
-      ).toList();
-
-      // 根据星期几过滤
-      if (dayOfWeek != null && dayOfWeek >= 1 && dayOfWeek <= 7) {
-        coursePlans = coursePlans.where((plan) => 
-          plan.planDate.weekday == dayOfWeek
-        ).toList();
-      }
-
-      // 转换为课程表格式
-      final courses = coursePlans.map((plan) => {
-        'course_name': plan.title,
-        'teacher': _extractTeacher(plan.description),
-        'classroom': _extractClassroom(plan.description),
-        'time': _formatCourseTime(plan.planDate, plan.startTime, plan.endTime),
-        'week_day': plan.planDate.weekday,
-        'start_time': plan.startTime?.toString().split(' ')[1].substring(0, 5) ?? 
-                     plan.planDate.toString().split(' ')[1].substring(0, 5),
-        'end_time': plan.endTime?.toString().split(' ')[1].substring(0, 5) ?? 
-                   plan.planDate.add(Duration(hours: 2)).toString().split(' ')[1].substring(0, 5),
-        'course_id': plan.courseId,
-        'description': plan.description,
-        'progress': plan.progress,
-        'status': plan.status.value,
-        'priority': plan.priority.name,
-        'tags': plan.tags,
-      }).toList();
-
-      // 按时间排序
-      courses.sort((a, b) {
-        final dayCompare = (a['week_day'] as int).compareTo(b['week_day'] as int);
-        if (dayCompare != 0) return dayCompare;
-        return (a['start_time'] as String).compareTo(b['start_time'] as String);
-      });
-
-      debugPrint('✅ 成功查询到${courses.length}门课程');
-
-      return FunctionCallResult.success(
-        data: {
-          'courses': courses,
-          'total_count': courses.length,
-          'query_params': {
-            'start_date': startDateTime.toIso8601String().split('T')[0],
-            'end_date': endDateTime.toIso8601String().split('T')[0],
-            'day_of_week': dayOfWeek
-          },
-          'date_range': {
-            'start': startDateTime.toIso8601String().split('T')[0],
-            'end': endDateTime.toIso8601String().split('T')[0]
-          }
-        },
-        message: '成功获取课程表信息，共${courses.length}门课程'
+      // 定义课程标签正则表达式
+      final courseTagsRegex = RegExp(
+        r'(课程|上课|教学|实验|讲座|研讨|考试|测验|作业|课堂)',
+        caseSensitive: false,
       );
-
+      // 解析参数
+      DateTime? startDate;
+      DateTime? endDate;
+      
+      // 解析日期范围
+      if (arguments['date_range'] != null) {
+        final dateRangeStr = arguments['date_range'] as String;
+        final dates = dateRangeStr.split('至');
+        if (dates.length == 2) {
+          try {
+            startDate = DateTime.parse(dates[0].trim());
+            endDate = DateTime.parse(dates[1].trim());
+          } catch (e) {
+            debugPrint('日期解析错误: $e');
+          }
+        }
+      }
+      
+      // 如果没有指定日期范围，默认为本周
+      if (startDate == null || endDate == null) {
+        final now = DateTime.now();
+        final weekday = now.weekday;
+        startDate = now.subtract(Duration(days: weekday - 1));
+        endDate = startDate.add(Duration(days: 6));
+      }
+      
+      // 解析星期几筛选
+      List<int>? weekdayFilter;
+      if (arguments['weekday'] != null) {
+        final weekdayStr = arguments['weekday'] as String;
+        weekdayFilter = _parseWeekday(weekdayStr);
+      }
+      
+      // 首先尝试从缓存读取真实的课程表数据
+      final cachedClassTable = await ClassTableCacheManager.loadClassTable();
+      
+      if (cachedClassTable != null && cachedClassTable.timeArrangement.isNotEmpty) {
+        // 计算当前是第几周
+        DateTime termStart;
+        try {
+          termStart = DateTime.parse(cachedClassTable.termStartDay);
+        } catch (e) {
+          // 如果解析失败，使用默认值
+          termStart = DateTime.now().subtract(Duration(days: 30));
+        }
+        
+        final daysSinceStart = startDate.difference(termStart).inDays;
+        final currentWeek = (daysSinceStart / 7).floor();
+        
+        // 转换缓存的课程表数据为AI格式
+        final courses = <Map<String, dynamic>>[];
+        
+        for (final timeArrangement in cachedClassTable.timeArrangement) {
+          // 检查是否在当前周有课
+          if (currentWeek >= 0 && 
+              currentWeek < timeArrangement.weekList.length && 
+              timeArrangement.weekList[currentWeek]) {
+            
+            // 过滤星期
+            if (weekdayFilter != null && !weekdayFilter.contains(timeArrangement.day)) {
+              continue;
+            }
+            
+            // 获取课程详情
+            final classDetail = cachedClassTable.getClassDetail(timeArrangement);
+            
+            // 计算具体日期
+            final courseDate = startDate.add(Duration(days: timeArrangement.day - 1));
+            
+            // 如果课程日期不在查询范围内，跳过
+            if (courseDate.isBefore(startDate) || courseDate.isAfter(endDate)) {
+              continue;
+            }
+            
+            courses.add({
+              'course_name': classDetail.name,
+              'teacher': timeArrangement.teacher ?? '',
+              'classroom': timeArrangement.classroom ?? '',
+              'time': '${_getTimeFromIndex(timeArrangement.start, true)}-${_getTimeFromIndex(timeArrangement.stop, false)}',
+              'week_day': timeArrangement.day,
+              'start_time': _getTimeFromIndex(timeArrangement.start, true),
+              'end_time': _getTimeFromIndex(timeArrangement.stop, false),
+              'course_id': '${classDetail.code ?? classDetail.name}_${timeArrangement.day}_${timeArrangement.start}',
+              'description': '${classDetail.name}课程，教师：${timeArrangement.teacher ?? "未知"}，地点：${timeArrangement.classroom ?? "未知"}，第${timeArrangement.start}-${timeArrangement.stop}节',
+              'progress': 0,
+              'status': 'pending',
+              'priority': 'high',
+              'tags': ['课程', '正式课表'],
+              'course_code': classDetail.code,
+              'course_number': classDetail.number,
+              'section_start': timeArrangement.start,
+              'section_end': timeArrangement.stop,
+              'current_week': currentWeek + 1,
+            });
+          }
+        }
+        
+        // 如果有真实课程数据，返回
+        if (courses.isNotEmpty) {
+          // 按星期和时间排序
+          courses.sort((a, b) {
+            final dayCompare = (a['week_day'] as int).compareTo(b['week_day'] as int);
+            if (dayCompare != 0) return dayCompare;
+            return (a['section_start'] as int).compareTo(b['section_start'] as int);
+          });
+          
+          final result = {
+            'success': true,
+            'message': '成功获取课程表（真实数据）',
+            'data': {
+              'start_date': DateFormat('yyyy-MM-dd').format(startDate),
+              'end_date': DateFormat('yyyy-MM-dd').format(endDate),
+              'semester_code': cachedClassTable.semesterCode,
+              'current_week': currentWeek + 1,
+              'total_courses': courses.length,
+              'courses': courses,
+            }
+          };
+          
+          return FunctionCallResult.success(
+            data: result
+          );
+        }
+      }
+      
+      // 如果没有缓存数据，尝试从计划仓库查询
+      final plans = await _planRepository.getPlansByDateRange(
+        startDate,
+        endDate,
+      );
+      
+      // 筛选课程计划
+      final coursePlans = plans.where((plan) {
+        // 如果有星期筛选，应用筛选
+        if (weekdayFilter != null && !weekdayFilter.contains(plan.planDate.weekday)) {
+          return false;
+        }
+        
+        // 检查是否包含课程相关标签
+        final tags = plan.tags ?? [];
+        final description = plan.description ?? '';
+        return tags.any((tag) => 
+          tag.contains('课程') || 
+          tag.contains('课表') || 
+          tag.contains('上课')
+        ) || (description.isNotEmpty && courseTagsRegex.hasMatch(description));
+      }).toList();
+      
+      if (coursePlans.isEmpty) {
+        // 返回示例课程表数据
+        final sampleCourses = _generateSampleCourseSchedule(startDate, endDate);
+        
+        final result = {
+          'success': true,
+          'message': '已获取本周课程表（示例数据）',
+          'data': {
+            'start_date': DateFormat('yyyy-MM-dd').format(startDate),
+            'end_date': DateFormat('yyyy-MM-dd').format(endDate),
+            'total_courses': sampleCourses.length,
+            'courses': sampleCourses,
+          }
+        };
+        
+        return FunctionCallResult.success(
+          data: result
+        );
+      }
+      
+      // 转换为课程格式
+      final courses = coursePlans.map((plan) {
+        // 从计划描述中提取课程信息
+        final teacher = _extractTeacher(plan.description ?? '');
+        final classroom = _extractClassroom(plan.description ?? '');
+        final time = _formatCourseTime(plan);
+        
+        return {
+          'id': plan.id,
+          'name': plan.title,
+          'teacher': teacher,
+          'classroom': classroom,
+          'time': time,
+          'week_day': plan.planDate.weekday,
+          'start_time': DateFormat('HH:mm').format(plan.planDate),
+          'end_time': plan.endTime != null 
+              ? DateFormat('HH:mm').format(plan.endTime!)
+              : DateFormat('HH:mm').format(plan.planDate.add(Duration(hours: 2))),
+          'course_id': plan.id,
+          'description': plan.description,
+          'progress': plan.progress,
+          'status': plan.status.value,
+          'priority': plan.priority.name,
+          'tags': plan.tags,
+        };
+      }).toList();
+      
+      final result = {
+        'success': true,
+        'message': '成功获取课程表',
+        'data': {
+          'start_date': DateFormat('yyyy-MM-dd').format(startDate),
+          'end_date': DateFormat('yyyy-MM-dd').format(endDate),
+          'total_courses': courses.length,
+          'courses': courses,
+        }
+      };
+      
+      return FunctionCallResult.success(
+        data: result
+      );
+      
     } catch (e) {
-      debugPrint('❌ 读取课程表失败: $e');
-      return FunctionCallResult.failure(error: '读取课程表失败: ${e.toString()}');
+      return FunctionCallResult.failure(
+        error: '获取课程表失败: $e'
+      );
     }
   }
 
+  /// 解析星期参数
+  List<int>? _parseWeekday(String? weekdayStr) {
+    if (weekdayStr == null || weekdayStr.isEmpty) return null;
+    
+    // 映射星期名称到数字
+    final weekdayMap = {
+      '星期一': 1, '周一': 1, 'Monday': 1,
+      '星期二': 2, '周二': 2, 'Tuesday': 2,
+      '星期三': 3, '周三': 3, 'Wednesday': 3,
+      '星期四': 4, '周四': 4, 'Thursday': 4,
+      '星期五': 5, '周五': 5, 'Friday': 5,
+      '星期六': 6, '周六': 6, 'Saturday': 6,
+      '星期日': 7, '周日': 7, 'Sunday': 7,
+    };
+    
+    // 尝试解析为数字
+    final weekday = int.tryParse(weekdayStr);
+    if (weekday != null && weekday >= 1 && weekday <= 7) {
+      return [weekday];
+    }
+    
+    // 尝试匹配星期名称
+    for (final entry in weekdayMap.entries) {
+      if (weekdayStr.contains(entry.key)) {
+        return [entry.value];
+      }
+    }
+    
+    return null;
+  }
+  
+  
+  /// 根据节次索引获取时间
+  String _getTimeFromIndex(int index, bool isStart) {
+    // 时间安排表：偶数索引是开始时间，奇数索引是结束时间
+    final timeList = [
+      "08:30", "09:15",  // 第1节
+      "09:20", "10:05",  // 第2节
+      "10:25", "11:10",  // 第3节
+      "11:15", "12:00",  // 第4节
+      "14:00", "14:45",  // 第5节
+      "14:50", "15:35",  // 第6节
+      "15:55", "16:40",  // 第7节
+      "16:45", "17:30",  // 第8节
+      "19:00", "19:45",  // 第9节
+      "19:55", "20:35",  // 第10节
+      "20:40", "21:25",  // 第11节
+    ];
+    
+    // 节次从1开始，需要转换为数组索引
+    final timeIndex = isStart ? (index - 1) * 2 : (index - 1) * 2 + 1;
+    
+    if (timeIndex >= 0 && timeIndex < timeList.length) {
+      return timeList[timeIndex];
+    }
+    
+    return isStart ? '08:30' : '10:10';
+  }
+  
+  /// 格式化课程时间
+  String _formatCourseTime(PlanEntity plan) {
+    final startTime = DateFormat('HH:mm').format(plan.planDate);
+    final endTime = plan.endTime != null 
+        ? DateFormat('HH:mm').format(plan.endTime!)
+        : DateFormat('HH:mm').format(plan.planDate.add(Duration(hours: 2)));
+    
+    return '$startTime-$endTime';
+  }
+  
   /// 从描述中提取教师信息
   String? _extractTeacher(String? description) {
     if (description == null || description.isEmpty) return null;
     
     // 尝试匹配常见的教师格式
     final teacherPatterns = [
-      RegExp(r'教师[：:]\s*([^,，\n]+)'),
-      RegExp(r'老师[：:]\s*([^,，\n]+)'),
-      RegExp(r'任课教师[：:]\s*([^,，\n]+)'),
-      RegExp(r'授课教师[：:]\s*([^,，\n]+)'),
-      RegExp(r'([^,，\n]*)[教老]师'),
+      RegExp(r'教师[：::\s]*([^,，\n]+)'),
+      RegExp(r'老师[：::\s]*([^,，\n]+)'),
+      RegExp(r'任课教师[：::\s]*([^,，\n]+)'),
+      RegExp(r'授课教师[：::\s]*([^,，\n]+)'),
     ];
     
     for (final pattern in teacherPatterns) {
       final match = pattern.firstMatch(description);
       if (match != null) {
-        final teacher = match.group(1)?.trim();
-        if (teacher != null && teacher.isNotEmpty) {
-          return teacher;
-        }
+        return match.group(1)?.trim();
       }
     }
     
     return null;
   }
-
+  
   /// 从描述中提取教室信息
   String? _extractClassroom(String? description) {
     if (description == null || description.isEmpty) return null;
     
     // 尝试匹配常见的教室格式
     final classroomPatterns = [
-      RegExp(r'教室[：:]\s*([^,，\n]+)'),
-      RegExp(r'地点[：:]\s*([^,，\n]+)'),
-      RegExp(r'上课地点[：:]\s*([^,，\n]+)'),
-      RegExp(r'([A-Z]\d+|教学楼[A-Z]\d+|实验楼\d+|[^,，\n]*楼\d+)'),
+      RegExp(r'教室[：::\s]*([^,，\n]+)'),
+      RegExp(r'地点[：::\s]*([^,，\n]+)'),
+      RegExp(r'上课地点[：::\s]*([^,，\n]+)'),
+      RegExp(r'([A-Z]\d{3,4}[室]?)'), // 匹配如B203室
     ];
     
     for (final pattern in classroomPatterns) {
       final match = pattern.firstMatch(description);
       if (match != null) {
-        final classroom = match.group(1)?.trim();
-        if (classroom != null && classroom.isNotEmpty) {
-          return classroom;
-        }
+        return match.group(1)?.trim();
       }
     }
     
     return null;
-  }
-
-  /// 格式化课程时间显示
-  String _formatCourseTime(DateTime planDate, DateTime? startTime, DateTime? endTime) {
-    final weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    final weekdayName = weekdays[planDate.weekday];
-    
-    if (startTime != null && endTime != null) {
-      final startTimeStr = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
-      final endTimeStr = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
-      return '$weekdayName $startTimeStr-$endTimeStr';
-    } else {
-      // 使用计划日期的时间
-      final timeStr = '${planDate.hour.toString().padLeft(2, '0')}:${planDate.minute.toString().padLeft(2, '0')}';
-      final endTimeStr = '${(planDate.hour + 2).toString().padLeft(2, '0')}:${planDate.minute.toString().padLeft(2, '0')}';
-      return '$weekdayName $timeStr-$endTimeStr';
-    }
   }
 
   /// 处理创建学习计划函数
@@ -765,5 +936,144 @@ class AIPlanBridgeService {
     return '分析期间共有$planCount个学习计划，'
         '完成率为$completionRate%，平均进度$averageProgress%。'
         '其中已完成$completedCount个，进行中$inProgressCount个，待处理$pendingCount个任务。';
+  }
+
+  /// 生成示例课程表数据
+  List<Map<String, dynamic>> _generateSampleCourseSchedule(DateTime startDate, DateTime endDate) {
+    final courses = <Map<String, dynamic>>[];
+    
+    // 示例课程数据
+    final sampleCourses = [
+      {
+        'name': '高等数学',
+        'teacher': '张教授',
+        'classroom': '教学楼A301',
+        'day': 1, // 周一
+        'start': '08:00',
+        'end': '09:40',
+      },
+      {
+        'name': '大学英语',
+        'teacher': '李老师',
+        'classroom': '教学楼B205',
+        'day': 1,
+        'start': '10:00',
+        'end': '11:40',
+      },
+      {
+        'name': '数据结构',
+        'teacher': '王教授',
+        'classroom': '实验楼C401',
+        'day': 2, // 周二
+        'start': '14:00',
+        'end': '15:40',
+      },
+      {
+        'name': '计算机网络',
+        'teacher': '刘老师',
+        'classroom': '教学楼A502',
+        'day': 2,
+        'start': '16:00',
+        'end': '17:40',
+      },
+      {
+        'name': '操作系统',
+        'teacher': '陈教授',
+        'classroom': '教学楼B301',
+        'day': 3, // 周三
+        'start': '08:00',
+        'end': '09:40',
+      },
+      {
+        'name': '数据库原理',
+        'teacher': '赵老师',
+        'classroom': '实验楼C302',
+        'day': 3,
+        'start': '14:00',
+        'end': '15:40',
+      },
+      {
+        'name': '软件工程',
+        'teacher': '周教授',
+        'classroom': '教学楼A401',
+        'day': 4, // 周四
+        'start': '10:00',
+        'end': '11:40',
+      },
+      {
+        'name': '人工智能导论',
+        'teacher': '吴老师',
+        'classroom': '教学楼B403',
+        'day': 4,
+        'start': '14:00',
+        'end': '15:40',
+      },
+      {
+        'name': '线性代数',
+        'teacher': '郑教授',
+        'classroom': '教学楼A201',
+        'day': 5, // 周五
+        'start': '08:00',
+        'end': '09:40',
+      },
+      {
+        'name': '概率论与数理统计',
+        'teacher': '孙老师',
+        'classroom': '教学楼B302',
+        'day': 5,
+        'start': '10:00',
+        'end': '11:40',
+      },
+    ];
+    
+    // 根据日期范围生成课程
+    for (final courseData in sampleCourses) {
+      // 计算课程的具体日期
+      final weekday = courseData['day'] as int;
+      final courseDate = _getDateForWeekday(startDate, endDate, weekday);
+      
+      if (courseDate != null && courseDate.isAfter(startDate.subtract(Duration(days: 1))) 
+          && courseDate.isBefore(endDate.add(Duration(days: 1)))) {
+        courses.add({
+          'course_name': courseData['name'],
+          'teacher': courseData['teacher'],
+          'classroom': courseData['classroom'],
+          'time': '周${_getWeekdayName(weekday)} ${courseData['start']}-${courseData['end']}',
+          'week_day': weekday,
+          'start_time': courseData['start'],
+          'end_time': courseData['end'],
+          'course_id': 'sample_${courseData['name']}_$weekday',
+          'description': '${courseData['name']}课程，教师：${courseData['teacher']}，地点：${courseData['classroom']}',
+          'progress': 0,
+          'status': 'pending',
+          'priority': 'high',
+          'tags': ['课程', '示例数据'],
+          'is_sample': true, // 标记为示例数据
+        });
+      }
+    }
+    
+    return courses;
+  }
+  
+  /// 获取指定星期几对应的日期
+  DateTime? _getDateForWeekday(DateTime startDate, DateTime endDate, int targetWeekday) {
+    DateTime current = startDate;
+    while (current.isBefore(endDate.add(Duration(days: 1)))) {
+      if (current.weekday == targetWeekday) {
+        return current;
+      }
+      current = current.add(Duration(days: 1));
+    }
+    return null;
+  }
+  
+  /// 获取星期几的中文名称
+  String _getWeekdayName(int weekday) {
+    final weekdays = ['一', '二', '三', '四', '五', '六', '日'];
+    if (weekday >= 1 && weekday <= 7) {
+      return weekdays[weekday - 1];
+    }
+    return '';
   }
 }

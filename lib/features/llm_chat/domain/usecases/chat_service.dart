@@ -12,6 +12,7 @@ import '../entities/model_capabilities.dart';
 import '../../data/providers/llm_provider_factory.dart';
 
 import '../utils/model_capability_checker.dart';
+import '../tools/daily_management_tools.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
@@ -37,7 +38,6 @@ import '../../../settings/domain/entities/search_config.dart';
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
 // AI工具函数相关导入
-import '../tools/daily_management_tools.dart';
 import '../../presentation/providers/ai_plan_bridge_provider.dart';
 
 
@@ -866,6 +866,26 @@ class ChatService {
       // 检查是否为学习模式 - 学习模式下不使用智能体提示词，因为学习提示词已经包含在消息中
       final isLearningMode = content != finalPrompt; // 如果内容被修改过，说明是学习模式
       
+      // 7.5. 检查是否支持函数调用，如果支持则添加AI工具函数
+      final supportsTools = ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.functionCalling);
+      List<ToolDefinition>? tools;
+      debugPrint('🔧 工具支持检查: model=${llmConfig.defaultModel}, supportsTools=$supportsTools');
+      if (supportsTools) {
+        debugPrint('🔧 模型支持函数调用，添加AI工具函数');
+        // 将 DailyManagementTools 的函数定义转换为 ToolDefinition
+        tools = DailyManagementTools.getFunctionDefinitions().map((funcDef) {
+          return ToolDefinition(
+            name: funcDef['name'] as String,
+            description: funcDef['description'] as String,
+            parameters: funcDef['parameters'] as Map<String, dynamic>,
+          );
+        }).toList();
+        debugPrint('🛠️ 已添加${tools.length}个工具函数');
+        debugPrint('🛠️ 工具函数列表: ${tools.map((t) => t.name).join(', ')}');
+      } else {
+        debugPrint('⚠️ 模型不支持函数调用: ${llmConfig.defaultModel}');
+      }
+      
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: isLearningMode ? null : persona.systemPrompt, // 学习模式下不使用智能体提示词
@@ -880,6 +900,7 @@ class ChatService {
         ),
         maxReasoningTokens: params.maxReasoningTokens,
         customParams: mergedCustomStream,
+        tools: tools, // 添加工具函数
       );
 
       debugPrint(
@@ -894,17 +915,57 @@ class ChatService {
       bool isInThinkingMode = false; // 当前是否在思考模式
       String partialTag = ''; // 处理跨块的标签
       String? aiMessageId;
+      List<ToolCall>? accumulatedToolCalls; // 累积的工具调用
 
       await for (final chunk in provider.generateChatStream(
         contextMessages,
         options: chatOptions,
       )) {
         debugPrint(
-          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}',
+          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}, toolCalls=${chunk.toolCalls?.length ?? 0}',
         );
 
+        // 检查是否有工具调用
+        if (chunk.toolCalls != null && chunk.toolCalls!.isNotEmpty) {
+          accumulatedToolCalls = chunk.toolCalls;
+          debugPrint('🔧 检测到工具调用: ${chunk.toolCalls!.map((t) => t.name).join(', ')}');
+        }
+
         if (chunk.isDone) {
-          // 流结束，保存最终消息到数据库
+          // 流结束，检查是否有工具调用需要处理
+          if (accumulatedToolCalls != null && accumulatedToolCalls.isNotEmpty) {
+            debugPrint('🛠️ 流结束，处理${accumulatedToolCalls.length}个工具调用');
+            
+            // 创建包含工具调用的结果对象
+            final resultWithTools = ChatResult(
+              content: accumulatedRawContent,
+              model: llmConfig.defaultModel ?? 'gpt-4o',
+              tokenUsage: chunk.tokenUsage ?? const TokenUsage(
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0,
+              ),
+              finishReason: chunk.finishReason ?? FinishReason.stop,
+              toolCalls: accumulatedToolCalls,
+              thinkingContent: accumulatedThinking.isNotEmpty ? accumulatedThinking : null,
+            );
+            
+            // 调用工具处理方法
+            final toolCallResult = await _handleToolCalls(
+              resultWithTools,
+              sessionId,
+              userMessage,
+              contextMessages,
+              chatOptions,
+              provider,
+            );
+            
+            debugPrint('✅ 工具调用处理完成，返回最终消息');
+            yield toolCallResult.copyWith(status: MessageStatus.sent);
+            break;
+          }
+          
+          // 没有工具调用，保存最终消息到数据库
           if (aiMessageId != null) {
             final finalMessage =
                 ChatMessageFactory.createAIMessage(

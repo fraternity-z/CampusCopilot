@@ -509,13 +509,27 @@ class OpenAiLlmProvider extends LlmProvider {
   }
 
   /// 将流式工具调用转换为ToolCall格式
-  List<ToolCall> _convertStreamToolCalls(List<ChatCompletionStreamMessageToolCallChunk>? streamToolCalls) {
-    if (streamToolCalls == null || streamToolCalls.isEmpty) {
+  List<ToolCall> _convertStreamToolCalls(List<ChatCompletionStreamMessageToolCallChunk>? toolCalls) {
+    if (toolCalls == null || toolCalls.isEmpty) {
       return [];
     }
-
-    return streamToolCalls.map((toolCall) {
-      // 解析函数参数
+    
+    // 过滤掉无效的工具调用（没有函数名或函数对象为空的）
+    final validToolCalls = toolCalls.where((toolCall) {
+      final hasValidName = toolCall.function?.name != null && 
+                           toolCall.function!.name!.isNotEmpty;
+      if (!hasValidName) {
+        debugPrint('⚠️ 跳过无效的工具调用: id=${toolCall.id}, function=${toolCall.function}');
+      }
+      return hasValidName;
+    }).toList();
+    
+    if (validToolCalls.isEmpty) {
+      return [];
+    }
+    
+    return validToolCalls.map((toolCall) {
+      // 尝试解析参数
       Map<String, dynamic> arguments = {};
       try {
         final argumentsStr = toolCall.function?.arguments;
@@ -528,7 +542,7 @@ class OpenAiLlmProvider extends LlmProvider {
         arguments = {'raw_arguments': toolCall.function?.arguments ?? ''};
       }
 
-      final functionName = toolCall.function?.name ?? 'unknown';
+      final functionName = toolCall.function!.name!;
       debugPrint('🔧 转换流式工具调用: $functionName, 参数: $arguments');
 
       return ToolCall(
