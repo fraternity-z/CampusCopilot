@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import '../../shared/utils/debug_log.dart';
 import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -35,9 +35,9 @@ class ImageGenerationService {
     final finalModel = model ?? 'dall-e-3';
     
     try {
-      debugPrint('🎨 开始生成图片: $prompt');
-      debugPrint('🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
-      debugPrint('🤖 模型: $finalModel');
+  debugLog(() => '🎨 开始生成图片: $prompt');
+  debugLog(() => '🔧 使用端点: ${baseUrl ?? "https://api.openai.com/v1"}');
+  debugLog(() => '🤖 模型: $finalModel');
 
       // 验证参数
       if (prompt.trim().isEmpty) {
@@ -51,7 +51,7 @@ class ImageGenerationService {
       // DALL-E 3 只支持生成1张图片
       if (finalModel == 'dall-e-3' && count > 1) {
         count = 1;
-        debugPrint('⚠️ DALL-E 3 只支持生成1张图片，已调整为1张');
+  debugLog(() => '⚠️ DALL-E 3 只支持生成1张图片，已调整为1张');
       }
 
       // 设置 OpenAI 客户端
@@ -70,8 +70,8 @@ class ImageGenerationService {
           cleanBaseUrl += '/v1';
         }
         
-        finalBaseUrl = cleanBaseUrl;
-        debugPrint('🔧 设置图像生成 baseUrl: $cleanBaseUrl (原始: $baseUrl)');
+  finalBaseUrl = cleanBaseUrl;
+  debugLog(() => '🔧 设置图像生成 baseUrl: $cleanBaseUrl (原始: $baseUrl)');
       }
       
       _client = openai.OpenAIClient(
@@ -101,7 +101,7 @@ class ImageGenerationService {
       
       final response = await _client!.createImage(request: request);
 
-      debugPrint('✅ 图片生成成功，共${response.data.length}张');
+  debugLog(() => '✅ 图片生成成功，共${response.data.length}张');
 
       // 处理响应
       final results = <GeneratedImageResult>[];
@@ -134,8 +134,8 @@ class ImageGenerationService {
 
       return results;
     } catch (e) {
-      debugPrint('❌ 图片生成失败: $e');
-      
+      debugLog(() => '❌ 图片生成失败: $e');
+
       // 特殊处理NewAPI兼容性错误
       final errorMsg = e.toString().toLowerCase();
       if (errorMsg.contains('unsupported') || 
@@ -145,7 +145,7 @@ class ImageGenerationService {
         
         // 如果使用了高级参数且出现错误，尝试使用基础参数重试
         if (_shouldUseAdvancedParams(finalModel, baseUrl)) {
-          debugPrint('🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
+          debugLog(() => '🔄 检测到参数兼容性问题，尝试使用基础参数重试...');
           try {
             final retryRequest = openai.CreateImageRequest(
               prompt: prompt,
@@ -158,7 +158,7 @@ class ImageGenerationService {
             
             final retryResponse = await _client!.createImage(request: retryRequest);
             
-            debugPrint('✅ 使用基础参数重试成功，共${retryResponse.data.length}张');
+            debugLog(() => '✅ 使用基础参数重试成功，共${retryResponse.data.length}张');
             
             // 处理重试成功的响应
             final results = <GeneratedImageResult>[];
@@ -189,7 +189,7 @@ class ImageGenerationService {
             }
             return results;
           } catch (retryError) {
-            debugPrint('❌ 重试也失败了: $retryError');
+            debugLog(() => '❌ 重试也失败了: $retryError');
             throw ImageGenerationException('图片生成失败，NewAPI端点可能不支持此模型或参数: $retryError');
           }
         }
@@ -251,13 +251,13 @@ class ImageGenerationService {
       if (response.statusCode == 200) {
         final file = File(filePath);
         await file.writeAsBytes(response.bodyBytes);
-        debugPrint('📁 图片已缓存: $filePath');
+          debugLog(() => '📁 图片已缓存: $filePath');
         return file;
       } else {
         throw ImageGenerationException('下载图片失败: HTTP ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ 缓存图片失败: $e');
+  debugLog(() => '❌ 缓存图片失败: $e');
       throw ImageGenerationException('缓存图片失败: $e');
     }
   }
@@ -289,7 +289,7 @@ class ImageGenerationService {
     }
     
     // 对于未知模型或第三方端点，默认不使用高级参数以提高兼容性
-    debugPrint('🔧 第三方端点检测到，禁用高级参数以提高兼容性: $baseUrl');
+  debugLog(() => '🔧 第三方端点检测到，禁用高级参数以提高兼容性: $baseUrl');
     return false;
   }
 
@@ -349,10 +349,10 @@ class ImageGenerationService {
 
       if (await cacheDir.exists()) {
         await cacheDir.delete(recursive: true);
-        debugPrint('🗑️ 图片缓存已清理');
+  debugLog(() => '🗑️ 图片缓存已清理');
       }
     } catch (e) {
-      debugPrint('❌ 清理缓存失败: $e');
+  debugLog(() => '❌ 清理缓存失败: $e');
     }
   }
 }

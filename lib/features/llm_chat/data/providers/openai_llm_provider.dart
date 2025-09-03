@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert' show json;
 
 import 'package:openai_dart/openai_dart.dart';
-import 'package:flutter/foundation.dart';
+import '../../../../shared/utils/debug_log.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../../domain/providers/llm_provider.dart';
@@ -39,8 +39,8 @@ class OpenAiLlmProvider extends LlmProvider {
         cleanBaseUrl += '/v1';
       }
       
-      baseUrl = cleanBaseUrl;
-      debugPrint('🔧 设置OpenAI baseUrl: $baseUrl (原始: ${config.baseUrl})');
+  baseUrl = cleanBaseUrl;
+  debugLog(() => '🔧 设置OpenAI baseUrl: $baseUrl (原始: ${config.baseUrl})');
     }
 
     _client = OpenAIClient(
@@ -133,10 +133,11 @@ class OpenAiLlmProvider extends LlmProvider {
       // 转换工具函数
       List<ChatCompletionTool>? tools;
       if (options?.tools != null && options!.tools!.isNotEmpty) {
-        tools = _convertToOpenAITools(options.tools!);
-        debugPrint('🔧 转换后的工具函数数量: ${tools.length}');
+  tools = _convertToOpenAITools(options.tools!);
+  final toolsCount = tools.length;
+  debugLog(() => '🔧 转换后的工具函数数量: $toolsCount');
         for (final tool in tools) {
-          debugPrint('🔧 工具函数: ${tool.function.name} - ${tool.function.description}');
+          debugLog(() => '🔧 工具函数: ${tool.function.name} - ${tool.function.description}');
         }
       }
 
@@ -166,19 +167,19 @@ class OpenAiLlmProvider extends LlmProvider {
       // 保存完整的原始内容
       final originalContent = choice.message.content ?? '';
 
-      debugPrint('🧠 接收完整响应内容: 长度=${originalContent.length}');
-      debugPrint('🧠 完成原因: ${choice.finishReason?.name}');
+  debugLog(() => '🧠 接收完整响应内容: 长度=${originalContent.length}');
+  debugLog(() => '🧠 完成原因: ${choice.finishReason?.name}');
       
       // 处理工具调用
       final toolCalls = _convertToToolCalls(choice.message.toolCalls);
       if (toolCalls.isNotEmpty) {
-        debugPrint('🔧 检测到 ${toolCalls.length} 个工具调用');
+        debugLog(() => '🔧 检测到 ${toolCalls.length} 个工具调用');
         for (final call in toolCalls) {
-          debugPrint('🔧 工具调用: ${call.name} (${call.id})');
-          debugPrint('🔧 参数: ${call.arguments}');
+          debugLog(() => '🔧 工具调用: ${call.name} (${call.id})');
+          debugLog(() => '🔧 参数: ${call.arguments}');
         }
       } else if (choice.message.toolCalls?.isNotEmpty == true) {
-        debugPrint('⚠️ 原始工具调用存在但转换后为空: ${choice.message.toolCalls?.length}');
+        debugLog(() => '⚠️ 原始工具调用存在但转换后为空: ${choice.message.toolCalls?.length}');
       }
       
       return ChatResult(
@@ -213,8 +214,9 @@ class OpenAiLlmProvider extends LlmProvider {
       // 转换工具函数
       List<ChatCompletionTool>? tools;
       if (options?.tools != null && options!.tools!.isNotEmpty) {
-        tools = _convertToOpenAITools(options.tools!);
-        debugPrint('🔧 流式响应 - 转换后的工具函数数量: ${tools.length}');
+  tools = _convertToOpenAITools(options.tools!);
+  final toolsCount = tools.length;
+  debugLog(() => '🔧 流式响应 - 转换后的工具函数数量: $toolsCount');
       }
 
       final request = CreateChatCompletionRequest(
@@ -312,13 +314,13 @@ class OpenAiLlmProvider extends LlmProvider {
                     arguments = json.decode(argumentsStr) as Map<String, dynamic>;
                   }
                 } catch (e) {
-                  debugPrint('⚠️ 解析工具调用参数失败: $e');
-                  debugPrint('⚠️ 原始参数: $argumentsStr');
+                  debugLog(() => '⚠️ 解析工具调用参数失败: $e');
+                  debugLog(() => '⚠️ 原始参数: $argumentsStr');
                   arguments = {'raw_arguments': argumentsStr};
                 }
                 
-                debugPrint('🔧 转换流式工具调用: $name');
-                debugPrint('📋 参数: $arguments');
+                debugLog(() => '🔧 转换流式工具调用: $name');
+                debugLog(() => '📋 参数: $arguments');
                 
                 accumulatedToolCalls.add(ToolCall(
                   id: id,
@@ -326,12 +328,12 @@ class OpenAiLlmProvider extends LlmProvider {
                   arguments: arguments,
                 ));
               } else {
-                debugPrint('⚠️ 跳过不完整的工具调用: id=$id, name=$name');
+                debugLog(() => '⚠️ 跳过不完整的工具调用: id=$id, name=$name');
               }
             }
           }
           
-          debugPrint('🧠 流式响应完成: 内容长度=${accumulatedContent.length}, 工具调用=${accumulatedToolCalls.length}');
+          debugLog(() => '🧠 流式响应完成: 内容长度=${accumulatedContent.length}, 工具调用=${accumulatedToolCalls.length}');
 
           yield StreamedChatResult(
             content: accumulatedContent, // 保存完整内容，UI层面分离显示
@@ -357,8 +359,8 @@ class OpenAiLlmProvider extends LlmProvider {
     try {
       final model = config.defaultEmbeddingModel ?? 'text-embedding-3-small';
 
-      debugPrint('🔗 OpenAI嵌入请求: 模型=$model, 文本数量=${texts.length}');
-      debugPrint('🌐 API端点: ${config.baseUrl ?? 'https://api.openai.com'}');
+  debugLog(() => '🔗 OpenAI嵌入请求: 模型=$model, 文本数量=${texts.length}');
+  debugLog(() => '🌐 API端点: ${config.baseUrl ?? 'https://api.openai.com'}');
 
       final request = CreateEmbeddingRequest(
         model: EmbeddingModel.modelId(model),
@@ -378,7 +380,7 @@ class OpenAiLlmProvider extends LlmProvider {
         throw Exception('OpenAI API返回了空的嵌入数据');
       }
 
-      debugPrint('✅ OpenAI嵌入请求成功: 生成${embedding.data.length}个向量');
+  debugLog(() => '✅ OpenAI嵌入请求成功: 生成${embedding.data.length}个向量');
 
       // 安全地处理嵌入数据
       final embeddings = <List<double>>[];
@@ -388,7 +390,7 @@ class OpenAiLlmProvider extends LlmProvider {
         if (embeddingVector.isNotEmpty) {
           embeddings.add(embeddingVector);
         } else {
-          debugPrint('⚠️ 发现空的嵌入向量，跳过');
+          debugLog(() => '⚠️ 发现空的嵌入向量，跳过');
         }
       }
 
@@ -406,12 +408,12 @@ class OpenAiLlmProvider extends LlmProvider {
         ),
       );
     } catch (e) {
-      debugPrint('❌ OpenAI嵌入请求失败: $e');
-      debugPrint('🔍 OpenAI错误详情: $e');
+  debugLog(() => '❌ OpenAI嵌入请求失败: $e');
+  debugLog(() => '🔍 OpenAI错误详情: $e');
 
       // 提供更详细的错误信息
       if (e.toString().contains('NoSuchMethodError')) {
-        debugPrint('💡 这可能是API响应格式问题，请检查OpenAI API版本兼容性');
+  debugLog(() => '💡 这可能是API响应格式问题，请检查OpenAI API版本兼容性');
       }
 
       throw _handleOpenAIError(e);
@@ -483,7 +485,7 @@ class OpenAiLlmProvider extends LlmProvider {
               ),
             );
           } else {
-            debugPrint('⚠️ 不支持的图片格式: $imageUrl');
+            debugLog(() => '⚠️ 不支持的图片格式: $imageUrl');
           }
         }
         
@@ -558,12 +560,12 @@ class OpenAiLlmProvider extends LlmProvider {
           arguments = json.decode(argumentsStr) as Map<String, dynamic>;
         }
       } catch (e) {
-        debugPrint('⚠️ 解析工具调用参数失败: $e, 原始参数: ${toolCall.function.arguments}');
+  debugLog(() => '⚠️ 解析工具调用参数失败: $e, 原始参数: ${toolCall.function.arguments}');
         // 如果JSON解析失败，尝试作为字符串处理
         arguments = {'raw_arguments': toolCall.function.arguments};
       }
 
-      debugPrint('🔧 转换工具调用: ${toolCall.function.name}, 参数: $arguments');
+  debugLog(() => '🔧 转换工具调用: ${toolCall.function.name}, 参数: $arguments');
 
       return ToolCall(
         id: toolCall.id,
@@ -595,7 +597,7 @@ class OpenAiLlmProvider extends LlmProvider {
   /// 处理OpenAI错误
   AppException _handleOpenAIError(dynamic error) {
     final errorMessage = error.toString();
-    debugPrint('🔍 OpenAI错误详情: $errorMessage');
+  debugLog(() => '🔍 OpenAI错误详情: $errorMessage');
 
     // NoSuchMethodError - 通常是API响应格式问题
     if (errorMessage.contains('NoSuchMethodError')) {

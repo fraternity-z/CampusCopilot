@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import '../../../../shared/utils/debug_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../tools/daily_management_tools.dart';
@@ -31,8 +31,8 @@ class AIPlanBridgeService {
         );
       }
 
-      debugPrint('🤖 AI函数调用: $functionName');
-      debugPrint('📋 调用参数: $arguments');
+  debugLog(() => '🤖 AI函数调用: $functionName');
+  debugLog(() => '📋 调用参数: $arguments');
 
       // 根据函数名称路由到具体处理方法
       switch (functionName) {
@@ -54,9 +54,9 @@ class AIPlanBridgeService {
           );
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ AI函数调用失败: $functionName');
-      debugPrint('错误详情: $e');
-      debugPrint('堆栈跟踪: $stackTrace');
+  debugLog(() => '❌ AI函数调用失败: $functionName');
+  debugLog(() => '错误详情: $e');
+  debugLog(() => '堆栈跟踪: $stackTrace');
       
       return FunctionCallResult.failure(
         error: '函数执行失败: ${e.toString()}'
@@ -85,7 +85,7 @@ class AIPlanBridgeService {
             startDate = DateTime.parse(dates[0].trim());
             endDate = DateTime.parse(dates[1].trim());
           } catch (e) {
-            debugPrint('日期解析错误: $e');
+            debugLog(() => '日期解析错误: $e');
           }
         }
       }
@@ -444,7 +444,7 @@ class AIPlanBridgeService {
       // 创建计划
       final createdPlan = await _planRepository.createPlan(request);
       
-      debugPrint('✅ 成功创建计划: ${createdPlan.title}');
+  debugLog(() => '✅ 成功创建计划: ${createdPlan.title}');
 
       return FunctionCallResult.success(
         data: {
@@ -488,7 +488,7 @@ class AIPlanBridgeService {
       // 更新计划
       final updatedPlan = await _planRepository.updatePlan(planId, request);
       
-      debugPrint('✅ 成功更新计划: ${updatedPlan.title}');
+  debugLog(() => '✅ 成功更新计划: ${updatedPlan.title}');
 
       return FunctionCallResult.success(
         data: {
@@ -527,7 +527,7 @@ class AIPlanBridgeService {
       // 删除计划
       await _planRepository.deletePlan(planId);
       
-      debugPrint('✅ 成功删除计划: ${existingPlan.title}');
+  debugLog(() => '✅ 成功删除计划: ${existingPlan.title}');
 
       return FunctionCallResult.success(
         data: {
@@ -597,7 +597,7 @@ class AIPlanBridgeService {
         'updated_at': plan.updatedAt.toIso8601String()
       }).toList();
 
-      debugPrint('📋 查询到${plans.length}个计划');
+  debugLog(() => '📋 查询到${plans.length}个计划');
 
       return FunctionCallResult.success(
         data: {
@@ -621,7 +621,7 @@ class AIPlanBridgeService {
       final startDate = arguments['start_date'] as String?;
       final endDate = arguments['end_date'] as String?;
 
-      debugPrint('📊 分析课程工作量 - 时间范围: $startDate 至 $endDate');
+  debugLog(() => '📊 分析课程工作量 - 时间范围: $startDate 至 $endDate');
 
       // 解析日期范围
       DateTime startDateTime;
