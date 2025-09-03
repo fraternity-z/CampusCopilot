@@ -1954,10 +1954,19 @@ class ChatService {
     
     buffer.writeln('   📋 找到 ${plans.length} 个计划:');
     for (final plan in plans.take(3)) { // 最多显示3个计划
-      final title = plan['title'] ?? '未知计划';
+      final title = plan['title'] ?? '未命名计划';
       final status = plan['status'] ?? '';
       final progress = plan['progress'] ?? 0;
-      final priority = plan['priority'] ?? '';
+      // priority统一转换处理
+      final priorityValue = plan['priority'];
+      String priority = '';
+      if (priorityValue is String) {
+        priority = priorityValue;
+      } else if (priorityValue is int) {
+        // 将整数优先级转换为字符串表示
+        priority = priorityValue == 1 ? 'high' : 
+                  priorityValue == 2 ? 'medium' : 'low';
+      }
       
       buffer.write('     • $title');
       if (status.isNotEmpty) {
@@ -2000,13 +2009,17 @@ class ChatService {
   /// 格式化计划操作数据
   void _formatPlanOperationData(StringBuffer buffer, Map<String, dynamic> data) {
     final planTitle = data['title'] as String?;
-    final planId = data['plan_id'] as String?;
+    final planId = data['plan_id']?.toString();
     
     if (planTitle != null) {
       buffer.writeln('   📌 计划: $planTitle');
     }
     if (planId != null) {
-      buffer.writeln('   🆔 ID: ${planId.substring(0, 8)}...');
+      // 只有当ID长度超过8个字符时才截取
+      final displayId = planId.length > 8 
+          ? '${planId.substring(0, 8)}...'
+          : planId;
+      buffer.writeln('   🆔 ID: $displayId');
     }
   }
 }
