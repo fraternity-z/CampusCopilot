@@ -451,18 +451,32 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 判断是否应该使用图像生成服务
   bool _shouldUseImageGeneration(String text) {
-    // 1. 首先检查文本是否包含明确的图像生成指令
-    if (_isImageGenerationPrompt(text)) {
-      debugPrint('🔍 检测到图像生成指令: $text');
+    // 首先检查当前选择的模型是否支持图像生成
+    try {
+      final currentModel = _ref.read(databaseCurrentModelProvider).whenOrNull(data: (model) => model);
+      if (currentModel == null) {
+        debugPrint('🔍 当前没有选择模型，不使用图像生成');
+        return false;
+      }
+      
+      // 检查当前模型是否具有图像生成能力
+      final hasImageGenCapability = ModelCapabilityChecker.hasCapability(
+        currentModel.id, 
+        ModelCapabilityType.imageGeneration
+      );
+      
+      if (!hasImageGenCapability) {
+        debugPrint('🔍 当前模型 ${currentModel.name} 不支持图像生成，跳过');
+        return false;
+      }
+      
+      debugPrint('🎨 当前模型 ${currentModel.name} 支持图像生成，自动启用图像生成功能');
       return true;
+      
+    } catch (e) {
+      debugPrint('❌ 检查模型图像生成能力时出错: $e');
+      return false;
     }
-    
-    // 2. 未来可以添加更多检测逻辑，比如：
-    // - 检查当前选择的模型是否为图像模型
-    // - 检查用户偏好设置
-    // - 检查上下文信息等
-    
-    return false;
   }
 
 
@@ -471,38 +485,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return false; // 先简化为false，让AI在学习提示词中自己判断
   }
 
-  /// 判断是否为图像生成指令
-  bool _isImageGenerationPrompt(String text) {
-    final lowerText = text.toLowerCase().trim();
-    
-    // 中文图像生成指令
-    final chineseKeywords = [
-      '画', '绘制', '绘画', '画一', '画个', '画出', '生成图', '创建图', '制作图', 
-      '图像', '图片', '插画', '素描', '水彩', '油画', '漫画', '卡通',
-    ];
-    
-    // 英文图像生成指令
-    final englishKeywords = [
-      'draw', 'paint', 'create', 'generate', 'make', 'design', 'sketch', 
-      'illustrate', 'render', 'produce', 'image of', 'picture of', 'art of',
-      'painting of', 'drawing of', 'illustration of',
-    ];
-    
-    // 检查是否以这些关键词开头或包含这些关键词
-    for (final keyword in chineseKeywords) {
-      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
-        return true;
-      }
-    }
-    
-    for (final keyword in englishKeywords) {
-      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
-        return true;
-      }
-    }
-    
-    return false;
-  }
 
   /// 带占位符的图像生成（内部使用）
   Future<void> _generateImageWithPlaceholder(String prompt, String placeholderId) async {
