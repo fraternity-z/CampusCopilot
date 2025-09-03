@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import '../../../../shared/utils/debug_log.dart';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/app_settings.dart';
@@ -33,7 +33,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       }
     } catch (e) {
       // 加载失败时使用默认设置
-      debugPrint('Failed to load settings: $e');
+      debugLog(() => 'Failed to load settings: $e');
     }
   }
 
@@ -44,7 +44,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       final settingsJson = json.encode(state.toJson());
       await prefs.setString('app_settings', settingsJson);
     } catch (e) {
-      debugPrint('Failed to save settings: $e');
+      debugLog(() => 'Failed to save settings: $e');
     }
   }
 
@@ -367,12 +367,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       // 保存设置
       await _saveSettings();
 
-      debugPrint('✅ 已切换模型到: $modelId (${config.provider})');
+      debugLog(() => '✅ 已切换模型到: $modelId (${config.provider})');
       switched = true;
     }
 
     if (!switched) {
-      debugPrint('⚠️ 未找到模型 $modelId 对应的LLM配置，请检查数据库或配置');
+      debugLog(() => '⚠️ 未找到模型 $modelId 对应的LLM配置，请检查数据库或配置');
     }
   }
 }

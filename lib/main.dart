@@ -60,7 +60,7 @@ Future<void> _initializePaths() async {
     network.supportPath = await getApplicationSupportDirectory();
     debugLog(() => '📁 应用支持目录已初始化: ${network.supportPath.path}');
   } catch (e) {
-    debugPrint('❌ 初始化应用路径失败: $e');
+    debugLog(() => '❌ 初始化应用路径失败: $e');
     // 使用临时目录作为备用方案
     network.supportPath = Directory.systemTemp;
   }

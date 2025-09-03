@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '../../../../shared/utils/debug_log.dart';
 
 import '../../domain/services/vector_database_interface.dart';
 import '../vector_databases/local_file_vector_client.dart';
@@ -31,7 +31,7 @@ class VectorDatabaseFactory {
     // 优先返回缓存实例
     final cached = _instanceCache[type];
     if (cached != null) {
-      debugPrint('🔄 返回缓存的向量数据库实例: $type');
+      debugLog(() =>'🔄 返回缓存的向量数据库实例: $type');
       return cached;
     }
 
@@ -48,7 +48,7 @@ class VectorDatabaseFactory {
 
     // 缓存实例
     _instanceCache[type] = database;
-    debugPrint('✅ 创建新的向量数据库实例: $type');
+    debugLog(() =>'✅ 创建新的向量数据库实例: $type');
 
     return database;
   }
@@ -72,7 +72,7 @@ class VectorDatabaseFactory {
       dbPath = path.join(appDir.path, 'vector_database');
     }
 
-    debugPrint('📁 创建本地文件向量数据库: $dbPath');
+    debugLog(() =>'📁 创建本地文件向量数据库: $dbPath');
     return LocalFileVectorClient(dbPath);
   }
 
@@ -80,7 +80,7 @@ class VectorDatabaseFactory {
   static ObjectBoxVectorClient _createObjectBoxDatabase(
     Map<String, dynamic>? config,
   ) {
-    debugPrint('📦 创建 ObjectBox 向量数据库');
+    debugLog(() =>'📦 创建 ObjectBox 向量数据库');
     return ObjectBoxVectorClient();
   }
 
@@ -90,11 +90,11 @@ class VectorDatabaseFactory {
       try {
         await database.close();
       } catch (e) {
-        debugPrint('⚠️ 关闭向量数据库失败: $e');
+        debugLog(() =>'⚠️ 关闭向量数据库失败: $e');
       }
     }
     _instanceCache.clear();
-    debugPrint('🧹 向量数据库缓存已清理');
+    debugLog(() =>'🧹 向量数据库缓存已清理');
   }
 
   /// 获取支持的数据库类型
