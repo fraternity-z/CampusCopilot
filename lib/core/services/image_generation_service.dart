@@ -222,63 +222,6 @@ class ImageGenerationService {
     }
   }
 
-  /// 编辑图片
-  Future<List<GeneratedImageResult>> editImage({
-    required File image,
-    required String prompt,
-    File? mask,
-    int count = 1,
-    ImageSize size = ImageSize.size1024x1024,
-  }) async {
-    try {
-      debugPrint('🖼️ 开始编辑图片: $prompt');
-
-      // 验证参数
-      if (!await image.exists()) {
-        throw ImageGenerationException('图片文件不存在');
-      }
-
-      if (prompt.trim().isEmpty) {
-        throw ImageGenerationException('编辑提示词不能为空');
-      }
-
-      // 暂时不支持图片编辑功能，openai_dart 包中可能没有该API
-      throw ImageGenerationException('图片编辑功能暂时不可用，请使用其他工具进行图片编辑');
-
-    } catch (e) {
-      debugPrint('❌ 图片编辑失败: $e');
-      if (e is ImageGenerationException) {
-        rethrow;
-      }
-      throw ImageGenerationException('图片编辑失败: $e');
-    }
-  }
-
-  /// 生成图片变体
-  Future<List<GeneratedImageResult>> createVariations({
-    required File image,
-    int count = 1,
-    ImageSize size = ImageSize.size1024x1024,
-  }) async {
-    try {
-      debugPrint('🔄 开始生成图片变体');
-
-      // 验证参数
-      if (!await image.exists()) {
-        throw ImageGenerationException('图片文件不存在');
-      }
-
-      // 暂时不支持图片变体功能，openai_dart 包中可能没有该API
-      throw ImageGenerationException('图片变体功能暂时不可用，请使用图片生成功能');
-
-    } catch (e) {
-      debugPrint('❌ 图片变体生成失败: $e');
-      if (e is ImageGenerationException) {
-        rethrow;
-      }
-      throw ImageGenerationException('图片变体生成失败: $e');
-    }
-  }
 
   /// 下载并缓存图片
   Future<File> _downloadAndCacheImage(
@@ -440,8 +383,6 @@ class GeneratedImageResult {
   final ImageStyle style;
   final String model;
   final DateTime createdAt;
-  final bool isEdit;
-  final bool isVariation;
 
   GeneratedImageResult({
     required this.url,
@@ -453,8 +394,6 @@ class GeneratedImageResult {
     required this.style,
     required this.model,
     required this.createdAt,
-    this.isEdit = false,
-    this.isVariation = false,
   });
 
   /// 获取尺寸描述
@@ -473,12 +412,6 @@ class GeneratedImageResult {
     }
   }
 
-  /// 获取类型描述
-  String get typeDescription {
-    if (isEdit) return '图片编辑';
-    if (isVariation) return '图片变体';
-    return '图片生成';
-  }
 }
 
 /// 图片生成异常
