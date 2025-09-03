@@ -427,6 +427,29 @@ class AIPlanBridgeService {
         return FunctionCallResult.failure(error: '日期格式错误，请使用YYYY-MM-DDTHH:mm:ss格式');
       }
 
+      // 解析开始时间和结束时间
+      DateTime? startTime = _parseDateTime(arguments['start_time'] as String?);
+      DateTime? endTime = _parseDateTime(arguments['end_time'] as String?);
+      
+      debugLog(() => '🕐 解析到的开始时间: $startTime');
+      debugLog(() => '🕐 解析到的结束时间: $endTime');
+      
+      // 如果提供了开始时间，但没有提供计划日期的具体时间，则使用开始时间作为计划日期
+      if (startTime != null) {
+        // 如果计划日期只包含日期部分，则与开始时间合并
+        if (planDate.hour == 0 && planDate.minute == 0 && planDate.second == 0) {
+          planDate = DateTime(
+            planDate.year,
+            planDate.month, 
+            planDate.day,
+            startTime.hour,
+            startTime.minute,
+            startTime.second,
+          );
+          debugLog(() => '📅 计划日期已更新为包含开始时间: $planDate');
+        }
+      }
+
       // 构建创建请求
       final request = CreatePlanRequest(
         title: title,
@@ -434,8 +457,8 @@ class AIPlanBridgeService {
         type: _parsePlanType(arguments['type'] as String?),
         priority: _parsePlanPriority(arguments['priority'] as int?),
         planDate: planDate,
-        startTime: _parseDateTime(arguments['start_time'] as String?),
-        endTime: _parseDateTime(arguments['end_time'] as String?),
+        startTime: startTime,
+        endTime: endTime,
         tags: _parseTags(arguments['tags']),
         courseId: arguments['course_id'] as String?,
         notes: arguments['notes'] as String?,
@@ -454,6 +477,11 @@ class AIPlanBridgeService {
           'priority': createdPlan.priority.level,
           'status': createdPlan.status.value,
           'plan_date': createdPlan.planDate.toIso8601String(),
+          'start_time': createdPlan.startTime?.toIso8601String(),
+          'end_time': createdPlan.endTime?.toIso8601String(),
+          'tags': createdPlan.tags,
+          'course_id': createdPlan.courseId,
+          'notes': createdPlan.notes,
           'created_at': createdPlan.createdAt.toIso8601String()
         },
         message: '成功创建学习计划: ${createdPlan.title}'
@@ -512,32 +540,102 @@ class AIPlanBridgeService {
     Map<String, dynamic> arguments,
   ) async {
     try {
+      debugLog(() => '🗑️ 开始智能删除计划，参数: $arguments');
+      
+      List<PlanEntity> plansToDelete = [];
+      
+      // 如果提供了具体的计划ID，直接删除该计划
       final planId = arguments['plan_id'] as String?;
-      
-      if (planId == null || planId.isEmpty) {
-        return FunctionCallResult.failure(error: '计划ID不能为空');
+      if (planId != null && planId.isNotEmpty) {
+        final existingPlan = await _planRepository.getPlanById(planId);
+        if (existingPlan != null) {
+          plansToDelete.add(existingPlan);
+        } else {
+          return FunctionCallResult.failure(error: '找不到指定的计划，ID: $planId');
+        }
+      } 
+      // 删除所有计划
+      else if (arguments['delete_all'] == true) {
+        plansToDelete = await _planRepository.getAllPlans();
+        debugLog(() => '🔥 执行删除所有计划操作，共${plansToDelete.length}个计划');
+      }
+      // 按条件查询要删除的计划
+      else {
+        // 按状态筛选
+        if (arguments['status'] != null) {
+          final status = _parsePlanStatus(arguments['status'] as String);
+          if (status != null) {
+            plansToDelete = await _planRepository.getPlansByStatus(status);
+          }
+        }
+        // 按类型筛选
+        else if (arguments['type'] != null) {
+          final type = _parsePlanType(arguments['type'] as String);
+          plansToDelete = await _planRepository.getPlansByType(type);
+        }
+        // 按日期范围筛选
+        else if (arguments['date_range'] != null) {
+          final dateRange = arguments['date_range'] as Map<String, dynamic>;
+          final startDate = DateTime.parse(dateRange['start_date']);
+          final endDate = DateTime.parse(dateRange['end_date']);
+          plansToDelete = await _planRepository.getPlansByDateRange(startDate, endDate);
+        }
+        // 按标题匹配筛选
+        else if (arguments['title_contains'] != null) {
+          final titleQuery = arguments['title_contains'] as String;
+          plansToDelete = await _planRepository.searchPlans(titleQuery);
+        }
+        // 如果没有指定条件，默认删除所有学习类型的计划
+        else {
+          plansToDelete = await _planRepository.getPlansByType(PlanType.study);
+          debugLog(() => '📚 默认删除所有学习类型计划，共${plansToDelete.length}个');
+        }
       }
 
-      // 先查询计划是否存在
-      final existingPlan = await _planRepository.getPlanById(planId);
-      if (existingPlan == null) {
-        return FunctionCallResult.failure(error: '找不到指定的计划');
+      // 如果没有找到要删除的计划
+      if (plansToDelete.isEmpty) {
+        return FunctionCallResult.success(
+          data: {
+            'deleted_count': 0,
+            'message': '未找到符合条件的计划'
+          },
+          message: '未找到符合条件的计划需要删除'
+        );
       }
 
-      // 删除计划
-      await _planRepository.deletePlan(planId);
+      // 执行批量删除
+      debugLog(() => '⚡ 开始执行批量删除，共${plansToDelete.length}个计划');
+      final deletedPlans = <Map<String, dynamic>>[];
       
-  debugLog(() => '✅ 成功删除计划: ${existingPlan.title}');
+      for (final plan in plansToDelete) {
+        try {
+          await _planRepository.deletePlan(plan.id);
+          deletedPlans.add({
+            'id': plan.id,
+            'title': plan.title,
+            'type': plan.type.value,
+            'status': plan.status.value,
+          });
+          debugLog(() => '✅ 已删除: ${plan.title}');
+        } catch (e) {
+          debugLog(() => '❌ 删除失败: ${plan.title}, 错误: $e');
+        }
+      }
+
+      debugLog(() => '🎉 批量删除完成，成功删除${deletedPlans.length}个计划');
 
       return FunctionCallResult.success(
         data: {
-          'deleted_plan_id': planId,
-          'deleted_plan_title': existingPlan.title
+          'deleted_count': deletedPlans.length,
+          'total_found': plansToDelete.length,
+          'deleted_plans': deletedPlans,
+          'deletion_confirmed': true
         },
-        message: '成功删除学习计划: ${existingPlan.title}'
+        message: '成功删除${deletedPlans.length}个学习计划'
       );
 
     } catch (e) {
+      debugLog(() => '❌ 智能删除计划时发生异常: $e');
       return FunctionCallResult.failure(error: '删除计划失败: ${e.toString()}');
     }
   }
