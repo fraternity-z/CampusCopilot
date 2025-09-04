@@ -85,13 +85,13 @@ dependencies:
   shared_preferences: ^2.5.3
 
   # 数据模型与序列化
-  freezed_annotation: ^2.4.1
+  freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
 
   # AI供应商SDK
   openai_dart: ^0.5.4+1
   google_generative_ai: ^0.4.3
-  anthropic_sdk_dart: ^0.2.1
+  anthropic_sdk_dart: ^0.2.2
 
 
   # 文件处理 (知识库)
