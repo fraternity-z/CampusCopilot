@@ -9,9 +9,9 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
 
 class EhallSession extends IDSSession {
   static final _ehallLock = Lock();

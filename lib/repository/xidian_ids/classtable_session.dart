@@ -9,13 +9,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:time/time.dart';
-import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/network_session.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/model/xidian_ids/classtable.dart';
-import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
-import 'package:ai_assistant/repository/classtable_cache_manager.dart';
+import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/network_session.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:campus_copilot/repository/xidian_ids/ehall_session.dart';
+import 'package:campus_copilot/repository/classtable_cache_manager.dart';
 
 /// 课程表 4770397878132218
 class ClassTableFile extends EhallSession {

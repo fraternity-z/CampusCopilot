@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
 
 /// 个人信息界面

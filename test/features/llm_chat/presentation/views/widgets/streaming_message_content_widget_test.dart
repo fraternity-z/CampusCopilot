@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ai_assistant/features/llm_chat/presentation/views/widgets/streaming_message_content_widget.dart';
-import 'package:ai_assistant/features/llm_chat/domain/entities/chat_message.dart';
+import 'package:campus_copilot/features/llm_chat/presentation/views/widgets/streaming_message_content_widget.dart';
+import 'package:campus_copilot/features/llm_chat/domain/entities/chat_message.dart';
 
 void main() {
   group('OptimizedStreamingMessageWidget 流式输出顺序测试', () {

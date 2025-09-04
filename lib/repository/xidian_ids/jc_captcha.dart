@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:image/image.dart' as img;
 import 'package:styled_widget/styled_widget.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 
 class Lazy<T> {
   final T Function() _initializer;

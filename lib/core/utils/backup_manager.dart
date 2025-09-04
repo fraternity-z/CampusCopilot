@@ -32,7 +32,7 @@ class BackupManager {
       final timestamp = DateFormat(
         AppConstants.backupDateFormat,
       ).format(DateTime.now());
-      final backupFileName = 'ai_assistant_backup_$timestamp.zip';
+      final backupFileName = 'campus_copilot_backup_$timestamp.zip';
 
       // 确定备份路径
       final backupPath = customPath ?? await _getDefaultBackupPath();
@@ -390,7 +390,7 @@ class BackupManager {
   /// 获取默认备份路径
   Future<String> _getDefaultBackupPath() async {
     final documentsDir = await getApplicationDocumentsDirectory();
-    return path.join(documentsDir.path, 'AI_Assistant_Backups');
+    return path.join(documentsDir.path, 'campus_copilot_Backups');
   }
 
   /// 计算数据校验和
@@ -408,7 +408,7 @@ class BackupManager {
   /// 获取恢复点路径
   Future<String> _getRestorePointPath() async {
     final documentsDir = await getApplicationDocumentsDirectory();
-    return path.join(documentsDir.path, 'AI_Assistant_RestorePoints');
+    return path.join(documentsDir.path, 'campus_copilot_RestorePoints');
   }
 
   /// 更新备份历史

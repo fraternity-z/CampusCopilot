@@ -7,15 +7,15 @@
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 import 'package:ming_cute_icons/ming_cute_icons.dart';
 import 'package:sn_progress_dialog/sn_progress_dialog.dart';
 import 'package:styled_widget/styled_widget.dart';
-import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
-import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/personal_info_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
+import 'package:campus_copilot/repository/xidian_ids/ehall_session.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/personal_info_session.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});

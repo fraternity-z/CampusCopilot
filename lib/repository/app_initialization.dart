@@ -3,11 +3,11 @@
 
 // 应用初始化管理器
 
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
-import 'package:ai_assistant/repository/classtable_cache_manager.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/classtable_session.dart';
+import 'package:campus_copilot/repository/classtable_cache_manager.dart';
 
 class AppInitializationManager {
   /// 应用初始化

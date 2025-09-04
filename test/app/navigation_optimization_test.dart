@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ai_assistant/app/constants/ui_constants.dart';
-import 'package:ai_assistant/app/navigation/sidebar_container.dart';
-import 'package:ai_assistant/app/navigation/assistants_tab.dart';
-import 'package:ai_assistant/app/navigation/topics_tab.dart';
-import 'package:ai_assistant/app/navigation/settings_tab.dart';
-import 'package:ai_assistant/app/widgets/sidebar_button.dart';
-import 'package:ai_assistant/app/widgets/action_button.dart';
+import 'package:campus_copilot/app/constants/ui_constants.dart';
+import 'package:campus_copilot/app/navigation/sidebar_container.dart';
+import 'package:campus_copilot/app/navigation/assistants_tab.dart';
+import 'package:campus_copilot/app/navigation/topics_tab.dart';
+import 'package:campus_copilot/app/navigation/settings_tab.dart';
+import 'package:campus_copilot/app/widgets/sidebar_button.dart';
+import 'package:campus_copilot/app/widgets/action_button.dart';
 
 void main() {
   group('导航优化测试', () {

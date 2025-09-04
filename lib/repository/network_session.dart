@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/widgets.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 
 late Directory supportPath;
 

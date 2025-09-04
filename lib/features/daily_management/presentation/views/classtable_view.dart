@@ -4,10 +4,10 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/model/xidian_ids/classtable.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/xidian_ids/classtable_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
 import 'class_organized_data.dart';
 import 'class_card.dart';

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.ai_assistant"
+    namespace = "com.example.campus_copilot"
     compileSdk = flutter.compileSdkVersion
     // 不强制指定 NDK 版本，避免 CI 无匹配 NDK 时失败
     // ndkVersion = "27.0.12077973"
@@ -40,7 +40,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.ai_assistant"
+        applicationId = "com.example.campus_copilot"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

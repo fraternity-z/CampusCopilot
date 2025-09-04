@@ -5,10 +5,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/repository/xidian_ids/ehall_session.dart';
 
 class PersonalInfoSession extends EhallSession {
   Future<void> getSemesterInfoYjspt() async {

@@ -6,8 +6,8 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
-import 'package:ai_assistant/model/xidian_ids/classtable.dart';
-import 'package:ai_assistant/shared/utils/debug_log.dart';
+import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ClassTableCacheManager {
