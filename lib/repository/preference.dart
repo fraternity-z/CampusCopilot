@@ -4,7 +4,6 @@
 
 // General user setting preference.
 
-import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,19 +18,6 @@ final GlobalKey<NavigatorState> splitViewKey = GlobalKey<NavigatorState>(
   debugLabel: "PDASplitViewKey",
 );
 const String appId = "group.xyz.superbart.xdyou";
-
-Catcher2Options catcherOptions = Catcher2Options(
-  PageReportMode(showStackTrace: true),
-  [
-    EmailManualHandler(
-      ["superbart_chen@qq.com"],
-      emailTitle: "PDA 发生故障",
-      emailHeader: "请作者尽快修复",
-    ),
-    ConsoleHandler(),
-  ],
-  localizationOptions: [LocalizationOptions.buildDefaultChineseOptions()],
-);
 
 enum Preference {
   //name(key: "name", type: "String"),

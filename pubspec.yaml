@@ -116,16 +116,13 @@ dependencies:
   # 工具类
   uuid: ^4.4.0
   intl: ^0.20.2
-  logger: ^2.0.2+1
   logging: ^1.2.0
   google_fonts: ^6.2.1
   open_file: ^3.5.10
   url_launcher: ^6.3.0
   talker_flutter: ^4.4.1
-  talker_dio_logger: ^4.4.1
   synchronized: ^3.1.0+1
   image: ^4.2.0
-  catcher_2: ^2.0.0
   flutter_i18n: ^0.36.2
   styled_widget: ^0.4.1
   ming_cute_icons: ^0.0.7

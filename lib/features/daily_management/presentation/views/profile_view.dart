@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/repository/logger.dart';
+import 'package:ai_assistant/shared/utils/debug_log.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
@@ -254,7 +254,7 @@ class _ProfileViewState extends State<ProfileView> {
       // 清除保存的密码
       await preference.setString(preference.Preference.idsPassword, "");
       
-      log.info("[ProfileView] User logged out");
+      debugLog(() => "[ProfileView] User logged out");
       
       if (mounted) {
         setState(() {}); // 刷新界面
@@ -263,7 +263,7 @@ class _ProfileViewState extends State<ProfileView> {
         );
       }
     } catch (e) {
-      log.error("[ProfileView] Logout failed: $e");
+      debugLog(() => "[ProfileView] Logout failed: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("注销失败，请重试")),
