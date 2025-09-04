@@ -711,6 +711,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 发送消息
   Future<void> sendMessage(String text) async {
+  // 标记：本次发送是否创建了新会话，用于决定是否需要拉取列表
+  bool createdNewSessionDuringSend = false;
     // 学习模式处理：检查是否启用学习模式并处理消息内容
     final learningModeState = _ref.read(learningModeProvider);
     final learningModeNotifier = _ref.read(learningModeProvider.notifier);
@@ -784,7 +786,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
     
     // 检查是否有当前会话，如果没有则创建新会话
-    ChatSession? currentSession = state.currentSession;
+  ChatSession? currentSession = state.currentSession;
     if (currentSession == null) {
       try {
         await createNewSession();
@@ -794,6 +796,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           state = state.copyWith(error: '无法创建新的对话会话');
           return;
         }
+    createdNewSessionDuringSend = true;
       } catch (e) {
         state = state.copyWith(error: '创建新会话失败: $e');
         return;
@@ -1039,9 +1042,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 等待流完成
       await _currentStreamSubscription?.asFuture();
 
-      // 消息发送完成后，重置上下文清除状态并重新加载会话信息
-      state = state.copyWith(contextCleared: false);
-      await _loadChatSessions();
+      // 仅重置上下文标记；标题/会话信息用回调增量更新
+      if (mounted) {
+        state = state.copyWith(contextCleared: false);
+      }
+      // 如确有必要（例如本次流程新建了会话），再做一次列表拉取
+      if (createdNewSessionDuringSend) {
+        await _loadChatSessions();
+      }
     } catch (e) {
       // 取消当前流订阅
       await _currentStreamSubscription?.cancel();
