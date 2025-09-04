@@ -80,6 +80,21 @@ class AppTheme {
       // 字体配置
       textTheme: _buildTextTheme(Brightness.light),
 
+      // 全局 PopupMenu 圆角与边框 + 选中高亮
+      popupMenuTheme: PopupMenuThemeData(
+        color: _surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusM),
+          side: const BorderSide(color: Color(0xFFE6E0E9), width: 1),
+        ),
+        textStyle: const TextStyle(color: Color(0xFF1C1B1F), fontSize: 14),
+      ),
+      hoverColor: const Color(0xFF6750A4).withValues(alpha: 0.08),
+      highlightColor: const Color(0xFF6750A4).withValues(alpha: 0.10),
+      splashColor: const Color(0xFF6750A4).withValues(alpha: 0.12),
+
       // AppBar主题
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -249,6 +264,21 @@ class AppTheme {
       ),
 
       textTheme: _buildTextTheme(Brightness.dark),
+
+      // 全局 PopupMenu 圆角与边框 + 选中高亮（暗色）
+      popupMenuTheme: PopupMenuThemeData(
+        color: Color(0xFF1C1B1F),
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusM),
+          side: const BorderSide(color: Color(0xFF36343B), width: 1),
+        ),
+        textStyle: const TextStyle(color: Color(0xFFE6E0E9), fontSize: 14),
+      ),
+      hoverColor: const Color(0xFFD0BCFF).withValues(alpha: 0.12),
+      highlightColor: const Color(0xFFD0BCFF).withValues(alpha: 0.16),
+      splashColor: const Color(0xFFD0BCFF).withValues(alpha: 0.20),
 
       appBarTheme: const AppBarTheme(
         elevation: 0,

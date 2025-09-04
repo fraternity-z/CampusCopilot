@@ -235,6 +235,8 @@ class _SearchSourceConfigState extends ConsumerState<_SearchSourceConfig> {
             border: OutlineInputBorder(),
             isDense: true,
           ),
+          borderRadius: BorderRadius.circular(12),
+          dropdownColor: Theme.of(context).colorScheme.surface,
           items: const [
             DropdownMenuItem(value: 'model_native', child: Text('模型内置联网（实验）')),
             DropdownMenuItem(value: 'tavily', child: Text('Tavily（API密钥）')),
