@@ -9,7 +9,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:ai_assistant/repository/logger.dart';
+import 'package:ai_assistant/shared/utils/debug_log.dart';
 import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
 import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
 
@@ -36,10 +36,7 @@ class EhallSession extends IDSSession {
     var response = await dioEhall.get(
       "https://ehall.xidian.edu.cn/jsonp/getAppUsageMonitor.json?type=uv",
     );
-    log.info(
-      "[ehall_session][isLoggedIn] "
-      "Ehall isLoggedin: ${response.data["hasLogin"]}",
-    );
+    debugLog(() => "[ehall_session][isLoggedIn] Ehall isLoggedin: ${response.data["hasLogin"]}");
     return response.data["hasLogin"];
   }
 
@@ -60,10 +57,7 @@ class EhallSession extends IDSSession {
     var response = await dio.get(location);
     while (response.headers[HttpHeaders.locationHeader] != null) {
       location = response.headers[HttpHeaders.locationHeader]![0];
-      log.info(
-        "[ehall_session][loginEhall] "
-        "Received location: $location",
-      );
+      debugLog(() => "[ehall_session][loginEhall] Received location: $location");
       response = await dioEhall.get(location);
     }
     return;
@@ -71,10 +65,7 @@ class EhallSession extends IDSSession {
 
   Future<String> useApp(String appID) async {
     return await _ehallLock.synchronized(() async {
-      log.info(
-        "[ehall_session][useApp] "
-        "Ready to use the app $appID. Try to Login.",
-      );
+      debugLog(() => "[ehall_session][useApp] Ready to use the app $appID. Try to Login.");
       if (!await isLoggedIn()) {
         String location = await super.checkAndLogin(
           target:
@@ -86,17 +77,11 @@ class EhallSession extends IDSSession {
         var response = await dio.get(location);
         while (response.headers[HttpHeaders.locationHeader] != null) {
           location = response.headers[HttpHeaders.locationHeader]![0];
-          log.info(
-            "[ehall_session][useApp] "
-            "Received location: $location.",
-          );
+          debugLog(() => "[ehall_session][useApp] Received location: $location.");
           response = await dioEhall.get(location);
         }
       }
-      log.info(
-        "[ehall_session][useApp] "
-        "Try to use the $appID.",
-      );
+      debugLog(() => "[ehall_session][useApp] Try to use the $appID.");
       var value = await dioEhall.get(
         "https://ehall.xidian.edu.cn/appShow?appId=$appID",
         options: Options(
@@ -106,10 +91,7 @@ class EhallSession extends IDSSession {
           },
         ),
       );
-      log.info(
-        "[ehall_session][useApp] "
-        "Transfer address: ${value.headers['location']![0]}.",
-      );
+      debugLog(() => "[ehall_session][useApp] Transfer address: ${value.headers['location']![0]}.");
 
       var locationHeader = value.headers['location'];
       if (locationHeader == null || locationHeader.isEmpty) {

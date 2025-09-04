@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:image/image.dart' as img;
 import 'package:styled_widget/styled_widget.dart';
-import '../logger.dart';
+import 'package:ai_assistant/shared/utils/debug_log.dart';
 
 class Lazy<T> {
   final T Function() _initializer;
@@ -27,7 +27,7 @@ class Lazy<T> {
 
 class SliderCaptchaClientProvider {
   final String cookie;
-  Dio dio = Dio()..interceptors.add(logDioAdapter);
+  Dio dio = Dio();
 
   Uint8List? puzzleData;
   Uint8List? pieceData;
@@ -78,13 +78,13 @@ class SliderCaptchaClientProvider {
       await updatePuzzle();
       double? answer = _trySolve(puzzleData!, pieceData!);
       if (answer != null && await verify(answer)) {
-        log.info("Parse captcha $i time(s), success.");
+        debugLog(() => "Parse captcha $i time(s), success.");
         return;
       }
-      log.info("Parse captcha $i time(s), failure.");
+      debugLog(() => "Parse captcha $i time(s), failure.");
     }
 
-    log.info("$retryCount failures, fallback to user input.");
+    debugLog(() => "$retryCount failures, fallback to user input.");
     // fallback
     if (context != null && context.mounted) {
       await Navigator.of(context).push(

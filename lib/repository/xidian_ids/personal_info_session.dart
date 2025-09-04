@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
-import 'package:ai_assistant/repository/logger.dart';
+import 'package:ai_assistant/shared/utils/debug_log.dart';
 import 'package:ai_assistant/repository/preference.dart' as preference;
 import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
 
@@ -18,24 +18,15 @@ class PersonalInfoSession extends EhallSession {
           SliderCaptchaClientProvider(cookie: cookieStr).solve(null),
     );
 
-    log.info(
-      "[PersonalInfoSession][getSemesterInfoYjspt] "
-      "Location is $location",
-    );
+    debugLog(() => "[PersonalInfoSession][getSemesterInfoYjspt] Location is $location");
     var response = await dio.get(location);
     while (response.headers[HttpHeaders.locationHeader] != null) {
       location = response.headers[HttpHeaders.locationHeader]![0];
-      log.info(
-        "[PersonalInfoSession][getSemesterInfoYjspt] "
-        "Received location: $location.",
-      );
+      debugLog(() => "[PersonalInfoSession][getSemesterInfoYjspt] Received location: $location.");
       response = await dio.get(location);
     }
 
-    log.info(
-      "[PersonalInfoSession][getSemesterInfoYjspt] "
-      "Getting the current semester info.",
-    );
+    debugLog(() => "[PersonalInfoSession][getSemesterInfoYjspt] Getting the current semester info.");
     var detailed = await dio
         .post(
           "https://yjspt.xidian.edu.cn/gsapp/sys/yjsemaphome/modules/pubWork/getUserInfo.do",
@@ -60,10 +51,7 @@ class PersonalInfoSession extends EhallSession {
   }
 
   Future<String> getDormInfoEhall() async {
-    log.info(
-      "[ehall_session][getDormInfoEhall] "
-      "Ready to get the user information.",
-    );
+    debugLog(() => "[ehall_session][getDormInfoEhall] Ready to get the user information.");
 
     String location = await super.checkAndLogin(
       target:
@@ -71,10 +59,7 @@ class PersonalInfoSession extends EhallSession {
       sliderCaptcha: (String cookieStr) =>
           SliderCaptchaClientProvider(cookie: cookieStr).solve(null),
     );
-    log.info(
-      "[ehall_session][getDormInfoEhall] "
-      "Location is $location",
-    );
+    debugLog(() => "[ehall_session][getDormInfoEhall] Location is $location");
     var response = await dio.get(
       location,
       options: Options(
@@ -87,10 +72,7 @@ class PersonalInfoSession extends EhallSession {
     );
     while (response.headers[HttpHeaders.locationHeader] != null) {
       location = response.headers[HttpHeaders.locationHeader]![0];
-      log.info(
-        "[ehall_session][useApp] "
-        "Received location: $location.",
-      );
+      debugLog(() => "[ehall_session][useApp] Received location: $location.");
       response = await dioEhall.get(
         location,
         options: Options(
@@ -114,10 +96,7 @@ class PersonalInfoSession extends EhallSession {
     );
 
     /// Get information here. resultCode==00000 is successful.
-    log.info(
-      "[ehall_session][getDormInfoEhall] "
-      "Getting the dorm information.",
-    );
+    debugLog(() => "[ehall_session][getDormInfoEhall] Getting the dorm information.");
     var detailed = await dioEhall
         .post(
           "https://xgxt.xidian.edu.cn/xsfw/sys/jbxxapp/modules/infoStudent/getStuBaseInfo.do",
@@ -139,10 +118,7 @@ class PersonalInfoSession extends EhallSession {
           }
           return data;
         });
-    log.info(
-      "[ehall_session][getDormInfoEhall] "
-      "Storing the user information.",
-    );
+    debugLog(() => "[ehall_session][getDormInfoEhall] Storing the user information.");
     if (detailed["returnCode"] != "#E000000000000") {
       throw GetInformationFailedException(detailed["description"]);
     }
@@ -155,10 +131,7 @@ class PersonalInfoSession extends EhallSession {
   }
 
   Future<void> getSemesterInfoEhall() async {
-    log.info(
-      "[ehall_session][getSemesterInfoEhall] "
-      "Get the semester information.",
-    );
+    debugLog(() => "[ehall_session][getSemesterInfoEhall] Get the semester information.");
     String get = await useApp("4770397878132218");
     await dioEhall.post(get);
     String semesterCode = await dioEhall

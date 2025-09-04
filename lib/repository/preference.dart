@@ -8,7 +8,6 @@ import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import './logger.dart';
 
 late SharedPreferencesWithCache prefs;
 late PackageInfo packageInfo;
@@ -32,7 +31,6 @@ Catcher2Options catcherOptions = Catcher2Options(
     ConsoleHandler(),
   ],
   localizationOptions: [LocalizationOptions.buildDefaultChineseOptions()],
-  logger: PDACatcher2Logger(),
 );
 
 enum Preference {
