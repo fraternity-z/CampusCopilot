@@ -18,7 +18,9 @@ import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
 import 'package:campus_copilot/repository/xidian_ids/personal_info_session.dart';
 
 class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+  final VoidCallback? onLoginSuccess;
+  
+  const LoginView({super.key, this.onLoginSuccess});
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -194,9 +196,9 @@ class _LoginViewState extends State<LoginView> {
           debugLog(() => "Failed to get user info: $e");
         }
         
-        // 返回成功 - 添加安全检查
-        if (mounted && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(true);
+        // 通知父页面登录成功
+        if (widget.onLoginSuccess != null) {
+          widget.onLoginSuccess!();
         }
       }
       

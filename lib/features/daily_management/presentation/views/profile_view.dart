@@ -21,6 +21,14 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
+  
+  /// 处理登录成功回调
+  void _handleLoginSuccess() {
+    if (mounted) {
+      setState(() {}); // 刷新页面状态
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _buildBody();
@@ -144,7 +152,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   /// 构建登录提示（未登录状态）
   Widget _buildLoginPrompt() {
-    return const LoginView();
+    return LoginView(onLoginSuccess: _handleLoginSuccess);
   }
 
   /// 构建信息卡片
