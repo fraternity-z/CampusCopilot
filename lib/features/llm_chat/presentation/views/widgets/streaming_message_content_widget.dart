@@ -243,9 +243,8 @@ class _OptimizedStreamingMessageWidgetState
       return _streamChunks.isNotEmpty || widget.isStreaming;
     }
 
-    // 如果有思考链内容，必须等思考链完成且正文开始后才显示
-    return _thinkingCompleted &&
-        _contentStarted &&
+    // 如果有思考链内容：一旦正文开始就显示，避免可见停顿
+    return _contentStarted &&
         (_streamChunks.isNotEmpty || widget.isStreaming);
   }
 
@@ -256,8 +255,8 @@ class _OptimizedStreamingMessageWidgetState
       return true;
     }
 
-    // 如果有思考链内容，必须等思考链完成后才更新正文渲染块
-    return _thinkingCompleted;
+    // 如果有思考链内容：一旦正文开始就更新，提升流畅度
+    return _contentStarted;
   }
 
   Widget _buildAttachments() {

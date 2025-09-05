@@ -508,7 +508,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           if (scrollController.hasClients && messages.isNotEmpty) {
             // 检查是否需要滚动
             if (scrollNotifier.shouldScrollForMessages(messages)) {
-              _performScroll(scrollController, messages, isStreaming: false);
+              final isStreamingNow = messages.isNotEmpty &&
+                  !messages.last.isFromUser &&
+                  messages.last.status == MessageStatus.sending;
+              _performScroll(
+                scrollController,
+                messages,
+                isStreaming: isStreamingNow,
+              );
             }
           }
         });
