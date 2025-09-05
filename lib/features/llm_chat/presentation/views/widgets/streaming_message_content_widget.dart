@@ -96,6 +96,13 @@ class _OptimizedStreamingMessageWidgetState
       setState(() {
         _streamChunks.clear();
         _streamChunks.addAll(chunks);
+        // 对于无 <think> 标签但有 thinkingContent 的模型（如 DeepSeek R1），
+        // 当检测到正文开始时，视为思考链已完成，以保证先后显示。
+        if (!_thinkingCompleted &&
+            (widget.message.thinkingContent?.isNotEmpty ?? false) &&
+            _contentStarted) {
+          _thinkingCompleted = true;
+        }
       });
     }
   }
@@ -215,14 +222,19 @@ class _OptimizedStreamingMessageWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 实时显示思考链（流式）
-        if (_streamingThinking.isNotEmpty && !widget.message.isFromUser)
+        // 实时显示思考链（优先使用消息自带的thinkingContent，兼容DeepSeek R1等）
+        if (!widget.message.isFromUser &&
+            ((widget.message.thinkingContent?.isNotEmpty ?? false) ||
+                _streamingThinking.isNotEmpty))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ThinkingChainWidget(
-              content: _streamingThinking,
+              content: (widget.message.thinkingContent?.isNotEmpty ?? false)
+                  ? widget.message.thinkingContent!
+                  : _streamingThinking,
               modelName: widget.message.modelName ?? '',
-              isCompleted: _thinkingCompleted,
+              isCompleted:
+                  widget.message.thinkingComplete || _thinkingCompleted,
             ),
           ),
 
@@ -239,25 +251,34 @@ class _OptimizedStreamingMessageWidgetState
 
   /// 判断是否应该显示正文内容
   bool _shouldShowContent() {
+    final hasThinking = _hasThinkingContent ||
+        (widget.message.thinkingContent?.isNotEmpty ?? false);
+    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
+
     // 如果没有思考链内容，直接显示正文
-    if (!_hasThinkingContent) {
+    if (!hasThinking) {
       return _streamChunks.isNotEmpty || widget.isStreaming;
     }
 
-    // 如果有思考链内容：一旦正文开始就显示，避免可见停顿
-    return _contentStarted &&
+    // 如果有思考链内容：必须在思考完成后再显示正文（先后显示）
+    return thinkingDone &&
+        _contentStarted &&
         (_streamChunks.isNotEmpty || widget.isStreaming);
   }
 
   /// 判断是否应该更新正文内容的渲染块
   bool _shouldUpdateContentChunks() {
+    final hasThinking = _hasThinkingContent ||
+        (widget.message.thinkingContent?.isNotEmpty ?? false);
+    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
+
     // 如果没有思考链内容，直接更新
-    if (!_hasThinkingContent) {
+    if (!hasThinking) {
       return true;
     }
 
-    // 如果有思考链内容：一旦正文开始就更新，提升流畅度
-    return _contentStarted;
+    // 如果有思考链内容：思考完成后才更新正文渲染
+    return thinkingDone;
   }
 
   Widget _buildAttachments() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 关于页面
 class AboutScreen extends ConsumerWidget {
@@ -293,10 +294,26 @@ class AboutScreen extends ConsumerWidget {
   }
 
   /// 显示反馈
-  void _showFeedback(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('反馈功能开发中...')),
-    );
+  void _showFeedback(BuildContext context) async {
+    const url = 'https://github.com/fraternity-z/CampusCopilot/issues';
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('无法打开链接，请手动访问GitHub Issues页面')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('打开链接失败: $e')),
+        );
+      }
+    }
   }
 
   /// 评价应用

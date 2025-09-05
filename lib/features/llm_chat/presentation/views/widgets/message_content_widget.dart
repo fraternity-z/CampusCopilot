@@ -55,17 +55,24 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
     final generalSettings = ref.watch(generalSettingsProvider);
 
-    // 仅在内容变化时重新分离思考链与正文
-    if (_lastProcessedContent != widget.message.content) {
+    // 优先使用消息自带的思考链字段（兼容 DeepSeek R1 / Reasoning 模型）
+    final hasExplicitThinking =
+        (widget.message.thinkingContent?.isNotEmpty ?? false);
+
+    if (!hasExplicitThinking && _lastProcessedContent != widget.message.content) {
       _cachedSeparatedContent = _separateThinkingAndContent(
         widget.message.content,
       );
       _lastProcessedContent = widget.message.content;
     }
 
-    final separated = _cachedSeparatedContent!;
-    final thinkingContent = separated['thinking'];
-    final actualContent = separated['content'] ?? widget.message.content;
+    final separated = hasExplicitThinking ? null : _cachedSeparatedContent;
+    final thinkingContent = hasExplicitThinking
+        ? widget.message.thinkingContent
+        : separated?['thinking'];
+    final actualContent = hasExplicitThinking
+        ? widget.message.content
+        : (separated?['content'] ?? widget.message.content);
 
 
     return Column(

@@ -1022,6 +1022,11 @@ class ChatService {
           break;
         }
 
+        // 兼容推理模型：直接累积 Provider 提供的思考增量
+        if (chunk.thinkingDelta != null && chunk.thinkingDelta!.isNotEmpty) {
+          accumulatedThinking += chunk.thinkingDelta!;
+        }
+
         // 处理内容增量
         if (chunk.delta != null && chunk.delta!.isNotEmpty) {
           String deltaText = chunk.delta!;
@@ -1097,7 +1102,8 @@ class ChatService {
           thinkingContent: accumulatedThinking.isNotEmpty
               ? accumulatedThinking
               : null,
-          thinkingComplete: false, // 流式过程中始终为false
+          // 若 Provider 明确标记思考完成，则同步到消息状态
+          thinkingComplete: chunk.thinkingComplete || chunk.isDone,
         );
       }
     } catch (e) {
