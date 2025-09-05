@@ -53,6 +53,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     
     // 获取设置
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
+    final generalSettings = ref.watch(generalSettingsProvider);
 
     // 仅在内容变化时重新分离思考链与正文
     if (_lastProcessedContent != widget.message.content) {
@@ -100,12 +101,14 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
           ),
         // 主要内容
         if (actualContent.trim().isNotEmpty)
-          _buildContentWithMath(
-            context: context,
-            content: actualContent,
-            styleSheet: _getMarkdownStyleSheet(context),
-            codeBlockSettings: codeBlockSettings,
-          ),
+          (generalSettings.enableMarkdownRendering
+              ? _buildContentWithMath(
+                  context: context,
+                  content: actualContent,
+                  styleSheet: _getMarkdownStyleSheet(context),
+                  codeBlockSettings: codeBlockSettings,
+                )
+              : _buildPlainTextContent(context, actualContent)),
 
         // 引用展示（来自模型内置联网/Responses/Claude）
         if (!widget.message.isFromUser &&
@@ -114,6 +117,22 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
           _buildCitations(context, widget.message.metadata!['citations']),
       ],
     );
+  }
+
+  /// 构建纯文本内容（禁用 Markdown 渲染时）
+  Widget _buildPlainTextContent(BuildContext context, String content) {
+    final theme = Theme.of(context);
+    final color = widget.message.isFromUser
+        ? theme.colorScheme.onPrimaryContainer
+        : theme.colorScheme.onSurface;
+    final style = GoogleFonts.inter(
+      textStyle: theme.textTheme.bodyMedium?.copyWith(
+        color: color,
+        height: 1.7,
+        letterSpacing: 0.2,
+      ),
+    );
+    return SelectableText(content, style: style);
   }
 
   Widget _buildCitations(BuildContext context, dynamic citations) {

@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../domain/entities/chat_message.dart';
 import 'message_content_widget.dart';
+import '../../../../../app/app_router.dart' show generalSettingsProvider;
 import 'thinking_chain_widget.dart';
 
 /// 流式增量渲染的消息组件
@@ -367,19 +368,24 @@ class _OptimizedStreamingMessageWidgetState
   }
 
   Widget _buildStreaming() {
+    final general = ref.watch(generalSettingsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._streamChunks.map((c) {
-          switch (c.kind) {
-            case _Kind.text:
-              return SelectableText(c.text, style: _textStyle());
-            case _Kind.code:
-              return _ChunkBuilder._code(context, c.text);
-            case _Kind.math:
-              return _ChunkBuilder._math(context, c.text);
-          }
-        }),
+        if (general.enableMarkdownRendering)
+          ..._streamChunks.map((c) {
+            switch (c.kind) {
+              case _Kind.text:
+                return SelectableText(c.text, style: _textStyle());
+              case _Kind.code:
+                return _ChunkBuilder._code(context, c.text);
+              case _Kind.math:
+                return _ChunkBuilder._math(context, c.text);
+            }
+          })
+        else
+          // 禁用Markdown时，直接渲染纯文本（累积内容）
+          SelectableText(_streamingContent, style: _textStyle()),
         if (widget.isStreaming)
           Container(
             margin: const EdgeInsets.only(top: 4),

@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../../../settings/presentation/providers/settings_provider.dart';
+import '../../../../../app/app_router.dart' show generalSettingsProvider;
 
 /// 思考链显示组件
 ///
@@ -527,6 +528,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     settings,
     String displayedContent,
   ) {
+    final general = ref.watch(generalSettingsProvider);
     final bool shouldTruncate =
         !_isExpanded && displayedContent.length > settings.maxDisplayLength;
 
@@ -554,25 +556,34 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 使用 RepaintBoundary 包裹 MarkdownBody
-            RepaintBoundary(
-              child: MarkdownBody(
-                data: displayContent,
-                styleSheet: MarkdownStyleSheet(
-                  p: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
-                  code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainer,
+            // 内容区：根据设置选择 Markdown 或纯文本
+            if (general.enableMarkdownRendering)
+              RepaintBoundary(
+                child: MarkdownBody(
+                  data: displayContent,
+                  styleSheet: MarkdownStyleSheet(
+                    p: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                    code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontFamily: 'monospace',
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainer,
+                    ),
                   ),
                 ),
+              )
+            else
+              SelectableText(
+                displayContent,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
-            ),
             // 光标动画
             if (!widget.isCompleted &&
                 displayedContent.length < widget.content.length)
