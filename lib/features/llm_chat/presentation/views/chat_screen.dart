@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
@@ -83,11 +84,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _performScroll(ScrollController controller, List<ChatMessage> messages, {bool isStreaming = false}) {
     if (!mounted || !controller.hasClients) return;
 
-    // 检查用户是否在底部
-    final position = controller.position;
-    final isAtBottom = position.maxScrollExtent - position.pixels < 50;
-    
-    if (!isAtBottom) return; // 用户不在底部，不自动滚动
+    // 通过ScrollNotifier检查是否应该自动滚动
+    final scrollState = ref.read(chatScrollProvider);
+    if (!scrollState.isAtBottom) return; // 用户不在底部，不自动滚动
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !controller.hasClients) return;
@@ -525,17 +524,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         if (isSearching) extraItems++;
         if (error != null) extraItems++;
 
-        return AnimationLimiter(
-          child: ListView.builder(
-            key: const PageStorageKey('chat_message_list'),
-            controller: scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            cacheExtent: 800,
-            addAutomaticKeepAlives: true,
-            addRepaintBoundaries: true,
-            addSemanticIndexes: true,
-            itemCount: messages.length + extraItems,
-            itemBuilder: (context, index) {
+        return NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            final notifier = ref.read(chatScrollProvider.notifier);
+            
+            // 更新滚动位置状态
+            if (scrollController.hasClients) {
+              notifier.updateScrollPosition(scrollController);
+            }
+            
+            if (notification is UserScrollNotification) {
+              // 仅用户手势导致的滚动才标记为用户滚动
+              if (notification.direction == ScrollDirection.idle) {
+                notifier.markUserScrollingStopped();
+              } else {
+                notifier.markUserScrolling();
+              }
+            } else if (notification is ScrollEndNotification) {
+              notifier.markUserScrollingStopped();
+            }
+            return false; // 允许事件继续冒泡
+          },
+          child: AnimationLimiter(
+            child: ListView.builder(
+              key: const PageStorageKey('chat_message_list'),
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              cacheExtent: 800,
+              addAutomaticKeepAlives: true,
+              addRepaintBoundaries: true,
+              addSemanticIndexes: true,
+              itemCount: messages.length + extraItems,
+              itemBuilder: (context, index) {
               // 显示搜索状态消息（在消息列表末尾，错误消息之前）
               if (isSearching && index == messages.length) {
                 return AnimationConfiguration.staggeredList(
@@ -578,6 +598,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 ),
               );
             },
+            ),
           ),
         );
       },
