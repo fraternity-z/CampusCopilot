@@ -12,7 +12,6 @@ import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, gene
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
-import 'enhanced_mermaid_renderer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
@@ -457,15 +456,10 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
 
     final mathRegex = RegExp(r'\$\$(.*?)\$\$', dotAll: true);
-    final mermaidRegex = RegExp(r'```mermaid\s*\n(.*?)\n\s*```', dotAll: true);
 
     // Collect all matches
     final List<Match> allMatches = [];
     allMatches.addAll(mathRegex.allMatches(normalizedContent));
-
-    // 添加 Mermaid 图表匹配
-    final mermaidMatches = mermaidRegex.allMatches(normalizedContent);
-    allMatches.addAll(mermaidMatches);
 
     // Sort by start index
     allMatches.sort((a, b) => a.start.compareTo(b.start));
@@ -488,66 +482,22 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
         }
       }
       final content = match.group(1)!;
-      if (match.pattern == mathRegex.pattern) {
-        // Math
-        segments.add(
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: Math.tex(
-              content,
-              mathStyle: MathStyle.display,
-              textStyle: Theme.of(context).textTheme.bodyMedium,
-              onErrorFallback: (FlutterMathException e) {
-                // 出现解析错误时，降级为普通文本显示
-                // ignore: unnecessary_brace_in_string_interps
-                return Text('\$\$${content}\$\$');
-              },
-            ),
+      // Math
+      segments.add(
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: Math.tex(
+            content,
+            mathStyle: MathStyle.display,
+            textStyle: Theme.of(context).textTheme.bodyMedium,
+            onErrorFallback: (FlutterMathException e) {
+              // 出现解析错误时，降级为普通文本显示
+              // ignore: unnecessary_brace_in_string_interps
+              return Text('\$\$${content}\$\$');
+            },
           ),
-        );
-      } else {
-        // Mermaid
-        segments.add(
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outline.withValues(alpha: 0.2),
-              ),
-            ),
-            child: codeBlockSettings.enableMermaidDiagrams
-                ? EnhancedMermaidRenderer(mermaidCode: content)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Mermaid图表 (已禁用)',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        content,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        );
-      }
+        ),
+      );
       lastEnd = match.end;
     }
 

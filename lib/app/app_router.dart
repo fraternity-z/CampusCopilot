@@ -198,7 +198,6 @@ class CodeBlockSettings {
   final bool enableCodeFolding;
   final bool enableCodeWrapping;
   final bool defaultCollapseCodeBlocks;
-  final bool enableMermaidDiagrams;
   final double? maxCodeBlockHeight;
 
   const CodeBlockSettings({
@@ -207,7 +206,6 @@ class CodeBlockSettings {
     this.enableCodeFolding = true,
     this.enableCodeWrapping = true,
     this.defaultCollapseCodeBlocks = false,
-    this.enableMermaidDiagrams = true,
     this.maxCodeBlockHeight = 600,
   });
 
@@ -217,7 +215,6 @@ class CodeBlockSettings {
     bool? enableCodeFolding,
     bool? enableCodeWrapping,
     bool? defaultCollapseCodeBlocks,
-    bool? enableMermaidDiagrams,
     double? maxCodeBlockHeight,
   }) {
     return CodeBlockSettings(
@@ -227,8 +224,6 @@ class CodeBlockSettings {
       enableCodeWrapping: enableCodeWrapping ?? this.enableCodeWrapping,
       defaultCollapseCodeBlocks:
           defaultCollapseCodeBlocks ?? this.defaultCollapseCodeBlocks,
-      enableMermaidDiagrams:
-          enableMermaidDiagrams ?? this.enableMermaidDiagrams,
       maxCodeBlockHeight: maxCodeBlockHeight ?? this.maxCodeBlockHeight,
     );
   }

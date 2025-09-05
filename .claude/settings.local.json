@@ -18,7 +18,8 @@
       "Read(E:\\code\\traintime_pda/**)",
       "Read(E:\\code\\traintime_pda\\lib/**)",
       "WebFetch(domain:docs.objectbox.io)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
