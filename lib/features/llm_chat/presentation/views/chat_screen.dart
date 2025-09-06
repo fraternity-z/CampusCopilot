@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:shimmer/shimmer.dart';
 
@@ -20,8 +19,7 @@ import '../providers/chat_provider.dart';
 import '../providers/scroll_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
-import 'widgets/message_content_widget.dart';
-import 'widgets/streaming_message_content_widget.dart';
+import 'widgets/smooth_message_switcher.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
@@ -459,7 +457,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
-  /// 构建消息列表 - 使用新的滚动状态隔离机制
+  /// 构建消息列表 - 使用新的滚动状态隔离机制，优化性能
   Widget _buildMessageList() {
     return Consumer(
       builder: (context, ref, child) {
@@ -468,8 +466,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         final isSearching = ref.watch(chatSearchingProvider);
         final scrollController = ref.watch(scrollControllerProvider);
         final scrollNotifier = ref.read(chatScrollProvider.notifier);
+        final isLoading = ref.watch(chatLoadingProvider);
 
-        if (messages.isEmpty) {
+        if (messages.isEmpty && !isLoading) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -495,6 +494,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     color: Theme.of(
                       context,
                     ).colorScheme.onSurface.withAlpha(153),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 显示加载状态（当切换会话时）
+        if (messages.isEmpty && isLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '正在加载消息...',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -530,23 +555,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             
             // 更新滚动位置状态
             if (scrollController.hasClients) {
-              notifier.updateScrollPosition(scrollController);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                notifier.updateScrollPosition(scrollController);
+              });
             }
             
             if (notification is UserScrollNotification) {
               // 仅用户手势导致的滚动才标记为用户滚动
               if (notification.direction == ScrollDirection.idle) {
-                notifier.markUserScrollingStopped();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  notifier.markUserScrollingStopped();
+                });
               } else {
-                notifier.markUserScrolling();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  notifier.markUserScrolling();
+                });
               }
             } else if (notification is ScrollEndNotification) {
-              notifier.markUserScrollingStopped();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                notifier.markUserScrollingStopped();
+              });
             }
             return false; // 允许事件继续冒泡
           },
-          child: AnimationLimiter(
-            child: ListView.builder(
+          child: ListView.builder(
               key: const PageStorageKey('chat_message_list'),
               controller: scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -558,48 +594,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               itemBuilder: (context, index) {
               // 显示搜索状态消息（在消息列表末尾，错误消息之前）
               if (isSearching && index == messages.length) {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 375),
-                  child: SlideAnimation(
-                    verticalOffset: 30.0,
-                    horizontalOffset: -30.0,
-                    child: FadeInAnimation(
-                      child: _buildSearchingMessage(),
-                    ),
-                  ),
-                );
+                return _buildSearchingMessage();
               }
 
               // 显示错误消息（在最后）
               if (error != null && index == messages.length + (isSearching ? 1 : 0)) {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 375),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
-                    child: FadeInAnimation(
-                      child: _buildErrorMessage(error),
-                    ),
-                  ),
-                );
+                return _buildErrorMessage(error);
               }
 
               // 显示普通消息
-              return AnimationConfiguration.staggeredList(
-                position: index,
-                duration: const Duration(milliseconds: 375),
-                child: SlideAnimation(
-                  verticalOffset: messages[index].isFromUser ? -30.0 : 30.0,
-                  horizontalOffset: messages[index].isFromUser ? 30.0 : -30.0,
-                  child: FadeInAnimation(
-                    child: _buildMessageBubble(messages[index]),
-                  ),
-                ),
-              );
+              return _buildMessageBubble(messages[index]);
             },
             ),
-          ),
         );
       },
     );
@@ -976,12 +982,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                   ),
                                 ],
                               ),
-                              child: message.status == MessageStatus.sending && message.isFromAI
-                                  ? OptimizedStreamingMessageWidget(
-                                      message: message,
-                                      isStreaming: true,
-                                    )
-                                  : MessageContentWidget(message: message),
+                              child: InstantMessageSwitcher(message: message),
                             ),
                           ),
                         ),
@@ -1117,12 +1118,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                 ),
                               ],
                             ),
-                            child: message.status == MessageStatus.sending && message.isFromAI
-                                ? OptimizedStreamingMessageWidget(
-                                    message: message,
-                                    isStreaming: true,
-                                  )
-                                : MessageContentWidget(message: message),
+                            child: InstantMessageSwitcher(message: message),
                           ),
                         ),
                       ),

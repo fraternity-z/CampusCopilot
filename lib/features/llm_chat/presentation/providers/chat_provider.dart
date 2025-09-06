@@ -30,6 +30,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final ImageService _imageService = ImageService();
   final ImageGenerationService _imageGenerationService =
       ImageGenerationService();
+  
+  // 消息缓存，避免重复数据库查询
+  final Map<String, List<ChatMessage>> _messagesCache = {};
+  // 当前正在切换的会话ID，用于防止重复切换
+  String? _switchingToSessionId;
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
     // 延迟加载会话列表，避免构造函数中的异步操作
@@ -110,33 +115,132 @@ class ChatNotifier extends StateNotifier<ChatState> {
     debugLog(() => '🔄 更新后当前会话标题: ${state.currentSession?.title}');
   }
 
-  /// 选择会话
+  /// 选择会话 - 优化版本，支持缓存和异步加载
   Future<void> selectSession(String sessionId) async {
     try {
+      // 防止重复切换到同一个会话
+      if (state.currentSession?.id == sessionId && !state.isLoading) {
+        debugLog(() => '🔄 会话已选中，跳过切换: $sessionId');
+        return;
+      }
+      
+      // 防止并发切换
+      if (_switchingToSessionId == sessionId) {
+        debugLog(() => '🔄 正在切换到该会话，跳过重复请求: $sessionId');
+        return;
+      }
+      
+      _switchingToSessionId = sessionId;
+      
       final sessionIndex = state.sessions.indexWhere((s) => s.id == sessionId);
       if (sessionIndex == -1) {
         state = state.copyWith(error: '会话不存在');
+        _switchingToSessionId = null;
         return;
       }
 
       final session = state.sessions[sessionIndex];
-      final messages = await _chatService.getSessionMessages(sessionId);
-
+      
+      // 先立即更新会话，显示加载状态，提升用户体验
       state = state.copyWith(
         currentSession: session,
-        messages: messages,
+        isLoading: true,
         error: null,
       );
+      
+      List<ChatMessage> messages;
+      
+      // 检查缓存
+      if (_messagesCache.containsKey(sessionId)) {
+        debugLog(() => '🚀 从缓存加载消息: $sessionId');
+        messages = _messagesCache[sessionId]!;
+        
+        // 使用缓存数据快速更新UI
+        state = state.copyWith(
+          messages: messages,
+          isLoading: false,
+        );
+        
+        // 后台异步刷新缓存（可选）
+        _refreshMessagesInBackground(sessionId);
+      } else {
+        // 缓存未命中，从数据库加载
+        debugLog(() => '📄 从数据库加载消息: $sessionId');
+        messages = await _chatService.getSessionMessages(sessionId);
+        
+        // 缓存消息
+        _messagesCache[sessionId] = List.from(messages);
+        
+        // 限制缓存大小，避免内存泄漏
+        _limitCacheSize();
+        
+        state = state.copyWith(
+          messages: messages,
+          isLoading: false,
+        );
+      }
+      
+      _switchingToSessionId = null;
+      debugLog(() => '✅ 会话切换完成: $sessionId (${messages.length}条消息)');
+      
     } catch (e) {
-      // 添加调试信息
-      state = state.copyWith(error: '加载会话失败: $e');
+      _switchingToSessionId = null;
+      debugLog(() => '❌ 会话切换失败: $sessionId, 错误: $e');
+      state = state.copyWith(
+        error: '加载会话失败: $e',
+        isLoading: false,
+      );
     }
+  }
+  
+  /// 后台刷新消息缓存
+  Future<void> _refreshMessagesInBackground(String sessionId) async {
+    try {
+      final freshMessages = await _chatService.getSessionMessages(sessionId);
+      _messagesCache[sessionId] = List.from(freshMessages);
+      
+      // 如果这仍然是当前会话，静默更新消息
+      if (state.currentSession?.id == sessionId) {
+        state = state.copyWith(messages: freshMessages);
+      }
+    } catch (e) {
+      debugLog(() => '🔄 后台刷新缓存失败: $sessionId, 错误: $e');
+    }
+  }
+  
+  /// 限制缓存大小，保留最近的10个会话
+  void _limitCacheSize() {
+    const maxCacheSize = 10;
+    if (_messagesCache.length > maxCacheSize) {
+      // 移除最老的缓存项
+      final keys = _messagesCache.keys.toList();
+      final keysToRemove = keys.take(keys.length - maxCacheSize);
+      for (final key in keysToRemove) {
+        _messagesCache.remove(key);
+      }
+      debugLog(() => '🧹 清理消息缓存，保留${_messagesCache.length}个会话');
+    }
+  }
+  
+  /// 清空消息缓存
+  void clearMessagesCache() {
+    _messagesCache.clear();
+    debugLog(() => '🗑️ 已清空消息缓存');
+  }
+  
+  /// 更新特定会话的缓存
+  void updateSessionCache(String sessionId, List<ChatMessage> messages) {
+    _messagesCache[sessionId] = List.from(messages);
+    debugLog(() => '📝 更新会话缓存: $sessionId (${messages.length}条消息)');
   }
 
   /// 删除会话
   Future<void> deleteSession(String sessionId) async {
     try {
       await _chatService.deleteChatSession(sessionId);
+      
+      // 清除该会话的缓存
+      _messagesCache.remove(sessionId);
 
       final updatedSessions = state.sessions
           .where((s) => s.id != sessionId)
@@ -165,6 +269,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       for (final session in state.sessions) {
         await _chatService.deleteChatSession(session.id);
       }
+
+      // 清空所有缓存
+      _messagesCache.clear();
 
       // 清空状态
       state = state.copyWith(
@@ -346,6 +453,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
               messages: updatedMessages,
               isLoading: messageChunk.status != MessageStatus.sent,
             );
+
+            // 更新缓存（实时更新流式响应）
+            if (state.currentSession != null) {
+              updateSessionCache(state.currentSession!.id, updatedMessages);
+            }
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
             if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
@@ -934,11 +1046,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       // 立即将用户消息添加到UI，并清除附件
+      final updatedMessages = [...state.messages, userMessage];
       state = state.copyWith(
-        messages: [...state.messages, userMessage],
+        messages: updatedMessages,
         attachedFiles: [],
         attachedImages: [],
       );
+      
+      // 更新当前会话的缓存
+      if (state.currentSession != null) {
+        updateSessionCache(state.currentSession!.id, updatedMessages);
+      }
 
       final aiMessageId = _uuid.v4();
       // 为正常显示新增占位符（空内容）
@@ -950,7 +1068,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
         timestamp: DateTime.now(),
         status: MessageStatus.sending,
       );
-      state = state.copyWith(messages: [...state.messages, aiPlaceholderSend]);
+      final messagesWithPlaceholder = [...state.messages, aiPlaceholderSend];
+      state = state.copyWith(messages: messagesWithPlaceholder);
+      
+      // 更新缓存（包含占位符）
+      if (state.currentSession != null) {
+        updateSessionCache(state.currentSession!.id, messagesWithPlaceholder);
+      }
 
       // 检查是否是图像生成指令
       if (isImageGeneration) {
@@ -1024,6 +1148,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
               messages: updatedMessages,
               isLoading: messageChunk.status != MessageStatus.sent,
             );
+
+            // 更新缓存（实时更新流式响应）
+            if (state.currentSession != null) {
+              updateSessionCache(state.currentSession!.id, updatedMessages);
+            }
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
             if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
