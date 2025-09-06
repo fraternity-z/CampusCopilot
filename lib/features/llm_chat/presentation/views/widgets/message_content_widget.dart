@@ -5,15 +5,15 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart' as highlight;
+import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
 import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, generalSettingsProvider, CodeBlockSettings;
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
 
 /// 消息内容渲染组件
 ///

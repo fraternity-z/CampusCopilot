@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart' as mdw;
-import 'package:markdown/markdown.dart' as md;
 
 /// 渲染引擎类型
 enum MarkdownEngine { markdownWidget }
@@ -15,8 +14,6 @@ abstract class MarkdownRenderer {
     TextStyle? baseTextStyle,
     /// 自定义代码块构建器（用于接入现有 CodeBlockWidget 等）
     Widget Function(String code, String language)? codeBlockBuilder,
-    /// 可选：Markdown 扩展集配置（如 GFM 样式）
-    md.ExtensionSet? extensionSet,
   });
 
   /// 工厂：返回默认的 markdown_widget 渲染器
@@ -34,7 +31,6 @@ class _MarkdownWidgetRenderer implements MarkdownRenderer {
     String data, {
     TextStyle? baseTextStyle,
     Widget Function(String code, String language)? codeBlockBuilder,
-    md.ExtensionSet? extensionSet,
   }) {
     // markdown_widget 的样式/行为主要通过 MarkdownConfig 配置：
     // - 段落样式：PConfig(textStyle)
