@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+// 渐进迁移：优先通过渲染适配层接入 markdown_widget
+import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../../../settings/presentation/providers/settings_provider.dart';
@@ -543,21 +544,15 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
             // 内容区：根据设置选择 Markdown 或纯文本
             if (general.enableMarkdownRendering)
               RepaintBoundary(
-                child: MarkdownBody(
-                  data: displayContent,
-                  styleSheet: MarkdownStyleSheet(
-                    p: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                    code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainer,
-                    ),
-                  ),
+                child: MarkdownRenderer
+                        .defaultRenderer(engine: MarkdownEngine.markdownWidget)
+                    .render(
+                  displayContent,
+                  baseTextStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color:
+                            Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
                 ),
               )
             else
