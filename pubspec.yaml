@@ -125,6 +125,12 @@ dependencies:
   highlight: ^0.7.0
   markdown: ^7.2.2
   
+  # 图表渲染（Graphic）
+  graphic: ^2.6.0
+  
+  # 文件保存（导出图表图片）
+  file_selector: ^1.0.3
+  
   # 数学公式渲染
   flutter_math_fork: ^0.7.4
 

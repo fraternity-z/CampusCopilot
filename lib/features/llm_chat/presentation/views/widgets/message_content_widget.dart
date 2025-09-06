@@ -9,6 +9,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
+import 'package:campus_copilot/shared/charts/chart_from_json.dart';
 import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, generalSettingsProvider, CodeBlockSettings;
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
@@ -760,6 +761,20 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
             ),
           ),
           const Spacer(),
+          // 图表创建按钮（当代码块为 chart-json 或 json 且符合规范时显示）
+          if ((widget.language.toLowerCase() == 'chart-json' || widget.language.toLowerCase() == 'json')
+              && isChartSpecJson(widget.code))
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              iconSize: 14,
+              visualDensity: VisualDensity.compact,
+              tooltip: '创建图表',
+              icon: const Icon(Icons.pie_chart_outline),
+              onPressed: () {
+                showChartPreviewDialog(context, widget.code);
+              },
+            ),
           if (widget.settings.enableLineNumbers)
             IconButton(
               padding: EdgeInsets.zero,
