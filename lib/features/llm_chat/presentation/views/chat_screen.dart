@@ -928,25 +928,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         ),
                       ),
                     ),
-                    // 消息气泡
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20).copyWith(
-                            topLeft: const Radius.circular(20),
-                            topRight: const Radius.circular(4),
-                            bottomLeft: const Radius.circular(20),
-                            bottomRight: const Radius.circular(20),
-                          ),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                            child: Container(
-                              padding: const EdgeInsets.only(
-                                left: 18,
-                                right: 46,
-                                top: 18,
-                                bottom: 14,
-                              ),
+                    // 消息气泡 - 添加宽度限制
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: _getMaxBubbleWidth(context),
+                      ),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20).copyWith(
+                              topLeft: const Radius.circular(20),
+                              topRight: const Radius.circular(4),
+                              bottomLeft: const Radius.circular(20),
+                              bottomRight: const Radius.circular(20),
+                            ),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                  left: 18,
+                                  right: 46,
+                                  top: 18,
+                                  bottom: 14,
+                                ),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
@@ -987,12 +991,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                             ),
                           ),
                         ),
-                        Positioned(
-                          right: 8,
-                          top: 4,
-                          child: MessageOptionsButton(message: message),
-                        ),
-                      ],
+                          Positioned(
+                            right: 8,
+                            top: 4,
+                            child: MessageOptionsButton(message: message),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                     ),
@@ -1065,27 +1070,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   ],
                 ),
                 const SizedBox(height: 4),
-                // 消息气泡
+                // 消息气泡 - 添加宽度限制
                 Container(
                   margin: const EdgeInsets.only(left: 40),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20).copyWith(
-                          topLeft: const Radius.circular(4),
-                          topRight: const Radius.circular(20),
-                          bottomLeft: const Radius.circular(20),
-                          bottomRight: const Radius.circular(20),
-                        ),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            padding: const EdgeInsets.only(
-                              left: 18,
-                              right: 46,
-                              top: 18,
-                              bottom: 14,
-                            ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: _getMaxBubbleWidth(context),
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20).copyWith(
+                            topLeft: const Radius.circular(4),
+                            topRight: const Radius.circular(20),
+                            bottomLeft: const Radius.circular(20),
+                            bottomRight: const Radius.circular(20),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.only(
+                                left: 18,
+                                right: 46,
+                                top: 18,
+                                bottom: 14,
+                              ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
@@ -1126,12 +1135,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: 8,
-                        top: 4,
-                        child: MessageOptionsButton(message: message),
-                      ),
-                    ],
+                        Positioned(
+                          right: 8,
+                          top: 4,
+                          child: MessageOptionsButton(message: message),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1945,6 +1955,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final hour = timestamp.hour.toString().padLeft(2, '0');
     final minute = timestamp.minute.toString().padLeft(2, '0');
     return '$month/$day $hour:$minute';
+  }
+
+  /// 获取响应式气泡最大宽度
+  double _getMaxBubbleWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = 40.0; // 聊天列表的左右padding
+    final availableWidth = screenWidth - horizontalPadding;
+    
+    // 响应式设计：根据屏幕宽度调整比例
+    if (screenWidth < 600) {
+      // 小屏幕：80%
+      return availableWidth * 0.80;
+    } else if (screenWidth < 900) {
+      // 中等屏幕：70%
+      return availableWidth * 0.70;
+    } else {
+      // 大屏幕：65%，但不超过720px
+      return (availableWidth * 0.65).clamp(0, 720);
+    }
   }
 
   /// 构建并列的 RAG 与 AI 搜索控制（紧凑样式）
