@@ -54,8 +54,6 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
                 const SizedBox(height: 16),
                 _buildStorageSection(context),
                 const SizedBox(height: 16),
-                _buildSystemMaintenanceSection(context),
-                const SizedBox(height: 16),
                 _buildDangerZoneSection(context),
               ],
             ),
@@ -222,6 +220,8 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   }
 
   /// 系统维护区域
+  /// 注意：此功能已被禁用，如需重新启用请在build方法中添加对此方法的调用
+  // ignore: unused_element
   Widget _buildSystemMaintenanceSection(BuildContext context) {
     return Card(
       child: Padding(
