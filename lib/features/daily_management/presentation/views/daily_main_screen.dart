@@ -35,15 +35,21 @@ class _DailyMainScreenState extends ConsumerState<DailyMainScreen> {
   }
 
   void _onTabTapped(int index) {
-    // 避免在构建阶段触发 setState；仅通过 PageView 的 onPageChanged 同步状态
+    // 仅驱动 PageView 切换；状态由 onPageChanged 统一同步，避免构建期 setState
     if (_currentIndex == index) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      final distance = (index - _currentIndex).abs();
+      if (distance <= 1) {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        // 非相邻页：直接跳转，避免中途触发中间索引导致气泡“途经”动画
+        _pageController.jumpToPage(index);
+      }
     });
   }
 
@@ -89,6 +95,7 @@ class _DailyMainScreenState extends ConsumerState<DailyMainScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+          // 背景保持应用常规外观
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -100,7 +107,8 @@ class _DailyMainScreenState extends ConsumerState<DailyMainScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -108,18 +116,29 @@ class _DailyMainScreenState extends ConsumerState<DailyMainScreen> {
         ),
         child: BottomBarBubble(
           selectedIndex: _currentIndex,
+          // 选中态主题色：淡紫色
+          color: const Color(0xFF9B87F5),
+          // 透明以显示外层渐变背景
+          backgroundColor: Colors.transparent,
           items: [
             BottomBarItem(
-              iconBuilder: (color) => Icon(
+              label: '总览',
+              iconBuilder: (_) => Icon(
                 _currentIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
-                color: color,
+                // 未选中：黑色；选中：淡紫
+                color: _currentIndex == 0
+                    ? const Color(0xFF9B87F5)
+                    : const Color.fromARGB(130, 0, 0, 0),
                 size: 26,
               ),
             ),
             BottomBarItem(
-              iconBuilder: (color) => Icon(
+              label: '个人信息',
+              iconBuilder: (_) => Icon(
                 _currentIndex == 1 ? Icons.person : Icons.person_outline,
-                color: color,
+                color: _currentIndex == 1
+                    ? const Color(0xFF9B87F5)
+                    : const Color.fromARGB(130, 0, 0, 0),
                 size: 26,
               ),
             ),

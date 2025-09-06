@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:bottom_bar_matu/bottom_bar_matu.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 
@@ -37,23 +37,61 @@ class KnowledgeBaseScreen extends ConsumerStatefulWidget {
       _KnowledgeBaseScreenState();
 }
 
-class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
+  int _currentIndex = 0;
+  late PageController _pageController;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _pageController = PageController();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _pageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
+
+  void _onTabTapped(int index) {
+    // 仅驱动 PageView；状态通过 onPageChanged 更新
+    if (_currentIndex == index) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final distance = (index - _currentIndex).abs();
+      if (distance <= 1) {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.jumpToPage(index);
+      }
+    });
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  String _getAppBarTitle() {
+    switch (_currentIndex) {
+      case 0:
+        return '知识库 · 文档';
+      case 1:
+        return '知识库 · 搜索';
+      case 2:
+        return '知识库 · 设置';
+      default:
+        return '知识库';
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -73,84 +111,11 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('知识库'),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-                  width: 1,
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(23),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 13,
-                ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.folder, size: 16),
-                        const SizedBox(width: 4),
-                        Text('文档'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search, size: 16),
-                        const SizedBox(width: 4),
-                        Text('搜索'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.settings, size: 16),
-                        const SizedBox(width: 4),
-                        Text('设置'),
-                      ],
-                    ),
-                  ),
-                ],
-              ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.3, duration: 400.ms),
-            ),
+          title: Text(
+            _getAppBarTitle(),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
+          centerTitle: true,
           actions: [
             IconButton(
               icon: const Icon(Icons.library_books),
@@ -170,14 +135,82 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
             ),
           ],
         ),
-        body: TabBarView(
-          controller: _tabController,
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
           physics: const BouncingScrollPhysics(),
           children: [
-            _buildDocumentsTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
-            _buildSearchTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
-            _buildSettingsTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
+            _buildDocumentsTab(),
+            _buildSearchTab(),
+            _buildSettingsTab(),
           ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                Theme.of(context).colorScheme.surface,
+              ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary
+                    .withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: BottomBarBubble(
+            selectedIndex: _currentIndex,
+            color: const Color(0xFF9B87F5),
+            backgroundColor: Colors.transparent,
+            items: [
+              BottomBarItem(
+                label: '文档',
+                iconBuilder: (_) => Icon(
+                  _currentIndex == 0
+                      ? Icons.folder
+                      : Icons.folder_outlined,
+                  color: _currentIndex == 0
+                      ? const Color(0xFF9B87F5)
+                      : Colors.black,
+                  size: 26,
+                ),
+              ),
+              BottomBarItem(
+                label: '搜索',
+                iconBuilder: (_) => Icon(
+                  _currentIndex == 1
+                      ? Icons.search
+                      : Icons.search_outlined,
+                  color: _currentIndex == 1
+                      ? const Color(0xFF9B87F5)
+                      : Colors.black,
+                  size: 26,
+                ),
+              ),
+              BottomBarItem(
+                label: '设置',
+                iconBuilder: (_) => Icon(
+                  _currentIndex == 2
+                      ? Icons.settings
+                      : Icons.settings_outlined,
+                  color: _currentIndex == 2
+                      ? const Color(0xFF9B87F5)
+                      : Colors.black,
+                  size: 26,
+                ),
+              ),
+            ],
+            onSelect: (index) {
+              _onTabTapped(index);
+            },
+          ),
         ),
       ),
     );
