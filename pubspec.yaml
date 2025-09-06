@@ -38,8 +38,9 @@ dependencies:
   # 优秀的UI组件库
   shimmer: ^3.0.0                      # 骨架屏加载动画
   flutter_staggered_animations: ^1.1.1 # 列表动画效果
-  flutter_animate: ^4.5.0              # 强大的动画库
-  
+  flutter_animate: ^4.5.0         # 强大的动画库
+  bottom_bar_matu: ^1.5.0              # 底部导航栏动画
+
   # 新增优秀UI组件
   spring_button: ^2.0.0               # 弹性按钮交互效果
 
@@ -175,3 +176,4 @@ flutter:
   assets:
     - assets/images/
     - assets/logos/
+    - assets/icons/
