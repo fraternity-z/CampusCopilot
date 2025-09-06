@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart' as fm;
 import 'package:markdown_widget/markdown_widget.dart' as mdw;
 import 'package:markdown/markdown.dart' as md;
 
 /// 渲染引擎类型
-enum MarkdownEngine { flutterMarkdown, markdownWidget }
+enum MarkdownEngine { markdownWidget }
 
 /// Markdown 渲染适配器（最小公共接口）
 abstract class MarkdownRenderer {
@@ -16,47 +15,17 @@ abstract class MarkdownRenderer {
     TextStyle? baseTextStyle,
     /// 自定义代码块构建器（用于接入现有 CodeBlockWidget 等）
     Widget Function(String code, String language)? codeBlockBuilder,
-    /// 可选：flutter_markdown 使用的扩展集（如 GFM 去除缩进代码块）
+    /// 可选：Markdown 扩展集配置（如 GFM 样式）
     md.ExtensionSet? extensionSet,
   });
 
-  /// 工厂：按需选择引擎（默认采用 markdown_widget 以便试点）
+  /// 工厂：返回默认的 markdown_widget 渲染器
   factory MarkdownRenderer.defaultRenderer({MarkdownEngine? engine}) {
-    switch (engine) {
-      case MarkdownEngine.flutterMarkdown:
-        return const _FlutterMarkdownRenderer();
-      case MarkdownEngine.markdownWidget:
-      default:
-        return const _MarkdownWidgetRenderer();
-    }
+    return const _MarkdownWidgetRenderer();
   }
 }
 
-/// Flutter Markdown 渲染实现（保持现有样式的最小一致性）
-class _FlutterMarkdownRenderer implements MarkdownRenderer {
-  const _FlutterMarkdownRenderer();
-
-  @override
-  Widget render(
-    String data, {
-    TextStyle? baseTextStyle,
-    Widget Function(String code, String language)? codeBlockBuilder,
-    md.ExtensionSet? extensionSet,
-  }) {
-    // 说明：适配层保持最小职责，这里仅设置段落基础样式与扩展集。
-    // 具体的 builders / inlineSyntaxes 仍由调用方控制（保留向后兼容）。
-    return fm.MarkdownBody(
-      data: data,
-      selectable: true,
-      styleSheet: fm.MarkdownStyleSheet(
-        p: baseTextStyle,
-      ),
-      extensionSet: extensionSet,
-    );
-  }
-}
-
-/// markdown_widget 渲染实现（先以默认配置接入，后续逐步覆盖样式/规则）
+/// markdown_widget 渲染实现（已完全替换 flutter_markdown）
 class _MarkdownWidgetRenderer implements MarkdownRenderer {
   const _MarkdownWidgetRenderer();
 

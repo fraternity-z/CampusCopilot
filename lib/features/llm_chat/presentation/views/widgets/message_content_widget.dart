@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart' as highlight;
-import 'package:markdown/markdown.dart' as md;
-import 'package:markdown/markdown.dart' show InlineSyntax;
 import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, generalSettingsProvider, CodeBlockSettings;
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
@@ -15,7 +12,6 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
-import 'dart:ui' as ui;
 import 'package:shimmer/shimmer.dart';
 import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
 
@@ -42,7 +38,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   // 缓存分离后的内容，减少重复计算
   Map<String, String?>? _cachedSeparatedContent;
   String? _lastProcessedContent;
-  MarkdownStyleSheet? _cachedStyleSheet;
+  TextStyle? _cachedBaseTextStyle;
   ThemeData? _lastTheme;
 
   @override
@@ -113,7 +109,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
               ? _buildContentWithMath(
                   context: context,
                   content: actualContent,
-                  styleSheet: _getMarkdownStyleSheet(context),
+                  baseTextStyle: _getBaseTextStyle(context),
                   codeBlockSettings: codeBlockSettings,
                 )
               : _buildPlainTextContent(context, actualContent)),
@@ -326,83 +322,32 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
   }
 
-  /// 获取缓存的Markdown样式表
-  MarkdownStyleSheet _getMarkdownStyleSheet(BuildContext context) {
+  /// 获取缓存的基础文本样式
+  TextStyle _getBaseTextStyle(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 如果主题改变了，重新构建样式表
-    if (_cachedStyleSheet == null || _lastTheme != theme) {
+    // 如果主题改变了，重新构建样式
+    if (_cachedBaseTextStyle == null || _lastTheme != theme) {
       _lastTheme = theme;
-      _cachedStyleSheet = _buildMarkdownStyleSheet(context);
+      _cachedBaseTextStyle = _buildBaseTextStyle(context);
     }
 
-    return _cachedStyleSheet!;
+    return _cachedBaseTextStyle!;
   }
 
-  /// 构建Markdown样式表
-  MarkdownStyleSheet _buildMarkdownStyleSheet(BuildContext context) {
+  /// 构建基础文本样式
+  TextStyle _buildBaseTextStyle(BuildContext context) {
     final theme = Theme.of(context);
     final textColor = widget.message.isFromUser
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface;
 
     final bodyFont = GoogleFonts.inter(textStyle: theme.textTheme.bodyMedium);
-    final headingFont = GoogleFonts.poppins(
-      textStyle: theme.textTheme.headlineMedium,
-    );
-
-    return MarkdownStyleSheet(
-      p: bodyFont.copyWith(color: textColor, height: 1.7, letterSpacing: 0.2),
-      h1: headingFont.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.w700,
-        fontSize: 28,
-        height: 1.4,
-      ),
-      h2: headingFont.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.w700,
-        fontSize: 24,
-        height: 1.4,
-      ),
-      h3: headingFont.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.w700,
-        fontSize: 20,
-        height: 1.4,
-      ),
-      h4: headingFont.copyWith(color: textColor, fontSize: 18),
-      h5: headingFont.copyWith(color: textColor, fontSize: 16),
-      h6: headingFont.copyWith(color: textColor, fontSize: 14),
-      blockquote: theme.textTheme.bodyMedium?.copyWith(
-        color: textColor.withValues(alpha: 0.85),
-      ),
-      strong: theme.textTheme.bodyMedium?.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.bold,
-      ),
-      em: theme.textTheme.bodyMedium?.copyWith(
-        color: textColor,
-      ),
-      code: theme.textTheme.bodyMedium?.copyWith(
-        color: textColor,
-        fontFamily: 'JetBrains Mono, Source Code Pro, monospace',
-        fontSize: 13,
-        backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.6,
-        ),
-      ),
-      listBullet: theme.textTheme.bodyMedium?.copyWith(color: textColor),
-      // 间距优化
-      blockSpacing: 16,
-      // 透明化默认代码块装饰，去除可能的白色占位背景
-      codeblockDecoration: const BoxDecoration(color: Colors.transparent),
-      // flutter_markdown 0.7.x 不支持这些属性，保留兼容性blockSpacing 即可
-      horizontalRuleDecoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
-        ),
-      ),
+    
+    return bodyFont.copyWith(
+      color: textColor, 
+      height: 1.7, 
+      letterSpacing: 0.2,
     );
   }
 
@@ -473,7 +418,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   Widget _buildContentWithMath({
     required BuildContext context,
     required String content,
-    required MarkdownStyleSheet styleSheet,
+    required TextStyle baseTextStyle,
     required CodeBlockSettings codeBlockSettings,
   }) {
     // 先将 \\[..\\] 格式的公式统一转换为$$..$$，便于后续统一处理
@@ -502,7 +447,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
             _buildMarkdownWithAdapter(
               context: context,
               data: text,
-              styleSheet: styleSheet,
+              baseTextStyle: baseTextStyle,
               codeBlockSettings: codeBlockSettings,
             ),
           );
@@ -536,7 +481,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
           _buildMarkdownWithAdapter(
             context: context,
             data: text,
-            styleSheet: styleSheet,
+            baseTextStyle: baseTextStyle,
             codeBlockSettings: codeBlockSettings,
           ),
         );
@@ -554,7 +499,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   Widget _buildMarkdownWithAdapter({
     required BuildContext context,
     required String data,
-    required MarkdownStyleSheet styleSheet,
+    required TextStyle baseTextStyle,
     required CodeBlockSettings codeBlockSettings,
   }) {
     final renderer = MarkdownRenderer.defaultRenderer(
@@ -562,14 +507,11 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
     return renderer.render(
       data,
-      baseTextStyle: styleSheet.p,
+      baseTextStyle: baseTextStyle,
       codeBlockBuilder: (code, language) {
-        // 若markdown_widget 未提供语言，退回到本文件的智能检测逻辑
+        // 若markdown_widget 未提供语言，使用智能检测逻辑
         final lang = (language.isEmpty)
-            ? CodeBlockBuilder(
-                codeBlockSettings: codeBlockSettings,
-                isFromUser: widget.message.isFromUser,
-              )._detectLanguage(code)
+            ? CodeBlockLanguageDetector.detectLanguage(code)
             : language;
         return CodeBlockWidget(
           code: code,
@@ -582,29 +524,10 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   }
 }
 
-/// 代码块构建器
-class CodeBlockBuilder extends MarkdownElementBuilder {
-  final CodeBlockSettings codeBlockSettings;
-  final bool isFromUser;
-
-  CodeBlockBuilder({required this.codeBlockSettings, required this.isFromUser});
-
-  @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final code = element.textContent;
-    // 强制使用智能检测，不再信任围栏声明或简单关键词
-    var language = _detectLanguage(code);
-
-    return CodeBlockWidget(
-      code: code,
-      language: language,
-      settings: codeBlockSettings,
-      isFromUser: isFromUser,
-    );
-  }
-
+/// 代码块语言检测工具类
+class CodeBlockLanguageDetector {
   /// 智能语言检测：完全基于 highlight 的相关性评分
-  String _detectLanguage(String code) {
+  static String detectLanguage(String code) {
     try {
       const languages = [
         'python',
@@ -1096,85 +1019,5 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 }
 
-/// 行内数学公式语法，例如$a^2 + b^2=c^2$
-class InlineLatexSyntax extends InlineSyntax {
-  InlineLatexSyntax() : super(r'\$(?!\$)(.+?)(?<!\$)\$');
-
-  @override
-  bool onMatch(md.InlineParser parser, Match match) {
-    final mathContent = match.group(1)!;
-    parser.addNode(md.Element.text('inline_math', mathContent));
-    return true;
-  }
-}
-
-/// 行内数学公式Builder，将 Element 渲染为Math.tex
-class InlineLatexBuilder extends MarkdownElementBuilder {
-  @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Math.tex(
-      element.textContent,
-      mathStyle: MathStyle.text,
-      textStyle: preferredStyle,
-      onErrorFallback: (e) => Text(element.textContent),
-    );
-  }
-}
-
-/// 增强的行内代码构建器（紫色圆角标签）
-class EnhancedInlineCodeBuilder extends MarkdownElementBuilder {
-  final bool isFromUser;
-  EnhancedInlineCodeBuilder({required this.isFromUser});
-
-  @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final borderRadius = BorderRadius.circular(8);
-    return ClipRRect(
-      borderRadius: borderRadius,
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.25),
-                Colors.white.withValues(alpha: 0.15),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.35),
-              width: 0.6,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Text(
-            element.textContent,
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 13,
-              color: Color(0xFF6A1B9A),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// 轻量占位：目前仅用于让builder 不报错；详细样式已在 MarkdownStyleSheet 中体现
-class EnhancedBlockquoteBuilder extends MarkdownElementBuilder {}
-
-class EnhancedHorizontalRuleBuilder extends MarkdownElementBuilder {}
-
-class EnhancedHeadingBuilder extends MarkdownElementBuilder {
-  final int level;
-  EnhancedHeadingBuilder({required this.level});
-}
+// 清理完成：已移除 flutter_markdown 相关构建器和语法类
+// 所有 Markdown 渲染都交由 MarkdownRenderer 适配器处理

@@ -132,7 +132,6 @@ dependencies:
   package_info_plus: ^8.1.0
 
   # Markdown渲染和代码高亮
-  flutter_markdown: ^0.7.3+2
   markdown_widget: ^2.3.2+6
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
