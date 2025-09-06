@@ -113,6 +113,9 @@ dependencies:
   # 后台服务
   flutter_background_service: ^5.0.5
 
+  # 闹钟提醒
+  alarm: ^5.1.4
+
   # 工具类
   uuid: ^4.4.0
   intl: ^0.20.2
@@ -192,3 +195,4 @@ flutter:
   assets:
     - assets/images/
     - assets/logos/
+    - assets/audio/

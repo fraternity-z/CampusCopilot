@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/di/database_providers.dart';
 import '../../domain/entities/plan_entity.dart';
 import '../../domain/repositories/plan_repository.dart';
 import '../../data/repositories/plan_repository_impl.dart';
+import '../services/alarm_service.dart';
 
 /// 计划仓库提供商
 final planRepositoryProvider = Provider<PlanRepository>((ref) {
@@ -36,6 +38,16 @@ class PlanNotifier extends StateNotifier<PlanState> {
     try {
       final plan = await _repository.createPlan(request);
       
+      // 如果计划设置了提醒时间，自动创建闹钟
+      if (plan.reminderTime != null) {
+        final alarmSuccess = await AlarmService.createPlanAlarm(plan: plan);
+        if (alarmSuccess) {
+          debugPrint('✅ 为计划 "${plan.title}" 成功设置闹钟提醒');
+        } else {
+          debugPrint('⚠️ 为计划 "${plan.title}" 设置闹钟提醒失败');
+        }
+      }
+      
       if (state is Loaded) {
         final currentPlans = (state as Loaded).plans;
         final updatedPlans = [plan, ...currentPlans];
@@ -53,6 +65,18 @@ class PlanNotifier extends StateNotifier<PlanState> {
     try {
       final updatedPlan = await _repository.updatePlan(id, request);
       
+      // 更新闹钟设置
+      final alarmSuccess = await AlarmService.updatePlanAlarm(plan: updatedPlan);
+      if (alarmSuccess) {
+        if (updatedPlan.reminderTime != null) {
+          debugPrint('✅ 计划 "${updatedPlan.title}" 的闹钟提醒已更新');
+        } else {
+          debugPrint('🔕 计划 "${updatedPlan.title}" 的闹钟提醒已取消');
+        }
+      } else {
+        debugPrint('⚠️ 更新计划 "${updatedPlan.title}" 的闹钟提醒失败');
+      }
+      
       if (state is Loaded) {
         final currentPlans = (state as Loaded).plans;
         final updatedPlans = currentPlans
@@ -68,7 +92,25 @@ class PlanNotifier extends StateNotifier<PlanState> {
   /// 删除计划
   Future<void> deletePlan(String id) async {
     try {
+      // 获取要删除的计划，用于取消闹钟
+      PlanEntity? planToDelete;
+      if (state is Loaded) {
+        final currentPlans = (state as Loaded).plans;
+        planToDelete = currentPlans.firstWhere(
+          (plan) => plan.id == id,
+          orElse: () => throw Exception('计划不存在'),
+        );
+      }
+      
       await _repository.deletePlan(id);
+      
+      // 取消相关的闹钟
+      if (planToDelete != null) {
+        final alarmCancelled = await AlarmService.cancelPlanAlarmByPlan(planToDelete);
+        if (alarmCancelled) {
+          debugPrint('🔕 计划 "${planToDelete.title}" 的闹钟提醒已取消');
+        }
+      }
       
       if (state is Loaded) {
         final currentPlans = (state as Loaded).plans;
@@ -143,7 +185,23 @@ class PlanNotifier extends StateNotifier<PlanState> {
   /// 批量删除计划
   Future<void> deletePlans(List<String> ids) async {
     try {
+      // 获取要删除的计划列表，用于取消闹钟
+      List<PlanEntity> plansToDelete = [];
+      if (state is Loaded) {
+        final currentPlans = (state as Loaded).plans;
+        plansToDelete = currentPlans
+            .where((plan) => ids.contains(plan.id))
+            .toList();
+      }
+      
       await _repository.deletePlans(ids);
+      
+      // 批量取消相关的闹钟
+      if (plansToDelete.isNotEmpty) {
+        final alarmResults = await AlarmService.cancelAlarmsForPlans(plansToDelete);
+        final successCount = alarmResults.where((result) => result).length;
+        debugPrint('🔕 已取消 $successCount 个计划的闹钟提醒');
+      }
       
       if (state is Loaded) {
         final currentPlans = (state as Loaded).plans;

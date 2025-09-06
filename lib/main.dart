@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:alarm/alarm.dart';
 import 'dart:io';
 
 import 'app/app.dart';
@@ -20,6 +21,7 @@ void main() async {
   // 初始化应用依赖
   await _initializePreferences();
   await _initializePaths();
+  await _initializeAlarm();
   
   // 配置系统UI样式
   _configureSystemUI();
@@ -65,6 +67,15 @@ Future<void> _initializePaths() async {
   }
 }
 
+/// 初始化闹钟服务
+Future<void> _initializeAlarm() async {
+  try {
+    await Alarm.init();
+    debugPrint('🔔 闹钟服务已初始化');
+  } catch (e) {
+    debugPrint('❌ 初始化闹钟服务失败: $e');
+  }
+}
 
 /// 配置系统UI样式
 void _configureSystemUI() {
