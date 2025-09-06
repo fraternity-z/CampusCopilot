@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
 
@@ -73,13 +74,82 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
       child: Scaffold(
         appBar: AppBar(
           title: const Text('知识库'),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.folder), text: '文档'),
-              Tab(icon: Icon(Icons.search), text: '搜索'),
-              Tab(icon: Icon(Icons.settings), text: '设置'),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(23),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 13,
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                tabs: [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.folder, size: 16),
+                        const SizedBox(width: 4),
+                        Text('文档'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search, size: 16),
+                        const SizedBox(width: 4),
+                        Text('搜索'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.settings, size: 16),
+                        const SizedBox(width: 4),
+                        Text('设置'),
+                      ],
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.3, duration: 400.ms),
+            ),
           ),
           actions: [
             IconButton(
@@ -102,10 +172,11 @@ class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen>
         ),
         body: TabBarView(
           controller: _tabController,
+          physics: const BouncingScrollPhysics(),
           children: [
-            _buildDocumentsTab(),
-            _buildSearchTab(),
-            _buildSettingsTab(),
+            _buildDocumentsTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
+            _buildSearchTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
+            _buildSettingsTab().animate().fadeIn(duration: 350.ms, curve: Curves.easeInOut),
           ],
         ),
       ),
