@@ -98,15 +98,26 @@ class _SplashWrapper extends ConsumerStatefulWidget {
 class _SplashWrapperState extends ConsumerState<_SplashWrapper>
     with SingleTickerProviderStateMixin {
   late AnimationController _fadeInController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
   bool _showMainApp = false;
 
   @override
   void initState() {
     super.initState();
     _fadeInController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 520),
       vsync: this,
     );
+
+    final curve = CurvedAnimation(
+      parent: _fadeInController,
+      curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic),
+    );
+
+    _fadeAnimation = curve;
+    _scaleAnimation = Tween<double>(begin: 0.985, end: 1.0)
+        .animate(CurvedAnimation(parent: _fadeInController, curve: Curves.easeOut));
   }
 
   @override
@@ -135,14 +146,13 @@ class _SplashWrapperState extends ConsumerState<_SplashWrapper>
       children: [
         // 主应用（淡入效果）
         if (_showMainApp)
-          AnimatedBuilder(
-            animation: _fadeInController,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeInController.value,
-                child: widget.child ?? const SizedBox.shrink(),
-              );
-            },
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              filterQuality: FilterQuality.high,
+              child: widget.child ?? const SizedBox.shrink(),
+            ),
           ),
         
         // 启动屏

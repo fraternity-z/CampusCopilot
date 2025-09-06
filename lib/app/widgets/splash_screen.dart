@@ -32,7 +32,11 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _backgroundController;
   late AnimationController _fadeOutController;
   
-  bool _isAnimationComplete = false;
+  // 是否已经开始淡出
+  bool _isFadingOut = false;
+  
+  // 提前与主动画重叠的淡出时长（更自然的交叉淡出）
+  final Duration _fadeOverlap = const Duration(milliseconds: 450);
   
   @override
   void initState() {
@@ -49,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
     
     _fadeOutController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 520),
       vsync: this,
     );
 
@@ -68,24 +72,29 @@ class _SplashScreenState extends State<SplashScreen>
     // 启动背景动画
     _backgroundController.repeat();
     
-    // 启动主要动画
-    await _mainController.forward();
-    
-    // 动画完成后的短暂延迟（加快速度）
-    await Future.delayed(const Duration(milliseconds: 100));
-    
-    // 设置动画完成状态
-    setState(() {
-      _isAnimationComplete = true;
+    // 并行启动主要进度动画
+    _mainController.forward();
+
+    // 计算淡出开始时间（不能早于0，不能超过主动画时长）
+    final overlapMs = _fadeOverlap.inMilliseconds;
+    final mainMs = widget.animationDuration.inMilliseconds;
+    final startAfter = Duration(milliseconds: (mainMs - overlapMs).clamp(0, mainMs));
+
+    // 提前启动淡出，形成重叠
+    await Future.delayed(startAfter, () async {
+      if (mounted) {
+        setState(() => _isFadingOut = true);
+      }
+      await _fadeOutController.forward();
     });
-    
-    // 开始淡出动画
-    await _fadeOutController.forward();
-    
-    // 触发回调
-    if (widget.onAnimationComplete != null) {
-      widget.onAnimationComplete!();
+
+    // 确保主动画完成
+    if (_mainController.status != AnimationStatus.completed) {
+      await _mainController.forward();
     }
+
+    // 回调在交叉淡出完成后触发
+    widget.onAnimationComplete?.call();
   }
 
   @override
@@ -95,49 +104,53 @@ class _SplashScreenState extends State<SplashScreen>
     return AnimatedBuilder(
       animation: _fadeOutController,
       builder: (context, child) {
+        final fadeValue = _isFadingOut ? (1.0 - _fadeOutController.value) : 1.0;
+        final scaleValue = 1.0 + (_fadeOutController.value * 0.04); // 轻微放大后淡出
         return Opacity(
-          opacity: _isAnimationComplete 
-              ? 1.0 - _fadeOutController.value
-              : 1.0,
-          child: Scaffold(
-            backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-            body: SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: Stack(
-                children: [
-                  // 动态渐变背景
-                  _buildAnimatedBackground(isDark),
-                  
-                  // 主要内容
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo动画
-                        _buildLogoAnimation(),
-                        
-                        const SizedBox(height: 32),
-                        
-                        // 品牌名称动画
-                        _buildBrandNameAnimation(),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // 副标题动画
-                        _buildSubtitleAnimation(),
-                        
-                        const SizedBox(height: 48),
-                        
-                        // 加载指示器
-                        _buildLoadingIndicator(),
-                      ],
+          opacity: fadeValue,
+          child: Transform.scale(
+            scale: scaleValue,
+            filterQuality: FilterQuality.high,
+            child: Scaffold(
+              backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+              body: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: Stack(
+                  children: [
+                    // 动态渐变背景
+                    _buildAnimatedBackground(isDark),
+                    
+                    // 主要内容
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo动画
+                          _buildLogoAnimation(),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // 品牌名称动画
+                          _buildBrandNameAnimation(),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // 副标题动画
+                          _buildSubtitleAnimation(),
+                          
+                          const SizedBox(height: 48),
+                          
+                          // 加载指示器
+                          _buildLoadingIndicator(),
+                        ],
+                      ),
                     ),
-                  ),
-                  
-                  // 底部版本信息
-                  _buildVersionInfo(),
-                ],
+                    
+                    // 底部版本信息
+                    _buildVersionInfo(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -360,15 +373,15 @@ class _SplashScreenState extends State<SplashScreen>
       ],
     )
     .animate()
-    .scale(
-      begin: const Offset(0.0, 0.0),
-      end: const Offset(1.0, 1.0),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.elasticOut,
-    )
     .fadeIn(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeOutCubic,
+    )
+    .scale(
+      begin: const Offset(0.85, 0.85),
+      end: const Offset(1.0, 1.0),
+      duration: const Duration(milliseconds: 620),
+      curve: Curves.easeOutBack,
     )
     .then(delay: const Duration(milliseconds: 100))
     .shake(
@@ -397,16 +410,16 @@ class _SplashScreenState extends State<SplashScreen>
     )
     .animate()
     .fadeIn(
-      delay: const Duration(milliseconds: 600),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 480),
+      curve: Curves.easeOutCubic,
     )
     .slideY(
-      begin: 0.3,
+      begin: 0.25,
       end: 0.0,
-      delay: const Duration(milliseconds: 600),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 480),
+      curve: Curves.easeOutCubic,
     )
     .then(delay: const Duration(milliseconds: 100))
     .animate(onPlay: (controller) => controller.repeat())
@@ -427,16 +440,16 @@ class _SplashScreenState extends State<SplashScreen>
     )
     .animate()
     .fadeIn(
-      delay: const Duration(milliseconds: 1000),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 760),
+      duration: const Duration(milliseconds: 460),
+      curve: Curves.easeOutCubic,
     )
     .slideY(
-      begin: 0.3,
+      begin: 0.22,
       end: 0.0,
-      delay: const Duration(milliseconds: 1000),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 760),
+      duration: const Duration(milliseconds: 460),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -499,16 +512,16 @@ class _SplashScreenState extends State<SplashScreen>
     )
     .animate()
     .fadeIn(
-      delay: const Duration(milliseconds: 1200),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 980),
+      duration: const Duration(milliseconds: 460),
+      curve: Curves.easeOutCubic,
     )
     .slideY(
-      begin: 0.3,
+      begin: 0.2,
       end: 0.0,
-      delay: const Duration(milliseconds: 1200),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
+      delay: const Duration(milliseconds: 980),
+      duration: const Duration(milliseconds: 460),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -527,9 +540,9 @@ class _SplashScreenState extends State<SplashScreen>
       )
       .animate()
       .fadeIn(
-        delay: const Duration(milliseconds: 1600),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
+        delay: const Duration(milliseconds: 1400),
+        duration: const Duration(milliseconds: 480),
+        curve: Curves.easeOutCubic,
       ),
     );
   }
