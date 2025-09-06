@@ -7,6 +7,7 @@ import '../../domain/entities/chat_message.dart';
 class ChatScrollState {
   final bool shouldAutoScroll;
   final bool isUserScrolling;
+  final bool isAtBottom;
   final int lastMessageCount;
   final String? lastMessageId;
   final DateTime lastUpdateTime;
@@ -14,6 +15,7 @@ class ChatScrollState {
   const ChatScrollState({
     this.shouldAutoScroll = true,
     this.isUserScrolling = false,
+    this.isAtBottom = true,
     this.lastMessageCount = 0,
     this.lastMessageId,
     required this.lastUpdateTime,
@@ -22,6 +24,7 @@ class ChatScrollState {
   ChatScrollState copyWith({
     bool? shouldAutoScroll,
     bool? isUserScrolling,
+    bool? isAtBottom,
     int? lastMessageCount,
     String? lastMessageId,
     DateTime? lastUpdateTime,
@@ -29,6 +32,7 @@ class ChatScrollState {
     return ChatScrollState(
       shouldAutoScroll: shouldAutoScroll ?? this.shouldAutoScroll,
       isUserScrolling: isUserScrolling ?? this.isUserScrolling,
+      isAtBottom: isAtBottom ?? this.isAtBottom,
       lastMessageCount: lastMessageCount ?? this.lastMessageCount,
       lastMessageId: lastMessageId ?? this.lastMessageId,
       lastUpdateTime: lastUpdateTime ?? this.lastUpdateTime,
@@ -52,16 +56,11 @@ class ChatScrollNotifier extends StateNotifier<ChatScrollState> {
 
   /// 用户开始交互（点击菜单、切换选项等）
   void markUserInteraction() {
-    // 取消之前的定时器
     _userInteractionTimer?.cancel();
-    
-    // 标记为用户交互状态，禁用自动滚动
     state = state.copyWith(
       shouldAutoScroll: false,
       lastUpdateTime: DateTime.now(),
     );
-
-    // 500ms后恢复自动滚动
     _userInteractionTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         state = state.copyWith(
@@ -88,33 +87,48 @@ class ChatScrollNotifier extends StateNotifier<ChatScrollState> {
     );
   }
 
+  /// 更新滚动位置状态
+  void updateScrollPosition(ScrollController controller) {
+    if (!mounted || !controller.hasClients) return;
+    
+    final position = controller.position;
+    // 使用更智能的底部检测：距离底部80像素内认为在底部
+    // 这样可以在用户快速滚动到接近底部时也触发自动滚动
+    final isAtBottom = position.maxScrollExtent - position.pixels < 80;
+    
+    if (state.isAtBottom != isAtBottom) {
+      state = state.copyWith(
+        isAtBottom: isAtBottom,
+        lastUpdateTime: DateTime.now(),
+      );
+    }
+  }
+
   /// 检查消息变化并决定是否需要滚动
   bool shouldScrollForMessages(List<ChatMessage> messages) {
     if (!state.shouldAutoScroll) return false;
     if (state.isUserScrolling) return false;
+    if (!state.isAtBottom) return false; // 只有在底部时才自动滚动
 
     final currentCount = messages.length;
     final lastCount = state.lastMessageCount;
 
-    // 消息数量增加了（新消息）
+    // 新消息
     if (currentCount > lastCount) {
       _updateMessageState(messages);
       return true;
     }
 
-    // 检查最后一条消息是否在变化（流式响应）
+    // 流式更新（最后一条AI消息内容变化）
     if (messages.isNotEmpty) {
       final lastMessage = messages.last;
-      final isStreamingUpdate = lastMessage.id == state.lastMessageId &&
-          !lastMessage.isFromUser; // 只对AI消息进行流式滚动
-
+      final isStreamingUpdate =
+          lastMessage.id == state.lastMessageId && !lastMessage.isFromUser;
       if (isStreamingUpdate) {
         return true;
       }
-
       _updateMessageState(messages);
     }
-
     return false;
   }
 
@@ -129,7 +143,6 @@ class ChatScrollNotifier extends StateNotifier<ChatScrollState> {
 
   /// 强制触发滚动（如发送消息后）
   void triggerScroll() {
-    // 使用防抖机制避免频繁触发
     _scrollTimer?.cancel();
     _scrollTimer = Timer(const Duration(milliseconds: 50), () {
       if (mounted) {
@@ -140,24 +153,17 @@ class ChatScrollNotifier extends StateNotifier<ChatScrollState> {
 }
 
 /// 聊天滚动状态Provider
-final chatScrollProvider = StateNotifierProvider<ChatScrollNotifier, ChatScrollState>((ref) {
+final chatScrollProvider =
+    StateNotifierProvider<ChatScrollNotifier, ChatScrollState>((ref) {
   return ChatScrollNotifier();
 });
 
 /// 滚动控制器Provider
 final scrollControllerProvider = Provider<ScrollController>((ref) {
   final controller = ScrollController();
-  
-  // 监听滚动状态变化
-  controller.addListener(() {
-    final scrollNotifier = ref.read(chatScrollProvider.notifier);
-    
-    if (controller.position.isScrollingNotifier.value) {
-      scrollNotifier.markUserScrolling();
-    } else {
-      scrollNotifier.markUserScrollingStopped();
-    }
-  });
+
+  // 不在这里修改 isUserScrolling，避免把编程滚动当作用户滚动。
+  // 用户滚动的捕获在 ListView 外层的 NotificationListener 中处理。
 
   ref.onDispose(() {
     controller.dispose();

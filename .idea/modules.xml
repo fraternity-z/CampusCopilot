@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ai_assistant.iml" filepath="$PROJECT_DIR$/ai_assistant.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android/ai_assistant_android.iml" filepath="$PROJECT_DIR$/android/ai_assistant_android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/campus_copilot.iml" filepath="$PROJECT_DIR$/campus_copilot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/campus_copilot_android.iml" filepath="$PROJECT_DIR$/android/campus_copilot_android.iml" />
     </modules>
   </component>
 </project>

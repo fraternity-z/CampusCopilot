@@ -3,18 +3,17 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../shared/utils/debug_log.dart';
 import 'app_database.dart';
 
 /// 数据库管理工具类
 /// 提供数据库备份、恢复、重置等维护功能
 class DatabaseManager {
   final AppDatabase _database;
-  final Talker _logger;
 
-  DatabaseManager(this._database) : _logger = TalkerFlutter.init();
+  DatabaseManager(this._database);
 
   /// 获取数据库文件路径
   Future<String> _getDatabasePath() async {
@@ -58,10 +57,10 @@ class DatabaseManager {
       final zipData = ZipEncoder().encode(archive);
       await File(backupPath).writeAsBytes(zipData);
 
-      _logger.info('数据库备份成功: $backupPath');
+      debugLog(() => '数据库备份成功: $backupPath');
       return backupPath;
     } catch (e) {
-      _logger.error('数据库备份失败', e);
+      debugLog(() => '数据库备份失败: $e');
       rethrow;
     }
   }
@@ -91,9 +90,9 @@ class DatabaseManager {
       // 写入数据库文件
       await File(dbPath).writeAsBytes(dbFile.content as List<int>);
 
-      _logger.info('数据库恢复成功: $backupPath');
+      debugLog(() => '数据库恢复成功: $backupPath');
     } catch (e) {
-      _logger.error('数据库恢复失败', e);
+      debugLog(() => '数据库恢复失败: $e');
       rethrow;
     }
   }
@@ -103,14 +102,14 @@ class DatabaseManager {
     try {
       // 先备份当前数据库
       final backupPath = await backupDatabase(customName: 'before_reset_${DateTime.now().millisecondsSinceEpoch}${AppConstants.backupFileExtension}');
-      _logger.info('重置前备份: $backupPath');
+      debugLog(() => '重置前备份: $backupPath');
 
       // 重置数据库
       await _database.resetDatabase();
 
-      _logger.info('数据库重置成功');
+      debugLog(() => '数据库重置成功');
     } catch (e) {
-      _logger.error('数据库重置失败', e);
+      debugLog(() => '数据库重置失败: $e');
       rethrow;
     }
   }
@@ -134,7 +133,7 @@ class DatabaseManager {
         'lastModified': await dbFile.exists() ? await dbFile.lastModified() : null,
       };
     } catch (e) {
-      _logger.error('获取数据库信息失败', e);
+      debugLog(() => '获取数据库信息失败: $e');
       return {};
     }
   }
@@ -162,11 +161,11 @@ class DatabaseManager {
       if (backupFiles.length > keepCount) {
         for (var i = keepCount; i < backupFiles.length; i++) {
           await backupFiles[i].delete();
-          _logger.info('删除旧备份: ${backupFiles[i].path}');
+          debugLog(() => '删除旧备份: ${backupFiles[i].path}');
         }
       }
     } catch (e) {
-      _logger.error('清理旧备份失败', e);
+      debugLog(() => '清理旧备份失败: $e');
     }
   }
 
@@ -198,7 +197,7 @@ class DatabaseManager {
 
       return buffer.toString();
     } catch (e) {
-      _logger.error('导出SQL失败', e);
+      debugLog(() => '导出SQL失败: $e');
       rethrow;
     }
   }
@@ -218,7 +217,7 @@ class DatabaseManager {
       for (final table in tables) {
         final result = await _database.customSelect('SELECT name FROM sqlite_master WHERE type="table" AND name="$table"').get();
         if (result.isEmpty) {
-          _logger.warning('表不存在: $table');
+          debugLog(() => '表不存在: $table');
           return false;
         }
       }
@@ -226,14 +225,14 @@ class DatabaseManager {
       // 检查默认数据
       final defaultPersona = await _database.getDefaultPersona();
       if (defaultPersona == null) {
-        _logger.warning('默认智能体不存在');
+        debugLog(() => '默认智能体不存在');
         return false;
       }
 
-      _logger.info('数据库完整性检查通过');
+      debugLog(() => '数据库完整性检查通过');
       return true;
     } catch (e) {
-      _logger.error('数据库完整性检查失败', e);
+      debugLog(() => '数据库完整性检查失败: $e');
       return false;
     }
   }

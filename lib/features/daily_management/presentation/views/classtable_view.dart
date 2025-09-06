@@ -4,10 +4,10 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/repository/logger.dart';
-import 'package:ai_assistant/model/xidian_ids/classtable.dart';
-import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
+import 'package:campus_copilot/repository/xidian_ids/classtable_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
 import 'class_organized_data.dart';
 import 'class_card.dart';
@@ -85,7 +85,7 @@ class _ClassTableViewState extends State<ClassTableView> {
       
       return currentWeek;
     } catch (e) {
-      log.error("Error calculating current week: $e");
+      debugLog(() => "Error calculating current week: $e");
       return -1;
     }
   }
@@ -103,15 +103,15 @@ class _ClassTableViewState extends State<ClassTableView> {
   
   Future<void> _checkLoginAndLoad() async {
     // 检查真正的登录状态
-    log.info("[ClassTableView] Current loginState: $loginState, offline: $offline");
+    debugLog(() => "[ClassTableView] Current loginState: $loginState, offline: $offline");
     
     if (loginState == IDSLoginState.success) {
       // 已登录，优先从缓存加载课程表
-      log.info("User logged in, loading class table from cache first");
+      debugLog(() => "User logged in, loading class table from cache first");
       await _loadClassTableFromCache();
     } else {
       // 未登录，显示登录提示
-      log.info("User not logged in (loginState: $loginState), showing login prompt");
+      debugLog(() => "User not logged in (loginState: $loginState), showing login prompt");
       if (mounted) {
         _showMessage("请先登录后再查看课程表");
       }
@@ -136,10 +136,10 @@ class _ClassTableViewState extends State<ClassTableView> {
           _classTableData = data;
           _isLoading = false;
         });
-        log.info("[ClassTableView] Class table loaded successfully");
+        debugLog(() => "[ClassTableView] Class table loaded successfully");
       }
     } catch (e) {
-      log.error("[ClassTableView] Failed to load class table: $e");
+      debugLog(() => "[ClassTableView] Failed to load class table: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -178,7 +178,7 @@ class _ClassTableViewState extends State<ClassTableView> {
         }
       }
     } catch (e) {
-      log.error("Failed to refresh class table from network", e);
+      debugLog(() => "Failed to refresh class table from network: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -542,7 +542,7 @@ class _ClassTableViewState extends State<ClassTableView> {
       
       return targetDate.day;
     } catch (e) {
-      log.error("Error calculating date for week day: $e");
+      debugLog(() => "Error calculating date for week day: $e");
       // 如果出错，回退到原来的逻辑
       final now = DateTime.now();
       final currentWeekDay = now.weekday - 1; // 0-6

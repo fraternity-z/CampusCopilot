@@ -2,9 +2,9 @@ import '../../../../shared/utils/debug_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../tools/daily_management_tools.dart';
-import 'package:ai_assistant/features/daily_management/domain/entities/plan_entity.dart';
-import 'package:ai_assistant/features/daily_management/domain/repositories/plan_repository.dart';
-import 'package:ai_assistant/repository/classtable_cache_manager.dart';
+import 'package:campus_copilot/features/daily_management/domain/entities/plan_entity.dart';
+import 'package:campus_copilot/features/daily_management/domain/repositories/plan_repository.dart';
+import 'package:campus_copilot/repository/classtable_cache_manager.dart';
 import 'package:intl/intl.dart';
 
 /// AI计划桥接服务

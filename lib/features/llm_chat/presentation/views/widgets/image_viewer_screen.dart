@@ -96,7 +96,12 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                         });
                       }
                     },
-                    child: Center(child: _buildImage(widget.imageUrls[index])),
+                    child: Center(
+                      child: Hero(
+                        tag: widget.imageUrls[index],
+                        child: _buildImage(widget.imageUrls[index]),
+                      ),
+                    ),
                   ),
                 );
               },

@@ -7,18 +7,20 @@
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:ai_assistant/repository/logger.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 import 'package:ming_cute_icons/ming_cute_icons.dart';
 import 'package:sn_progress_dialog/sn_progress_dialog.dart';
 import 'package:styled_widget/styled_widget.dart';
-import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
-import 'package:ai_assistant/repository/xidian_ids/ehall_session.dart';
-import 'package:ai_assistant/repository/preference.dart' as preference;
-import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
-import 'package:ai_assistant/repository/xidian_ids/personal_info_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
+import 'package:campus_copilot/repository/xidian_ids/ehall_session.dart';
+import 'package:campus_copilot/repository/preference.dart' as preference;
+import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
+import 'package:campus_copilot/repository/xidian_ids/personal_info_session.dart';
 
 class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+  final VoidCallback? onLoginSuccess;
+  
+  const LoginView({super.key, this.onLoginSuccess});
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -161,7 +163,7 @@ class _LoginViewState extends State<LoginView> {
       
       // 登录成功，设置状态
       await setLoginState(IDSLoginState.success);
-      log.info("[LoginView] Login successful, loginState set to success");
+      debugLog(() => "[LoginView] Login successful, loginState set to success");
       
       if (mounted) {
         pd.close();
@@ -174,29 +176,29 @@ class _LoginViewState extends State<LoginView> {
           await preference.setBool(preference.Preference.role, isPostGraduate);
           
           if (isPostGraduate) {
-            log.info("Postgraduate login successful");
+            debugLog(() => "Postgraduate login successful");
             try {
               await PersonalInfoSession().getSemesterInfoYjspt();
-              log.info("Postgraduate semester info retrieved successfully");
+              debugLog(() => "Postgraduate semester info retrieved successfully");
             } catch (e) {
-              log.warning("Failed to get postgraduate semester info: $e");
+              debugLog(() => "Failed to get postgraduate semester info: $e");
             }
           } else {
-            log.info("Undergraduate login successful");
+            debugLog(() => "Undergraduate login successful");
             try {
               await PersonalInfoSession().getSemesterInfoEhall();
-              log.info("Undergraduate semester info retrieved successfully");
+              debugLog(() => "Undergraduate semester info retrieved successfully");
             } catch (e) {
-              log.warning("Failed to get undergraduate semester info: $e");
+              debugLog(() => "Failed to get undergraduate semester info: $e");
             }
           }
         } catch (e) {
-          log.warning("Failed to get user info: $e");
+          debugLog(() => "Failed to get user info: $e");
         }
         
-        // 返回成功 - 添加安全检查
-        if (mounted && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(true);
+        // 通知父页面登录成功
+        if (widget.onLoginSuccess != null) {
+          widget.onLoginSuccess!();
         }
       }
       
@@ -208,9 +210,7 @@ class _LoginViewState extends State<LoginView> {
       }
     } catch (e, s) {
       await setLoginState(IDSLoginState.fail);
-      log.warning(
-        "[LoginView] Login failed with error: $e\nStacktrace: $s",
-      );
+      debugLog(() => "[LoginView] Login failed with error: $e\nStacktrace: $s");
       
       if (mounted) {
         pd.close();

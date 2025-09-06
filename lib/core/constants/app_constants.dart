@@ -14,7 +14,7 @@ class AppConstants {
   static const String appDescription = '模块化跨平台AI助手';
 
   /// 数据库配置
-  static const String databaseName = 'ai_assistant.db';
+  static const String databaseName = 'campus_copilot.db';
   static const int databaseVersion = 1;
 
   /// ObjectBox数据库配置

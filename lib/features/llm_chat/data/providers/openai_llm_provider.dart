@@ -166,6 +166,22 @@ class OpenAiLlmProvider extends LlmProvider {
 
       // 保存完整的原始内容
       final originalContent = choice.message.content ?? '';
+      // Try extract reasoning content from final message (reasoning models)
+      String? reasoningContent;
+      try {
+        final dynamic msg = choice.message;
+        if (msg != null) {
+          final dynamic jsonMap = (msg as dynamic).toJson != null
+              ? (msg as dynamic).toJson()
+              : null;
+          if (jsonMap is Map<String, dynamic>) {
+            final rc = jsonMap['reasoning_content'] ?? jsonMap['reasoningContent'];
+            if (rc is String && rc.isNotEmpty) {
+              reasoningContent = rc;
+            }
+          }
+        }
+      } catch (_) {}
 
   debugLog(() => '🧠 接收完整响应内容: 长度=${originalContent.length}');
   debugLog(() => '🧠 完成原因: ${choice.finishReason?.name}');
@@ -192,6 +208,7 @@ class OpenAiLlmProvider extends LlmProvider {
         ),
         finishReason: _convertFinishReason(choice.finishReason?.name),
         toolCalls: toolCalls, // 添加工具调用结果
+        thinkingContent: reasoningContent,
       );
     } catch (e) {
       throw _handleOpenAIError(e);
@@ -237,6 +254,7 @@ class OpenAiLlmProvider extends LlmProvider {
       final stream = _client.createChatCompletionStream(request: request);
 
       String accumulatedContent = ''; // 累积完整原始内容
+      String accumulatedReasoning = '';
       List<ToolCall> accumulatedToolCalls = []; // 累积工具调用
       
       // 用于累积工具调用片段的Map
@@ -261,6 +279,28 @@ class OpenAiLlmProvider extends LlmProvider {
             model: model,
           );
         }
+
+        // 处理推理增量（reasoning_content）
+        try {
+          final dynamic d = delta;
+          if (d != null) {
+            final dynamic jsonMap = (d as dynamic).toJson != null
+                ? (d as dynamic).toJson()
+                : null;
+            if (jsonMap is Map<String, dynamic>) {
+              final rc = jsonMap['reasoning_content'] ?? jsonMap['reasoningContent'];
+              if (rc is String && rc.isNotEmpty) {
+                accumulatedReasoning += rc;
+                yield StreamedChatResult(
+                  thinkingDelta: rc,
+                  thinkingContent: accumulatedReasoning,
+                  isDone: false,
+                  model: model,
+                );
+              }
+            }
+          }
+        } catch (_) {}
 
         // 处理工具调用增量（流式响应中工具调用是片段化传输的）
         if (delta?.toolCalls != null && delta!.toolCalls!.isNotEmpty) {
@@ -346,6 +386,8 @@ class OpenAiLlmProvider extends LlmProvider {
             ),
             finishReason: _convertFinishReason(choice.finishReason?.name),
             toolCalls: accumulatedToolCalls.isNotEmpty ? accumulatedToolCalls : null, // 添加工具调用
+            thinkingContent: accumulatedReasoning.isNotEmpty ? accumulatedReasoning : null,
+            thinkingComplete: accumulatedReasoning.isNotEmpty,
           );
         }
       }

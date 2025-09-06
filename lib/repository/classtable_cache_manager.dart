@@ -6,8 +6,8 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
-import 'package:ai_assistant/model/xidian_ids/classtable.dart';
-import 'package:ai_assistant/repository/logger.dart';
+import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:campus_copilot/shared/utils/debug_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ClassTableCacheManager {
@@ -50,10 +50,10 @@ class ClassTableCacheManager {
       final daysDiff = now.difference(cacheTime).inDays;
       final isValid = daysDiff < _cacheValidDays;
       
-      log.info("[ClassTableCacheManager] Cache valid: $isValid, days since cache: $daysDiff");
+      debugLog(() => "[ClassTableCacheManager] Cache valid: $isValid, days since cache: $daysDiff");
       return isValid;
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error checking cache validity: $e");
+      debugLog(() => "[ClassTableCacheManager] Error checking cache validity: $e");
       return false;
     }
   }
@@ -77,9 +77,9 @@ class ClassTableCacheManager {
       
       await prefs.setString(_cacheMetaKey, json.encode(meta));
       
-      log.info("[ClassTableCacheManager] ClassTable cached successfully for semester: ${classTable.semesterCode}");
+      debugLog(() => "[ClassTableCacheManager] ClassTable cached successfully for semester: ${classTable.semesterCode}");
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error saving cache: $e");
+      debugLog(() => "[ClassTableCacheManager] Error saving cache: $e");
     }
   }
 
@@ -88,13 +88,13 @@ class ClassTableCacheManager {
     try {
       // 检查缓存是否有效
       if (!await isCacheValid()) {
-        log.info("[ClassTableCacheManager] Cache is invalid or expired");
+        debugLog(() => "[ClassTableCacheManager] Cache is invalid or expired");
         return null;
       }
 
       final file = await _getCacheFile();
       if (!await file.exists()) {
-        log.info("[ClassTableCacheManager] Cache file not found");
+        debugLog(() => "[ClassTableCacheManager] Cache file not found");
         return null;
       }
 
@@ -103,11 +103,11 @@ class ClassTableCacheManager {
       final Map<String, dynamic> data = json.decode(jsonData);
       
       final classTable = ClassTableData.fromJson(data);
-      log.info("[ClassTableCacheManager] ClassTable loaded from cache for semester: ${classTable.semesterCode}");
+      debugLog(() => "[ClassTableCacheManager] ClassTable loaded from cache for semester: ${classTable.semesterCode}");
       
       return classTable;
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error loading cache: $e");
+      debugLog(() => "[ClassTableCacheManager] Error loading cache: $e");
       return null;
     }
   }
@@ -123,9 +123,9 @@ class ClassTableCacheManager {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheMetaKey);
       
-      log.info("[ClassTableCacheManager] Cache cleared");
+      debugLog(() => "[ClassTableCacheManager] Cache cleared");
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error clearing cache: $e");
+      debugLog(() => "[ClassTableCacheManager] Error clearing cache: $e");
     }
   }
 
@@ -139,7 +139,7 @@ class ClassTableCacheManager {
       
       return json.decode(metaJson);
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error getting cache info: $e");
+      debugLog(() => "[ClassTableCacheManager] Error getting cache info: $e");
       return null;
     }
   }
@@ -153,10 +153,10 @@ class ClassTableCacheManager {
       final cachedSemester = cacheInfo['semesterCode'] as String?;
       final shouldRefresh = cachedSemester != currentSemester;
       
-      log.info("[ClassTableCacheManager] Should force refresh: $shouldRefresh (current: $currentSemester, cached: $cachedSemester)");
+      debugLog(() => "[ClassTableCacheManager] Should force refresh: $shouldRefresh (current: $currentSemester, cached: $cachedSemester)");
       return shouldRefresh;
     } catch (e) {
-      log.error("[ClassTableCacheManager] Error checking force refresh: $e");
+      debugLog(() => "[ClassTableCacheManager] Error checking force refresh: $e");
       return true;
     }
   }

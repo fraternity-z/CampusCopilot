@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../domain/entities/chat_message.dart';
 import 'message_content_widget.dart';
+import '../../../../../app/app_router.dart' show generalSettingsProvider;
 import 'thinking_chain_widget.dart';
 
 /// 流式增量渲染的消息组件
@@ -95,6 +96,13 @@ class _OptimizedStreamingMessageWidgetState
       setState(() {
         _streamChunks.clear();
         _streamChunks.addAll(chunks);
+        // 对于无 <think> 标签但有 thinkingContent 的模型（如 DeepSeek R1），
+        // 当检测到正文开始时，视为思考链已完成，以保证先后显示。
+        if (!_thinkingCompleted &&
+            (widget.message.thinkingContent?.isNotEmpty ?? false) &&
+            _contentStarted) {
+          _thinkingCompleted = true;
+        }
       });
     }
   }
@@ -214,14 +222,19 @@ class _OptimizedStreamingMessageWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 实时显示思考链（流式）
-        if (_streamingThinking.isNotEmpty && !widget.message.isFromUser)
+        // 实时显示思考链（优先使用消息自带的thinkingContent，兼容DeepSeek R1等）
+        if (!widget.message.isFromUser &&
+            ((widget.message.thinkingContent?.isNotEmpty ?? false) ||
+                _streamingThinking.isNotEmpty))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ThinkingChainWidget(
-              content: _streamingThinking,
+              content: (widget.message.thinkingContent?.isNotEmpty ?? false)
+                  ? widget.message.thinkingContent!
+                  : _streamingThinking,
               modelName: widget.message.modelName ?? '',
-              isCompleted: _thinkingCompleted,
+              isCompleted:
+                  widget.message.thinkingComplete || _thinkingCompleted,
             ),
           ),
 
@@ -238,26 +251,34 @@ class _OptimizedStreamingMessageWidgetState
 
   /// 判断是否应该显示正文内容
   bool _shouldShowContent() {
+    final hasThinking = _hasThinkingContent ||
+        (widget.message.thinkingContent?.isNotEmpty ?? false);
+    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
+
     // 如果没有思考链内容，直接显示正文
-    if (!_hasThinkingContent) {
+    if (!hasThinking) {
       return _streamChunks.isNotEmpty || widget.isStreaming;
     }
 
-    // 如果有思考链内容，必须等思考链完成且正文开始后才显示
-    return _thinkingCompleted &&
+    // 如果有思考链内容：必须在思考完成后再显示正文（先后显示）
+    return thinkingDone &&
         _contentStarted &&
         (_streamChunks.isNotEmpty || widget.isStreaming);
   }
 
   /// 判断是否应该更新正文内容的渲染块
   bool _shouldUpdateContentChunks() {
+    final hasThinking = _hasThinkingContent ||
+        (widget.message.thinkingContent?.isNotEmpty ?? false);
+    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
+
     // 如果没有思考链内容，直接更新
-    if (!_hasThinkingContent) {
+    if (!hasThinking) {
       return true;
     }
 
-    // 如果有思考链内容，必须等思考链完成后才更新正文渲染块
-    return _thinkingCompleted;
+    // 如果有思考链内容：思考完成后才更新正文渲染
+    return thinkingDone;
   }
 
   Widget _buildAttachments() {
@@ -368,21 +389,24 @@ class _OptimizedStreamingMessageWidgetState
   }
 
   Widget _buildStreaming() {
+    final general = ref.watch(generalSettingsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._streamChunks.map((c) {
-          switch (c.kind) {
-            case _Kind.text:
-              return SelectableText(c.text, style: _textStyle());
-            case _Kind.code:
-              return _ChunkBuilder._code(context, c.text);
-            case _Kind.mermaid:
-              return _ChunkBuilder._mermaid(context, c.text);
-            case _Kind.math:
-              return _ChunkBuilder._math(context, c.text);
-          }
-        }),
+        if (general.enableMarkdownRendering)
+          ..._streamChunks.map((c) {
+            switch (c.kind) {
+              case _Kind.text:
+                return SelectableText(c.text, style: _textStyle());
+              case _Kind.code:
+                return _ChunkBuilder._code(context, c.text);
+              case _Kind.math:
+                return _ChunkBuilder._math(context, c.text);
+            }
+          })
+        else
+          // 禁用Markdown时，直接渲染纯文本（累积内容）
+          SelectableText(_streamingContent, style: _textStyle()),
         if (widget.isStreaming)
           Container(
             margin: const EdgeInsets.only(top: 4),
@@ -422,7 +446,7 @@ class _OptimizedStreamingMessageWidgetState
 
 // ========== 增量渲染支持 ==========
 
-enum _Kind { text, code, mermaid, math }
+enum _Kind { text, code, math }
 
 class _Chunk {
   final _Kind kind;
@@ -444,9 +468,8 @@ class _IncrementalRenderer {
 
     // 快速路径：无特殊标记
     final hasFence = delta.contains('```');
-    final hasMermaid = delta.contains('```mermaid');
     final hasMath = delta.contains(r'$$');
-    if (!hasFence && !hasMermaid && !hasMath) {
+    if (!hasFence && !hasMath) {
       if (delta.trim().isNotEmpty) {
         out.add(_Chunk(_Kind.text, delta));
       }
@@ -464,8 +487,7 @@ class _IncrementalRenderer {
           if (pending.trim().isNotEmpty) out.add(_Chunk(_Kind.text, pending));
           buf.clear();
           final block = delta.substring(i, end + 3);
-          final isMermaid = block.startsWith('```mermaid');
-          out.add(_Chunk(isMermaid ? _Kind.mermaid : _Kind.code, block));
+          out.add(_Chunk(_Kind.code, block));
           i = end + 3;
           continue;
         }
@@ -530,44 +552,6 @@ class _ChunkBuilder {
     );
   }
 
-  static Widget _mermaid(BuildContext context, String fenced) {
-    final content = _stripFences(fenced);
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Mermaid图表渲染中…',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            content,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.75),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   static Widget _math(BuildContext context, String fenced) {
     final content = fenced.replaceAll('\$\$', '').trim();
