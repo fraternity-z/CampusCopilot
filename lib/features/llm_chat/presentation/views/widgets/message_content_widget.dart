@@ -17,6 +17,7 @@ import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
 import 'dart:ui' as ui;
 import 'package:shimmer/shimmer.dart';
+import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
 
 /// 消息内容渲染组件
 ///
@@ -55,7 +56,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     final codeBlockSettings = ref.watch(codeBlockSettingsProvider);
     final generalSettings = ref.watch(generalSettingsProvider);
 
-    // 优先使用消息自带的思考链字段（兼容 DeepSeek R1 / Reasoning 模型）
+    // 优先使用消息自带的思考链字段（兼容DeepSeek R1 / Reasoning 模型）
     final hasExplicitThinking =
         (widget.message.thinkingContent?.isNotEmpty ?? false);
 
@@ -117,7 +118,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
                 )
               : _buildPlainTextContent(context, actualContent)),
 
-        // 引用展示（来自模型内置联网/Responses/Claude）
+        // 引用展示（来自模型内置联网Responses/Claude）
         if (!widget.message.isFromUser &&
             widget.message.metadata != null &&
             widget.message.metadata!['citations'] != null)
@@ -224,7 +225,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
               ),
               const SizedBox(width: 12),
               
-              // 生成中文字
+              // 生成中文本
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +397,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       blockSpacing: 16,
       // 透明化默认代码块装饰，去除可能的白色占位背景
       codeblockDecoration: const BoxDecoration(color: Colors.transparent),
-      // flutter_markdown 0.7.x 不支持这些属性，保留兼容的 blockSpacing 即可
+      // flutter_markdown 0.7.x 不支持这些属性，保留兼容性blockSpacing 即可
       horizontalRuleDecoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
@@ -467,15 +468,15 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
   }
 
-  /// 渲染带块级数学公式的内容。
-  /// 规则：使用正则表达式按 $$$$ 分割，公式部分使用 [Math.tex] 渲染，其他部分使用 MarkdownBody。
+  /// 渲染带块级数学公式的内容
+  /// 规则：使用正则表达式?$$$$ 分割，公式部分使用 [Math.tex] 渲染，其他部分使用 [MarkdownBody] 渲染
   Widget _buildContentWithMath({
     required BuildContext context,
     required String content,
     required MarkdownStyleSheet styleSheet,
     required CodeBlockSettings codeBlockSettings,
   }) {
-    // 先将 \\[..\\] 格式的公式统一转换为 $$..$$，便于后续统一处理
+    // 先将 \\[..\\] 格式的公式统一转换为$$..$$，便于后续统一处理
     final normalizedContent = content.replaceAllMapped(
       RegExp(r'\\\[(.*?)\\\]', dotAll: true),
       (match) => '\$\$${match.group(1)}\$\$',
@@ -498,7 +499,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
         final text = normalizedContent.substring(lastEnd, match.start);
         if (text.trim().isNotEmpty) {
           segments.add(
-            _buildMarkdownWithMathEngine(
+            _buildMarkdownWithAdapter(
               context: context,
               data: text,
               styleSheet: styleSheet,
@@ -532,7 +533,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       final text = normalizedContent.substring(lastEnd);
       if (text.trim().isNotEmpty) {
         segments.add(
-          _buildMarkdownWithMathEngine(
+          _buildMarkdownWithAdapter(
             context: context,
             data: text,
             styleSheet: styleSheet,
@@ -548,70 +549,36 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
   }
 
-  /// 根据 GeneralSettings 的 mathEngine 选择 KaTeX 或 flutter_math 渲染行内公式
-  Widget _buildMarkdownWithMathEngine({
+
+  /// 适配层 + markdown_widget 渲染正文（保留代码块自定义与块级公式分段） 
+  Widget _buildMarkdownWithAdapter({
     required BuildContext context,
     required String data,
     required MarkdownStyleSheet styleSheet,
     required CodeBlockSettings codeBlockSettings,
   }) {
-    final general = ref.read(generalSettingsProvider);
-    final ext = _gfmWithoutIndentedCode();
-    if (general.mathEngine == 'mathjax') {
-      // MathJax 路径：使用 flutter_math_fork 同步渲染，行内仍用 Math.tex
-      return MarkdownBody(
-        data: data,
-        selectable: true,
-        styleSheet: styleSheet,
-        inlineSyntaxes: [InlineLatexSyntax()],
-        builders: {
-          'code': EnhancedInlineCodeBuilder(
-            isFromUser: widget.message.isFromUser,
-          ),
-          'pre': CodeBlockBuilder(
-            codeBlockSettings: codeBlockSettings,
-            isFromUser: widget.message.isFromUser,
-          ),
-          'inline_math': InlineLatexBuilder(),
-          // 这些增强构建器在本文件下方定义
-          'blockquote': EnhancedBlockquoteBuilder(),
-        },
-        extensionSet: ext,
-      );
-    }
-    // KaTeX 也复用 flutter_math_fork 渲染，方便跨平台；未来可替换为 HTML+KaTeX
-    return MarkdownBody(
-      data: data,
-      selectable: true,
-      styleSheet: styleSheet,
-      inlineSyntaxes: [InlineLatexSyntax()],
-      builders: {
-        'code': EnhancedInlineCodeBuilder(
+    final renderer = MarkdownRenderer.defaultRenderer(
+      engine: MarkdownEngine.markdownWidget,
+    );
+    return renderer.render(
+      data,
+      baseTextStyle: styleSheet.p,
+      codeBlockBuilder: (code, language) {
+        // 若markdown_widget 未提供语言，退回到本文件的智能检测逻辑
+        final lang = (language.isEmpty)
+            ? CodeBlockBuilder(
+                codeBlockSettings: codeBlockSettings,
+                isFromUser: widget.message.isFromUser,
+              )._detectLanguage(code)
+            : language;
+        return CodeBlockWidget(
+          code: code,
+          language: lang,
+          settings: codeBlockSettings,
           isFromUser: widget.message.isFromUser,
-        ),
-        'pre': CodeBlockBuilder(
-          codeBlockSettings: codeBlockSettings,
-          isFromUser: widget.message.isFromUser,
-        ),
-        'inline_math': InlineLatexBuilder(),
-        'blockquote': EnhancedBlockquoteBuilder(),
+        );
       },
-      extensionSet: ext,
     );
-  }
-
-  /// 基于 GFM 的扩展集，但移除缩进代码块语法，避免普通缩进行被误判为代码块
-  md.ExtensionSet _gfmWithoutIndentedCode() {
-    final List<md.BlockSyntax> blocks =
-        List<md.BlockSyntax>.from(md.ExtensionSet.gitHubFlavored.blockSyntaxes)
-          ..removeWhere(
-            (s) => s.runtimeType.toString() == 'IndentedCodeBlockSyntax',
-          );
-    final List<md.InlineSyntax> inline = List<md.InlineSyntax>.from(
-      md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
-    );
-    // 注意：markdown.ExtensionSet 的构造参数顺序为 (blockSyntaxes, inlineSyntaxes)
-    return md.ExtensionSet(blocks, inline);
   }
 }
 
@@ -916,7 +883,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
               color: _isCopied ? Colors.green : null,
             ),
             onPressed: () => _copyCode(context),
-            tooltip: _isCopied ? '已复制' : '复制代码',
+            tooltip: _isCopied ? '已复制代码' : '复制代码',
           ),
           if (widget.settings.enableCodeEditing)
             IconButton(
@@ -1075,7 +1042,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
 
   /// 获取代码高亮主题
   Map<String, TextStyle> _getCodeTheme(bool isDark) {
-    // 使用原来的 Atom One 主题
+    // 使用原来的Atom One 主题
     final base = isDark ? atomOneDarkTheme : atomOneLightTheme;
 
     // 取消注释、文档标签、引用的斜体样式
@@ -1129,7 +1096,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
   }
 }
 
-/// 行内数学公式语法，例如 $a^2 + b^2=c^2$
+/// 行内数学公式语法，例如$a^2 + b^2=c^2$
 class InlineLatexSyntax extends InlineSyntax {
   InlineLatexSyntax() : super(r'\$(?!\$)(.+?)(?<!\$)\$');
 
@@ -1141,7 +1108,7 @@ class InlineLatexSyntax extends InlineSyntax {
   }
 }
 
-/// 行内数学公式Builder，将 Element 渲染为 Math.tex
+/// 行内数学公式Builder，将 Element 渲染为Math.tex
 class InlineLatexBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -1202,7 +1169,7 @@ class EnhancedInlineCodeBuilder extends MarkdownElementBuilder {
   }
 }
 
-// 轻量占位：目前仅用于让 builder 不报错；详细样式已在 MarkdownStyleSheet 中体现
+// 轻量占位：目前仅用于让builder 不报错；详细样式已在 MarkdownStyleSheet 中体现
 class EnhancedBlockquoteBuilder extends MarkdownElementBuilder {}
 
 class EnhancedHorizontalRuleBuilder extends MarkdownElementBuilder {}

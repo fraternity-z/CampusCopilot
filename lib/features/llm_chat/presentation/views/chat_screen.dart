@@ -910,8 +910,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 时间和气泡列
-                Padding(
+                // 时间和气泡列（加 Flexible 防止横向溢出）
+                Flexible(
+                  child: Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -994,6 +995,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       ],
                     ),
                   ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1037,8 +1039,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     // 助手头像
                     _buildAssistantAvatar(message),
                     const SizedBox(width: 8),
-                    // 助手信息
-                    Column(
+                    // 助手信息（加 Flexible 防止横向溢出）
+                    Flexible(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -1057,6 +1060,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           ),
                         ),
                       ],
+                      ),
                     ),
                   ],
                 ),
