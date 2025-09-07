@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
@@ -50,6 +50,14 @@ Future<void> showChartPreviewDialog(BuildContext context, String code) {
     builder: (ctx) {
       final title = spec['title'] as String?;
       final chart = _buildChartFromSpec(spec);
+      // 读取轴标题（如果提供）
+      final axisMap = (spec['axis'] as Map?)?.map((k, v) => MapEntry(k.toString(), v));
+      final String? xTitle = (axisMap is Map)
+          ? ((axisMap?['x'] as Map?)?['title']?.toString())
+          : null;
+      final String? yTitle = (axisMap is Map)
+          ? ((axisMap?['y'] as Map?)?['title']?.toString())
+          : null;
       return Dialog(
         insetPadding: const EdgeInsets.all(16),
         child: ConstrainedBox(
@@ -90,7 +98,41 @@ Future<void> showChartPreviewDialog(BuildContext context, String code) {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(8),
-                        child: chart,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (yTitle != null && yTitle.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0),
+                                      child: Center(
+                                        child: RotatedBox(
+                                          quarterTurns: 3,
+                                          child: Text(
+                                            yTitle,
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  Expanded(child: chart),
+                                ],
+                              ),
+                            ),
+                            if (xTitle != null && xTitle.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  xTitle,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -112,7 +154,7 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
       .toList(growable: false);
   final encode = (spec['encode'] as Map? ?? const {})
       .map((k, v) => MapEntry(k.toString(), v));
-  final axis = (spec['axis'] as Map?)?.map((k, v) => MapEntry(k.toString(), v));
+  (spec['axis'] as Map?)?.map((k, v) => MapEntry(k.toString(), v));
   final options = (spec['options'] as Map?)?.map((k, v) => MapEntry(k.toString(), v));
 
   final xField = encode['x'] as String?;
@@ -120,6 +162,35 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
   final colorField = encode['color'] as String?; // 可选
 
   final variables = <String, g.Variable>{};
+  // 字段映射有效性检查，提前拦截以避免图形库内部空断言
+  bool fieldExists(String? field) {
+    if (field == null || field.isEmpty) return false;
+    for (final row in data) {
+      if (row.containsKey(field) && row[field] != null) return true;
+    }
+    return false;
+  }
+  final hasX = fieldExists(xField);
+  final hasY = fieldExists(yField);
+  final hasColor = fieldExists(colorField);
+  // 更严格的颜色可用性：每条数据都提供非空颜色且类别大于1
+  if (hasColor && colorField != null && colorField.isNotEmpty) {
+    final set = <String>{};
+    for (final row in data) {
+      final v = row[colorField];
+      final s = v?.toString().trim();
+      if (s == null || s.isEmpty) { break; }
+      set.add(s);
+    }
+  }
+// 全局禁用颜色通道与分组（临时）
+  if (!hasX || !hasY) {
+    final miss = [
+      if (!hasX) (xField == null || xField.isEmpty) ? 'encode.x 未设置' : '数据中不存在字段 "$xField"',
+      if (!hasY) (yField == null || yField.isEmpty) ? 'encode.y 未设置' : '数据中不存在字段 "$yField"',
+    ].join('；');
+    return _error('图表字段映射错误：$miss');
+  }
   // 推断字段类型并构造合适的 Variable 泛型
   if (xField != null && xField.isNotEmpty) {
     final sample = _firstNonNull(data, xField);
@@ -166,23 +237,12 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
       return 0;
     });
   }
-  if (colorField != null && colorField.isNotEmpty) {
-    variables['color'] = g.Variable(accessor: (dynamic datum) {
-      final map = datum as Map;
-      final v = map[colorField];
-      return v?.toString() ?? '';
-    });
-  }
 
-  List<g.AxisGuide>? axes;
-  if (axis != null) {
-    final xa = axis['x'];
-    final ya = axis['y'];
-    axes = [
-      if (xa is Map) g.Defaults.horizontalAxis,
-      if (ya is Map) g.Defaults.verticalAxis,
-    ];
-  }
+  // 坐标轴：默认同时开启横轴与纵轴，避免因配置缺省导致不显示
+  final List<g.AxisGuide> axes = <g.AxisGuide>[
+    g.Defaults.horizontalAxis,
+    g.Defaults.verticalAxis,
+  ];
 
   switch (chartType) {
     case 'line':
@@ -196,7 +256,7 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
           g.LineMark(
             position: g.Varset('x') * g.Varset('y'),
             shape: g.ShapeEncode(value: g.BasicLineShape(smooth: options?['smooth'] == true)),
-            color: colorField != null ? g.ColorEncode(variable: 'color') : null,
+            color: null,
           ),
         ],
         axes: axes,
@@ -213,12 +273,12 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
         marks: [
           g.IntervalMark(
             position: g.Varset('x') * g.Varset('y'),
-            color: colorField != null ? g.ColorEncode(variable: 'color') : null,
+            color: null,
             size: g.SizeEncode(value: 12),
             // 分组并列柱：当存在颜色维度且未开启堆叠时，启用 Dodge 分组
             modifiers: [
               if (options?['stack'] == true) g.StackModifier()
-              else if (colorField != null && (options?['stack'] != true)) g.DodgeModifier()
+              else if (colorField != null && hasColor && (options?['stack'] != true)) g.DodgeModifier()
             ],
           ),
         ],
@@ -238,7 +298,7 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
           g.PointMark(
             position: g.Varset('x') * g.Varset('y'),
             size: g.SizeEncode(value: 5),
-            color: colorField != null ? g.ColorEncode(variable: 'color') : null,
+            color: null,
           ),
         ],
         axes: axes,
