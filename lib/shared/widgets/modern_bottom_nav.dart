@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
 
 /// 现代化底部导航栏
@@ -338,10 +339,14 @@ class ModernSideNav extends StatelessWidget {
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(AppTheme.radiusM),
                   ),
-                  child: const Icon(
-                    Icons.smart_toy,
-                    color: Colors.white,
-                    size: 24,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      'assets/logos/assistant.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter:
+                          const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    ),
                   ),
                 ),
                 if (isExpanded) ...[

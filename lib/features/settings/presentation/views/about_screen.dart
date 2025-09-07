@@ -36,15 +36,24 @@ class AboutScreen extends ConsumerWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
-                Icons.smart_toy,
-                size: 48,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/icons/app_icon.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -343,7 +352,11 @@ class AboutScreen extends ConsumerWidget {
       context: context,
       applicationName: 'AI Assistant',
       applicationVersion: 'v1.0.0',
-      applicationIcon: const Icon(Icons.smart_toy, size: 48),
+      applicationIcon: Image.asset(
+        'assets/icons/app_icon.png',
+        width: 48,
+        height: 48,
+      ),
     );
   }
 }
