@@ -377,8 +377,6 @@ class _OptimizedStreamingMessageWidgetState
               return SelectableText(c.text, style: _textStyle());
             case _Kind.code:
               return _ChunkBuilder._code(context, c.text);
-            case _Kind.mermaid:
-              return _ChunkBuilder._mermaid(context, c.text);
             case _Kind.math:
               return _ChunkBuilder._math(context, c.text);
           }
@@ -422,7 +420,7 @@ class _OptimizedStreamingMessageWidgetState
 
 // ========== 增量渲染支持 ==========
 
-enum _Kind { text, code, mermaid, math }
+enum _Kind { text, code, math }
 
 class _Chunk {
   final _Kind kind;
@@ -444,9 +442,8 @@ class _IncrementalRenderer {
 
     // 快速路径：无特殊标记
     final hasFence = delta.contains('```');
-    final hasMermaid = delta.contains('```mermaid');
     final hasMath = delta.contains(r'$$');
-    if (!hasFence && !hasMermaid && !hasMath) {
+    if (!hasFence && !hasMath) {
       if (delta.trim().isNotEmpty) {
         out.add(_Chunk(_Kind.text, delta));
       }
@@ -464,8 +461,7 @@ class _IncrementalRenderer {
           if (pending.trim().isNotEmpty) out.add(_Chunk(_Kind.text, pending));
           buf.clear();
           final block = delta.substring(i, end + 3);
-          final isMermaid = block.startsWith('```mermaid');
-          out.add(_Chunk(isMermaid ? _Kind.mermaid : _Kind.code, block));
+          out.add(_Chunk(_Kind.code, block));
           i = end + 3;
           continue;
         }
@@ -530,44 +526,6 @@ class _ChunkBuilder {
     );
   }
 
-  static Widget _mermaid(BuildContext context, String fenced) {
-    final content = _stripFences(fenced);
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Mermaid图表渲染中…',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            content,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.75),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   static Widget _math(BuildContext context, String fenced) {
     final content = fenced.replaceAll('\$\$', '').trim();

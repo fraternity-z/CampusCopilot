@@ -12,7 +12,6 @@ import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, gene
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
-import 'enhanced_mermaid_renderer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'file_attachment_card.dart';
 import 'image_preview_widget.dart';
@@ -457,15 +456,10 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
     );
 
     final mathRegex = RegExp(r'\$\$(.*?)\$\$', dotAll: true);
-    final mermaidRegex = RegExp(r'```mermaid\s*\n(.*?)\n\s*```', dotAll: true);
 
     // Collect all matches
     final List<Match> allMatches = [];
     allMatches.addAll(mathRegex.allMatches(normalizedContent));
-
-    // 添加 Mermaid 图表匹配
-    final mermaidMatches = mermaidRegex.allMatches(normalizedContent);
-    allMatches.addAll(mermaidMatches);
 
     // Sort by start index
     allMatches.sort((a, b) => a.start.compareTo(b.start));
@@ -503,53 +497,6 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
                 return Text('\$\$${content}\$\$');
               },
             ),
-          ),
-        );
-      } else {
-        // Mermaid - 使用简化的容器，让布局管理器处理边距和约束
-        segments.add(
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: codeBlockSettings.enableMermaidDiagrams
-                ? EnhancedMermaidRenderer(mermaidCode: content)
-                : Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Mermaid图表 (已禁用)',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          content,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
           ),
         );
       }
