@@ -461,17 +461,52 @@ class _ClassTableViewState extends State<ClassTableView> {
       color: Theme.of(context).cardColor,
       child: Row(
         children: [
-          // 左上角空白区域
-          SizedBox(
+          // 左上角美化月份显示
+          Container(
             width: 50,
-            child: Center(
-              child: Text(
-                '${now.month}月',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.calendar_month,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${now.month}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                Text(
+                  '月',
+                  style: TextStyle(
+                    fontSize: 8,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           // 星期标题
@@ -481,13 +516,34 @@ class _ClassTableViewState extends State<ClassTableView> {
             final isToday = index == today && isCurrentWeek;
             return Expanded(
               child: Container(
-                alignment: Alignment.center,
+                margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
                 decoration: isToday ? BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(20),
-                ) : null,
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColor.withOpacity(0.8),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ) : BoxDecoration(
+                  color: Theme.of(context).cardColor.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    width: 0.5,
+                  ),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
@@ -495,18 +551,27 @@ class _ClassTableViewState extends State<ClassTableView> {
                       Text(
                         weekDays[index],
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: isToday ? Colors.white : Colors.grey[700],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isToday ? Colors.white : Colors.grey[600],
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 1),
-                      Text(
-                        '${_getDateForWeekDay(index)}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: isToday ? Colors.white : Colors.grey[800],
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: isToday ? BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ) : null,
+                        child: Text(
+                          '${_getDateForWeekDay(index)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isToday ? Colors.white : Theme.of(context).primaryColor,
+                            fontFamily: 'monospace',
+                          ),
                         ),
                       ),
                     ],
@@ -692,42 +757,87 @@ class _ClassTableViewState extends State<ClassTableView> {
   Widget _buildTimeSlotContent(int courseNumber, String timeText) {
     if (courseNumber == -1 || courseNumber == -2) {
       // 休息时间
-      return FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          timeText,
-          style: const TextStyle(
-            fontSize: 9,
-            color: Colors.grey,
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            timeText,
+            style: TextStyle(
+              fontSize: 9,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
         ),
       );
     } else {
-      // 正常课程时间 - 使用FittedBox防止溢出
-      return FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$courseNumber',
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (timeText.isNotEmpty)
-              Text(
-                timeText,
-                style: TextStyle(
-                  fontSize: 6,
-                  color: Colors.grey[600],
+      // 正常课程时间 - 美化时钟样式
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 1),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            width: 0.5,
+          ),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                textAlign: TextAlign.center,
+                child: Text(
+                  '$courseNumber',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-          ],
+              if (timeText.isNotEmpty) ...[
+                const SizedBox(height: 1),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    timeText,
+                    style: TextStyle(
+                      fontSize: 6,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'monospace',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
