@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/app_settings.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../data/local/app_database.dart';
+import '../../../../shared/theme/color_theme.dart';
 import 'custom_provider_notifier.dart';
 
 /// 设置状态管理
@@ -94,6 +95,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   /// 更新主题模式
   Future<void> updateThemeMode(ThemeMode themeMode) async {
     state = state.copyWith(themeMode: themeMode);
+    await _saveSettings();
+  }
+
+  /// 更新颜色主题
+  Future<void> updateColorTheme(AppColorTheme colorTheme) async {
+    state = state.copyWith(colorTheme: colorTheme);
     await _saveSettings();
   }
 

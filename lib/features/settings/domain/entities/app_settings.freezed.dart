@@ -44,6 +44,9 @@ mixin _$AppSettings {
   /// 主题设置
   ThemeMode get themeMode => throw _privateConstructorUsedError;
 
+  /// 颜色主题设置
+  AppColorTheme get colorTheme => throw _privateConstructorUsedError;
+
   /// 语言设置
   String get language => throw _privateConstructorUsedError;
 
@@ -81,6 +84,7 @@ abstract class $AppSettingsCopyWith<$Res> {
       OpenRouterConfig? openrouterConfig,
       OllamaConfig? ollamaConfig,
       ThemeMode themeMode,
+      AppColorTheme colorTheme,
       String language,
       AIProvider defaultProvider,
       ChatSettings chatSettings,
@@ -120,6 +124,7 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? openrouterConfig = freezed,
     Object? ollamaConfig = freezed,
     Object? themeMode = null,
+    Object? colorTheme = null,
     Object? language = null,
     Object? defaultProvider = null,
     Object? chatSettings = null,
@@ -159,6 +164,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
           ? _value.themeMode
           : themeMode // ignore: cast_nullable_to_non_nullable
               as ThemeMode,
+      colorTheme: null == colorTheme
+          ? _value.colorTheme
+          : colorTheme // ignore: cast_nullable_to_non_nullable
+              as AppColorTheme,
       language: null == language
           ? _value.language
           : language // ignore: cast_nullable_to_non_nullable
@@ -309,6 +318,7 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
       OpenRouterConfig? openrouterConfig,
       OllamaConfig? ollamaConfig,
       ThemeMode themeMode,
+      AppColorTheme colorTheme,
       String language,
       AIProvider defaultProvider,
       ChatSettings chatSettings,
@@ -356,6 +366,7 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? openrouterConfig = freezed,
     Object? ollamaConfig = freezed,
     Object? themeMode = null,
+    Object? colorTheme = null,
     Object? language = null,
     Object? defaultProvider = null,
     Object? chatSettings = null,
@@ -395,6 +406,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
           ? _value.themeMode
           : themeMode // ignore: cast_nullable_to_non_nullable
               as ThemeMode,
+      colorTheme: null == colorTheme
+          ? _value.colorTheme
+          : colorTheme // ignore: cast_nullable_to_non_nullable
+              as AppColorTheme,
       language: null == language
           ? _value.language
           : language // ignore: cast_nullable_to_non_nullable
@@ -431,6 +446,7 @@ class _$AppSettingsImpl implements _AppSettings {
       this.openrouterConfig,
       this.ollamaConfig,
       this.themeMode = ThemeMode.system,
+      this.colorTheme = AppColorTheme.purple,
       this.language = 'zh',
       this.defaultProvider = AIProvider.openai,
       this.chatSettings = const ChatSettings(),
@@ -473,6 +489,11 @@ class _$AppSettingsImpl implements _AppSettings {
   @JsonKey()
   final ThemeMode themeMode;
 
+  /// 颜色主题设置
+  @override
+  @JsonKey()
+  final AppColorTheme colorTheme;
+
   /// 语言设置
   @override
   @JsonKey()
@@ -500,7 +521,7 @@ class _$AppSettingsImpl implements _AppSettings {
 
   @override
   String toString() {
-    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, thinkingChainSettings: $thinkingChainSettings)';
+    return 'AppSettings(openaiConfig: $openaiConfig, geminiConfig: $geminiConfig, claudeConfig: $claudeConfig, deepseekConfig: $deepseekConfig, qwenConfig: $qwenConfig, openrouterConfig: $openrouterConfig, ollamaConfig: $ollamaConfig, themeMode: $themeMode, colorTheme: $colorTheme, language: $language, defaultProvider: $defaultProvider, chatSettings: $chatSettings, privacySettings: $privacySettings, thinkingChainSettings: $thinkingChainSettings)';
   }
 
   @override
@@ -524,6 +545,8 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.ollamaConfig == ollamaConfig) &&
             (identical(other.themeMode, themeMode) ||
                 other.themeMode == themeMode) &&
+            (identical(other.colorTheme, colorTheme) ||
+                other.colorTheme == colorTheme) &&
             (identical(other.language, language) ||
                 other.language == language) &&
             (identical(other.defaultProvider, defaultProvider) ||
@@ -548,6 +571,7 @@ class _$AppSettingsImpl implements _AppSettings {
       openrouterConfig,
       ollamaConfig,
       themeMode,
+      colorTheme,
       language,
       defaultProvider,
       chatSettings,
@@ -578,6 +602,7 @@ abstract class _AppSettings implements AppSettings {
       final OpenRouterConfig? openrouterConfig,
       final OllamaConfig? ollamaConfig,
       final ThemeMode themeMode,
+      final AppColorTheme colorTheme,
       final String language,
       final AIProvider defaultProvider,
       final ChatSettings chatSettings,
@@ -619,6 +644,10 @@ abstract class _AppSettings implements AppSettings {
 
   /// 主题设置
   ThemeMode get themeMode;
+  @override
+
+  /// 颜色主题设置
+  AppColorTheme get colorTheme;
   @override
 
   /// 语言设置

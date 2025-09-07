@@ -28,8 +28,8 @@ class AIAssistantApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
 
       // 主题配置
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightThemeWithColor(settings.colorTheme),
+      darkTheme: AppTheme.darkThemeWithColor(settings.colorTheme),
       themeMode: _convertThemeMode(settings.themeMode),
 
       // 路由配置
