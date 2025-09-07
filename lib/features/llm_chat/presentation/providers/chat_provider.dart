@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
+import '../../../../core/services/app_launch_service.dart';
 import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
@@ -52,6 +53,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
     Future.microtask(() async {
       try {
         await _loadChatSessions();
+        
+        // 检查是否需要在应用启动时自动创建新会话
+        if (AppLaunchService.shouldExecuteLaunchLogic() && 
+            AppLaunchService.autoCreateNewSessionOnLaunch) {
+          debugPrint('🚀 应用启动：自动创建新会话');
+          await _createNewSessionOnLaunch();
+          AppLaunchService.markInitialized();
+        }
       } catch (e) {
         state = state.copyWith(error: '初始化失败: $e', sessions: <ChatSession>[]);
       }
@@ -205,6 +214,36 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
     } catch (e) {
       state = state.copyWith(error: '创建新会话失败: $e');
+    }
+  }
+
+  /// 应用启动时创建新会话（私有方法）
+  /// 
+  /// 专门用于应用启动时自动创建新会话，确保用户每次打开应用都有一个新对话
+  Future<void> _createNewSessionOnLaunch() async {
+    try {
+      final selectedPersona = _ref.read(selectedPersonaProvider);
+      final personaId = selectedPersona?.id ?? 'default';
+
+      final session = await _chatService.createChatSession(
+        personaId: personaId,
+        title: '新对话',
+      );
+
+      // 将新会话添加到列表开头并设为当前会话
+      final updatedSessions = [session, ...state.sessions];
+      state = state.copyWith(
+        sessions: updatedSessions,
+        currentSession: session,
+        messages: [],
+        error: null,
+      );
+      
+      debugPrint('🆕 应用启动新会话已创建: ${session.id}');
+    } catch (e) {
+      debugPrint('❌ 应用启动创建新会话失败: $e');
+      // 启动时创建会话失败不应该阻塞整个应用
+      state = state.copyWith(error: null);
     }
   }
 
