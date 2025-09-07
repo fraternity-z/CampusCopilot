@@ -390,6 +390,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
+    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
+    final String sessionId = currentSession.id;
+
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -397,7 +400,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final aiMessageId = _uuid.v4();
       final aiPlaceholder = ChatMessage(
         id: aiMessageId,
-        chatSessionId: currentSession.id,
+        chatSessionId: sessionId,
         content: '',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -410,7 +413,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 开始流式响应（在学习模式下使用处理过的消息，普通模式下使用原始内容）
       final messageContent = learningModeState.isLearningMode ? processedMessage : userContent;
       final stream = _chatService.sendMessageStream(
-        sessionId: currentSession.id,
+        sessionId: sessionId,
         content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
         displayContent: userContent, // 传递原始用户输入用于显示
@@ -456,7 +459,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
             // 更新缓存（实时更新流式响应）
             if (state.currentSession != null) {
-              updateSessionCache(state.currentSession!.id, updatedMessages);
+              updateSessionCache(sessionId, updatedMessages);
             }
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
@@ -650,6 +653,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
+    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
+    final String sessionId = currentSession.id;
+
     // 只有在没有占位符时才设置全局加载状态
     if (placeholderId == null) {
       state = state.copyWith(isLoading: true, error: null);
@@ -657,11 +663,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     try {
       // 使用和聊天相同的配置获取逻辑：通过会话 → 智能体 → API配置
-      final llmConfig = await _chatService.getSessionLlmConfig(currentSession.id);
+      final llmConfig = await _chatService.getSessionLlmConfig(sessionId);
       debugLog(() => '🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 直接使用LLM配置的信息
-      String? apiKey = llmConfig.apiKey;
+      String apiKey = llmConfig.apiKey;
       String? baseUrl = llmConfig.baseUrl;
       String configType = '${llmConfig.name} (${llmConfig.provider})';
 
@@ -725,7 +731,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         
         final imageMessage = ChatMessage(
           id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
-          chatSessionId: currentSession.id,
+          chatSessionId: sessionId,
           content: '生成了${results.length}张图片：$prompt',
           isFromUser: false,
           timestamp: DateTime.now(),
@@ -767,7 +773,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 创建错误消息
       final errorMessage = ChatMessage(
         id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
-        chatSessionId: currentSession.id,
+        chatSessionId: sessionId,
         content: '图片生成失败: $e',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -915,6 +921,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }
     }
 
+    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
+    final String sessionId = currentSession.id;
+
     if (text.isEmpty &&
         state.attachedFiles.isEmpty &&
         state.attachedImages.isEmpty) {
@@ -1034,7 +1043,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       final userMessage = ChatMessage(
         id: _uuid.v4(),
-        chatSessionId: currentSession.id,
+        chatSessionId: sessionId,
         content: displayContent,
         isFromUser: true,
         timestamp: DateTime.now(),
@@ -1055,14 +1064,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       
       // 更新当前会话的缓存
       if (state.currentSession != null) {
-        updateSessionCache(state.currentSession!.id, updatedMessages);
+        updateSessionCache(sessionId, updatedMessages);
       }
 
       final aiMessageId = _uuid.v4();
       // 为正常显示新增占位符（空内容）
       final aiPlaceholderSend = ChatMessage(
         id: aiMessageId,
-        chatSessionId: currentSession.id,
+        chatSessionId: sessionId,
         content: '',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -1073,7 +1082,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       
       // 更新缓存（包含占位符）
       if (state.currentSession != null) {
-        updateSessionCache(state.currentSession!.id, messagesWithPlaceholder);
+        updateSessionCache(sessionId, messagesWithPlaceholder);
       }
 
       // 检查是否是图像生成指令
@@ -1104,7 +1113,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // 开始流式响应
       final stream = _chatService.sendMessageStream(
-        sessionId: currentSession.id,
+        sessionId: sessionId,
         content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
         imageUrls: imageUrlsForAI, // 传递base64格式的图片给AI
@@ -1151,7 +1160,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
             // 更新缓存（实时更新流式响应）
             if (state.currentSession != null) {
-              updateSessionCache(state.currentSession!.id, updatedMessages);
+              updateSessionCache(sessionId, updatedMessages);
             }
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
@@ -1187,7 +1196,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 如果发生错误，移除占位符并显示错误消息
       final errorMessage = ChatMessage(
         id: _uuid.v4(),
-        chatSessionId: currentSession.id,
+        chatSessionId: sessionId,
         content: '抱歉，发生错误: $e',
         isFromUser: false,
         timestamp: DateTime.now(),
