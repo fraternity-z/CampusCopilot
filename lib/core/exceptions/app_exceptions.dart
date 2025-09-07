@@ -256,3 +256,29 @@ class ValidationException extends AppException {
     );
   }
 }
+
+/// 聊天会话相关异常
+class ChatSessionException extends AppException {
+  const ChatSessionException(
+    super.message, {
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
+
+  factory ChatSessionException.notFound(String sessionId) {
+    return ChatSessionException('会话不存在: $sessionId', code: 'SESSION_NOT_FOUND');
+  }
+
+  factory ChatSessionException.archived(String sessionId) {
+    return ChatSessionException('会话已归档，无法操作: $sessionId', code: 'SESSION_ARCHIVED');
+  }
+
+  factory ChatSessionException.invalidState(String reason) {
+    return ChatSessionException('会话状态无效: $reason', code: 'INVALID_SESSION_STATE');
+  }
+
+  factory ChatSessionException.createFailed() {
+    return const ChatSessionException('创建会话失败', code: 'SESSION_CREATE_FAILED');
+  }
+}

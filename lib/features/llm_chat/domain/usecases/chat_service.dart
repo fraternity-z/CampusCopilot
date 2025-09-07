@@ -477,6 +477,22 @@ class ChatService {
     String? displayContent, // 用于UI显示的原始内容（可选）
   }) async* {
     debugPrint('🚀 开始发送消息: $content');
+    
+    // 🛡️ 会话存在性验证 - 确保在发送消息前会话在数据库中真实存在
+    try {
+      final session = await _getSessionById(sessionId);
+      if (session.isArchived) {
+        throw ChatSessionException.archived(sessionId);
+      }
+      debugPrint('🛡️ 会话验证通过: ${session.id} - ${session.title}');
+    } catch (e) {
+      debugPrint('🛡️ 会话验证失败: $e');
+      if (e is ChatSessionException) {
+        rethrow; // 重新抛出会话相关异常
+      }
+      throw ChatSessionException.invalidState(e.toString());
+    }
+    
     final messageContentForDisplay = displayContent ?? content;
     debugPrint('🔍 用户消息内容 - 显示: ${messageContentForDisplay.length}字符, AI处理: ${content.length}字符');
 

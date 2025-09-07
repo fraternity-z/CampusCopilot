@@ -16,6 +16,7 @@ import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
 import '../../../learning_mode/domain/services/learning_session_service.dart';
 import '../../../learning_mode/domain/entities/learning_session.dart';
+import '../../domain/validators/session_safety_validator.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -27,8 +28,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final ImageService _imageService = ImageService();
   final ImageGenerationService _imageGenerationService =
       ImageGenerationService();
+  
+  // 会话安全验证器
+  late final SessionSafetyValidator _sessionSafetyValidator;
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
+    // 初始化会话安全验证器
+    _sessionSafetyValidator = SessionSafetyValidator(_chatService);
+    
     // 延迟加载会话列表，避免构造函数中的异步操作
     _initialize();
 
@@ -761,21 +768,69 @@ class ChatNotifier extends StateNotifier<ChatState> {
       debugPrint('🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
     }
     
-    // 检查是否有当前会话，如果没有则创建新会话
-    ChatSession? currentSession = state.currentSession;
-    if (currentSession == null) {
-      try {
-        await createNewSession();
-        // 确保新会话已创建
-        currentSession = state.currentSession;
-        if (currentSession == null) {
-          state = state.copyWith(error: '无法创建新的对话会话');
-          return;
+    // 🛡️ 会话安全验证 - 使用专门的安全验证器确保会话状态正确
+    final validationResult = await _sessionSafetyValidator.validateAndFixSession(
+      currentSession: state.currentSession,
+      availableSessions: state.sessions,
+    );
+    
+    if (!validationResult.isValid) {
+      // 验证失败，显示错误并终止发送
+      final errorMsg = validationResult.error ?? '会话状态验证失败';
+      debugPrint('🛡️ 会话安全验证失败: $errorMsg');
+      state = state.copyWith(error: errorMsg);
+      return;
+    }
+    
+    // 获取验证后的安全会话
+    final safeSession = validationResult.session!;
+    
+    // 如果会话被修复或更换，需要更新UI状态
+    if (validationResult.needsStateUpdate) {
+      debugPrint('🛡️ 会话安全修复: ${validationResult.message}');
+      
+      // 如果是新创建的会话，需要更新会话列表
+      if (validationResult.isRecovered && !state.sessions.any((s) => s.id == safeSession.id)) {
+        final updatedSessions = [safeSession, ...state.sessions];
+        state = state.copyWith(
+          currentSession: safeSession,
+          sessions: updatedSessions,
+          messages: [], // 新会话没有历史消息
+          error: null,
+        );
+      } else {
+        // 只是切换到现有会话
+        try {
+          final messages = await _chatService.getSessionMessages(safeSession.id);
+          state = state.copyWith(
+            currentSession: safeSession,
+            messages: messages,
+            error: null,
+          );
+        } catch (e) {
+          debugPrint('🛡️ 加载切换会话的消息失败: $e');
+          state = state.copyWith(
+            currentSession: safeSession,
+            messages: [], // 如果加载失败，使用空消息列表
+            error: null,
+          );
         }
-      } catch (e) {
-        state = state.copyWith(error: '创建新会话失败: $e');
-        return;
       }
+      
+      // 显示用户友好的提示信息（可选）
+      if (validationResult.message != null) {
+        // 这里可以考虑显示一个临时提示，告知用户会话已自动修复
+        // 为了不影响用户体验，暂时只在调试日志中显示
+        debugPrint('🛡️ 用户提示: ${validationResult.message}');
+      }
+    }
+    
+    // 确保我们有有效的当前会话
+    final currentSession = state.currentSession;
+    if (currentSession == null) {
+      // 这种情况理论上不应该发生，但为了安全起见保留检查
+      state = state.copyWith(error: '内部错误：无法获取有效的对话会话');
+      return;
     }
 
     if (text.isEmpty &&
