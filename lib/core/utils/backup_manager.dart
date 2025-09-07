@@ -8,6 +8,7 @@ import 'package:archive/archive.dart';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
+import '../../data/local/app_database.dart';
 
 /// 数据备份管理器
 ///
@@ -19,6 +20,110 @@ import '../exceptions/app_exceptions.dart';
 /// - 数据完整性验证
 class BackupManager {
   static const String _backupMetadataKey = 'backup_metadata';
+
+  // ============== 选择性备份（JSON 单文件，排除知识库） ==============
+  /// 导出仅包含核心数据（AI提供商配置 + 聊天记录 + 智能体，可选设置/自定义模型）。
+  /// 输出为单一 JSON 文件（扩展名 .aibackup），更便于跨平台手动管理。
+  Future<String> createSelectiveBackup({
+    required AppDatabase db,
+    String? customPath,
+    bool includePersonas = true,
+    bool includeSettings = false,
+    bool includeCustomModels = true,
+  }) async {
+    try {
+      final timestamp = DateFormat(AppConstants.backupDateFormat)
+          .format(DateTime.now());
+      final backupFileName = 'anywherechat_core_backup_'
+          '$timestamp${AppConstants.backupFileExtension}';
+
+      final outDir = customPath ?? await _getDefaultBackupPath();
+      final outFile = File(path.join(outDir, backupFileName));
+      await outFile.parent.create(recursive: true);
+
+      final data = await _collectCoreData(
+        db,
+        includePersonas: includePersonas,
+        includeSettings: includeSettings,
+        includeCustomModels: includeCustomModels,
+      );
+
+      final metadata = <String, dynamic>{
+        'version': AppConstants.appVersion,
+        'schemaVersion': db.schemaVersion,
+        'backupScope': 'core_only',
+        'type': BackupType.full.name,
+        'timestamp': DateTime.now().toIso8601String(),
+        'counts': {
+          'llm_configs': (data['llm_configs'] as List).length,
+          'custom_models': (data['custom_models'] as List).length,
+          'personas': (data['personas'] as List).length,
+          'persona_groups': (data['persona_groups'] as List).length,
+          'chat_sessions': (data['chat_sessions'] as List).length,
+          'chat_messages': (data['chat_messages'] as List).length,
+          'settings_keys': (data['settings'] as Map).length,
+        },
+      };
+
+      final checksum = _calculateChecksum(data);
+      metadata['checksum'] = checksum;
+
+      final envelope = {'metadata': metadata, 'data': data};
+      await outFile.writeAsString(jsonEncode(envelope), encoding: utf8);
+
+      await _updateBackupHistory(
+        outFile.path,
+        BackupMetadata(
+          version: AppConstants.appVersion,
+          timestamp: DateTime.now(),
+          type: BackupType.full,
+          checksum: checksum,
+        ),
+      );
+
+      await _cleanupOldBackups(outDir);
+      return outFile.path;
+    } catch (_) {
+      throw BackupException.createFailed();
+    }
+  }
+
+  /// 从 JSON 单文件恢复核心数据；不会触碰知识库相关表。
+  Future<void> restoreSelectiveBackup(
+    AppDatabase db,
+    String backupFilePath, {
+    RestoreMode mode = RestoreMode.overwrite,
+  }) async {
+    try {
+      final f = File(backupFilePath);
+      if (!await f.exists()) throw BackupException.invalidBackupFile();
+
+      final content = await f.readAsString(encoding: utf8);
+      final obj = jsonDecode(content) as Map<String, dynamic>;
+      if (!obj.containsKey('metadata') || !obj.containsKey('data')) {
+        throw BackupException.invalidBackupFile();
+      }
+
+      final metadata = BackupMetadata.fromJson(
+        obj['metadata'] as Map<String, dynamic>,
+      );
+      final data = obj['data'] as Map<String, dynamic>;
+
+      final calc = _calculateChecksum(data);
+      if (calc != metadata.checksum) {
+        throw BackupException.corruptedBackup();
+      }
+
+      // 创建恢复点
+      await _createRestorePoint();
+
+      // 恢复核心数据
+      await _restoreCoreData(db, data, mode: mode);
+    } catch (e) {
+      if (e is BackupException) rethrow;
+      throw BackupException.restoreFailed();
+    }
+  }
 
   /// 创建完整备份
   ///
@@ -288,6 +393,71 @@ class BackupManager {
     return {'metadata': metadata, 'data': backupData};
   }
 
+  /// 收集核心数据（仅白名单表），转换为 JSON 可序列化结构
+  Future<Map<String, dynamic>> _collectCoreData(
+    AppDatabase db, {
+    required bool includePersonas,
+    required bool includeSettings,
+    required bool includeCustomModels,
+  }) async {
+    final result = <String, dynamic>{
+      'llm_configs': <Map<String, dynamic>>[],
+      'custom_models': <Map<String, dynamic>>[],
+      'personas': <Map<String, dynamic>>[],
+      'persona_groups': <Map<String, dynamic>>[],
+      'chat_sessions': <Map<String, dynamic>>[],
+      'chat_messages': <Map<String, dynamic>>[],
+      'settings': <String, dynamic>{},
+    };
+
+    // LLM 配置
+    final llmConfigs = await db.getAllLlmConfigs();
+    result['llm_configs'] = llmConfigs.map((e) => e.toJson()).toList();
+
+    // 自定义模型（可选）
+    if (includeCustomModels) {
+      final customModels = await db.getAllCustomModels();
+      result['custom_models'] = customModels.map((e) => e.toJson()).toList();
+    }
+
+    // 智能体及分组（可选，建议包含，避免会话引用缺失）
+    if (includePersonas) {
+      final personas = await db.getAllPersonas();
+      result['personas'] = personas.map((e) => e.toJson()).toList();
+
+      final groups = await db.getAllPersonaGroups();
+      result['persona_groups'] = groups.map((e) => e.toJson()).toList();
+    }
+
+    // 会话与消息
+    final sessions = await db.getAllChatSessions();
+    result['chat_sessions'] = sessions.map((e) => e.toJson()).toList();
+
+    final allMessages = <Map<String, dynamic>>[];
+    for (final s in sessions) {
+      final msgs = await db.getMessagesBySession(s.id);
+      allMessages.addAll(msgs.map((e) => e.toJson()));
+    }
+    result['chat_messages'] = allMessages;
+
+    // 设置（可选，默认不导出）
+    if (includeSettings) {
+      final settings = await db.getAllSettings();
+      final whitelist = <String>{
+        AppConstants.keyThemeMode,
+        AppConstants.keyLastSelectedPersona,
+        AppConstants.keyBackupPath,
+        AppConstants.keyAutoBackup,
+      };
+      result['settings'] = {
+        for (final e in settings.entries)
+          if (whitelist.contains(e.key)) e.key: e.value,
+      };
+    }
+
+    return result;
+  }
+
   /// 收集备份数据
   Future<Map<String, dynamic>> _collectBackupData() async {
     final backupData = <String, dynamic>{};
@@ -385,6 +555,82 @@ class BackupManager {
         base64Decode(backupData['objectbox_database']),
       );
     }
+  }
+
+  /// 恢复核心数据（不会触碰知识库相关表）
+  Future<void> _restoreCoreData(
+    AppDatabase db,
+    Map<String, dynamic> data, {
+    RestoreMode mode = RestoreMode.overwrite,
+  }) async {
+    List<Map<String, dynamic>> listOf(String key) =>
+        (data[key] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+
+    final llmConfigs = listOf('llm_configs')
+        .map((e) => LlmConfigsTableData.fromJson(e))
+        .toList();
+    final customModels = listOf('custom_models')
+        .map((e) => CustomModelsTableData.fromJson(e))
+        .toList();
+    final personas = listOf('personas')
+        .map((e) => PersonasTableData.fromJson(e))
+        .toList();
+    final personaGroups = listOf('persona_groups')
+        .map((e) => PersonaGroupsTableData.fromJson(e))
+        .toList();
+    final sessions = listOf('chat_sessions')
+        .map((e) => ChatSessionsTableData.fromJson(e))
+        .toList();
+    final messages = listOf('chat_messages')
+        .map((e) => ChatMessagesTableData.fromJson(e))
+        .toList();
+    final settingsMap =
+        (data['settings'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+
+    await db.transaction(() async {
+      if (mode == RestoreMode.overwrite) {
+        // 清空相关表（知识库保持不变）
+        await db.customStatement('DELETE FROM chat_messages_table');
+        await db.customStatement('DELETE FROM chat_sessions_table');
+        await db.customStatement('DELETE FROM personas_table');
+        await db.customStatement('DELETE FROM persona_groups_table');
+        await db.customStatement('DELETE FROM custom_models_table');
+        await db.customStatement('DELETE FROM llm_configs_table');
+      }
+
+      if (llmConfigs.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.llmConfigsTable, llmConfigs.map((e) => e.toCompanion(true)).toList()));
+      }
+      if (customModels.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.customModelsTable, customModels.map((e) => e.toCompanion(true)).toList()));
+      }
+      if (personaGroups.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.personaGroupsTable,
+            personaGroups.map((e) => e.toCompanion(true)).toList()));
+      }
+      if (personas.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.personasTable, personas.map((e) => e.toCompanion(true)).toList()));
+      }
+      if (sessions.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.chatSessionsTable, sessions.map((e) => e.toCompanion(true)).toList()));
+      }
+      if (messages.isNotEmpty) {
+        await db.batch((b) => b.insertAllOnConflictUpdate(
+            db.chatMessagesTable, messages.map((e) => e.toCompanion(true)).toList()));
+      }
+
+      // 设置覆盖写入（仅导出的键）
+      if (settingsMap.isNotEmpty) {
+        for (final entry in settingsMap.entries) {
+          await db.setSetting(entry.key, entry.value.toString());
+        }
+      }
+    });
   }
 
   /// 获取默认备份路径
@@ -494,6 +740,9 @@ class BackupManager {
 /// 备份类型
 enum BackupType { full, incremental, restorePoint }
 
+/// 恢复模式
+enum RestoreMode { overwrite, merge }
+
 /// 备份元数据
 class BackupMetadata {
   final String version;
@@ -516,10 +765,13 @@ class BackupMetadata {
   };
 
   factory BackupMetadata.fromJson(Map<String, dynamic> json) => BackupMetadata(
-    version: json['version'],
-    timestamp: DateTime.parse(json['timestamp']),
-    type: BackupType.values.byName(json['type']),
-    checksum: json['checksum'],
+    version: (json['version'] ?? AppConstants.appVersion) as String,
+    timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+    // 兼容早期未写入 type 的 JSON 备份
+    type: json['type'] != null
+        ? BackupType.values.byName(json['type'])
+        : BackupType.full,
+    checksum: (json['checksum'] ?? '') as String,
   );
 }
 
