@@ -125,6 +125,82 @@ class BackupManager {
     }
   }
 
+  /// 创建/替换自动备份文件（固定文件名，重复覆盖上一次）。
+  /// 返回最终写入的文件路径。
+  Future<String> createOrReplaceAutoBackup({
+    required AppDatabase db,
+    String? directory,
+    bool includePersonas = true,
+    bool includeSettings = false,
+    bool includeCustomModels = true,
+  }) async {
+    final outDir = directory ?? await getDefaultBackupDirectory();
+    final fileName = 'anywherechat_auto_backup${AppConstants.backupFileExtension}';
+    final file = File(path.join(outDir, fileName));
+    await file.parent.create(recursive: true);
+
+    final data = await _collectCoreData(
+      db,
+      includePersonas: includePersonas,
+      includeSettings: includeSettings,
+      includeCustomModels: includeCustomModels,
+    );
+
+    final metadata = <String, dynamic>{
+      'version': AppConstants.appVersion,
+      'schemaVersion': db.schemaVersion,
+      'backupScope': 'core_only',
+      'type': BackupType.full.name,
+      'timestamp': DateTime.now().toIso8601String(),
+      'counts': {
+        'llm_configs': (data['llm_configs'] as List).length,
+        'custom_models': (data['custom_models'] as List).length,
+        'personas': (data['personas'] as List).length,
+        'persona_groups': (data['persona_groups'] as List).length,
+        'chat_sessions': (data['chat_sessions'] as List).length,
+        'chat_messages': (data['chat_messages'] as List).length,
+        'settings_keys': (data['settings'] as Map).length,
+      },
+    };
+    final checksum = _calculateChecksum(data);
+    metadata['checksum'] = checksum;
+
+    final envelope = {'metadata': metadata, 'data': data};
+    await file.writeAsString(jsonEncode(envelope), encoding: utf8);
+
+    // 历史仅保留该文件，先清理同目录的历史多余文件
+    try {
+      final dir = Directory(outDir);
+      final files = await dir
+          .list()
+          .where((e) => e is File && e.path.endsWith(AppConstants.backupFileExtension))
+          .cast<File>()
+          .toList();
+      for (final f in files) {
+        if (path.basename(f.path) != path.basename(file.path)) {
+          try {
+            await f.delete();
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    await _updateBackupHistory(
+      file.path,
+      BackupMetadata(
+        version: AppConstants.appVersion,
+        timestamp: DateTime.now(),
+        type: BackupType.full,
+        checksum: checksum,
+      ),
+    );
+
+    return file.path;
+  }
+
+  /// 对外暴露默认备份目录（供自动备份调度使用）
+  Future<String> getDefaultBackupDirectory() => _getDefaultBackupPath();
+
   /// 创建完整备份
   ///
   /// 包含：

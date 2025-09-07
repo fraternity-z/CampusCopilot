@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../providers/data_management_provider.dart';
 import '../../../llm_chat/presentation/providers/chat_provider.dart';
@@ -21,6 +22,8 @@ class DataManagementScreen extends ConsumerStatefulWidget {
 class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   bool _isLoading = false;
   bool _autoBackupEnabled = false;
+  String _autoBackupTime = '03:00';
+  String? _autoBackupPath;
 
   @override
   void initState() {
@@ -32,9 +35,24 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _autoBackupEnabled = prefs.getBool('auto_backup_enabled') ?? false;
-      });
+      final enabled = prefs.getBool('auto_backup_enabled') ?? false;
+      final time = prefs.getString('auto_backup_time') ?? '03:00';
+      String? path = prefs.getString('auto_backup_path');
+      // 若路径未设置，使用默认目录
+      if (path == null) {
+        try {
+          final manager = ref.read(backupManagerProvider);
+          path = await manager.getDefaultBackupDirectory();
+          await prefs.setString('auto_backup_path', path);
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() {
+          _autoBackupEnabled = enabled;
+          _autoBackupTime = time;
+          _autoBackupPath = path;
+        });
+      }
     } catch (e) {
       // 处理错误
     }
@@ -104,13 +122,31 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('自动备份'),
-              subtitle: const Text('定期自动备份数据'),
+              subtitle: const Text('定期自动备份数据（仅保留最近一次）'),
               trailing: Switch(
                 value: _autoBackupEnabled,
                 onChanged: _toggleAutoBackup,
               ),
               contentPadding: EdgeInsets.zero,
             ),
+            if (_autoBackupEnabled) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.access_time),
+                title: const Text('备份时间'),
+                subtitle: Text(_autoBackupTime),
+                onTap: _pickAutoBackupTime,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: const Text('备份位置'),
+                subtitle: Text(_autoBackupPath ?? '默认应用文档目录'),
+                onTap: _pickAutoBackupDirectory,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
           ],
         ),
       ),
@@ -457,6 +493,50 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     setState(() {
       _autoBackupEnabled = value;
     });
+  }
+
+  /// 选择自动备份时间
+  Future<void> _pickAutoBackupTime() async {
+    final parts = _autoBackupTime.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.tryParse(parts[0]) ?? 3,
+      minute: int.tryParse(parts[1]) ?? 0,
+    );
+    final picked = await showTimePicker(context: context, initialTime: initialTime);
+    if (picked != null) {
+      final hh = picked.hour.toString().padLeft(2, '0');
+      final mm = picked.minute.toString().padLeft(2, '0');
+      final str = '$hh:$mm';
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auto_backup_time', str);
+      if (mounted) setState(() => _autoBackupTime = str);
+    }
+  }
+
+  /// 选择自动备份路径
+  Future<void> _pickAutoBackupDirectory() async {
+    try {
+      final directory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择自动备份保存位置',
+      );
+      if (directory != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auto_backup_path', directory);
+        if (mounted) setState(() => _autoBackupPath = directory);
+      }
+    } catch (e) {
+      // 移动端可能不支持目录选择，回退为默认目录
+      final manager = ref.read(backupManagerProvider);
+      final def = await manager.getDefaultBackupDirectory();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auto_backup_path', def);
+      if (mounted) setState(() => _autoBackupPath = def);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('当前平台不支持选择目录，已使用默认目录')),
+        );
+      }
+    }
   }
 
   /// 清除聊天记录

@@ -4,6 +4,7 @@ import 'dio_client.dart';
 import 'proxy_config.dart';
 import '../../features/settings/presentation/providers/general_settings_provider.dart';
 import '../../shared/utils/debug_log.dart';
+import '../utils/auto_backup_scheduler.dart';
 
 /// 代理服务
 ///
@@ -41,6 +42,9 @@ final proxyServiceProvider = Provider<ProxyService>((ref) {
 final proxyConfigWatcherProvider = Provider<void>((ref) {
   final proxyService = ref.watch(proxyServiceProvider);
   final generalSettings = ref.watch(generalSettingsProvider);
+
+  // 启动自动备份调度（在应用生命周期内常驻）
+  ref.watch(autoBackupInitProvider);
 
   // 当代理配置发生变化时，更新代理服务
   ref.listen(generalSettingsProvider.select((state) => state.proxyConfig), (

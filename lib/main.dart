@@ -5,7 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
-import 'app/app.dart';
+import 'package:campus_copilot/app/app.dart';
 import 'shared/utils/keyboard_utils.dart';
 import 'shared/utils/debug_log.dart';
 import 'repository/preference.dart' as preference;
