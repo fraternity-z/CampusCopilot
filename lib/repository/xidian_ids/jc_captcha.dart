@@ -287,7 +287,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(FlutterI18n.translate(context, "login.slider_title")),
+        title: Text(_safeTr(context, "login.slider_title", fallback: "滑动验证")),
       ),
       body: FutureBuilder<SliderCaptchaClientProvider>(
         future: provider,
@@ -356,6 +356,17 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
         },
       ),
     );
+  }
+}
+
+/// 安全获取多语言文案，未初始化或异常时回退到默认文案
+String _safeTr(BuildContext context, String key, {required String fallback}) {
+  try {
+    final text = FlutterI18n.translate(context, key);
+    if (text.isEmpty || text == key) return fallback;
+    return text;
+  } catch (e) {
+    return fallback;
   }
 }
 

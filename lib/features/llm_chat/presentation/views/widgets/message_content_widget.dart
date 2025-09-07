@@ -9,7 +9,6 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
-import 'package:campus_copilot/shared/charts/chart_from_json.dart';
 import '../../../../../app/app_router.dart' show codeBlockSettingsProvider, generalSettingsProvider, CodeBlockSettings;
 import 'thinking_chain_widget.dart';
 import '../../../domain/entities/chat_message.dart';
@@ -454,7 +453,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
           );
         }
       }
-      final content = match.group(1)!;
+      final content = match.group(1) ?? '';
       // Math
       segments.add(
         Container(
@@ -530,6 +529,10 @@ class CodeBlockLanguageDetector {
   /// 智能语言检测：完全基于 highlight 的相关性评分
   static String detectLanguage(String code) {
     try {
+      if (code.trim().isEmpty) {
+        return 'text';
+      }
+      
       const languages = [
         'python',
         'javascript',
@@ -563,10 +566,14 @@ class CodeBlockLanguageDetector {
             bestScore = score;
             best = lang;
           }
-        } catch (_) {}
+        } catch (e) {
+          // 忽略单个语言解析错误，继续尝试其他语言
+          continue;
+        }
       }
       return bestScore >= 8 ? best : 'text';
-    } catch (_) {
+    } catch (e) {
+      // 如果整个检测过程失败，返回默认值
       return 'text';
     }
   }
@@ -726,7 +733,11 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
     final theme = Theme.of(context);
     final lang =
         _languageInfoMap[widget.language.toLowerCase()] ??
-        _languageInfoMap['text']!;
+        const LanguageInfo(
+          icon: Icons.description,
+          displayName: 'Plain Text',
+          color: Color(0xFF757575),
+        );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 5, 6, 5),
@@ -761,20 +772,6 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
             ),
           ),
           const Spacer(),
-          // 图表创建按钮（当代码块为 chart-json 或 json 且符合规范时显示）
-          if ((widget.language.toLowerCase() == 'chart-json' || widget.language.toLowerCase() == 'json')
-              && isChartSpecJson(widget.code))
-            IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-              iconSize: 14,
-              visualDensity: VisualDensity.compact,
-              tooltip: '创建图表',
-              icon: const Icon(Icons.pie_chart_outline),
-              onPressed: () {
-                showChartPreviewDialog(context, widget.code);
-              },
-            ),
           if (widget.settings.enableLineNumbers)
             IconButton(
               padding: EdgeInsets.zero,
@@ -987,7 +984,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
     final fixed = Map<String, TextStyle>.from(base);
     const keys = ['comment', 'doctag', 'quote'];
     for (var k in keys) {
-      if (fixed.containsKey(k)) {
+      if (fixed.containsKey(k) && fixed[k] != null) {
         fixed[k] = fixed[k]!.copyWith(fontStyle: FontStyle.normal);
       }
     }

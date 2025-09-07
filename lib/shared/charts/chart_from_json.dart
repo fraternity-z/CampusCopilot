@@ -108,6 +108,7 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
   final chartType = (spec['chart'] as String?)?.toLowerCase();
   final data = (spec['data'] as List? ?? const [])
       .whereType<Map>()
+      .cast<Map>()
       .toList(growable: false);
   final encode = (spec['encode'] as Map? ?? const {})
       .map((k, v) => MapEntry(k.toString(), v));
@@ -120,10 +121,11 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
 
   final variables = <String, g.Variable>{};
   // 推断字段类型并构造合适的 Variable 泛型
-  if (xField != null) {
+  if (xField != null && xField.isNotEmpty) {
     final sample = _firstNonNull(data, xField);
     if (sample is num) {
-      variables['x'] = g.Variable<Map, num>(accessor: (Map map) {
+      variables['x'] = g.Variable(accessor: (dynamic datum) {
+        final map = datum as Map;
         final v = map[xField];
         if (v is num) return v;
         if (v is String) {
@@ -133,7 +135,8 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
         return 0;
       });
     } else if (sample is DateTime) {
-      variables['x'] = g.Variable<Map, DateTime>(accessor: (Map map) {
+      variables['x'] = g.Variable(accessor: (dynamic datum) {
+        final map = datum as Map;
         final v = map[xField];
         if (v is DateTime) return v;
         if (v is String) {
@@ -144,14 +147,16 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
         return DateTime.fromMillisecondsSinceEpoch(0);
       });
     } else {
-      variables['x'] = g.Variable<Map, String>(accessor: (Map map) {
+      variables['x'] = g.Variable(accessor: (dynamic datum) {
+        final map = datum as Map;
         final v = map[xField];
         return v?.toString() ?? '';
       });
     }
   }
-  if (yField != null) {
-    variables['y'] = g.Variable<Map, num>(accessor: (Map map) {
+  if (yField != null && yField.isNotEmpty) {
+    variables['y'] = g.Variable(accessor: (dynamic datum) {
+      final map = datum as Map;
       final v = map[yField];
       if (v is num) return v;
       if (v is String) {
@@ -161,8 +166,9 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
       return 0;
     });
   }
-  if (colorField != null) {
-    variables['color'] = g.Variable<Map, String>(accessor: (Map map) {
+  if (colorField != null && colorField.isNotEmpty) {
+    variables['color'] = g.Variable(accessor: (dynamic datum) {
+      final map = datum as Map;
       final v = map[colorField];
       return v?.toString() ?? '';
     });
@@ -180,11 +186,15 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
 
   switch (chartType) {
     case 'line':
+      if (!(xField != null && xField.isNotEmpty && yField != null && yField.isNotEmpty)) {
+        return _error('折线图需要 encode.x 与 encode.y');
+      }
       return g.Chart(
         data: data,
         variables: variables,
         marks: [
           g.LineMark(
+            position: g.Varset('x') * g.Varset('y'),
             shape: g.ShapeEncode(value: g.BasicLineShape(smooth: options?['smooth'] == true)),
             color: colorField != null ? g.ColorEncode(variable: 'color') : null,
           ),
@@ -194,13 +204,22 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
         tooltip: g.TooltipGuide(),
       );
     case 'bar':
+      if (!(xField != null && xField.isNotEmpty && yField != null && yField.isNotEmpty)) {
+        return _error('柱状图需要 encode.x 与 encode.y');
+      }
       return g.Chart(
         data: data,
         variables: variables,
         marks: [
           g.IntervalMark(
+            position: g.Varset('x') * g.Varset('y'),
             color: colorField != null ? g.ColorEncode(variable: 'color') : null,
-            modifiers: [if (options?['stack'] == true) g.StackModifier()],
+            size: g.SizeEncode(value: 12),
+            // 分组并列柱：当存在颜色维度且未开启堆叠时，启用 Dodge 分组
+            modifiers: [
+              if (options?['stack'] == true) g.StackModifier()
+              else if (colorField != null && (options?['stack'] != true)) g.DodgeModifier()
+            ],
           ),
         ],
         axes: axes,
@@ -209,11 +228,15 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
         tooltip: g.TooltipGuide(),
       );
     case 'scatter':
+      if (!(xField != null && xField.isNotEmpty && yField != null && yField.isNotEmpty)) {
+        return _error('散点图需要 encode.x 与 encode.y');
+      }
       return g.Chart(
         data: data,
         variables: variables,
         marks: [
           g.PointMark(
+            position: g.Varset('x') * g.Varset('y'),
             size: g.SizeEncode(value: 5),
             color: colorField != null ? g.ColorEncode(variable: 'color') : null,
           ),
@@ -231,11 +254,13 @@ Widget _buildChartFromSpec(Map<String, dynamic> spec) {
       return g.Chart(
         data: data,
         variables: {
-          'category': g.Variable<Map, String>(accessor: (Map map) {
+          'category': g.Variable(accessor: (dynamic datum) {
+            final map = datum as Map;
             final v = map[category];
             return v?.toString() ?? '';
           }),
-          'value': g.Variable<Map, num>(accessor: (Map map) {
+          'value': g.Variable(accessor: (dynamic datum) {
+            final map = datum as Map;
             final v = map[yField];
             if (v is num) return v;
             if (v is String) {
@@ -265,9 +290,12 @@ Widget _error(String msg) => Center(
     );
 
 Object? _firstNonNull(List<Map> data, String field) {
+  if (field.isEmpty) return null;
   for (final row in data) {
-    final v = row[field];
-    if (v != null) return v;
+    if (row.containsKey(field)) {
+      final v = row[field];
+      if (v != null) return v;
+    }
   }
   return null;
 }

@@ -19,7 +19,8 @@
       "Read(E:\\code\\traintime_pda\\lib/**)",
       "WebFetch(domain:docs.objectbox.io)",
       "Bash(echo:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
