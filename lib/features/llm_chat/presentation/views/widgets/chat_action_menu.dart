@@ -5,6 +5,7 @@ import '../../providers/chat_provider.dart';
 // 删除AI搜索切换相关的导入，开关已移动到输入区
 import '../../../../../core/widgets/elegant_notification.dart';
 import '../../../domain/services/export_service.dart';
+import 'chart_builder_dialog.dart';
 
 /// 聊天操作菜单组件
 ///
@@ -52,6 +53,17 @@ class ChatActionMenu extends ConsumerWidget {
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
       itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'chart_builder',
+          child: _buildMenuItem(
+            context: context,
+            icon: Icons.insert_chart_outlined,
+            title: '图表绘制',
+            subtitle: '上传图片/文件，AI解析绘制',
+            color: const Color(0xFF3F51B5),
+          ),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'export_conversation',
           child: _buildMenuItem(
@@ -160,6 +172,13 @@ class ChatActionMenu extends ConsumerWidget {
     // 使用下一帧再执行，避免与 PopupMenu 的遮罩层产生覆盖/重叠
     WidgetsBinding.instance.addPostFrameCallback((_) {
       switch (action) {
+        case 'chart_builder':
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => const ChartBuilderDialog(),
+          );
+          break;
         case 'export_conversation':
           _showExportDialog(context, ref);
           break;

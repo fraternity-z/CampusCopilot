@@ -121,7 +121,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         KeyboardUtils.hideKeyboard(context);
       },
       behavior: HitTestBehavior.translucent,
-      child: Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea()),
+      child: Scaffold(
+        appBar: _buildAppBar(), 
+        body: _buildMainChatArea(),
+      ),
     );
   }
 
