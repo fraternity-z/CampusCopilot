@@ -1,6 +1,7 @@
 # Campus Copilot - 智能校园助手
 
 一个专为西电校园生活设计的智能AI助手，集成多模态AI对话、课程管理、知识库检索、智能体管理等功能，让AI助手成为你的校园智能伙伴。
+
 ![启动](https://github.com/user-attachments/assets/5669290a-980c-4084-a951-53a76148e2da)
 
 ## ✨ 主要特性
