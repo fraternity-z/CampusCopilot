@@ -27,7 +27,6 @@ Map<String, dynamic> _$$ThemeColorSettingsImplToJson(
     };
 
 const _$ThemeColorTypeEnumMap = {
-  ThemeColorType.red: 'red',
   ThemeColorType.yellow: 'yellow',
   ThemeColorType.blue: 'blue',
   ThemeColorType.green: 'green',

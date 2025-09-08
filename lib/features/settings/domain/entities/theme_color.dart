@@ -6,7 +6,6 @@ part 'theme_color.g.dart';
 
 /// 主题颜色枚举
 enum ThemeColorType {
-  red('红色', Color(0xFFEF4444), 'red'),
   yellow('黄色', Color(0xFFF59E0B), 'yellow'),
   blue('蓝色', Color(0xFF3B82F6), 'blue'),
   green('绿色', Color(0xFF10B981), 'green'),
