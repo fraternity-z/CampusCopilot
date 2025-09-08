@@ -1,25 +1,26 @@
 # Campus Copilot - 智能校园助手
 
 一个专为西电校园生活设计的智能AI助手，集成多模态AI对话、课程管理、知识库检索、智能体管理等功能，让AI助手成为你的校园智能伙伴。
+![启动](https://github.com/user-attachments/assets/5669290a-980c-4084-a951-53a76148e2da)
 
 ## ✨ 主要特性
 
 ### 🎓 智能校园管理
-- **课程表管理**: 自动登录西电教务系统，获取个人课程安排![课表](https://github.com/user-attachments/assets/bd325a50-a0d5-4966-ab50-5b58f3fcf028)
+- **课程表管理**: 自动登录西电教务系统，获取个人课程安排
 - **实时课程状态**: 显示当前课程和下节课信息，支持课程时间智能提醒
 - **学期管理**: 自动识别学期时间，支持多学期课程数据缓存
 - **个人信息管理**: 统一的校园个人信息中心
 
 ### 🤖 多模态AI对话
 
-- **多供应商支持**: OpenAI、Google Gemini、Anthropic Claude等主流AI服务![AI](https://github.com/user-attachments/assets/d5db4cb9-ace6-4ae7-97e9-e0ed957af627)
+- **多供应商支持**: OpenAI、Google Gemini、Anthropic Claude等主流AI服务
 - **流式对话**: 实时响应，支持思考链显示（o1、Gemini Thinking等）
 - **多模态支持**: 文本、图片、文档输入，支持各类文件格式
 - **上下文管理**: 可配置的上下文窗口管理（0-20条消息）
 - **智能搜索集成**: 集成多种搜索引擎，支持实时信息检索
 
 ### 👥 智能体管理
-- **个性化智能体**: 创建和管理不同角色的AI助手（学习助手、编程助手、写作助手等）![助手](https://github.com/user-attachments/assets/79a73538-ba15-437b-a363-522e91834a32)
+- **个性化智能体**: 创建和管理不同角色的AI助手（学习助手、编程助手、写作助手等）
 - **智能体分组**: 按类别组织智能体，支持拖拽排序和分组管理
 - **系统提示词**: 自定义智能体行为和专业领域
 - **API配置绑定**: 每个智能体可绑定不同的API配置和模型
@@ -35,13 +36,15 @@
 - **Modern Material Design**: Material Design 3设计语言
 - **卡片式布局**: 美观的卡片式信息展示
 - **全屏图片查看**: 支持缩放、平移的沉浸式图片查看
-- **代码高亮**: 多语言代码语法高亮显示，支持复制功能
+- **代码高亮**: 多语言代码语法高亮显示，支持复制功能<img width="2500" height="1363" alt="屏幕截图 2025-09-08 213157" src="https://github.com/user-attachments/assets/fa587e38-9a8b-4fcb-9580-ae06430b71e8" />
+
 - **数学公式**: LaTeX数学公式完整渲染支持
 - **Mermaid图表**: 流程图、时序图、甘特图等图表渲染
 
 ### ⚙️ 高级设置
 - **模型参数**: 温度、最大Token、TopP等参数精确调节
-- **主题切换**: Material Design 3深色/浅色主题自动适配
+- **主题切换**: Material Design 3深色/浅色主题自动适配<img width="2533" height="1374" alt="屏幕截图 2025-09-08 213325" src="https://github.com/user-attachments/assets/f932c354-ac26-450f-837e-0331f4117bc1" />
+
 - **侧边栏管理**: 可折叠的响应式侧边栏设计
 - **数据管理**: 完整的本地数据存储和备份功能
 - **MCP集成**: 支持MCP (Model Context Protocol) 服务器集成
@@ -171,22 +174,28 @@ flutter run
 ## 📖 功能详解
 
 ### 🎓 校园日常管理
-- **智能课程表**: 自动从西电教务系统同步课程安排
-- **实时状态**: 显示当前正在上的课和下节课信息
+- **智能课程表**: 自动从西电教务系统同步课程安排![课表](https://github.com/user-attachments/assets/561e5306-882c-4fe1-884f-e9a10fdb309f)
+
+- **实时状态**: 显示当前正在上的课和下节课信息<img width="2518" height="1019" alt="屏幕截图 2025-09-08 213556" src="https://github.com/user-attachments/assets/9d1cdf04-0772-41cc-a88a-a1dcae9a27a2" />
+
 - **课程预览**: 卡片式展示今日课程概览和计划安排
 - **学期管理**: 自动识别学期周次，支持多学期数据
 - **登录记忆**: 支持登录信息保存，应用启动时自动登录
 
 ### 🤖 AI对话功能
-- **多会话管理**: 创建和管理多个独立的对话会话
-- **智能体选择**: 从预设或自定义智能体中选择对话伙伴
-- **多模态输入**: 支持文本、图片、文档等多种输入方式
+- **多会话管理**: 创建和管理多个独立的对话会话<img width="496" height="1511" alt="屏幕截图 2025-09-08 214735" src="https://github.com/user-attachments/assets/dabe98f4-a73a-4bbd-93dd-15dfa72a39a2" />
+
+- **智能体选择**: 从预设或自定义智能体中选择对话伙伴<img width="2488" height="1447" alt="image" src="https://github.com/user-attachments/assets/a91a6d7c-640d-4ad0-9832-cd401b37399e" />
+
+- **多模态输入**: 支持文本、图片、文档等多种输入方式<img width="1872" height="761" alt="屏幕截图 2025-09-08 213717" src="https://github.com/user-attachments/assets/f00dcce7-fb0d-4793-9fb5-2c14e22669d9" />
+
 - **实时流式响应**: 打字机效果的实时响应体验
 - **思考过程可视化**: 支持o1、Gemini Thinking等模型的思考过程展示
 - **上下文管理**: 可配置的对话历史管理（0-20条消息）
 
 ### 👥 智能体管理
-- **智能体创建**: 创建学习助手、编程助手、写作助手等角色
+- **智能体创建**: 创建学习助手、编程助手、写作助手等角色<img width="2519" height="1479" alt="屏幕截图 2025-09-08 214634" src="https://github.com/user-attachments/assets/bd26fbd6-3898-4863-8339-3ce7bb639020" />
+
 - **分组管理**: 按专业、用途等维度组织智能体
 - **系统提示词**: 自定义智能体的行为模式和专业领域
 - **API绑定**: 为不同智能体配置专用的API和模型
