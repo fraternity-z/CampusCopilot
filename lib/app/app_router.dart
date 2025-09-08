@@ -26,6 +26,7 @@ import '../features/settings/presentation/providers/ui_settings_provider.dart';
 import '../features/knowledge_base/presentation/views/knowledge_base_screen.dart';
 import '../features/learning_mode/presentation/views/learning_mode_settings_screen.dart';
 import '../features/daily_management/presentation/views/daily_dashboard_screen.dart';
+import '../features/usage_help/presentation/views/usage_help_screen.dart';
 
 /// 侧边栏标签页状态管理
 final sidebarTabProvider = StateProvider<SidebarTab>(
@@ -368,6 +369,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const AboutScreen(),
               ),
             ],
+          ),
+
+          // 使用帮助
+          GoRoute(
+            path: '/help',
+            name: 'help',
+            builder: (context, state) => const UsageHelpScreen(),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 关于页面
@@ -297,9 +298,7 @@ class AboutScreen extends ConsumerWidget {
 
   /// 显示帮助
   void _showHelp(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('帮助页面开发中...')),
-    );
+    context.go('/help');
   }
 
   /// 显示反馈
