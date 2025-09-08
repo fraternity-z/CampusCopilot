@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_router.dart';
-import '../shared/theme/app_theme.dart';
+import '../shared/theme/dynamic_theme_manager.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
+import '../features/settings/presentation/providers/theme_color_provider.dart';
 import '../features/settings/domain/entities/app_settings.dart' as app_settings;
 import '../core/network/proxy_service.dart';
 import 'widgets/splash_screen.dart';
@@ -24,15 +25,16 @@ class AIAssistantApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final settings = ref.watch(settingsProvider);
+    final colorSettings = ref.watch(themeColorProvider);
     final shouldShowSplash = ref.watch(shouldShowSplashProvider);
 
     return MaterialApp.router(
       title: 'Campus Copilot',
       debugShowCheckedModeBanner: false,
 
-      // 主题配置
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      // 主题配置 - 使用动态颜色主题
+      theme: DynamicThemeManager.getLightTheme(colorSettings.currentColor),
+      darkTheme: DynamicThemeManager.getDarkTheme(colorSettings.currentColor),
       themeMode: _convertThemeMode(settings.themeMode),
 
       // 路由配置

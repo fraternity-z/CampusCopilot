@@ -126,9 +126,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   /// 构建纯文本内容（禁用 Markdown 渲染时）
   Widget _buildPlainTextContent(BuildContext context, String content) {
     final theme = Theme.of(context);
-    final color = widget.message.isFromUser
-        ? theme.colorScheme.onPrimaryContainer
-        : theme.colorScheme.onSurface;
+    final color = _getFixedTextColor(context);
     final style = GoogleFonts.inter(
       textStyle: theme.textTheme.bodyMedium?.copyWith(
         color: color,
@@ -338,9 +336,7 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
   /// 构建基础文本样式
   TextStyle _buildBaseTextStyle(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = widget.message.isFromUser
-        ? theme.colorScheme.onPrimaryContainer
-        : theme.colorScheme.onSurface;
+    final textColor = _getFixedTextColor(context);
 
     final bodyFont = GoogleFonts.inter(textStyle: theme.textTheme.bodyMedium);
     
@@ -349,6 +345,13 @@ class _MessageContentWidgetState extends ConsumerState<MessageContentWidget> {
       height: 1.7, 
       letterSpacing: 0.2,
     );
+  }
+
+  /// 获取固定的文字颜色（不随主题颜色变化）
+  Color _getFixedTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    // 浅色系统使用黑色，深色系统使用白色
+    return brightness == Brightness.light ? Colors.black : Colors.white;
   }
 
   /// 从内容中分离思考链和正文
