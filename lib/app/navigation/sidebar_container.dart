@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/ui_constants.dart';
 import '../../features/settings/presentation/providers/ui_settings_provider.dart';
@@ -282,19 +281,6 @@ Widget _buildTabIcon(
   final Color color = isSelected
       ? Theme.of(context).colorScheme.primary
       : Theme.of(context).colorScheme.onSurfaceVariant;
-
-  // 优先使用配置中的 asset；若为空且为助手页签，使用默认 assistant.svg
-  final String? assetPath = config.asset ??
-      (config.label == '助手' ? 'assets/logos/assistant.svg' : null);
-
-  if (assetPath != null) {
-    return SvgPicture.asset(
-      assetPath,
-      width: UIConstants.iconSizeMedium,
-      height: UIConstants.iconSizeMedium,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  }
 
   return Icon(
     config.icon,
