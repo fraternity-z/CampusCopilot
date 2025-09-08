@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../providers/persona_provider.dart';
 import '../providers/persona_group_provider.dart';
@@ -89,10 +90,14 @@ class _PersonaManagementDialogState
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.smart_toy,
-            color: Theme.of(context).colorScheme.primary,
-            size: 28,
+          SvgPicture.asset(
+            'assets/logos/assistant.svg',
+            width: 28,
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              Theme.of(context).colorScheme.primary,
+              BlendMode.srcIn,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

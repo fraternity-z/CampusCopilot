@@ -112,6 +112,96 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
               ),
               contentPadding: EdgeInsets.zero,
             ),
+
+
+            if (_autoBackupEnabled) ...[
+              const SizedBox(height: 8),
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.03),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.schedule,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    '备份时间',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        _autoBackupTime,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '每日定时自动备份',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 16,
+                    ),
+                  ),
+                  onTap: _pickAutoBackupTime,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: const Text('备份位置'),
+                subtitle: Text(_autoBackupPath ?? '默认应用文档目录'),
+                onTap: _pickAutoBackupDirectory,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+
           ],
         ),
       ),
@@ -559,6 +649,135 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       _autoBackupEnabled = value;
     });
   }
+
+
+
+  /// 选择自动备份时间
+  Future<void> _pickAutoBackupTime() async {
+    final parts = _autoBackupTime.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.tryParse(parts[0]) ?? 3,
+      minute: int.tryParse(parts[1]) ?? 0,
+    );
+    final picked = await showTimePicker(
+      context: context, 
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              hourMinuteShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                  width: 2.5,
+                ),
+              ),
+              hourMinuteColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              hourMinuteTextColor: Theme.of(context).colorScheme.primary,
+              hourMinuteTextStyle: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+                letterSpacing: 2.0,
+              ),
+              dayPeriodShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                  width: 2,
+                ),
+              ),
+              dayPeriodColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              dayPeriodTextColor: Theme.of(context).colorScheme.primary,
+              dayPeriodTextStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              dialBackgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+              dialHandColor: Theme.of(context).colorScheme.primary,
+              dialTextColor: Theme.of(context).colorScheme.onSurface,
+              dialTextStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              entryModeIconColor: Theme.of(context).colorScheme.primary,
+              helpTextStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                elevation: 4,
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      final hh = picked.hour.toString().padLeft(2, '0');
+      final mm = picked.minute.toString().padLeft(2, '0');
+      final str = '$hh:$mm';
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auto_backup_time', str);
+      if (mounted) setState(() => _autoBackupTime = str);
+    }
+  }
+
+  /// 选择自动备份路径
+  Future<void> _pickAutoBackupDirectory() async {
+    try {
+      final directory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择自动备份保存位置',
+      );
+      if (directory != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auto_backup_path', directory);
+        if (mounted) setState(() => _autoBackupPath = directory);
+      }
+    } catch (e) {
+      // 移动端可能不支持目录选择，回退为默认目录
+      final manager = ref.read(backupManagerProvider);
+      final def = await manager.getDefaultBackupDirectory();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auto_backup_path', def);
+      if (mounted) setState(() => _autoBackupPath = def);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('当前平台不支持选择目录，已使用默认目录')),
+        );
+      }
+    }
+  }
+
 
   /// 清除聊天记录
   Future<void> _clearChatHistory() async {

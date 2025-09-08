@@ -59,8 +59,9 @@ class UIConstants {
 class TabConfig {
   final IconData icon;
   final String label;
+  final String? asset;
 
-  const TabConfig({required this.icon, required this.label});
+  const TabConfig({required this.icon, required this.label, this.asset});
 }
 
 /// 侧边栏标签页配置

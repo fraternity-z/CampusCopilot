@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../theme/app_theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// 现代化智能体卡片
 class ModernPersonaCard extends StatefulWidget {
@@ -283,7 +284,12 @@ class _ModernPersonaCardState extends State<ModernPersonaCard>
   }
 
   Widget _buildDefaultAvatar() {
-    return const Icon(Icons.smart_toy, color: Colors.white, size: 28);
+    return SvgPicture.asset(
+      'assets/logos/assistant.svg',
+      width: 28,
+      height: 28,
+      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    );
   }
 
   Widget _buildActionButtons() {
