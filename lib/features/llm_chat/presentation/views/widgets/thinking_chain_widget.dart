@@ -225,6 +225,13 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     super.dispose();
   }
 
+  /// 获取固定的文字颜色（不随主题颜色变化）
+  Color _getFixedTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    // 浅色系统使用黑色，深色系统使用白色
+    return brightness == Brightness.light ? Colors.black : Colors.white;
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider).thinkingChainSettings;
@@ -549,8 +556,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
                     .render(
                   displayContent,
                   baseTextStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: _getFixedTextColor(context),
                         height: 1.4,
                       ),
                 ),
@@ -559,7 +565,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
               SelectableText(
                 displayContent,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: _getFixedTextColor(context),
                   height: 1.4,
                 ),
               ),
