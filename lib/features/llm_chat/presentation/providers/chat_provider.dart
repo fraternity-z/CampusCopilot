@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,15 +11,13 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../../../core/services/image_service.dart';
 import '../../../../core/services/image_generation_service.dart';
+import '../../../../core/services/app_launch_service.dart';
 import '../../../knowledge_base/presentation/providers/document_processing_provider.dart';
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 import '../../../learning_mode/domain/services/learning_prompt_service.dart';
 import '../../../learning_mode/domain/services/learning_session_service.dart';
 import '../../../learning_mode/domain/entities/learning_session.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
-import '../../domain/utils/model_capability_checker.dart';
-import '../../domain/entities/model_capabilities.dart';
-import '../../../../shared/utils/debug_log.dart';
+import '../../domain/validators/session_safety_validator.dart';
 
 /// 聊天状态管理
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -31,12 +30,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final ImageGenerationService _imageGenerationService =
       ImageGenerationService();
   
-  // 消息缓存，避免重复数据库查询
-  final Map<String, List<ChatMessage>> _messagesCache = {};
-  // 当前正在切换的会话ID，用于防止重复切换
-  String? _switchingToSessionId;
+  // 会话安全验证器
+  late final SessionSafetyValidator _sessionSafetyValidator;
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState()) {
+    // 初始化会话安全验证器
+    _sessionSafetyValidator = SessionSafetyValidator(_chatService);
+    
     // 延迟加载会话列表，避免构造函数中的异步操作
     _initialize();
 
@@ -45,7 +45,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     
     // 设置搜索状态回调
     _chatService.onSearchStatusChanged = _onSearchStatusChanged;
-    debugLog(() => '🔗 ChatNotifier: 已设置会话标题更新回调');
+    debugPrint('🔗 ChatNotifier: 已设置会话标题更新回调');
   }
 
   /// 初始化方法
@@ -53,6 +53,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
     Future.microtask(() async {
       try {
         await _loadChatSessions();
+        
+        // 检查是否需要在应用启动时自动创建新会话
+        if (AppLaunchService.shouldExecuteLaunchLogic() && 
+            AppLaunchService.autoCreateNewSessionOnLaunch) {
+          debugPrint('🚀 应用启动：自动创建新会话');
+          await _createNewSessionOnLaunch();
+          AppLaunchService.markInitialized();
+        }
       } catch (e) {
         state = state.copyWith(error: '初始化失败: $e', sessions: <ChatSession>[]);
       }
@@ -76,20 +84,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 处理搜索状态变化回调
   void _onSearchStatusChanged(bool isSearching) {
-    debugLog(() => '🔍 搜索状态变化: $isSearching');
+    debugPrint('🔍 搜索状态变化: $isSearching');
     state = state.copyWith(isSearching: isSearching);
   }
 
   /// 处理会话标题更新（自动命名回调）
   void _onSessionTitleUpdated(String sessionId, String newTitle) {
-    debugLog(() => '🔄 收到会话标题更新回调: sessionId=$sessionId, newTitle=$newTitle');
-    debugLog(() => '🔄 当前会话ID: ${state.currentSession?.id}');
-    debugLog(() => '🔄 会话列表数量: ${state.sessions.length}');
+    debugPrint('🔄 收到会话标题更新回调: sessionId=$sessionId, newTitle=$newTitle');
+    debugPrint('🔄 当前会话ID: ${state.currentSession?.id}');
+    debugPrint('🔄 会话列表数量: ${state.sessions.length}');
 
     // 更新会话列表中的对应会话
     final updatedSessions = state.sessions.map((session) {
       if (session.id == sessionId) {
-        debugLog(() => '🔄 找到匹配的会话，更新标题: ${session.title} → $newTitle');
+        debugPrint('🔄 找到匹配的会话，更新标题: ${session.title} → $newTitle');
         return session.updateTitle(newTitle);
       }
       return session;
@@ -98,7 +106,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 更新当前会话（如果是当前会话）
     ChatSession? updatedCurrentSession = state.currentSession;
     if (state.currentSession?.id == sessionId) {
-      debugLog(() => '🔄 更新当前会话标题: ${state.currentSession?.title} → $newTitle');
+      debugPrint('🔄 更新当前会话标题: ${state.currentSession?.title} → $newTitle');
       updatedCurrentSession = state.currentSession!.updateTitle(newTitle);
     }
 
@@ -109,138 +117,38 @@ class ChatNotifier extends StateNotifier<ChatState> {
       currentSession: updatedCurrentSession,
     );
 
-    debugLog(() => '🔄 UI状态已更新完成');
-    final oldTitle = oldState.currentSession?.title;
-    debugLog(() => '🔄 更新前当前会话标题: $oldTitle');
-    debugLog(() => '🔄 更新后当前会话标题: ${state.currentSession?.title}');
+    debugPrint('🔄 UI状态已更新完成');
+    debugPrint('🔄 更新前当前会话标题: ${oldState.currentSession?.title}');
+    debugPrint('🔄 更新后当前会话标题: ${state.currentSession?.title}');
   }
 
-  /// 选择会话 - 优化版本，支持缓存和异步加载
+  /// 选择会话
   Future<void> selectSession(String sessionId) async {
     try {
-      // 防止重复切换到同一个会话
-      if (state.currentSession?.id == sessionId && !state.isLoading) {
-        debugLog(() => '🔄 会话已选中，跳过切换: $sessionId');
-        return;
-      }
-      
-      // 防止并发切换
-      if (_switchingToSessionId == sessionId) {
-        debugLog(() => '🔄 正在切换到该会话，跳过重复请求: $sessionId');
-        return;
-      }
-      
-      _switchingToSessionId = sessionId;
-      
       final sessionIndex = state.sessions.indexWhere((s) => s.id == sessionId);
       if (sessionIndex == -1) {
         state = state.copyWith(error: '会话不存在');
-        _switchingToSessionId = null;
         return;
       }
 
       final session = state.sessions[sessionIndex];
-      
-      // 先立即更新会话，显示加载状态，提升用户体验
+      final messages = await _chatService.getSessionMessages(sessionId);
+
       state = state.copyWith(
         currentSession: session,
-        isLoading: true,
+        messages: messages,
         error: null,
       );
-      
-      List<ChatMessage> messages;
-      
-      // 检查缓存
-      if (_messagesCache.containsKey(sessionId)) {
-        debugLog(() => '🚀 从缓存加载消息: $sessionId');
-        messages = _messagesCache[sessionId]!;
-        
-        // 使用缓存数据快速更新UI
-        state = state.copyWith(
-          messages: messages,
-          isLoading: false,
-        );
-        
-        // 后台异步刷新缓存（可选）
-        _refreshMessagesInBackground(sessionId);
-      } else {
-        // 缓存未命中，从数据库加载
-        debugLog(() => '📄 从数据库加载消息: $sessionId');
-        messages = await _chatService.getSessionMessages(sessionId);
-        
-        // 缓存消息
-        _messagesCache[sessionId] = List.from(messages);
-        
-        // 限制缓存大小，避免内存泄漏
-        _limitCacheSize();
-        
-        state = state.copyWith(
-          messages: messages,
-          isLoading: false,
-        );
-      }
-      
-      _switchingToSessionId = null;
-      debugLog(() => '✅ 会话切换完成: $sessionId (${messages.length}条消息)');
-      
     } catch (e) {
-      _switchingToSessionId = null;
-      debugLog(() => '❌ 会话切换失败: $sessionId, 错误: $e');
-      state = state.copyWith(
-        error: '加载会话失败: $e',
-        isLoading: false,
-      );
+      // 添加调试信息
+      state = state.copyWith(error: '加载会话失败: $e');
     }
-  }
-  
-  /// 后台刷新消息缓存
-  Future<void> _refreshMessagesInBackground(String sessionId) async {
-    try {
-      final freshMessages = await _chatService.getSessionMessages(sessionId);
-      _messagesCache[sessionId] = List.from(freshMessages);
-      
-      // 如果这仍然是当前会话，静默更新消息
-      if (state.currentSession?.id == sessionId) {
-        state = state.copyWith(messages: freshMessages);
-      }
-    } catch (e) {
-      debugLog(() => '🔄 后台刷新缓存失败: $sessionId, 错误: $e');
-    }
-  }
-  
-  /// 限制缓存大小，保留最近的10个会话
-  void _limitCacheSize() {
-    const maxCacheSize = 10;
-    if (_messagesCache.length > maxCacheSize) {
-      // 移除最老的缓存项
-      final keys = _messagesCache.keys.toList();
-      final keysToRemove = keys.take(keys.length - maxCacheSize);
-      for (final key in keysToRemove) {
-        _messagesCache.remove(key);
-      }
-      debugLog(() => '🧹 清理消息缓存，保留${_messagesCache.length}个会话');
-    }
-  }
-  
-  /// 清空消息缓存
-  void clearMessagesCache() {
-    _messagesCache.clear();
-    debugLog(() => '🗑️ 已清空消息缓存');
-  }
-  
-  /// 更新特定会话的缓存
-  void updateSessionCache(String sessionId, List<ChatMessage> messages) {
-    _messagesCache[sessionId] = List.from(messages);
-    debugLog(() => '📝 更新会话缓存: $sessionId (${messages.length}条消息)');
   }
 
   /// 删除会话
   Future<void> deleteSession(String sessionId) async {
     try {
       await _chatService.deleteChatSession(sessionId);
-      
-      // 清除该会话的缓存
-      _messagesCache.remove(sessionId);
 
       final updatedSessions = state.sessions
           .where((s) => s.id != sessionId)
@@ -269,9 +177,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       for (final session in state.sessions) {
         await _chatService.deleteChatSession(session.id);
       }
-
-      // 清空所有缓存
-      _messagesCache.clear();
 
       // 清空状态
       state = state.copyWith(
@@ -309,6 +214,36 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
     } catch (e) {
       state = state.copyWith(error: '创建新会话失败: $e');
+    }
+  }
+
+  /// 应用启动时创建新会话（私有方法）
+  /// 
+  /// 专门用于应用启动时自动创建新会话，确保用户每次打开应用都有一个新对话
+  Future<void> _createNewSessionOnLaunch() async {
+    try {
+      final selectedPersona = _ref.read(selectedPersonaProvider);
+      final personaId = selectedPersona?.id ?? 'default';
+
+      final session = await _chatService.createChatSession(
+        personaId: personaId,
+        title: '新对话',
+      );
+
+      // 将新会话添加到列表开头并设为当前会话
+      final updatedSessions = [session, ...state.sessions];
+      state = state.copyWith(
+        sessions: updatedSessions,
+        currentSession: session,
+        messages: [],
+        error: null,
+      );
+      
+      debugPrint('🆕 应用启动新会话已创建: ${session.id}');
+    } catch (e) {
+      debugPrint('❌ 应用启动创建新会话失败: $e');
+      // 启动时创建会话失败不应该阻塞整个应用
+      state = state.copyWith(error: null);
     }
   }
 
@@ -380,7 +315,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
       
-      debugLog(() => '🎓 学习模式重新生成: ${learningModeState.style.displayName}');
+      debugPrint('🎓 学习模式重新生成: ${learningModeState.style.displayName}');
     }
     
     // 检查是否有当前会话
@@ -390,9 +325,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
-    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
-    final String sessionId = currentSession.id;
-
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -400,7 +332,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final aiMessageId = _uuid.v4();
       final aiPlaceholder = ChatMessage(
         id: aiMessageId,
-        chatSessionId: sessionId,
+        chatSessionId: currentSession.id,
         content: '',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -413,7 +345,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 开始流式响应（在学习模式下使用处理过的消息，普通模式下使用原始内容）
       final messageContent = learningModeState.isLearningMode ? processedMessage : userContent;
       final stream = _chatService.sendMessageStream(
-        sessionId: sessionId,
+        sessionId: currentSession.id,
         content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
         displayContent: userContent, // 传递原始用户输入用于显示
@@ -431,13 +363,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (messageChunk.isFromUser && isFirstUserMessage) {
             // 跳过第一个用户消息，因为我们不需要重复添加
             isFirstUserMessage = false;
-            debugLog(() => '🔍 重新生成：跳过流中的用户消息');
+            debugPrint('🔍 重新生成：跳过流中的用户消息');
             return;
           }
 
           // 额外保护：如果流中还有其他用户消息，也要跳过
           if (messageChunk.isFromUser) {
-            debugLog(() => '⚠️ 重新生成：检测到额外的用户消息，跳过以保护原始内容');
+            debugPrint('⚠️ 重新生成：检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 
@@ -456,11 +388,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
               messages: updatedMessages,
               isLoading: messageChunk.status != MessageStatus.sent,
             );
-
-            // 更新缓存（实时更新流式响应）
-            if (state.currentSession != null) {
-              updateSessionCache(sessionId, updatedMessages);
-            }
 
             // 如果是学习模式且AI回复完成，进行学习模式处理
             if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
@@ -567,32 +494,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 判断是否应该使用图像生成服务
   bool _shouldUseImageGeneration(String text) {
-    // 首先检查当前选择的模型是否支持图像生成
-    try {
-      final currentModel = _ref.read(databaseCurrentModelProvider).whenOrNull(data: (model) => model);
-      if (currentModel == null) {
-        debugLog(() => '🔍 当前没有选择模型，不使用图像生成');
-        return false;
-      }
-      
-      // 检查当前模型是否具有图像生成能力
-      final hasImageGenCapability = ModelCapabilityChecker.hasCapability(
-        currentModel.id, 
-        ModelCapabilityType.imageGeneration
-      );
-      
-      if (!hasImageGenCapability) {
-        debugLog(() => '🔍 当前模型 ${currentModel.name} 不支持图像生成，跳过');
-        return false;
-      }
-      
-      debugLog(() => '🎨 当前模型 ${currentModel.name} 支持图像生成，自动启用图像生成功能');
+    // 1. 首先检查文本是否包含明确的图像生成指令
+    if (_isImageGenerationPrompt(text)) {
+      debugPrint('🔍 检测到图像生成指令: $text');
       return true;
-      
-    } catch (e) {
-      debugLog(() => '❌ 检查模型图像生成能力时出错: $e');
-      return false;
     }
+    
+    // 2. 未来可以添加更多检测逻辑，比如：
+    // - 检查当前选择的模型是否为图像模型
+    // - 检查用户偏好设置
+    // - 检查上下文信息等
+    
+    return false;
   }
 
 
@@ -601,6 +514,38 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return false; // 先简化为false，让AI在学习提示词中自己判断
   }
 
+  /// 判断是否为图像生成指令
+  bool _isImageGenerationPrompt(String text) {
+    final lowerText = text.toLowerCase().trim();
+    
+    // 中文图像生成指令
+    final chineseKeywords = [
+      '画', '绘制', '绘画', '画一', '画个', '画出', '生成图', '创建图', '制作图', 
+      '图像', '图片', '插画', '素描', '水彩', '油画', '漫画', '卡通',
+    ];
+    
+    // 英文图像生成指令
+    final englishKeywords = [
+      'draw', 'paint', 'create', 'generate', 'make', 'design', 'sketch', 
+      'illustrate', 'render', 'produce', 'image of', 'picture of', 'art of',
+      'painting of', 'drawing of', 'illustration of',
+    ];
+    
+    // 检查是否以这些关键词开头或包含这些关键词
+    for (final keyword in chineseKeywords) {
+      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
+        return true;
+      }
+    }
+    
+    for (final keyword in englishKeywords) {
+      if (lowerText.startsWith(keyword) || lowerText.contains(keyword)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
 
   /// 带占位符的图像生成（内部使用）
   Future<void> _generateImageWithPlaceholder(String prompt, String placeholderId) async {
@@ -653,9 +598,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
-    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
-    final String sessionId = currentSession.id;
-
     // 只有在没有占位符时才设置全局加载状态
     if (placeholderId == null) {
       state = state.copyWith(isLoading: true, error: null);
@@ -663,11 +605,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     try {
       // 使用和聊天相同的配置获取逻辑：通过会话 → 智能体 → API配置
-      final llmConfig = await _chatService.getSessionLlmConfig(sessionId);
-      debugLog(() => '🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
+      final llmConfig = await _chatService.getSessionLlmConfig(currentSession.id);
+      debugPrint('🔧 图像生成LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 直接使用LLM配置的信息
-      String apiKey = llmConfig.apiKey;
+      String? apiKey = llmConfig.apiKey;
       String? baseUrl = llmConfig.baseUrl;
       String configType = '${llmConfig.name} (${llmConfig.provider})';
 
@@ -675,43 +617,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         throw Exception('配置 "${llmConfig.name}" 的API密钥为空，请检查配置');
       }
 
-      debugLog(() => '🎨 使用 $configType 配置生成图片');
-      debugLog(() => '🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
-      
-      // 获取具有图像生成能力的模型
-      String? imageGenerationModel;
-      try {
-        // 首先尝试获取当前选中的模型
-        final currentModel = await _ref.read(databaseCurrentModelProvider.future);
-        if (currentModel != null && 
-            ModelCapabilityChecker.hasCapability(
-              currentModel.id, 
-              ModelCapabilityType.imageGeneration
-            )) {
-          imageGenerationModel = currentModel.id;
-          debugLog(() => '🎯 使用当前选中的图像生成模型: $imageGenerationModel');
-        } else {
-          // 如果当前模型不支持图像生成，查找可用的图像生成模型
-          final allModels = await _ref.read(databaseAvailableModelsProvider.future);
-          final imageGenModels = allModels.where((model) => 
-            ModelCapabilityChecker.hasCapability(
-              model.id, 
-              ModelCapabilityType.imageGeneration
-            )
-          ).toList();
-          
-          if (imageGenModels.isNotEmpty) {
-            imageGenerationModel = imageGenModels.first.id;
-            debugLog(() => '🔍 自动选择第一个可用的图像生成模型: $imageGenerationModel');
-          } else {
-            debugLog(() => '⚠️ 没有找到支持图像生成的模型，使用默认模型');
-            imageGenerationModel = 'dall-e-3'; // 回退到默认模型
-          }
-        }
-      } catch (e) {
-        debugLog(() => '❌ 获取图像生成模型失败: $e，使用默认模型');
-        imageGenerationModel = 'dall-e-3'; // 回退到默认模型
-      }
+      debugPrint('🎨 使用 $configType 配置生成图片');
+      debugPrint('🌐 API端点: ${baseUrl ?? 'https://api.openai.com/v1'}');
       
       // 生成图片
       final results = await _imageGenerationService.generateImages(
@@ -720,7 +627,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
         size: size,
         quality: quality,
         style: style,
-        model: imageGenerationModel,
         apiKey: apiKey,
         baseUrl: baseUrl,
       );
@@ -731,7 +637,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         
         final imageMessage = ChatMessage(
           id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
-          chatSessionId: sessionId,
+          chatSessionId: currentSession.id,
           content: '生成了${results.length}张图片：$prompt',
           isFromUser: false,
           timestamp: DateTime.now(),
@@ -768,12 +674,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }
       }
     } catch (e) {
-      debugLog(() => '❌ 图片生成失败: $e');
+      debugPrint('❌ 图片生成失败: $e');
       
       // 创建错误消息
       final errorMessage = ChatMessage(
         id: placeholderId ?? '${DateTime.now().microsecondsSinceEpoch}_${_uuid.v4()}',
-        chatSessionId: sessionId,
+        chatSessionId: currentSession.id,
         content: '图片生成失败: $e',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -808,7 +714,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           );
         }
       } catch (dbError) {
-        debugLog(() => '❌ 保存错误消息失败: $dbError');
+        debugPrint('❌ 保存错误消息失败: $dbError');
         // 如果数据库操作也失败，处理占位符并设置全局错误状态
         if (placeholderId != null) {
           final messagesWithoutPlaceholder = state.messages.where((m) => m.id != placeholderId).toList();
@@ -829,8 +735,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// 发送消息
   Future<void> sendMessage(String text) async {
-  // 标记：本次发送是否创建了新会话，用于决定是否需要拉取列表
-  bool createdNewSessionDuringSend = false;
     // 学习模式处理：检查是否启用学习模式并处理消息内容
     final learningModeState = _ref.read(learningModeProvider);
     final learningModeNotifier = _ref.read(learningModeProvider.notifier);
@@ -842,7 +746,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           LearningSessionService.isLearningQuestion(text)) {
         // 开始新的学习会话
         learningModeNotifier.startLearningSession(text);
-        debugLog(() => '🎓 开始新的学习会话');
+        debugPrint('🎓 开始新的学习会话');
       }
       
       // 简化逻辑：检查用户是否明确要求答案或到达最后一轮
@@ -855,8 +759,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           (learningModeState.currentSession!.currentRound + 1) == learningModeState.currentSession!.maxRounds;
       final shouldGiveFinalAnswer = userWantsDirectAnswer || reachedMaxRounds || willReachMaxRounds;
       
-      debugLog(() => '🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
-      debugLog(() => '🔍 用户消息: "$text"');
+      debugPrint('🔍 学习模式检测: 用户要求答案=$userWantsDirectAnswer, 达到最大轮数=$reachedMaxRounds, 应给最终答案=$shouldGiveFinalAnswer');
+      debugPrint('🔍 用户消息: "$text"');
       
       // 如果在学习会话中，推进轮数（用户发送消息时推进）
       if (learningModeState.currentSession != null && learningModeState.currentSession!.status == LearningSessionStatus.active) {
@@ -864,7 +768,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         learningModeNotifier.advanceLearningSession('user-message-temp'); // 临时ID，后面会被替换
         // 重新获取更新后的状态
         final updatedLearningModeState = _ref.read(learningModeProvider);
-        debugLog(() => '🎓 用户发送消息，推进到第 ${updatedLearningModeState.currentSession?.currentRound ?? 0} 轮');
+        debugPrint('🎓 用户发送消息，推进到第 ${updatedLearningModeState.currentSession?.currentRound ?? 0} 轮');
       }
       
       // 如果用户要求答案或达到最大轮数，标记会话状态
@@ -874,7 +778,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           status: LearningSessionStatus.active, // 保持active状态直到AI回复完成
         );
         learningModeNotifier.updateCurrentSession(updatedSession);
-        debugLog(() => '🎓 将在本轮给出完整答案');
+        debugPrint('🎓 将在本轮给出完整答案');
       }
       
       // 构建学习模式消息（传递是否应该给出最终答案的信息）
@@ -894,35 +798,79 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
       
-      debugLog(() => '🎓 学习模式已激活: ${learningModeState.style.displayName}');
+      debugPrint('🎓 学习模式已激活: ${learningModeState.style.displayName}');
     }
     
     // 智能路由：检查是否应该使用图像生成
     final isImageGeneration = _shouldUseImageGeneration(text);
     if (isImageGeneration) {
-      debugLog(() => '🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
+      debugPrint('🎨 检测到图像生成指令，将在创建用户消息后进行图像生成');
     }
     
-    // 检查是否有当前会话，如果没有则创建新会话
-  ChatSession? currentSession = state.currentSession;
-    if (currentSession == null) {
-      try {
-        await createNewSession();
-        // 确保新会话已创建
-        currentSession = state.currentSession;
-        if (currentSession == null) {
-          state = state.copyWith(error: '无法创建新的对话会话');
-          return;
+    // 🛡️ 会话安全验证 - 使用专门的安全验证器确保会话状态正确
+    final validationResult = await _sessionSafetyValidator.validateAndFixSession(
+      currentSession: state.currentSession,
+      availableSessions: state.sessions,
+    );
+    
+    if (!validationResult.isValid) {
+      // 验证失败，显示错误并终止发送
+      final errorMsg = validationResult.error ?? '会话状态验证失败';
+      debugPrint('🛡️ 会话安全验证失败: $errorMsg');
+      state = state.copyWith(error: errorMsg);
+      return;
+    }
+    
+    // 获取验证后的安全会话
+    final safeSession = validationResult.session!;
+    
+    // 如果会话被修复或更换，需要更新UI状态
+    if (validationResult.needsStateUpdate) {
+      debugPrint('🛡️ 会话安全修复: ${validationResult.message}');
+      
+      // 如果是新创建的会话，需要更新会话列表
+      if (validationResult.isRecovered && !state.sessions.any((s) => s.id == safeSession.id)) {
+        final updatedSessions = [safeSession, ...state.sessions];
+        state = state.copyWith(
+          currentSession: safeSession,
+          sessions: updatedSessions,
+          messages: [], // 新会话没有历史消息
+          error: null,
+        );
+      } else {
+        // 只是切换到现有会话
+        try {
+          final messages = await _chatService.getSessionMessages(safeSession.id);
+          state = state.copyWith(
+            currentSession: safeSession,
+            messages: messages,
+            error: null,
+          );
+        } catch (e) {
+          debugPrint('🛡️ 加载切换会话的消息失败: $e');
+          state = state.copyWith(
+            currentSession: safeSession,
+            messages: [], // 如果加载失败，使用空消息列表
+            error: null,
+          );
         }
-    createdNewSessionDuringSend = true;
-      } catch (e) {
-        state = state.copyWith(error: '创建新会话失败: $e');
-        return;
+      }
+      
+      // 显示用户友好的提示信息（可选）
+      if (validationResult.message != null) {
+        // 这里可以考虑显示一个临时提示，告知用户会话已自动修复
+        // 为了不影响用户体验，暂时只在调试日志中显示
+        debugPrint('🛡️ 用户提示: ${validationResult.message}');
       }
     }
-
-    // 在异步流程前缓存会话ID，避免空安全提升在 await/闭包后丢失
-    final String sessionId = currentSession.id;
+    
+    // 确保我们有有效的当前会话
+    final currentSession = state.currentSession;
+    if (currentSession == null) {
+      // 这种情况理论上不应该发生，但为了安全起见保留检查
+      state = state.copyWith(error: '内部错误：无法获取有效的对话会话');
+      return;
+    }
 
     if (text.isEmpty &&
         state.attachedFiles.isEmpty &&
@@ -1043,7 +991,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       final userMessage = ChatMessage(
         id: _uuid.v4(),
-        chatSessionId: sessionId,
+        chatSessionId: currentSession.id,
         content: displayContent,
         isFromUser: true,
         timestamp: DateTime.now(),
@@ -1055,39 +1003,27 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       // 立即将用户消息添加到UI，并清除附件
-      final updatedMessages = [...state.messages, userMessage];
       state = state.copyWith(
-        messages: updatedMessages,
+        messages: [...state.messages, userMessage],
         attachedFiles: [],
         attachedImages: [],
       );
-      
-      // 更新当前会话的缓存
-      if (state.currentSession != null) {
-        updateSessionCache(sessionId, updatedMessages);
-      }
 
       final aiMessageId = _uuid.v4();
       // 为正常显示新增占位符（空内容）
       final aiPlaceholderSend = ChatMessage(
         id: aiMessageId,
-        chatSessionId: sessionId,
+        chatSessionId: currentSession.id,
         content: '',
         isFromUser: false,
         timestamp: DateTime.now(),
         status: MessageStatus.sending,
       );
-      final messagesWithPlaceholder = [...state.messages, aiPlaceholderSend];
-      state = state.copyWith(messages: messagesWithPlaceholder);
-      
-      // 更新缓存（包含占位符）
-      if (state.currentSession != null) {
-        updateSessionCache(sessionId, messagesWithPlaceholder);
-      }
+      state = state.copyWith(messages: [...state.messages, aiPlaceholderSend]);
 
       // 检查是否是图像生成指令
       if (isImageGeneration) {
-        debugLog(() => '🎨 开始图像生成流程');
+        debugPrint('🎨 开始图像生成流程');
         
         // 为图像生成创建特殊的AI占位符消息
         final imageAiPlaceholder = aiPlaceholderSend.copyWith(
@@ -1113,7 +1049,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // 开始流式响应
       final stream = _chatService.sendMessageStream(
-        sessionId: sessionId,
+        sessionId: currentSession.id,
         content: messageContent, // AI处理用的内容
         includeContext: !state.contextCleared, // 如果清除了上下文则不包含历史
         imageUrls: imageUrlsForAI, // 传递base64格式的图片给AI
@@ -1132,13 +1068,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (messageChunk.isFromUser && isFirstUserMessage) {
             // 跳过第一个用户消息，因为我们已经在UI中显示了原始用户消息
             isFirstUserMessage = false;
-            debugLog(() => '🔍 跳过流中的用户消息，保持显示原始内容');
+            debugPrint('🔍 跳过流中的用户消息，保持显示原始内容');
             return;
           }
 
           // 额外保护：如果流中还有其他用户消息，也要跳过，防止替换原始用户消息
           if (messageChunk.isFromUser) {
-            debugLog(() => '⚠️ 检测到额外的用户消息，跳过以保护原始内容');
+            debugPrint('⚠️ 检测到额外的用户消息，跳过以保护原始内容');
             return;
           }
 
@@ -1158,11 +1094,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
               isLoading: messageChunk.status != MessageStatus.sent,
             );
 
-            // 更新缓存（实时更新流式响应）
-            if (state.currentSession != null) {
-              updateSessionCache(sessionId, updatedMessages);
-            }
-
             // 如果是学习模式且AI回复完成，进行学习模式处理
             if (learningModeState.isLearningMode && messageChunk.status == MessageStatus.sent) {
               _processLearningModeResponse(fullResponse, aiMessageId);
@@ -1180,14 +1111,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 等待流完成
       await _currentStreamSubscription?.asFuture();
 
-      // 仅重置上下文标记；标题/会话信息用回调增量更新
-      if (mounted) {
-        state = state.copyWith(contextCleared: false);
-      }
-      // 如确有必要（例如本次流程新建了会话），再做一次列表拉取
-      if (createdNewSessionDuringSend) {
-        await _loadChatSessions();
-      }
+      // 消息发送完成后，重置上下文清除状态并重新加载会话信息
+      state = state.copyWith(contextCleared: false);
+      await _loadChatSessions();
     } catch (e) {
       // 取消当前流订阅
       await _currentStreamSubscription?.cancel();
@@ -1196,7 +1122,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 如果发生错误，移除占位符并显示错误消息
       final errorMessage = ChatMessage(
         id: _uuid.v4(),
-        chatSessionId: sessionId,
+        chatSessionId: currentSession.id,
         content: '抱歉，发生错误: $e',
         isFromUser: false,
         timestamp: DateTime.now(),
@@ -1401,7 +1327,7 @@ $wrappedMessage
           learningModeNotifier.endCurrentSession(
             userRequested: currentSession.userRequestedAnswer,
           );
-          debugLog(() => '🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
+          debugPrint('🎓 学习会话已结束：${currentSession.userRequestedAnswer ? "用户要求答案" : "达到最大轮次"}');
           
           // 添加学习会话结束分割线
           _addLearningSessionEndDivider();
@@ -1417,7 +1343,7 @@ $wrappedMessage
     // 检查是否需要重置提问步骤（当学生得到完整理解时）
     if (aiResponse.contains('很好') || aiResponse.contains('正确') || aiResponse.contains('理解得很棒')) {
       // 可以考虑重置或调整学习进度
-      debugLog(() => '🎓 学生理解程度良好，学习模式响应已处理');
+      debugPrint('🎓 学生理解程度良好，学习模式响应已处理');
     }
   }
 
@@ -1442,7 +1368,7 @@ $wrappedMessage
       messages: [...state.messages, dividerMessage],
     );
 
-    debugLog(() => '🎓 已添加学习会话结束分割线');
+    debugPrint('🎓 已添加学习会话结束分割线');
   }
 }
 

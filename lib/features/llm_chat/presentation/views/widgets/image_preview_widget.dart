@@ -62,7 +62,7 @@ class ImagePreviewWidget extends StatelessWidget {
   }
 
   Widget _buildSingleImage(BuildContext context, String imageUrl, int index) {
-  return GestureDetector(
+    return GestureDetector(
       onTap: () => _openImageViewer(context, index),
       child: Container(
         constraints: BoxConstraints(
@@ -71,7 +71,7 @@ class ImagePreviewWidget extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-      child: Hero(tag: imageUrl, child: _buildImageWidget(imageUrl, context: context)),
+          child: _buildImageWidget(imageUrl),
         ),
       ),
     );
@@ -130,7 +130,7 @@ class ImagePreviewWidget extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Hero(tag: imageUrl, child: _buildImageWidget(imageUrl, context: context)),
+              _buildImageWidget(imageUrl),
 
               // 如果是最后一张且还有更多图片，显示数量覆盖层
               if (index == maxImagesPerRow - 1 &&
@@ -158,39 +158,13 @@ class ImagePreviewWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildImageWidget(String imageUrl, {BuildContext? context}) {
-    // 根据缩略尺寸和设备像素比决定缓存解码目标，减少无谓解码与内存
-    final dpr = context != null
-        ? MediaQuery.devicePixelRatioOf(context)
-        : WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
-    final target = (thumbnailSize * dpr).round();
-    if (imageUrl.startsWith('data:image/')) {
-      // Base64 图片
-      try {
-        final base64String = imageUrl.split(',')[1];
-        final bytes = base64Decode(base64String);
-        return Image.memory(
-          bytes,
-          fit: BoxFit.cover,
-          gaplessPlayback: true,
-          filterQuality: FilterQuality.low,
-          cacheWidth: target,
-          cacheHeight: target,
-        );
-      } catch (_) {
-        return _buildErrorWidget();
-      }
-    }
+  Widget _buildImageWidget(String imageUrl) {
     if (imageUrl.startsWith('file://')) {
       // 本地文件
       final filePath = imageUrl.substring(7); // 移除 'file://' 前缀
       return Image.file(
         File(filePath),
         fit: BoxFit.cover,
-        gaplessPlayback: true,
-        filterQuality: FilterQuality.low,
-        cacheWidth: target,
-        cacheHeight: target,
         errorBuilder: (context, error, stackTrace) {
           return _buildErrorWidget();
         },
@@ -201,10 +175,6 @@ class ImagePreviewWidget extends StatelessWidget {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
-        gaplessPlayback: true,
-        filterQuality: FilterQuality.low,
-        cacheWidth: target,
-        cacheHeight: target,
         errorBuilder: (context, error, stackTrace) {
           return _buildErrorWidget();
         },
@@ -225,10 +195,6 @@ class ImagePreviewWidget extends StatelessWidget {
       return Image.file(
         File(imageUrl),
         fit: BoxFit.cover,
-        gaplessPlayback: true,
-        filterQuality: FilterQuality.low,
-        cacheWidth: target,
-        cacheHeight: target,
         errorBuilder: (context, error, stackTrace) {
           return _buildErrorWidget();
         },
@@ -308,7 +274,7 @@ class MessageImageCard extends StatelessWidget {
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: Hero(tag: imageUrl, child: _buildImageWidget()),
+                  child: _buildImageWidget(),
                 ),
               ),
 
@@ -357,10 +323,6 @@ class MessageImageCard extends StatelessWidget {
   }
 
   Widget _buildImageWidget() {
-  // 卡片固定尺寸的缩略图参数
-  const double side = 150;
-  final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
-  final target = (side * dpr).round();
     if (imageUrl.startsWith('data:image/')) {
       // Base64 图片
       try {
@@ -368,11 +330,9 @@ class MessageImageCard extends StatelessWidget {
         final bytes = base64Decode(base64String);
         return Image.memory(
           bytes,
-      fit: BoxFit.cover,
-      width: side,
-      height: side,
-      gaplessPlayback: true,
-      filterQuality: FilterQuality.low,
+          fit: BoxFit.cover,
+          width: 150,
+          height: 150,
           errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
         );
       } catch (e) {
@@ -383,13 +343,9 @@ class MessageImageCard extends StatelessWidget {
       final filePath = imageUrl.substring(7);
       return Image.file(
         File(filePath),
-    fit: BoxFit.cover,
-    width: side,
-    height: side,
-    gaplessPlayback: true,
-    filterQuality: FilterQuality.low,
-    cacheWidth: target,
-    cacheHeight: target,
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
         errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
       );
     } else if (imageUrl.startsWith('http://') ||
@@ -397,19 +353,15 @@ class MessageImageCard extends StatelessWidget {
       // 网络图片
       return Image.network(
         imageUrl,
-    fit: BoxFit.cover,
-    width: side,
-    height: side,
-    gaplessPlayback: true,
-    filterQuality: FilterQuality.low,
-    cacheWidth: target,
-    cacheHeight: target,
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
         errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Container(
-      width: side,
-      height: side,
+            width: 150,
+            height: 150,
             color: Colors.grey[200],
             child: Center(
               child: CircularProgressIndicator(
@@ -426,13 +378,9 @@ class MessageImageCard extends StatelessWidget {
       // 其他情况，尝试作为本地文件处理
       return Image.file(
         File(imageUrl),
-    fit: BoxFit.cover,
-    width: side,
-    height: side,
-    gaplessPlayback: true,
-    filterQuality: FilterQuality.low,
-    cacheWidth: target,
-    cacheHeight: target,
+        fit: BoxFit.cover,
+        width: 150,
+        height: 150,
         errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
       );
     }

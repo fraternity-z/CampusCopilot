@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/widgets.dart';
-import 'package:campus_copilot/shared/utils/debug_log.dart';
+import './logger.dart';
 
 late Directory supportPath;
 
@@ -41,6 +41,7 @@ class NetworkSession {
           ),
         )
         ..interceptors.add(CookieManager(cookieJar))
+        ..interceptors.add(logDioAdapter)
         ..options.connectTimeout = const Duration(seconds: 10)
         ..options.receiveTimeout = const Duration(seconds: 30)
         ..options.followRedirects = false
@@ -64,24 +65,39 @@ class NetworkSession {
   }
 
   Future<void> initSession() async {
-    debugLog(() => "[NetworkSession][initSession] Current State: $isInit");
+    log.info(
+      "[NetworkSession][initSession] "
+      "Current State: $isInit",
+    );
     if (isInit == SessionState.fetching) {
       return;
     }
     try {
       isInit = SessionState.fetching;
-      debugLog(() => "[NetworkSession][initSession] Fetching...");
+      log.info(
+        "[NetworkSession][initSession] "
+        "Fetching...",
+      );
       var response = await dio.get("http://linux.xidian.edu.cn");
       if (response.statusCode == 200) {
         isInit = SessionState.fetched;
-        debugLog(() => "[NetworkSession][initSession] Fetched");
+        log.info(
+          "[NetworkSession][initSession] "
+          "Fetched",
+        );
       } else {
         isInit = SessionState.error;
-        debugLog(() => "[NetworkSession][initSession] Error");
+        log.error(
+          "[NetworkSession][initSession] "
+          "Error",
+        );
       }
     } catch (e) {
       isInit = SessionState.error;
-      debugLog(() => "[NetworkSession][initSession] Error: $e");
+      log.error(
+        "[NetworkSession][initSession] "
+        "Error: $e",
+      );
     }
   }
 }

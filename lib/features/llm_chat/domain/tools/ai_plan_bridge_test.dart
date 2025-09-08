@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/utils/debug_log.dart';
 
 import '../services/ai_plan_bridge_service.dart';
 import 'daily_management_tools.dart';
@@ -16,7 +15,7 @@ class AIPlanBridgeTest {
 
   /// 测试所有AI工具函数
   Future<void> runAllTests() async {
-    debugLog(() => '🧪 开始AI计划桥接功能测试');
+    debugPrint('🧪 开始AI计划桥接功能测试');
 
     // 测试1: 验证函数定义
     await _testFunctionDefinitions();
@@ -36,12 +35,12 @@ class AIPlanBridgeTest {
     // 测试6: 测试分析工作量
     await _testAnalyzeCourseWorkload();
 
-    debugLog(() => '✅ AI计划桥接功能测试完成');
+    debugPrint('✅ AI计划桥接功能测试完成');
   }
 
   /// 测试函数定义
   Future<void> _testFunctionDefinitions() async {
-    debugLog(() => '🔧 测试函数定义...');
+    debugPrint('🔧 测试函数定义...');
     
     final functions = DailyManagementTools.getFunctionDefinitions();
     assert(functions.length == 6, '应该有6个函数定义');
@@ -57,12 +56,12 @@ class AIPlanBridgeTest {
     };
     
     assert(functionNames.containsAll(expectedNames), '函数名称不匹配');
-    debugLog(() => '✅ 函数定义测试通过');
+    debugPrint('✅ 函数定义测试通过');
   }
 
   /// 测试读取课程表
   Future<void> _testReadCourseSchedule() async {
-    debugLog(() => '📅 测试读取课程表...');
+    debugPrint('📅 测试读取课程表...');
     
     try {
       final result = await _bridgeService.handleFunctionCall(
@@ -81,16 +80,16 @@ class AIPlanBridgeTest {
       assert(data.containsKey('courses'), '应该包含courses字段');
       assert(data.containsKey('total_count'), '应该包含total_count字段');
       
-      debugLog(() => '✅ 读取课程表测试通过: ${result.message}');
+      debugPrint('✅ 读取课程表测试通过: ${result.message}');
     } catch (e) {
-      debugLog(() => '❌ 读取课程表测试失败: $e');
+      debugPrint('❌ 读取课程表测试失败: $e');
       rethrow;
     }
   }
 
   /// 测试创建学习计划
   Future<void> _testCreateStudyPlan() async {
-    debugLog(() => '📝 测试创建学习计划...');
+    debugPrint('📝 测试创建学习计划...');
     
     try {
       final result = await _bridgeService.handleFunctionCall(
@@ -112,15 +111,15 @@ class AIPlanBridgeTest {
         assert(data.containsKey('title'), '应该返回标题');
         assert(data['title'] == '测试计划', '标题应该匹配');
         
-        debugLog(() => '✅ 创建学习计划测试通过: ${result.message}');
+        debugPrint('✅ 创建学习计划测试通过: ${result.message}');
         
         // 保存测试计划ID用于后续测试
         _testPlanId = data['plan_id'] as String;
       } else {
-        debugLog(() => '⚠️ 创建学习计划测试失败但可接受: ${result.error}');
+        debugPrint('⚠️ 创建学习计划测试失败但可接受: ${result.error}');
       }
     } catch (e) {
-      debugLog(() => '❌ 创建学习计划测试出现异常: $e');
+      debugPrint('❌ 创建学习计划测试出现异常: $e');
     }
   }
 
@@ -128,7 +127,7 @@ class AIPlanBridgeTest {
 
   /// 测试查询学习计划
   Future<void> _testGetStudyPlans() async {
-    debugLog(() => '🔍 测试查询学习计划...');
+    debugPrint('🔍 测试查询学习计划...');
     
     try {
       final result = await _bridgeService.handleFunctionCall(
@@ -144,23 +143,23 @@ class AIPlanBridgeTest {
         assert(data.containsKey('total_count'), '应该包含total_count字段');
         
         final plans = data['plans'] as List;
-        debugLog(() => '✅ 查询学习计划测试通过: 找到${plans.length}个计划');
+        debugPrint('✅ 查询学习计划测试通过: 找到${plans.length}个计划');
       } else {
-        debugLog(() => '⚠️ 查询学习计划测试失败但可接受: ${result.error}');
+        debugPrint('⚠️ 查询学习计划测试失败但可接受: ${result.error}');
       }
     } catch (e) {
-      debugLog(() => '❌ 查询学习计划测试出现异常: $e');
+      debugPrint('❌ 查询学习计划测试出现异常: $e');
     }
   }
 
   /// 测试更新学习计划
   Future<void> _testUpdateStudyPlan() async {
     if (_testPlanId == null) {
-      debugLog(() => '⏭️ 跳过更新学习计划测试（没有测试计划ID）');
+      debugPrint('⏭️ 跳过更新学习计划测试（没有测试计划ID）');
       return;
     }
     
-    debugLog(() => '✏️ 测试更新学习计划...');
+    debugPrint('✏️ 测试更新学习计划...');
     
     try {
       final result = await _bridgeService.handleFunctionCall(
@@ -178,18 +177,18 @@ class AIPlanBridgeTest {
         assert(data['progress'] == 50, '进度应该被更新为50');
         assert(data['status'] == 'in_progress', '状态应该被更新为in_progress');
         
-        debugLog(() => '✅ 更新学习计划测试通过: ${result.message}');
+        debugPrint('✅ 更新学习计划测试通过: ${result.message}');
       } else {
-        debugLog(() => '⚠️ 更新学习计划测试失败但可接受: ${result.error}');
+        debugPrint('⚠️ 更新学习计划测试失败但可接受: ${result.error}');
       }
     } catch (e) {
-      debugLog(() => '❌ 更新学习计划测试出现异常: $e');
+      debugPrint('❌ 更新学习计划测试出现异常: $e');
     }
   }
 
   /// 测试分析课程工作量
   Future<void> _testAnalyzeCourseWorkload() async {
-    debugLog(() => '📊 测试分析课程工作量...');
+    debugPrint('📊 测试分析课程工作量...');
     
     try {
       final result = await _bridgeService.handleFunctionCall(
@@ -209,16 +208,16 @@ class AIPlanBridgeTest {
       assert(data.containsKey('recommendations'), '应该包含recommendations字段');
       assert(data.containsKey('plan_suggestions'), '应该包含plan_suggestions字段');
       
-      debugLog(() => '✅ 分析课程工作量测试通过: ${result.message}');
+      debugPrint('✅ 分析课程工作量测试通过: ${result.message}');
     } catch (e) {
-      debugLog(() => '❌ 分析课程工作量测试失败: $e');
+      debugPrint('❌ 分析课程工作量测试失败: $e');
       rethrow;
     }
   }
 
   /// 测试参数验证
   Future<void> testParameterValidation() async {
-    debugLog(() => '🔒 测试参数验证...');
+    debugPrint('🔒 测试参数验证...');
     
     // 测试缺少必需参数
     final result1 = await _bridgeService.handleFunctionCall(
@@ -228,7 +227,7 @@ class AIPlanBridgeTest {
     
     assert(!result1.success, '缺少必需参数时应该失败');
     assert(result1.error != null, '应该有错误消息');
-    debugLog(() => '✅ 参数验证测试1通过: ${result1.error}');
+    debugPrint('✅ 参数验证测试1通过: ${result1.error}');
     
     // 测试无效函数名
     final result2 = await _bridgeService.handleFunctionCall(
@@ -238,14 +237,14 @@ class AIPlanBridgeTest {
     
     assert(!result2.success, '无效函数名应该失败');
     assert(result2.error != null, '应该有错误消息');
-    debugLog(() => '✅ 参数验证测试2通过: ${result2.error}');
+    debugPrint('✅ 参数验证测试2通过: ${result2.error}');
     
-    debugLog(() => '✅ 参数验证测试完成');
+    debugPrint('✅ 参数验证测试完成');
   }
 
   /// 运行完整的集成测试
   static Future<void> runIntegrationTest(ProviderContainer container) async {
-    debugLog(() => '🚀 开始AI计划桥接集成测试');
+    debugPrint('🚀 开始AI计划桥接集成测试');
     
     try {
       // 获取服务实例
@@ -258,11 +257,11 @@ class AIPlanBridgeTest {
       // 运行参数验证测试
       await tester.testParameterValidation();
       
-      debugLog(() => '🎉 集成测试全部通过！AI计划桥接功能正常工作');
+      debugPrint('🎉 集成测试全部通过！AI计划桥接功能正常工作');
       
     } catch (e, stackTrace) {
-      debugLog(() => '💥 集成测试失败: $e');
-      debugLog(() => '堆栈跟踪: $stackTrace');
+      debugPrint('💥 集成测试失败: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
       rethrow;
     }
   }

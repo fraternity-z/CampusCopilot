@@ -5,7 +5,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../domain/entities/chat_message.dart';
 import 'message_content_widget.dart';
-import '../../../../../app/app_router.dart' show generalSettingsProvider;
 import 'thinking_chain_widget.dart';
 
 /// 流式增量渲染的消息组件
@@ -96,13 +95,6 @@ class _OptimizedStreamingMessageWidgetState
       setState(() {
         _streamChunks.clear();
         _streamChunks.addAll(chunks);
-        // 对于无 <think> 标签但有 thinkingContent 的模型（如 DeepSeek R1），
-        // 当检测到正文开始时，视为思考链已完成，以保证先后显示。
-        if (!_thinkingCompleted &&
-            (widget.message.thinkingContent?.isNotEmpty ?? false) &&
-            _contentStarted) {
-          _thinkingCompleted = true;
-        }
       });
     }
   }
@@ -222,19 +214,14 @@ class _OptimizedStreamingMessageWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 实时显示思考链（优先使用消息自带的thinkingContent，兼容DeepSeek R1等）
-        if (!widget.message.isFromUser &&
-            ((widget.message.thinkingContent?.isNotEmpty ?? false) ||
-                _streamingThinking.isNotEmpty))
+        // 实时显示思考链（流式）
+        if (_streamingThinking.isNotEmpty && !widget.message.isFromUser)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ThinkingChainWidget(
-              content: (widget.message.thinkingContent?.isNotEmpty ?? false)
-                  ? widget.message.thinkingContent!
-                  : _streamingThinking,
+              content: _streamingThinking,
               modelName: widget.message.modelName ?? '',
-              isCompleted:
-                  widget.message.thinkingComplete || _thinkingCompleted,
+              isCompleted: _thinkingCompleted,
             ),
           ),
 
@@ -251,34 +238,26 @@ class _OptimizedStreamingMessageWidgetState
 
   /// 判断是否应该显示正文内容
   bool _shouldShowContent() {
-    final hasThinking = _hasThinkingContent ||
-        (widget.message.thinkingContent?.isNotEmpty ?? false);
-    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
-
     // 如果没有思考链内容，直接显示正文
-    if (!hasThinking) {
+    if (!_hasThinkingContent) {
       return _streamChunks.isNotEmpty || widget.isStreaming;
     }
 
-    // 如果有思考链内容：必须在思考完成后再显示正文（先后显示）
-    return thinkingDone &&
+    // 如果有思考链内容，必须等思考链完成且正文开始后才显示
+    return _thinkingCompleted &&
         _contentStarted &&
         (_streamChunks.isNotEmpty || widget.isStreaming);
   }
 
   /// 判断是否应该更新正文内容的渲染块
   bool _shouldUpdateContentChunks() {
-    final hasThinking = _hasThinkingContent ||
-        (widget.message.thinkingContent?.isNotEmpty ?? false);
-    final thinkingDone = _thinkingCompleted || widget.message.thinkingComplete;
-
     // 如果没有思考链内容，直接更新
-    if (!hasThinking) {
+    if (!_hasThinkingContent) {
       return true;
     }
 
-    // 如果有思考链内容：思考完成后才更新正文渲染
-    return thinkingDone;
+    // 如果有思考链内容，必须等思考链完成后才更新正文渲染块
+    return _thinkingCompleted;
   }
 
   Widget _buildAttachments() {
@@ -389,24 +368,19 @@ class _OptimizedStreamingMessageWidgetState
   }
 
   Widget _buildStreaming() {
-    final general = ref.watch(generalSettingsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (general.enableMarkdownRendering)
-          ..._streamChunks.map((c) {
-            switch (c.kind) {
-              case _Kind.text:
-                return SelectableText(c.text, style: _textStyle());
-              case _Kind.code:
-                return _ChunkBuilder._code(context, c.text);
-              case _Kind.math:
-                return _ChunkBuilder._math(context, c.text);
-            }
-          })
-        else
-          // 禁用Markdown时，直接渲染纯文本（累积内容）
-          SelectableText(_streamingContent, style: _textStyle()),
+        ..._streamChunks.map((c) {
+          switch (c.kind) {
+            case _Kind.text:
+              return SelectableText(c.text, style: _textStyle());
+            case _Kind.code:
+              return _ChunkBuilder._code(context, c.text);
+            case _Kind.math:
+              return _ChunkBuilder._math(context, c.text);
+          }
+        }),
         if (widget.isStreaming)
           Container(
             margin: const EdgeInsets.only(top: 4),

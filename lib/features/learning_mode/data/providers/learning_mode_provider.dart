@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../shared/utils/debug_log.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import '../../domain/entities/learning_mode_state.dart';
@@ -103,7 +103,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
         questionStep: 0, // 重置步骤计数
       );
       
-      debugLog(() =>'🎓 开始学习会话: ${session.sessionId.substring(0, 8)}, 问题: $initialQuestion');
+      debugPrint('🎓 开始学习会话: ${session.sessionId.substring(0, 8)}, 问题: $initialQuestion');
     }
   }
 
@@ -117,7 +117,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
       );
       
       state = state.copyWith(currentSession: updatedSession);
-      debugLog(() =>'🎓 会话推进到第 ${updatedSession.currentRound} 轮');
+      debugPrint('🎓 会话推进到第 ${updatedSession.currentRound} 轮');
     }
   }
 
@@ -148,7 +148,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
           
       state = state.copyWith(currentSession: endedSession);
       
-      debugLog(() =>'🎓 学习会话结束: ${endedSession.status}');
+      debugPrint('🎓 学习会话结束: ${endedSession.status}');
       
       // 延迟清除会话状态
       Future.delayed(const Duration(seconds: 2), () {
@@ -226,7 +226,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
       }
     } catch (e) {
       // 加载失败时使用默认状态
-      debugLog(() =>'Failed to load learning mode state: $e');
+      debugPrint('Failed to load learning mode state: $e');
     }
   }
 
@@ -237,7 +237,7 @@ class LearningModeNotifier extends _$LearningModeNotifier {
       final stateJson = json.encode(state.toJson());
       await prefs.setString(_storageKey, stateJson);
     } catch (e) {
-      debugLog(() =>'Failed to save learning mode state: $e');
+      debugPrint('Failed to save learning mode state: $e');
     }
   }
 }
@@ -291,7 +291,7 @@ class LearningModeConfigNotifier extends _$LearningModeConfigNotifier {
         state = LearningModeConfig.fromJson(configMap);
       }
     } catch (e) {
-      debugLog(() =>'Failed to load learning mode config: $e');
+      debugPrint('Failed to load learning mode config: $e');
     }
   }
 
@@ -302,7 +302,7 @@ class LearningModeConfigNotifier extends _$LearningModeConfigNotifier {
       final configJson = json.encode(state.toJson());
       await prefs.setString(_configKey, configJson);
     } catch (e) {
-      debugLog(() =>'Failed to save learning mode config: $e');
+      debugPrint('Failed to save learning mode config: $e');
     }
   }
 }

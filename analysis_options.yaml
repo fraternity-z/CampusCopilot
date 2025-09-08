@@ -17,7 +17,6 @@ analyzer:
     - "**/*.mocks.dart"
   errors:
     unintended_html_in_doc_comment: ignore
-
 include: package:flutter_lints/flutter.yaml
 
 linter:

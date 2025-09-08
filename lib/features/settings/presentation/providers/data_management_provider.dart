@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/utils/backup_manager.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
-import '../../../../data/local/app_database.dart';
 
 /// 数据统计信息
 class DataStatistics {
@@ -46,10 +45,9 @@ final dataStatisticsProvider = FutureProvider<DataStatistics>((ref) async {
 /// 数据管理状态管理
 class DataManagementNotifier extends StateNotifier<DataManagementState> {
   final BackupManager _backupManager;
-  final AppDatabase _db;
 
-  DataManagementNotifier(this._backupManager, this._db)
-      : super(const DataManagementState());
+  DataManagementNotifier(this._backupManager)
+    : super(const DataManagementState());
 
   /// 导出数据
   Future<String?> exportData() async {
@@ -66,13 +64,9 @@ class DataManagementNotifier extends StateNotifier<DataManagementState> {
         return null; // 用户取消了选择
       }
 
-      // 创建仅核心数据的 JSON 备份
-      final backupPath = await _backupManager.createSelectiveBackup(
-        db: _db,
+      // 创建备份
+      final backupPath = await _backupManager.createFullBackup(
         customPath: selectedDirectory,
-        includePersonas: true,
-        includeSettings: false,
-        includeCustomModels: true,
       );
 
       state = state.copyWith(
@@ -120,12 +114,8 @@ class DataManagementNotifier extends StateNotifier<DataManagementState> {
         throw BackupException.invalidBackupFile();
       }
 
-      // 恢复核心数据（覆盖模式）
-      await _backupManager.restoreSelectiveBackup(
-        _db,
-        backupFile.path!,
-        mode: RestoreMode.overwrite,
-      );
+      // 恢复数据
+      await _backupManager.restoreBackup(backupFile.path!);
 
       state = state.copyWith(
         isImporting: false,
@@ -216,7 +206,6 @@ class DataManagementState {
 /// 数据管理Provider
 final dataManagementProvider =
     StateNotifierProvider<DataManagementNotifier, DataManagementState>((ref) {
-  final backupManager = ref.watch(backupManagerProvider);
-  final db = ref.watch(appDatabaseProvider);
-  return DataManagementNotifier(backupManager, db);
+      final backupManager = ref.watch(backupManagerProvider);
+      return DataManagementNotifier(backupManager);
 });

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-import '../../../../shared/utils/debug_log.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../objectbox.g.dart'; // ObjectBox 生成的代码
 import '../../domain/services/vector_database_interface.dart';
@@ -19,33 +19,33 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
   @override
   Future<bool> initialize() async {
     try {
-      debugLog(() =>'🔌 初始化 ObjectBox 向量数据库客户端...');
+      debugPrint('🔌 初始化 ObjectBox 向量数据库客户端...');
 
       final success = await _objectBoxManager.initialize();
       if (success) {
         _isInitialized = true;
-        debugLog(() =>'✅ ObjectBox 向量数据库客户端初始化成功');
+        debugPrint('✅ ObjectBox 向量数据库客户端初始化成功');
 
         // 打印数据库统计信息
         final stats = _objectBoxManager.getDatabaseStats();
-        debugLog(() =>'📊 数据库统计: $stats');
+        debugPrint('📊 数据库统计: $stats');
         
         // 检验数据库健康状态
         if (!_objectBoxManager.isHealthy) {
-          debugLog(() =>'⚠️ 数据库初始化后健康检查失败');
+          debugPrint('⚠️ 数据库初始化后健康检查失败');
           return false;
         }
       } else {
-        debugLog(() =>'❌ ObjectBox 数据库管理器初始化失败');
+        debugPrint('❌ ObjectBox 数据库管理器初始化失败');
       }
 
       return success;
     } catch (e) {
-      debugLog(() =>'❌ ObjectBox 向量数据库客户端初始化失败: $e');
+      debugPrint('❌ ObjectBox 向量数据库客户端初始化失败: $e');
       
       // 如果是模式不匹配错误，提供友好提示
       if (e.toString().contains('does not match existing UID')) {
-        debugLog(() =>'💡 提示：数据库模式已更新，原有数据将被清理以确保兼容性');
+        debugPrint('💡 提示：数据库模式已更新，原有数据将被清理以确保兼容性');
       }
       
       return false;
@@ -57,7 +57,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     if (_isInitialized) {
       await _objectBoxManager.close();
       _isInitialized = false;
-      debugLog(() =>'🔌 ObjectBox 向量数据库客户端连接已关闭');
+      debugPrint('🔌 ObjectBox 向量数据库客户端连接已关闭');
     }
   }
 
@@ -74,7 +74,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      debugLog(() =>
+      debugPrint(
         '📁 创建 ObjectBox 向量集合: $collectionName (维度: $vectorDimension)',
       );
 
@@ -107,7 +107,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
 
       final id = collectionBox.put(collection);
-      debugLog(() =>'✅ 向量集合创建成功: $collectionName (ID: $id)');
+      debugPrint('✅ 向量集合创建成功: $collectionName (ID: $id)');
 
       return VectorCollectionResult(
         success: true,
@@ -121,7 +121,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
     } catch (e) {
       final error = '创建向量集合异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorCollectionResult(success: false, error: error);
     }
   }
@@ -129,7 +129,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
   @override
   Future<VectorOperationResult> deleteCollection(String collectionName) async {
     try {
-      debugLog(() =>'🗑️ 删除 ObjectBox 向量集合: $collectionName');
+      debugPrint('🗑️ 删除 ObjectBox 向量集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -162,17 +162,17 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       if (documents.isNotEmpty) {
         final documentIds = documents.map((doc) => doc.id).toList();
         documentBox.removeMany(documentIds);
-        debugLog(() =>'🗑️ 删除了 ${documents.length} 个向量文档');
+        debugPrint('🗑️ 删除了 ${documents.length} 个向量文档');
       }
 
       // 删除集合
       collectionBox.remove(collection.id);
 
-      debugLog(() =>'✅ 向量集合删除成功: $collectionName');
+      debugPrint('✅ 向量集合删除成功: $collectionName');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '删除向量集合异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -191,7 +191,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       return exists;
     } catch (e) {
-      debugLog(() =>'❌ 检查集合存在性失败: $e');
+      debugPrint('❌ 检查集合存在性失败: $e');
       return false;
     }
   }
@@ -239,7 +239,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         updatedAt: collection.updatedAt,
       );
     } catch (e) {
-      debugLog(() =>'❌ 获取集合信息失败: $e');
+      debugPrint('❌ 获取集合信息失败: $e');
       return null;
     }
   }
@@ -250,7 +250,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required List<VectorDocument> documents,
   }) async {
     try {
-      debugLog(() =>'📝 插入 ${documents.length} 个向量到集合: $collectionName');
+      debugPrint('📝 插入 ${documents.length} 个向量到集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -294,11 +294,11 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       // 批量插入/更新
       documentBox.putMany(entities);
 
-      debugLog(() =>'✅ 向量插入成功');
+      debugPrint('✅ 向量插入成功');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '插入向量异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -318,7 +318,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required List<String> documentIds,
   }) async {
     try {
-      debugLog(() =>'🗑️ 删除 ${documentIds.length} 个向量从集合: $collectionName');
+      debugPrint('🗑️ 删除 ${documentIds.length} 个向量从集合: $collectionName');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -343,11 +343,11 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         }
       }
 
-      debugLog(() =>'✅ 向量删除成功，删除了 $removedCount 个向量');
+      debugPrint('✅ 向量删除成功，删除了 $removedCount 个向量');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '删除向量异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -363,10 +363,10 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     final startTime = DateTime.now();
 
     try {
-      debugLog(() =>'🔍 ObjectBox 原生向量搜索: $collectionName (limit: $limit)');
+      debugPrint('🔍 ObjectBox 原生向量搜索: $collectionName (limit: $limit)');
 
       if (!_isInitialized) {
-        debugLog(() =>'⚠️ 向量数据库未初始化');
+        debugPrint('⚠️ 向量数据库未初始化');
         return VectorSearchResult(
           items: [],
           totalResults: 0,
@@ -388,7 +388,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       query.close();
 
       if (resultsWithScores.isEmpty) {
-        debugLog(() =>'⚠️ 集合中没有找到匹配的向量: $collectionName');
+        debugPrint('⚠️ 集合中没有找到匹配的向量: $collectionName');
         return VectorSearchResult(
           items: [],
           totalResults: 0,
@@ -429,7 +429,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       }
 
       final searchTime = _calculateSearchTime(startTime);
-      debugLog(() =>'✅ HNSW搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
+      debugPrint('✅ HNSW搜索完成，找到 ${items.length} 个结果，耗时: ${searchTime}ms');
 
       return VectorSearchResult(
         items: items,
@@ -439,15 +439,15 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     } catch (e) {
       _calculateSearchTime(startTime);
       final error = 'HNSW向量搜索异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       
       // 检查是否是HNSW索引配置错误（OBX_ERROR code 10002）
       if (e.toString().contains('10002')) {
-        debugLog(() =>'🔧 检测到HNSW索引配置问题，尝试重建数据库...');
+        debugPrint('🔧 检测到HNSW索引配置问题，尝试重建数据库...');
         final rebuildSuccess = await _objectBoxManager.rebuildDatabase();
         
         if (rebuildSuccess) {
-          debugLog(() =>'✅ 数据库重建成功，重试HNSW搜索...');
+          debugPrint('✅ 数据库重建成功，重试HNSW搜索...');
           // 重新初始化客户端状态
           _isInitialized = true;
           
@@ -485,7 +485,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
             }
 
             final searchTime = _calculateSearchTime(startTime);
-            debugLog(() =>'✅ HNSW重试搜索成功，找到 ${items.length} 个结果');
+            debugPrint('✅ HNSW重试搜索成功，找到 ${items.length} 个结果');
 
             return VectorSearchResult(
               items: items,
@@ -493,14 +493,14 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
               searchTime: searchTime,
             );
           } catch (retryError) {
-            debugLog(() =>'❌ HNSW重试仍失败: $retryError');
+            debugPrint('❌ HNSW重试仍失败: $retryError');
             // 继续执行下面的回退逻辑
           }
         }
       }
       
       // 如果重建失败或不是索引问题，回退到传统搜索方式
-      debugLog(() =>'🔄 回退到传统相似度计算搜索...');
+      debugPrint('🔄 回退到传统相似度计算搜索...');
       return _fallbackSearch(
         collectionName: collectionName,
         queryVector: queryVector,
@@ -565,7 +565,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         metadata: metadata,
       );
     } catch (e) {
-      debugLog(() =>'❌ 获取向量失败: $e');
+      debugPrint('❌ 获取向量失败: $e');
       return null;
     }
   }
@@ -608,7 +608,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       return results;
     } catch (e) {
-      debugLog(() =>'❌ 批量获取向量失败: $e');
+      debugPrint('❌ 批量获取向量失败: $e');
       return [];
     }
   }
@@ -657,7 +657,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
         },
       );
     } catch (e) {
-      debugLog(() =>'❌ 获取集合统计失败: $e');
+      debugPrint('❌ 获取集合统计失败: $e');
       rethrow;
     }
   }
@@ -668,7 +668,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required String backupPath,
   }) async {
     try {
-      debugLog(() =>'💾 备份 ObjectBox 向量集合: $collectionName 到 $backupPath');
+      debugPrint('💾 备份 ObjectBox 向量集合: $collectionName 到 $backupPath');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -709,7 +709,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       final backupSize = await _calculateFileSize(backupFile);
 
-      debugLog(() =>'✅ 集合备份完成: $collectionName');
+      debugPrint('✅ 集合备份完成: $collectionName');
 
       return VectorBackupResult(
         success: true,
@@ -719,7 +719,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
       );
     } catch (e) {
       final error = '备份异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorBackupResult(
         success: false,
         documentCount: 0,
@@ -735,7 +735,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
     required String backupPath,
   }) async {
     try {
-      debugLog(() =>'🔄 恢复 ObjectBox 向量集合: $collectionName 从 $backupPath');
+      debugPrint('🔄 恢复 ObjectBox 向量集合: $collectionName 从 $backupPath');
 
       if (!_isInitialized) {
         throw Exception('向量数据库未初始化');
@@ -773,11 +773,11 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
 
       documentBox.putMany(documents);
 
-      debugLog(() =>'✅ 集合恢复完成');
+      debugPrint('✅ 集合恢复完成');
       return const VectorOperationResult(success: true);
     } catch (e) {
       final error = '恢复异常: $e';
-      debugLog(() =>'❌ $error');
+      debugPrint('❌ $error');
       return VectorOperationResult(success: false, error: error);
     }
   }
@@ -828,7 +828,7 @@ class ObjectBoxVectorClient implements VectorDatabaseInterface {
             );
           }
         } catch (e) {
-          debugLog(() =>'⚠️ 跳过无效向量: ${document.documentId} - $e');
+          debugPrint('⚠️ 跳过无效向量: ${document.documentId} - $e');
         }
       }
 

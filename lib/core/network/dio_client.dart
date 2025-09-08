@@ -1,14 +1,11 @@
-import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:convert';
-
-import '../../shared/utils/debug_log.dart';
 
 import '../constants/app_constants.dart';
 import '../exceptions/app_exceptions.dart';
@@ -184,9 +181,11 @@ class DioClient {
       // 重新配置HTTP适配器以应用新的代理设置
       _configureHttpAdapter();
 
-      debugLog(() => '🌐 代理配置已更新: ${config.mode.displayName}');
-      if (config.isCustom && config.isValid) {
-        debugLog(() => '🌐 代理地址: ${config.host}:${config.port}');
+      if (kDebugMode) {
+        debugPrint('🌐 代理配置已更新: ${config.mode.displayName}');
+        if (config.isCustom && config.isValid) {
+          debugPrint('🌐 代理地址: ${config.host}:${config.port}');
+        }
       }
     }
   }
@@ -284,11 +283,7 @@ class DioClient {
     }
   }
 
-  /// 流式请求（低延迟）
-  ///
-  /// 之前为了减少 `yield` 次数设置了 1024 字符缓冲阈值，
-  /// 会导致小块数据需要累积到一定大小才下发，表现为“时不时停顿一下”。
-  /// 这里改为逐块解码并立刻转发，确保流式响应更顺滑。
+  /// 流式请求（优化版本）
   Stream<String> getStream(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -305,13 +300,23 @@ class DioClient {
         cancelToken: cancelToken,
       );
 
-      // 直接按UTF-8边界解码并转发，避免人为缓冲造成卡顿
-      final byteStream = response.data!.stream; // Stream<List<int>>
-      final textStream = byteStream.transform(utf8.decoder as StreamTransformer<Uint8List, dynamic>); // Stream<String>
+      final stream = response.data!.stream;
+      final buffer = StringBuffer();
 
-      await for (final piece in textStream) {
-        if (piece.isEmpty) continue;
-        yield piece;
+      // 使用缓冲区减少字符串创建次数
+      await for (final chunk in stream) {
+        buffer.write(String.fromCharCodes(chunk));
+
+        // 当缓冲区达到一定大小时才输出，减少 yield 次数
+        if (buffer.length >= 1024) {
+          yield buffer.toString();
+          buffer.clear();
+        }
+      }
+
+      // 输出剩余内容
+      if (buffer.isNotEmpty) {
+        yield buffer.toString();
       }
     } catch (e) {
       throw _handleError(e);
@@ -374,23 +379,32 @@ class DioClient {
 class _LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    debugLog(() => '🚀 REQUEST: ${options.method} ${options.uri}');
-    if (options.data != null) {
-      debugLog(() => '📤 DATA: ${options.data}');
+    // 只在Debug模式下记录日志
+    if (kDebugMode) {
+      debugPrint('🚀 REQUEST: ${options.method} ${options.uri}');
+      if (options.data != null) {
+        debugPrint('📤 DATA: ${options.data}');
+      }
     }
     super.onRequest(options, handler);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    debugLog(() => '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}');
+    if (kDebugMode) {
+      debugPrint(
+        '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
+      );
+    }
     super.onResponse(response, handler);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    debugLog(() => '❌ ERROR: ${err.type} ${err.requestOptions.uri}');
-    debugLog(() => '📝 MESSAGE: ${err.message}');
+    if (kDebugMode) {
+      debugPrint('❌ ERROR: ${err.type} ${err.requestOptions.uri}');
+      debugPrint('📝 MESSAGE: ${err.message}');
+    }
     super.onError(err, handler);
   }
 }
@@ -493,9 +507,9 @@ class _PerformanceMonitor {
   void record(String method, int durationMs) {
     _count++;
     _totalMs += durationMs;
-    if (_count % 50 == 0) {
+    if (kDebugMode && _count % 50 == 0) {
       final avg = (_totalMs / _count).toStringAsFixed(0);
-      debugLog(() => '📈 平均接口耗时: ${avg}ms (样本: $_count)');
+      debugPrint('📈 平均接口耗时: ${avg}ms (样本: $_count)');
     }
   }
 }

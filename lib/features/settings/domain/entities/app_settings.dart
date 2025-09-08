@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../shared/theme/color_theme.dart';
+
 part 'app_settings.freezed.dart';
 part 'app_settings.g.dart';
 
@@ -33,6 +35,9 @@ class AppSettings with _$AppSettings {
 
     /// 主题设置
     @Default(ThemeMode.system) ThemeMode themeMode,
+
+    /// 颜色主题设置
+    @Default(AppColorTheme.purple) AppColorTheme colorTheme,
 
     /// 语言设置
     @Default('zh') String language,

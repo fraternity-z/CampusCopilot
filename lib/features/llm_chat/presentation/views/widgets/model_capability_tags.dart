@@ -4,8 +4,6 @@ import '../../../domain/utils/model_capability_checker.dart';
 
 /// 模型能力标签显示组件
 class ModelCapabilityTags extends StatelessWidget {
-  // 为同一 modelName 的能力列表做缓存，避免多处重复计算
-  static final Map<String, List<ModelCapabilityType>> _capsCache = {};
   /// 模型名称
   final String? modelName;
   
@@ -35,10 +33,8 @@ class ModelCapabilityTags extends StatelessWidget {
     if (modelName == null || modelName!.isEmpty) {
       return const SizedBox.shrink();
     }
-  // 命中缓存或计算后写入
-  final key = modelName ?? '';
-  final capabilities =
-    _capsCache[key] ??= ModelCapabilityChecker.getModelCapabilities(modelName);
+    
+    final capabilities = ModelCapabilityChecker.getModelCapabilities(modelName);
     
     // 排除基础chat能力，只显示特殊能力
     final specialCapabilities = capabilities
@@ -172,12 +168,7 @@ class ModelCapabilityTags extends StatelessWidget {
   
   /// 构建更多标签（普通模式）
   Widget _buildMoreTag(BuildContext context, int visibleCount) {
-  // 使用缓存，减少重复计算
-  final totalCapabilities =
-    ((_capsCache[modelName ?? ''] ??
-          ModelCapabilityChecker.getModelCapabilities(modelName))
-        .length) -
-      1; // 排除chat
+    final totalCapabilities = ModelCapabilityChecker.getModelCapabilities(modelName).length - 1; // 排除chat
     final moreCount = totalCapabilities - visibleCount;
     final tagSize = _getTagSize();
     

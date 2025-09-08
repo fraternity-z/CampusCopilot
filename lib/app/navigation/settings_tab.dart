@@ -156,8 +156,6 @@ class SettingsTab extends ConsumerWidget {
           alignment: Alignment.centerLeft,
           child: DropdownButton<String>(
             value: parameters.reasoningEffort,
-            borderRadius: BorderRadius.circular(12),
-            dropdownColor: Theme.of(context).colorScheme.surface,
             items: const [
               DropdownMenuItem(value: 'off', child: Text('不启用')),
               DropdownMenuItem(value: 'auto', child: Text('AUTO')),
@@ -284,8 +282,6 @@ class SettingsTab extends ConsumerWidget {
                     const Text('数学渲染引擎'),
                     DropdownButton<String>(
                       value: general.mathEngine,
-                      borderRadius: BorderRadius.circular(12),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
                       items: const [
                         DropdownMenuItem(value: 'katex', child: Text('KaTeX')),
                         DropdownMenuItem(

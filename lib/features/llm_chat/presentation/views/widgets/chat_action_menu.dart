@@ -5,7 +5,6 @@ import '../../providers/chat_provider.dart';
 // 删除AI搜索切换相关的导入，开关已移动到输入区
 import '../../../../../core/widgets/elegant_notification.dart';
 import '../../../domain/services/export_service.dart';
-import 'chart_builder_dialog.dart';
 
 /// 聊天操作菜单组件
 ///
@@ -15,55 +14,27 @@ class ChatActionMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 使用局部 Theme 覆盖 PopupMenu 的样式，实现圆角、边框与选中高亮
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    return Theme(
-      data: theme.copyWith(
-        popupMenuTheme: PopupMenuThemeData(
-          color: scheme.surface,
-          surfaceTintColor: Colors.transparent,
-          elevation: 10,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: scheme.outline.withValues(alpha: 0.12),
-              width: 1,
-            ),
+    return PopupMenuButton<String>(
+      icon: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
+        child: Center(
+          child: Icon(
+            Icons.more_horiz, // 改为水平三点，更美观
+            color: const Color(0xFF999999),
+            size: 20, // 统一图标大小
           ),
-          textStyle: TextStyle(color: scheme.onSurface),
         ),
-        hoverColor: scheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
-        highlightColor: scheme.primary.withValues(alpha: isDark ? 0.16 : 0.10),
-        splashColor: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
       ),
-      child: PopupMenuButton<String>(
       tooltip: '更多操作',
       // 避免使用过大的负偏移导致被上层深色背景/遮罩裁剪
       position: PopupMenuPosition.under,
       offset: const Offset(0, 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
-          width: 1,
-        ),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
       itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: 'chart_builder',
-          child: _buildMenuItem(
-            context: context,
-            icon: Icons.insert_chart_outlined,
-            title: '图表绘制',
-            subtitle: '上传图片/文件，AI解析绘制',
-            color: const Color(0xFF3F51B5),
-          ),
-        ),
-        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'export_conversation',
           child: _buildMenuItem(
@@ -108,7 +79,6 @@ class ChatActionMenu extends ConsumerWidget {
         ),
       ],
       onSelected: (value) => _handleMenuAction(context, ref, value),
-    ),
     );
   }
 
@@ -172,13 +142,6 @@ class ChatActionMenu extends ConsumerWidget {
     // 使用下一帧再执行，避免与 PopupMenu 的遮罩层产生覆盖/重叠
     WidgetsBinding.instance.addPostFrameCallback((_) {
       switch (action) {
-        case 'chart_builder':
-          showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (_) => const ChartBuilderDialog(),
-          );
-          break;
         case 'export_conversation':
           _showExportDialog(context, ref);
           break;

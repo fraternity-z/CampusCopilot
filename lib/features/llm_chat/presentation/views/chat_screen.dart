@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../shared/utils/keyboard_utils.dart';
-import '../../../../shared/utils/debug_log.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -19,7 +18,8 @@ import '../providers/chat_provider.dart';
 import '../providers/scroll_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
-import 'widgets/smooth_message_switcher.dart';
+import 'widgets/message_content_widget.dart';
+import 'widgets/streaming_message_content_widget.dart';
 import 'widgets/model_selector_dialog.dart';
 import 'widgets/message_options_button.dart';
 import 'widgets/chat_action_menu.dart';
@@ -82,9 +82,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _performScroll(ScrollController controller, List<ChatMessage> messages, {bool isStreaming = false}) {
     if (!mounted || !controller.hasClients) return;
 
-    // 通过ScrollNotifier检查是否应该自动滚动
-    final scrollState = ref.read(chatScrollProvider);
-    if (!scrollState.isAtBottom) return; // 用户不在底部，不自动滚动
+    // 检查用户是否在底部
+    final position = controller.position;
+    final isAtBottom = position.maxScrollExtent - position.pixels < 50;
+    
+    if (!isAtBottom) return; // 用户不在底部，不自动滚动
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !controller.hasClients) return;
@@ -106,7 +108,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
         }
       } catch (e) {
-        debugLog(() => '滚动操作异常: $e');
+        debugPrint('滚动操作异常: $e');
       }
     });
   }
@@ -121,10 +123,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         KeyboardUtils.hideKeyboard(context);
       },
       behavior: HitTestBehavior.translucent,
-      child: Scaffold(
-        appBar: _buildAppBar(), 
-        body: _buildMainChatArea(),
-      ),
+      child: Scaffold(appBar: _buildAppBar(), body: _buildMainChatArea()),
     );
   }
 
@@ -460,7 +459,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
-  /// 构建消息列表 - 使用新的滚动状态隔离机制，优化性能
+  /// 构建消息列表 - 使用新的滚动状态隔离机制
   Widget _buildMessageList() {
     return Consumer(
       builder: (context, ref, child) {
@@ -469,9 +468,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         final isSearching = ref.watch(chatSearchingProvider);
         final scrollController = ref.watch(scrollControllerProvider);
         final scrollNotifier = ref.read(chatScrollProvider.notifier);
-        final isLoading = ref.watch(chatLoadingProvider);
 
-        if (messages.isEmpty && !isLoading) {
+        if (messages.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -504,45 +502,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
         }
 
-        // 显示加载状态（当切换会话时）
-        if (messages.isEmpty && isLoading) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '正在加载消息...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
         // 使用独立的滚动状态监听，避免UI状态变化触发滚动
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (scrollController.hasClients && messages.isNotEmpty) {
             // 检查是否需要滚动
             if (scrollNotifier.shouldScrollForMessages(messages)) {
-              final isStreamingNow = messages.isNotEmpty &&
-                  !messages.last.isFromUser &&
-                  messages.last.status == MessageStatus.sending;
-              _performScroll(
-                scrollController,
-                messages,
-                isStreaming: isStreamingNow,
-              );
+              _performScroll(scrollController, messages, isStreaming: false);
             }
           }
         });
@@ -552,63 +517,60 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         if (isSearching) extraItems++;
         if (error != null) extraItems++;
 
-        return NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            final notifier = ref.read(chatScrollProvider.notifier);
-            
-            // 更新滚动位置状态
-            if (scrollController.hasClients) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                notifier.updateScrollPosition(scrollController);
-              });
-            }
-            
-            if (notification is UserScrollNotification) {
-              // 仅用户手势导致的滚动才标记为用户滚动
-              if (notification.direction == ScrollDirection.idle) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  notifier.markUserScrollingStopped();
-                });
-              } else {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  notifier.markUserScrolling();
-                });
-              }
-            } else if (notification is ScrollEndNotification) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                notifier.markUserScrollingStopped();
-              });
-            }
-            return false; // 允许事件继续冒泡
-          },
+        return AnimationLimiter(
           child: ListView.builder(
-              key: const PageStorageKey('chat_message_list'),
-              controller: scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              cacheExtent: 800,
-              addAutomaticKeepAlives: true,
-              addRepaintBoundaries: true,
-              addSemanticIndexes: true,
-              itemCount: messages.length + extraItems,
-              itemBuilder: (context, index) {
+            key: const PageStorageKey('chat_message_list'),
+            controller: scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            cacheExtent: 800,
+            addAutomaticKeepAlives: true,
+            addRepaintBoundaries: true,
+            addSemanticIndexes: true,
+            itemCount: messages.length + extraItems,
+            itemBuilder: (context, index) {
               // 显示搜索状态消息（在消息列表末尾，错误消息之前）
               if (isSearching && index == messages.length) {
-                return _buildSearchingMessage();
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 375),
+                  child: SlideAnimation(
+                    verticalOffset: 30.0,
+                    horizontalOffset: -30.0,
+                    child: FadeInAnimation(
+                      child: _buildSearchingMessage(),
+                    ),
+                  ),
+                );
               }
 
               // 显示错误消息（在最后）
               if (error != null && index == messages.length + (isSearching ? 1 : 0)) {
-                return _buildErrorMessage(error);
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 375),
+                  child: SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(
+                      child: _buildErrorMessage(error),
+                    ),
+                  ),
+                );
               }
 
               // 显示普通消息
-              return _buildMessageBubble(messages[index]);
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 375),
+                child: SlideAnimation(
+                  verticalOffset: messages[index].isFromUser ? -30.0 : 30.0,
+                  horizontalOffset: messages[index].isFromUser ? 30.0 : -30.0,
+                  child: FadeInAnimation(
+                    child: _buildMessageBubble(messages[index]),
+                  ),
+                ),
+              );
             },
-            ),
+          ),
         );
       },
     );
@@ -913,9 +875,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 时间和气泡列（加 Flexible 防止横向溢出）
-                Flexible(
-                  child: Padding(
+                // 时间和气泡列
+                Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -931,29 +892,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         ),
                       ),
                     ),
-                    // 消息气泡 - 添加宽度限制
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: _getMaxBubbleWidth(context),
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20).copyWith(
-                              topLeft: const Radius.circular(20),
-                              topRight: const Radius.circular(4),
-                              bottomLeft: const Radius.circular(20),
-                              bottomRight: const Radius.circular(20),
-                            ),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                  left: 18,
-                                  right: 46,
-                                  top: 18,
-                                  bottom: 14,
-                                ),
+                    // 消息气泡
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20).copyWith(
+                            topLeft: const Radius.circular(20),
+                            topRight: const Radius.circular(4),
+                            bottomLeft: const Radius.circular(20),
+                            bottomRight: const Radius.circular(20),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.only(
+                                left: 18,
+                                right: 46,
+                                top: 18,
+                                bottom: 14,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
@@ -990,20 +947,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                   ),
                                 ],
                               ),
-                              child: InstantMessageSwitcher(message: message),
+                              child: message.status == MessageStatus.sending && message.isFromAI
+                                  ? OptimizedStreamingMessageWidget(
+                                      message: message,
+                                      isStreaming: true,
+                                    )
+                                  : MessageContentWidget(message: message),
                             ),
                           ),
                         ),
-                          Positioned(
-                            right: 8,
-                            top: 4,
-                            child: MessageOptionsButton(message: message),
-                          ),
-                        ],
-                      ),
+                        Positioned(
+                          right: 8,
+                          top: 4,
+                          child: MessageOptionsButton(message: message),
+                        ),
+                      ],
                     ),
                   ],
-                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1047,9 +1007,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     // 助手头像
                     _buildAssistantAvatar(message),
                     const SizedBox(width: 8),
-                    // 助手信息（加 Flexible 防止横向溢出）
-                    Flexible(
-                      child: Column(
+                    // 助手信息
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -1068,36 +1027,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           ),
                         ),
                       ],
-                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                // 消息气泡 - 添加宽度限制
+                // 消息气泡
                 Container(
                   margin: const EdgeInsets.only(left: 40),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: _getMaxBubbleWidth(context),
-                    ),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20).copyWith(
-                            topLeft: const Radius.circular(4),
-                            topRight: const Radius.circular(20),
-                            bottomLeft: const Radius.circular(20),
-                            bottomRight: const Radius.circular(20),
-                          ),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                            child: Container(
-                              padding: const EdgeInsets.only(
-                                left: 18,
-                                right: 46,
-                                top: 18,
-                                bottom: 14,
-                              ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20).copyWith(
+                          topLeft: const Radius.circular(4),
+                          topRight: const Radius.circular(20),
+                          bottomLeft: const Radius.circular(20),
+                          bottomRight: const Radius.circular(20),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            padding: const EdgeInsets.only(
+                              left: 18,
+                              right: 46,
+                              top: 18,
+                              bottom: 14,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
@@ -1134,17 +1088,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                 ),
                               ],
                             ),
-                            child: InstantMessageSwitcher(message: message),
+                            child: message.status == MessageStatus.sending && message.isFromAI
+                                ? OptimizedStreamingMessageWidget(
+                                    message: message,
+                                    isStreaming: true,
+                                  )
+                                : MessageContentWidget(message: message),
                           ),
                         ),
                       ),
-                        Positioned(
-                          right: 8,
-                          top: 4,
-                          child: MessageOptionsButton(message: message),
-                        ),
-                      ],
-                    ),
+                      Positioned(
+                        right: 8,
+                        top: 4,
+                        child: MessageOptionsButton(message: message),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1777,7 +1735,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           // 添加到聊天状态
           chatNotifier.addProcessedImage(imageResult);
         } catch (e) {
-          debugLog(() => '处理图片文件失败: ${file.name}, 错误: $e');
+          debugPrint('处理图片文件失败: ${file.name}, 错误: $e');
           // 继续处理其他图片
         }
       }
@@ -1958,25 +1916,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final hour = timestamp.hour.toString().padLeft(2, '0');
     final minute = timestamp.minute.toString().padLeft(2, '0');
     return '$month/$day $hour:$minute';
-  }
-
-  /// 获取响应式气泡最大宽度
-  double _getMaxBubbleWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = 40.0; // 聊天列表的左右padding
-    final availableWidth = screenWidth - horizontalPadding;
-    
-    // 响应式设计：根据屏幕宽度调整比例
-    if (screenWidth < 600) {
-      // 小屏幕：80%
-      return availableWidth * 0.80;
-    } else if (screenWidth < 900) {
-      // 中等屏幕：70%
-      return availableWidth * 0.70;
-    } else {
-      // 大屏幕：65%，但不超过720px
-      return (availableWidth * 0.65).clamp(0, 720);
-    }
   }
 
   /// 构建并列的 RAG 与 AI 搜索控制（紧凑样式）

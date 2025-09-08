@@ -11,10 +11,10 @@ import 'package:dio/dio.dart';
 import 'package:html/parser.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:synchronized/synchronized.dart';
-import 'package:campus_copilot/repository/network_session.dart';
-import 'package:campus_copilot/shared/utils/debug_log.dart';
-import 'package:campus_copilot/repository/preference.dart' as preference;
-import 'package:campus_copilot/repository/xidian_ids/jc_captcha.dart';
+import 'package:ai_assistant/repository/network_session.dart';
+import 'package:ai_assistant/repository/logger.dart';
+import 'package:ai_assistant/repository/preference.dart' as preference;
+import 'package:ai_assistant/repository/xidian_ids/jc_captcha.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum IDSLoginState {
@@ -37,7 +37,7 @@ IDSLoginState get loginState => _loginState;
 Future<void> setLoginState(IDSLoginState newState) async {
   _loginState = newState;
   await _saveLoginState(newState);
-  debugLog(() => "[IDSSession] Login state changed to: $newState");
+  log.info("[IDSSession] Login state changed to: $newState");
 }
 
 bool get offline =>
@@ -49,7 +49,7 @@ Future<void> _saveLoginState(IDSLoginState state) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('login_state', state.toString());
   } catch (e) {
-    debugLog(() => "[IDSSession] Failed to save login state: $e");
+    log.error("[IDSSession] Failed to save login state: $e");
   }
 }
 
@@ -64,7 +64,7 @@ Future<void> restoreLoginState() async {
       for (IDSLoginState state in IDSLoginState.values) {
         if (state.toString() == stateString) {
           _loginState = state;
-          debugLog(() => "[IDSSession] Restored login state: $state");
+          log.info("[IDSSession] Restored login state: $state");
           return;
         }
       }
@@ -72,9 +72,9 @@ Future<void> restoreLoginState() async {
     
     // 如果没有保存的状态或解析失败，使用默认状态
     _loginState = IDSLoginState.none;
-    debugLog(() => "[IDSSession] Using default login state: none");
+    log.info("[IDSSession] Using default login state: none");
   } catch (e) {
-    debugLog(() => "[IDSSession] Failed to restore login state: $e");
+    log.error("[IDSSession] Failed to restore login state: $e");
     _loginState = IDSLoginState.none;
   }
 }
@@ -84,7 +84,7 @@ Future<bool> tryAutoLogin() async {
   try {
     // 检查是否启用自动登录
     if (!preference.getBool(preference.Preference.autoLogin)) {
-      debugLog(() => "[IDSSession] Auto login is disabled");
+      log.info("[IDSSession] Auto login is disabled");
       return false;
     }
 
@@ -93,11 +93,11 @@ Future<bool> tryAutoLogin() async {
     final password = preference.getString(preference.Preference.idsPassword);
     
     if (account.isEmpty || password.isEmpty) {
-      debugLog(() => "[IDSSession] No saved credentials found for auto login");
+      log.info("[IDSSession] No saved credentials found for auto login");
       return false;
     }
 
-    debugLog(() => "[IDSSession] Attempting auto login for account: $account");
+    log.info("[IDSSession] Attempting auto login for account: $account");
     
     // 设置登录状态为请求中
     await setLoginState(IDSLoginState.requesting);
@@ -113,20 +113,20 @@ Future<bool> tryAutoLogin() async {
       
       // 登录成功
       await setLoginState(IDSLoginState.success);
-      debugLog(() => "[IDSSession] Auto login successful");
+      log.info("[IDSSession] Auto login successful");
       return true;
       
     } on PasswordWrongException catch (e) {
-      debugLog(() => "[IDSSession] Auto login failed - password wrong: ${e.msg}");
+      log.warning("[IDSSession] Auto login failed - password wrong: ${e.msg}");
       await setLoginState(IDSLoginState.passwordWrong);
       return false;
     } catch (e) {
-      debugLog(() => "[IDSSession] Auto login failed: $e");
+      log.warning("[IDSSession] Auto login failed: $e");
       await setLoginState(IDSLoginState.fail);
       return false;
     }
   } catch (e) {
-    debugLog(() => "[IDSSession] Error during auto login: $e");
+    log.error("[IDSSession] Error during auto login: $e");
     await setLoginState(IDSLoginState.fail);
     return false;
   }
@@ -138,9 +138,9 @@ Future<void> clearLoginState() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('login_state');
-    debugLog(() => "[IDSSession] Login state cleared");
+    log.info("[IDSSession] Login state cleared");
   } catch (e) {
-    debugLog(() => "[IDSSession] Failed to clear login state: $e");
+    log.error("[IDSSession] Failed to clear login state: $e");
   }
 }
 
@@ -152,7 +152,10 @@ class IDSSession extends NetworkSession {
     ..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          debugLog(() => "[IDSSession][OfflineCheckInspector] Offline status: $offline");
+          log.info(
+            "[IDSSession][OfflineCheckInspector]"
+            "Offline status: $offline",
+          );
           if (offline) {
             handler.reject(
               DioException.requestCancelled(
@@ -224,12 +227,18 @@ class IDSSession extends NetworkSession {
     required Future<void> Function(String) sliderCaptcha,
   }) async {
     return await _idslock.synchronized(() async {
-      debugLog(() => "[IDSSession][checkAndLogin] Ready to get $target.");
+      log.info(
+        "[IDSSession][checkAndLogin] "
+        "Ready to get $target.",
+      );
       var data = await dioNoOfflineCheck.get(
         "https://ids.xidian.edu.cn/authserver/login",
         queryParameters: {'service': target},
       );
-      debugLog(() => "[IDSSession][checkAndLogin] Received: $data.");
+      log.info(
+        "[IDSSession][checkAndLogin] "
+        "Received: $data.",
+      );
       if (data.statusCode == 401) {
         throw PasswordWrongException(msg: _parsePasswordWrongMsg(data.data));
       } else if (data.statusCode == 301 || data.statusCode == 302) {
@@ -239,7 +248,10 @@ class IDSSession extends NetworkSession {
         var page = parse(data.data ?? "");
         var form = page.getElementsByTagName("form")
           ..removeWhere((element) => element.id != "continue");
-        debugLog(() => "[IDSSession][login] form: $form.");
+        log.info(
+          "[IDSSession][login] "
+          "form: $form.",
+        );
         if (form.isNotEmpty) {
           var inputSearch = form[0].getElementsByTagName("input");
           Map<String, String> toPostAgain = {};
@@ -279,7 +291,10 @@ class IDSSession extends NetworkSession {
     /// Get the login webpage.
     if (onResponse != null) {
       onResponse(10, "login_process.ready_page");
-      debugLog(() => "[IDSSession][login] Ready to get the login webpage.");
+      log.info(
+        "[IDSSession][login] "
+        "Ready to get the login webpage.",
+      );
     }
     var response = await dioNoOfflineCheck
         .get(
@@ -302,7 +317,10 @@ class IDSSession extends NetworkSession {
     for (var i in cookie) {
       cookieStr += "${i.name}=${i.value}; ";
     }
-    debugLog(() => "[IDSSession][login] cookie: $cookieStr.");
+    log.info(
+      "[IDSSession][login] "
+      "cookie: $cookieStr.",
+    );
 
     /// Get AES encrypt key. There must be.
     if (onResponse != null) {
@@ -313,7 +331,10 @@ class IDSSession extends NetworkSession {
       orElse: () => throw LoginFailedException(msg: "无法获取加密密钥，登录页面可能已更新"),
     );
     String keys = pwdEncryptSaltElement.attributes["value"]!;
-    debugLog(() => "[IDSSession][login] encrypt key: $keys.");
+    log.info(
+      "[IDSSession][login] "
+      "encrypt key: $keys.",
+    );
 
     /// Prepare for login.
     if (onResponse != null) {
@@ -372,12 +393,18 @@ class IDSSession extends NetworkSession {
         return data.headers[HttpHeaders.locationHeader]![0];
       } else {
         /// Check whether need continue.
-        debugLog(() => "[IDSSession][login] data: ${(data.data as String).length}.");
+        log.info(
+          "[IDSSession][login] "
+          "data: ${(data.data as String).length}.",
+        );
 
         var page = parse(data.data ?? "");
         var form = page.getElementsByTagName("form")
           ..removeWhere((element) => element.id != "continue");
-        debugLog(() => "[IDSSession][login] form: $form.");
+        log.info(
+          "[IDSSession][login] "
+          "form: $form.",
+        );
         if (form.isNotEmpty) {
           var inputSearch = form[0].getElementsByTagName("input");
           Map<String, String> toPostAgain = {};
@@ -424,7 +451,7 @@ class IDSSession extends NetworkSession {
     var response = await dio.get(location);
     while (response.headers[HttpHeaders.locationHeader] != null) {
       location = response.headers[HttpHeaders.locationHeader]![0];
-      debugLog(() => "[checkWhetherPostgraduate] Received location: $location");
+      log.info("[checkWhetherPostgraduate] Received location: $location");
       response = await dio.get(location);
     }
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../../../../shared/utils/debug_log.dart';
 
 import '../../../../core/widgets/elegant_notification.dart';
 import 'package:drift/drift.dart' as drift;
@@ -1236,7 +1235,7 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
           } catch (e) {
             // 模型可能已存在，跳过
             skippedCount++;
-            debugLog(() => '跳过重复模型: ${model.id} - $e');
+            debugPrint('跳过重复模型: ${model.id} - $e');
           }
         }
 

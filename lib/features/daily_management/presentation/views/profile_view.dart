@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
-import 'package:campus_copilot/shared/utils/debug_log.dart';
-import 'package:campus_copilot/repository/preference.dart' as preference;
-import 'package:campus_copilot/repository/xidian_ids/ids_session.dart';
+import 'package:ai_assistant/repository/logger.dart';
+import 'package:ai_assistant/repository/preference.dart' as preference;
+import 'package:ai_assistant/repository/xidian_ids/ids_session.dart';
 import 'login_view.dart';
 
 /// 个人信息界面
@@ -21,14 +21,6 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  
-  /// 处理登录成功回调
-  void _handleLoginSuccess() {
-    if (mounted) {
-      setState(() {}); // 刷新页面状态
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return _buildBody();
@@ -152,7 +144,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   /// 构建登录提示（未登录状态）
   Widget _buildLoginPrompt() {
-    return LoginView(onLoginSuccess: _handleLoginSuccess);
+    return const LoginView();
   }
 
   /// 构建信息卡片
@@ -262,7 +254,7 @@ class _ProfileViewState extends State<ProfileView> {
       // 清除保存的密码
       await preference.setString(preference.Preference.idsPassword, "");
       
-      debugLog(() => "[ProfileView] User logged out");
+      log.info("[ProfileView] User logged out");
       
       if (mounted) {
         setState(() {}); // 刷新界面
@@ -271,7 +263,7 @@ class _ProfileViewState extends State<ProfileView> {
         );
       }
     } catch (e) {
-      debugLog(() => "[ProfileView] Logout failed: $e");
+      log.error("[ProfileView] Logout failed: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("注销失败，请重试")),

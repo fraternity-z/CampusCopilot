@@ -7,8 +7,6 @@ import '../shared/theme/app_theme.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/settings/domain/entities/app_settings.dart' as app_settings;
 import '../core/network/proxy_service.dart';
-import 'widgets/splash_screen.dart';
-import 'providers/splash_provider.dart';
 
 /// 应用程序根Widget
 ///
@@ -24,15 +22,14 @@ class AIAssistantApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final settings = ref.watch(settingsProvider);
-    final shouldShowSplash = ref.watch(shouldShowSplashProvider);
 
     return MaterialApp.router(
-      title: 'Campus Copilot',
+      title: 'AI Assistant',
       debugShowCheckedModeBanner: false,
 
       // 主题配置
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightThemeWithColor(settings.colorTheme),
+      darkTheme: AppTheme.darkThemeWithColor(settings.colorTheme),
       themeMode: _convertThemeMode(settings.themeMode),
 
       // 路由配置
@@ -46,13 +43,9 @@ class AIAssistantApp extends ConsumerWidget {
       ],
       supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
 
-      // 构建器用于全局错误处理、加载状态和启动屏
+      // 构建器用于全局错误处理和加载状态
       builder: (context, child) {
-        return _AppWrapper(
-          child: shouldShowSplash 
-              ? _SplashWrapper(child: child)
-              : child,
-        );
+        return _AppWrapper(child: child);
       },
     );
   }
@@ -82,96 +75,5 @@ class _AppWrapper extends ConsumerWidget {
     ref.watch(proxyConfigWatcherProvider);
 
     return child ?? const SizedBox.shrink();
-  }
-}
-
-/// 启动屏包装器
-class _SplashWrapper extends ConsumerStatefulWidget {
-  final Widget? child;
-
-  const _SplashWrapper({this.child});
-
-  @override
-  ConsumerState<_SplashWrapper> createState() => _SplashWrapperState();
-}
-
-class _SplashWrapperState extends ConsumerState<_SplashWrapper>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _fadeInController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  bool _showMainApp = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeInController = AnimationController(
-      duration: const Duration(milliseconds: 520),
-      vsync: this,
-    );
-
-    final curve = CurvedAnimation(
-      parent: _fadeInController,
-      curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic),
-    );
-
-    _fadeAnimation = curve;
-    _scaleAnimation = Tween<double>(begin: 0.985, end: 1.0)
-        .animate(CurvedAnimation(parent: _fadeInController, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _fadeInController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final splashSettings = ref.watch(splashSettingsProvider);
-    final shouldShowSplash = ref.watch(shouldShowSplashProvider);
-    
-    // 监听启动屏状态变化，如果重置则重置本地状态
-    ref.listen<SplashState>(splashProvider, (previous, next) {
-      if (next == SplashState.showing && previous == SplashState.completed) {
-        // 启动屏被重置，重置本地状态
-        setState(() {
-          _showMainApp = false;
-        });
-        _fadeInController.reset();
-      }
-    });
-    
-    return Stack(
-      children: [
-        // 主应用（淡入效果）
-        if (_showMainApp)
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              filterQuality: FilterQuality.high,
-              child: widget.child ?? const SizedBox.shrink(),
-            ),
-          ),
-        
-        // 启动屏
-        if (shouldShowSplash)
-          SplashScreen(
-            animationDuration: Duration(milliseconds: splashSettings.durationMs),
-            onAnimationComplete: () {
-              // 启动屏动画完成后，显示主应用并开始淡入
-              setState(() {
-                _showMainApp = true;
-              });
-              
-              _fadeInController.forward().then((_) {
-                // 淡入完成后更新状态
-                ref.read(splashProvider.notifier).completeAnimation();
-              });
-            },
-          ),
-      ],
-    );
   }
 }

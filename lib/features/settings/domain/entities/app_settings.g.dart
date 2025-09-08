@@ -33,6 +33,9 @@ _$AppSettingsImpl _$$AppSettingsImplFromJson(Map<String, dynamic> json) =>
           : OllamaConfig.fromJson(json['ollamaConfig'] as Map<String, dynamic>),
       themeMode: $enumDecodeNullable(_$ThemeModeEnumMap, json['themeMode']) ??
           ThemeMode.system,
+      colorTheme:
+          $enumDecodeNullable(_$AppColorThemeEnumMap, json['colorTheme']) ??
+              AppColorTheme.purple,
       language: json['language'] as String? ?? 'zh',
       defaultProvider:
           $enumDecodeNullable(_$AIProviderEnumMap, json['defaultProvider']) ??
@@ -60,6 +63,7 @@ Map<String, dynamic> _$$AppSettingsImplToJson(_$AppSettingsImpl instance) =>
       'openrouterConfig': instance.openrouterConfig,
       'ollamaConfig': instance.ollamaConfig,
       'themeMode': _$ThemeModeEnumMap[instance.themeMode]!,
+      'colorTheme': _$AppColorThemeEnumMap[instance.colorTheme]!,
       'language': instance.language,
       'defaultProvider': _$AIProviderEnumMap[instance.defaultProvider]!,
       'chatSettings': instance.chatSettings,
@@ -71,6 +75,15 @@ const _$ThemeModeEnumMap = {
   ThemeMode.system: 'system',
   ThemeMode.light: 'light',
   ThemeMode.dark: 'dark',
+};
+
+const _$AppColorThemeEnumMap = {
+  AppColorTheme.red: 'red',
+  AppColorTheme.yellow: 'yellow',
+  AppColorTheme.blue: 'blue',
+  AppColorTheme.green: 'green',
+  AppColorTheme.purple: 'purple',
+  AppColorTheme.orange: 'orange',
 };
 
 const _$AIProviderEnumMap = {

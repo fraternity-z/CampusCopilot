@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:campus_copilot/core/network/proxy_config.dart';
-import 'package:campus_copilot/core/network/dio_client.dart';
-import 'package:campus_copilot/core/network/proxy_service.dart';
+import 'package:ai_assistant/core/network/proxy_config.dart';
+import 'package:ai_assistant/core/network/dio_client.dart';
+import 'package:ai_assistant/core/network/proxy_service.dart';
 
 void main() {
   group('代理服务优化测试', () {

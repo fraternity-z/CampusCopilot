@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'color_theme.dart';
+
 /// 应用主题配置
 /// 基于Material Design 3和现代UI趋势设计
 class AppTheme {
   // 私有构造函数
   AppTheme._();
 
-  // 主色调配置
+  // 主色调配置（保留用于兼容性）
   static const Color _primaryColor = Color(0xFF6750A4);
-  static const Color _secondaryColor = Color(0xFF625B71);
   static const Color _surfaceColor = Color(0xFFFFFBFE);
-  static const Color _errorColor = Color(0xFFBA1A1A);
 
-  // 渐变色配置
+  // 渐变色配置（默认紫色主题）
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFF6750A4), Color(0xFF7C4DFF)],
     begin: Alignment.topLeft,
@@ -25,6 +25,16 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  /// 根据颜色主题获取主要渐变色
+  static LinearGradient getPrimaryGradient(AppColorTheme theme) {
+    return ColorThemeConfig.getPrimaryGradient(theme);
+  }
+
+  /// 根据颜色主题获取聊天气泡渐变色
+  static LinearGradient getChatBubbleGradient(AppColorTheme theme) {
+    return ColorThemeConfig.getChatBubbleGradient(theme);
+  }
 
   // 圆角配置
   static const double radiusXS = 4.0;
@@ -53,47 +63,22 @@ class AppTheme {
     BoxShadow(color: Color(0x1F000000), blurRadius: 8, offset: Offset(0, 2)),
   ];
 
-  // 亮色主题
-  static ThemeData get lightTheme {
+  // 亮色主题（使用默认紫色主题）
+  static ThemeData get lightTheme => lightThemeWithColor(AppColorTheme.purple);
+
+  // 暗色主题（使用默认紫色主题）
+  static ThemeData get darkTheme => darkThemeWithColor(AppColorTheme.purple);
+
+  // 根据颜色主题创建亮色主题
+  static ThemeData lightThemeWithColor(AppColorTheme colorTheme) {
+    final colorScheme = ColorThemeConfig.getLightColorScheme(colorTheme);
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: _primaryColor,
-        primaryContainer: Color(0xFFEADDFF),
-        secondary: _secondaryColor,
-        secondaryContainer: Color(0xFFE8DEF8),
-        surface: _surfaceColor,
-        surfaceContainerHighest: Color(0xFFE6E0E9),
-        error: _errorColor,
-        onPrimary: Colors.white,
-        onPrimaryContainer: Color(0xFF21005D),
-        onSecondary: Colors.white,
-        onSecondaryContainer: Color(0xFF1D192B),
-        onSurface: Color(0xFF1C1B1F),
-        onSurfaceVariant: Color(0xFF49454F),
-        onError: Colors.white,
-        outline: Color(0xFF79747E),
-        outlineVariant: Color(0xFFCAC4D0),
-      ),
+      colorScheme: colorScheme,
 
       // 字体配置
       textTheme: _buildTextTheme(Brightness.light),
-
-      // 全局 PopupMenu 圆角与边框 + 选中高亮
-      popupMenuTheme: PopupMenuThemeData(
-        color: _surfaceColor,
-        surfaceTintColor: Colors.transparent,
-        elevation: 10,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusM),
-          side: const BorderSide(color: Color(0xFFE6E0E9), width: 1),
-        ),
-        textStyle: const TextStyle(color: Color(0xFF1C1B1F), fontSize: 14),
-      ),
-      hoverColor: const Color(0xFF6750A4).withValues(alpha: 0.08),
-      highlightColor: const Color(0xFF6750A4).withValues(alpha: 0.10),
-      splashColor: const Color(0xFF6750A4).withValues(alpha: 0.12),
 
       // AppBar主题
       appBarTheme: const AppBarTheme(
@@ -138,18 +123,18 @@ class AppTheme {
       // 输入框主题
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF7F2FA),
+        fillColor: colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusM),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusM),
-          borderSide: const BorderSide(color: Color(0xFFE6E0E9), width: 1),
+          borderSide: BorderSide(color: colorScheme.outline, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusM),
-          borderSide: const BorderSide(color: _primaryColor, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spacingM,
@@ -158,28 +143,28 @@ class AppTheme {
       ),
 
       // 底部导航栏主题
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         elevation: 0,
-        backgroundColor: _surfaceColor,
-        selectedItemColor: _primaryColor,
-        unselectedItemColor: Color(0xFF79747E),
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.outline,
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: TextStyle(
+        selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: TextStyle(
+        unselectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w400,
         ),
       ),
 
       // 浮动操作按钮主题
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 6,
-        backgroundColor: _primaryColor,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(radiusM)),
         ),
       ),
@@ -225,71 +210,41 @@ class AppTheme {
       ),
 
       // 滑块主题
-      sliderTheme: const SliderThemeData(
-        activeTrackColor: _primaryColor,
-        inactiveTrackColor: Color(0xFFE6E0E9),
-        thumbColor: _primaryColor,
-        overlayColor: Color(0x1F6750A4),
-        valueIndicatorColor: _primaryColor,
+      sliderTheme: SliderThemeData(
+        activeTrackColor: colorScheme.primary,
+        inactiveTrackColor: colorScheme.outlineVariant,
+        thumbColor: colorScheme.primary,
+        overlayColor: colorScheme.primary.withValues(alpha: 0.12),
+        valueIndicatorColor: colorScheme.primary,
         valueIndicatorTextStyle: TextStyle(
-          color: Colors.white,
+          color: colorScheme.onPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  // 暗色主题
-  static ThemeData get darkTheme {
+  // 根据颜色主题创建暗色主题
+  static ThemeData darkThemeWithColor(AppColorTheme colorTheme) {
+    final colorScheme = ColorThemeConfig.getDarkColorScheme(colorTheme);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFFD0BCFF),
-        primaryContainer: Color(0xFF4F378B),
-        secondary: Color(0xFFCCC2DC),
-        secondaryContainer: Color(0xFF4A4458),
-        surface: Color(0xFF1C1B1F),
-        surfaceContainerHighest: Color(0xFF36343B),
-        error: Color(0xFFFFB4AB),
-        onPrimary: Color(0xFF371E73),
-        onPrimaryContainer: Color(0xFFEADDFF),
-        onSecondary: Color(0xFF332D41),
-        onSecondaryContainer: Color(0xFFE8DEF8),
-        onSurface: Color(0xFFE6E0E9),
-        onSurfaceVariant: Color(0xFFCAC4D0),
-        onError: Color(0xFF690005),
-        outline: Color(0xFF938F99),
-        outlineVariant: Color(0xFF49454F),
-      ),
+      colorScheme: colorScheme,
 
       textTheme: _buildTextTheme(Brightness.dark),
 
-      // 全局 PopupMenu 圆角与边框 + 选中高亮（暗色）
-      popupMenuTheme: PopupMenuThemeData(
-        color: Color(0xFF1C1B1F),
-        surfaceTintColor: Colors.transparent,
-        elevation: 10,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusM),
-          side: const BorderSide(color: Color(0xFF36343B), width: 1),
-        ),
-        textStyle: const TextStyle(color: Color(0xFFE6E0E9), fontSize: 14),
-      ),
-      hoverColor: const Color(0xFFD0BCFF).withValues(alpha: 0.12),
-      highlightColor: const Color(0xFFD0BCFF).withValues(alpha: 0.16),
-      splashColor: const Color(0xFFD0BCFF).withValues(alpha: 0.20),
-
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: true,
         backgroundColor: Colors.transparent,
-        foregroundColor: Color(0xFFE6E0E9),
+        foregroundColor: colorScheme.onSurface,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w600,
-          color: Color(0xFFE6E0E9),
+          color: colorScheme.onSurface,
         ),
       ),
 
@@ -297,9 +252,9 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusM),
-          side: const BorderSide(color: Color(0xFF36343B), width: 1),
+          side: BorderSide(color: colorScheme.outline, width: 1),
         ),
-        color: const Color(0xFF1C1B1F),
+        color: colorScheme.surface,
         shadowColor: Colors.transparent,
       ),
 
@@ -307,16 +262,16 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 8,
-        backgroundColor: const Color(0xFF1C1B1F),
-        contentTextStyle: const TextStyle(
+        backgroundColor: colorScheme.surface,
+        contentTextStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: Color(0xFFE6E0E9),
+          color: colorScheme.onSurface,
         ),
-        actionTextColor: const Color(0xFFD0BCFF),
+        actionTextColor: colorScheme.primary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusM),
-          side: const BorderSide(color: Color(0xFF36343B), width: 1),
+          side: BorderSide(color: colorScheme.outline, width: 1),
         ),
       ),
     );

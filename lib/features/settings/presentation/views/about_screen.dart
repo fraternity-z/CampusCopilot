@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// 关于页面
 class AboutScreen extends ConsumerWidget {
@@ -58,14 +57,14 @@ class AboutScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Campus Copilot',
+              'AI Assistant',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              '一个功能强大的校园助手应用',
+              '一个功能强大的AI助手应用',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -124,10 +123,10 @@ class AboutScreen extends ConsumerWidget {
             const Divider(),
             _buildInfoItem(context, '构建版本', '1.0.0+1'),
             const Divider(),
-            _buildInfoItem(context, 'Flutter版本', '3.32.0'),
+            _buildInfoItem(context, 'Flutter版本', '3.24.0'),
             const Divider(),
-            _buildInfoItem(context, '发布日期', '2025-08-27'),
-
+            _buildInfoItem(context, '发布日期', '2024-12-27'),
+            
             const SizedBox(height: 16),
             
             SizedBox(
@@ -303,26 +302,10 @@ class AboutScreen extends ConsumerWidget {
   }
 
   /// 显示反馈
-  void _showFeedback(BuildContext context) async {
-    const url = 'https://github.com/fraternity-z/CampusCopilot/issues';
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开链接，请手动访问GitHub Issues页面')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('打开链接失败: $e')),
-        );
-      }
-    }
+  void _showFeedback(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('反馈功能开发中...')),
+    );
   }
 
   /// 评价应用

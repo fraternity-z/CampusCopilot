@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/plan_entity.dart';
 import '../providers/plan_notifier.dart';
+import 'alarm_management_page.dart';
 
 /// 创建计划页面
 /// 
@@ -51,6 +52,17 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AlarmManagementPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.alarm),
+            tooltip: '闹钟管理',
+          ),
           TextButton(
             onPressed: _isLoading ? null : _submitPlan,
             child: _isLoading
@@ -300,7 +312,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildTimeSelector('提醒时间', _reminderTime, (time) => _reminderTime = time),
+                _buildReminderTimeSelector(),
               ],
             ),
           ),
@@ -335,6 +347,109 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// 构建提醒时间选择器
+  Widget _buildReminderTimeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.alarm, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              '提醒时间',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            if (_reminderTime != null)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _reminderTime = null;
+                  });
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('清除'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _selectTime((time) => _reminderTime = time),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.notifications_active,
+                  color: _reminderTime != null 
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _reminderTime?.format(context) ?? '点击设置提醒时间',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: _reminderTime != null 
+                          ? null
+                          : Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+                if (_reminderTime != null)
+                  Icon(
+                    Icons.alarm_on,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 16,
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (_reminderTime != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '系统会在提醒时间自动播放闹钟',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 

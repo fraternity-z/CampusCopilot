@@ -1,8 +1,8 @@
 // Copyright 2025 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 
-import 'package:campus_copilot/model/xidian_ids/classtable.dart';
-import 'package:campus_copilot/repository/xidian_ids/classtable_session.dart';
+import 'package:ai_assistant/model/xidian_ids/classtable.dart';
+import 'package:ai_assistant/repository/xidian_ids/classtable_session.dart';
 
 class ClassStatus {
   final String courseName;

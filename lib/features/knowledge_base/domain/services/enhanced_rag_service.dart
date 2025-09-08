@@ -1,5 +1,5 @@
 
-import 'package:campus_copilot/features/knowledge_base/domain/services/embedding_service.dart';
+import 'package:ai_assistant/features/knowledge_base/domain/services/embedding_service.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/local/app_database.dart';

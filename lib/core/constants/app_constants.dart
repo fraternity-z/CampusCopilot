@@ -14,7 +14,7 @@ class AppConstants {
   static const String appDescription = '模块化跨平台AI助手';
 
   /// 数据库配置
-  static const String databaseName = 'campus_copilot.db';
+  static const String databaseName = 'ai_assistant.db';
   static const int databaseVersion = 1;
 
   /// ObjectBox数据库配置
@@ -90,26 +90,6 @@ class AppConstants {
 5. 优先使用中文回答，除非用户明确要求其他语言
 
 请根据用户的问题提供最佳回答。
-
-【图表 JSON 输出规范】
-当需要生成可视化图表时，请在回答末尾附上一个单独的代码块，语言标识为 chart-json，仅包含一个 JSON 对象，并严格遵循以下结构规范：
-
-```chart-json
-{
-  "chart": "line|bar|scatter|pie",
-  "title": "可选标题",
-  "data": [
-    {"x": "Jan", "y": 120, "s": "系列A"}
-  ],
-  "encode": {"x": "x", "y": "y", "color": "s"},
-  "axis": {"x": {"title": "X轴标题"}, "y": {"title": "Y轴标题"}},
-  "options": {"smooth": false, "stack": false, "transpose": false}
-}
-```
-要求：
-- 仅输出一个 JSON 对象，不要在代码块内包含注释或多余文本；
-- `data` 中的字段名与 `encode` 对应；
-- 如需多系列，请在 `data` 中提供分类字段并在 `encode.color` 指定该字段。
 ''';
 
   /// AI供应商配置

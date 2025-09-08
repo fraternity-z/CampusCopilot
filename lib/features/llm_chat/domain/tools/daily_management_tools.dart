@@ -159,42 +159,16 @@ class DailyManagementTools {
   static Map<String, dynamic> _getDeletePlanDefinition() {
     return {
       "name": "delete_study_plan",
-      "description": "删除学习计划，支持单个或批量删除。可以通过计划ID、标题匹配、状态筛选、类型筛选等方式删除计划",
+      "description": "删除指定的学习计划",
       "parameters": {
         "type": "object",
         "properties": {
           "plan_id": {
             "type": "string",
-            "description": "要删除的特定计划ID（可选）"
-          },
-          "title_contains": {
-            "type": "string",
-            "description": "删除标题包含指定文本的计划（可选）"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["pending", "in_progress", "completed", "cancelled"],
-            "description": "删除指定状态的计划（可选）"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["study", "work", "life", "other"],
-            "description": "删除指定类型的计划（可选）"
-          },
-          "delete_all": {
-            "type": "boolean",
-            "description": "是否删除所有计划，设置为true时删除所有学习计划（慎用）"
-          },
-          "date_range": {
-            "type": "object",
-            "properties": {
-              "start_date": {"type": "string", "format": "date"},
-              "end_date": {"type": "string", "format": "date"}
-            },
-            "description": "删除指定日期范围内的计划（可选）"
+            "description": "要删除的计划ID，必填"
           }
         },
-        "required": []
+        "required": ["plan_id"]
       }
     };
   }

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import '../../../../shared/utils/debug_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 import '../../../../app/app_router.dart';
@@ -13,7 +12,6 @@ import '../entities/model_capabilities.dart';
 import '../../data/providers/llm_provider_factory.dart';
 
 import '../utils/model_capability_checker.dart';
-import '../tools/daily_management_tools.dart';
 import '../../../../core/di/database_providers.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 
@@ -39,6 +37,7 @@ import '../../../settings/domain/entities/search_config.dart';
 import '../../../learning_mode/data/providers/learning_mode_provider.dart';
 
 // AI工具函数相关导入
+import '../tools/daily_management_tools.dart';
 import '../../presentation/providers/ai_plan_bridge_provider.dart';
 
 
@@ -59,7 +58,7 @@ class ChatService {
 
   ChatService(this._database, this._ref)
     : _instanceId = DateTime.now().millisecondsSinceEpoch.toString() {
-  debugLog(() => '🏗️ ChatService实例创建: $_instanceId');
+    debugPrint('🏗️ ChatService实例创建: $_instanceId');
   }
 
   /// 创建新的聊天会话
@@ -158,7 +157,7 @@ class ChatService {
 
       // 如果RAG启用但配置未加载完成，尝试等待或使用兜底配置
       if (ragEnabled && knowledgeConfig == null) {
-  debugLog(() => '⏳ 知识库配置未就绪，尝试加载...');
+        debugPrint('⏳ 知识库配置未就绪，尝试加载...');
         try {
           // 强制重新加载配置
           await _ref.read(knowledgeBaseConfigProvider.notifier).reload();
@@ -187,12 +186,11 @@ class ChatService {
                 createdAt: dbConfig.createdAt,
                 updatedAt: dbConfig.updatedAt,
               );
-              final cfgName = knowledgeConfig.name;
-              debugLog(() => '🔄 使用兜底配置: $cfgName');
+              debugPrint('🔄 使用兜底配置: ${knowledgeConfig.name}');
             }
           }
         } catch (e) {
-          debugLog(() => '❌ 加载知识库配置失败: $e');
+          debugPrint('❌ 加载知识库配置失败: $e');
         }
       }
 
@@ -203,7 +201,7 @@ class ChatService {
 
       // 如果没有选中的知识库，尝试重新加载并选择默认知识库
       if (ragEnabled && currentKnowledgeBase == null) {
-  debugLog(() => '⏳ 没有选中的知识库，尝试加载...');
+        debugPrint('⏳ 没有选中的知识库，尝试加载...');
         try {
           await _ref.read(multiKnowledgeBaseProvider.notifier).reload();
           currentKnowledgeBase = _ref
@@ -211,23 +209,22 @@ class ChatService {
               .currentKnowledgeBase;
 
           if (currentKnowledgeBase != null) {
-            final kbName = currentKnowledgeBase.name;
-            debugLog(() => '🔄 已自动选择知识库: $kbName');
+            debugPrint('🔄 已自动选择知识库: ${currentKnowledgeBase.name}');
           }
         } catch (e) {
-          debugLog(() => '❌ 加载知识库失败: $e');
+          debugPrint('❌ 加载知识库失败: $e');
         }
       }
 
-  debugLog(() => '🔧 RAG状态检查:');
-  debugLog(() => '  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
-  debugLog(() => '  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
-  debugLog(() => '  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
+      debugPrint('🔧 RAG状态检查:');
+      debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
+      debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      debugPrint('  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
       if (knowledgeConfig != null) {
-  debugLog(() => '  - 配置名称: ${knowledgeConfig?.name}');
-  debugLog(() => '  - 嵌入模型: ${knowledgeConfig?.embeddingModelName}');
+        debugPrint('  - 配置名称: ${knowledgeConfig.name}');
+        debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
       }
-  debugLog(() => '  - 查询内容: "$content"');
+      debugPrint('  - 查询内容: "$content"');
 
       // 判断是否需要RAG增强（兼容新旧版本）
       bool shouldUseRag = false;
@@ -252,13 +249,13 @@ class ChatService {
           currentKnowledgeBase != null &&
           shouldUseRag) {
         try {
-          debugLog(() => '🔍 使用RAG增强用户查询');
-          final kbN = currentKnowledgeBase.name;
-          final kbId = currentKnowledgeBase.id;
-          debugLog(() => '📊 知识库: $kbN ($kbId)');
-          final cfgN = knowledgeConfig.name;
-          final cfgEmbed = knowledgeConfig.embeddingModelName;
-          debugLog(() => '⚙️ 配置: $cfgN - $cfgEmbed');
+          debugPrint('🔍 使用RAG增强用户查询');
+          debugPrint(
+            '📊 知识库: ${currentKnowledgeBase.name} (${currentKnowledgeBase.id})',
+          );
+          debugPrint(
+            '⚙️ 配置: ${knowledgeConfig.name} - ${knowledgeConfig.embeddingModelName}',
+          );
 
           if (ragService is RagService) {
             // 使用传统RAG服务（整体超时兜底，避免拖慢首响应）
@@ -274,18 +271,18 @@ class ChatService {
 
             if (ragResult.usedContexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
-              debugLog(() => '✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
-              debugLog(() => '📝 增强后的提示词长度: ${enhancedPrompt.length}');
+              debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
 
               // 显示使用的上下文相似度信息
               for (int i = 0; i < ragResult.usedContexts.length; i++) {
                 final context = ragResult.usedContexts[i];
-                debugLog(() =>
+                debugPrint(
                   '📄 上下文${i + 1}: 相似度=${context.similarity.toStringAsFixed(3)}, 长度=${context.content.length}',
                 );
               }
             } else {
-              debugLog(() => 'ℹ️ 未找到相关知识库内容，使用原始查询');
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
             }
           } else if (ragService is EnhancedRagService) {
             // 使用增强RAG服务（整体超时兜底）
@@ -301,46 +298,46 @@ class ChatService {
 
             if (ragResult.contexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
-              debugLog(() => '✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
-              debugLog(() => '📝 增强后的提示词长度: ${enhancedPrompt.length}');
+              debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
 
               // 显示使用的上下文信息（增强RAG的contexts是字符串列表）
               for (int i = 0; i < ragResult.contexts.length; i++) {
                 final context = ragResult.contexts[i];
-                debugLog(() => '📄 上下文${i + 1}: 长度=${context.length}');
+                debugPrint('📄 上下文${i + 1}: 长度=${context.length}');
               }
             } else {
-              debugLog(() => 'ℹ️ 未找到相关知识库内容，使用原始查询');
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
               if (ragResult.error != null) {
-                debugLog(() => '⚠️ 增强RAG检索错误: ${ragResult.error}');
+                debugPrint('⚠️ 增强RAG检索错误: ${ragResult.error}');
               }
             }
           } else {
-            debugLog(() => '⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
+            debugPrint('⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
           }
         } catch (e, stackTrace) {
-          debugLog(() => '⚠️ RAG增强失败，使用原始查询: $e');
-          debugLog(() => '📍 错误详情: ${e.toString()}');
-          debugLog(() => '🔍 堆栈跟踪: ${stackTrace.toString()}');
+          debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+          debugPrint('📍 错误详情: ${e.toString()}');
+          debugPrint('🔍 堆栈跟踪: ${stackTrace.toString()}');
 
           // 记录更详细的错误信息以便调试
           if (e.toString().contains('timeout')) {
-            debugLog(() => '💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
+            debugPrint('💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
           } else if (e.toString().contains('embedding')) {
-            debugLog(() => '💡 建议: 嵌入服务异常，请检查API配置');
+            debugPrint('💡 建议: 嵌入服务异常，请检查API配置');
           } else if (e.toString().contains('database')) {
-            debugLog(() => '💡 建议: 数据库连接异常，请检查知识库状态');
+            debugPrint('💡 建议: 数据库连接异常，请检查知识库状态');
           }
         }
       } else {
         if (!ragEnabled) {
-          debugLog(() => 'ℹ️ RAG功能已禁用，使用原始查询');
+          debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
         } else if (knowledgeConfig == null) {
-          debugLog(() => '⚠️ 没有知识库配置，使用原始查询');
+          debugPrint('⚠️ 没有知识库配置，使用原始查询');
         } else if (currentKnowledgeBase == null) {
-          debugLog(() => '⚠️ 没有选中知识库，使用原始查询');
+          debugPrint('⚠️ 没有选中知识库，使用原始查询');
         } else if (!shouldUseRag) {
-          debugLog(() => 'ℹ️ 查询不需要RAG增强，使用原始查询');
+          debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }
       }
 
@@ -381,11 +378,10 @@ class ChatService {
       }
 
       // 6.5. 检查是否支持函数调用，如果支持则添加AI工具函数
-      final supportsTools = ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.functionCalling);
+      final supportsTools = _checkModelSupportsTools(llmConfig.provider, llmConfig.defaultModel);
       List<ToolDefinition>? tools;
-  debugLog(() => '🔧 工具支持检查: model=${llmConfig.defaultModel}, supportsTools=$supportsTools');
       if (supportsTools) {
-  debugLog(() => '🔧 模型支持函数调用，添加AI工具函数');
+        debugPrint('🔧 模型支持函数调用，添加AI工具函数');
         // 将 DailyManagementTools 的函数定义转换为 ToolDefinition
         tools = DailyManagementTools.getFunctionDefinitions().map((funcDef) {
           return ToolDefinition(
@@ -394,18 +390,11 @@ class ChatService {
             parameters: funcDef['parameters'] as Map<String, dynamic>,
           );
         }).toList();
-  final toolCount = tools.length;
-  final toolNames = tools.map((t) => t.name).join(', ');
-  debugLog(() => '🛠️ 已添加$toolCount个工具函数');
-  debugLog(() => '🛠️ 工具函数列表: $toolNames');
-      } else {
-  debugLog(() => '⚠️ 模型不支持函数调用: ${llmConfig.defaultModel}');
-  final capabilities = ModelCapabilityChecker.getModelCapabilities(llmConfig.defaultModel);
-  debugLog(() => '🔍 模型能力: ${capabilities.map((c) => c.name).join(', ')}');
+        debugPrint('🛠️ 已添加${tools.length}个工具函数');
       }
 
-  debugLog(() => '🔍 llmConfig.defaultModel 实际值: "${llmConfig.defaultModel}"');
-  debugLog(() => '🔍 llmConfig.defaultModel 是否为空: ${llmConfig.defaultModel?.isEmpty ?? true}');
+      debugPrint('🔍 llmConfig.defaultModel 实际值: "${llmConfig.defaultModel}"');
+      debugPrint('🔍 llmConfig.defaultModel 是否为空: ${llmConfig.defaultModel?.isEmpty ?? true}');
       
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
@@ -421,7 +410,7 @@ class ChatService {
         tools: tools, // 添加工具函数
       );
 
-  debugLog(() =>
+      debugPrint(
         '🎯 使用模型: ${llmConfig.defaultModel} (提供商: ${llmConfig.provider})',
       );
 
@@ -432,7 +421,7 @@ class ChatService {
 
       // 6.6. 处理函数调用请求
       if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
-  debugLog(() => '🤖 AI请求执行函数调用，数量: ${result.toolCalls!.length}');
+        debugPrint('🤖 AI请求执行函数调用，数量: ${result.toolCalls!.length}');
         return await _handleToolCalls(result, sessionId, userMessage, contextMessages, chatOptions, provider);
       }
 
@@ -487,9 +476,25 @@ class ChatService {
     List<String> imageUrls = const [], // 图片URL列表
     String? displayContent, // 用于UI显示的原始内容（可选）
   }) async* {
-  debugLog(() => '🚀 开始发送消息: $content');
+    debugPrint('🚀 开始发送消息: $content');
+    
+    // 🛡️ 会话存在性验证 - 确保在发送消息前会话在数据库中真实存在
+    try {
+      final session = await _getSessionById(sessionId);
+      if (session.isArchived) {
+        throw ChatSessionException.archived(sessionId);
+      }
+      debugPrint('🛡️ 会话验证通过: ${session.id} - ${session.title}');
+    } catch (e) {
+      debugPrint('🛡️ 会话验证失败: $e');
+      if (e is ChatSessionException) {
+        rethrow; // 重新抛出会话相关异常
+      }
+      throw ChatSessionException.invalidState(e.toString());
+    }
+    
     final messageContentForDisplay = displayContent ?? content;
-  debugLog(() => '🔍 用户消息内容 - 显示: ${messageContentForDisplay.length}字符, AI处理: ${content.length}字符');
+    debugPrint('🔍 用户消息内容 - 显示: ${messageContentForDisplay.length}字符, AI处理: ${content.length}字符');
 
     final String? pId = parentMessageId;
     // 1. 创建用户消息（使用显示内容，确保UI显示的是原始输入）
@@ -512,24 +517,24 @@ class ChatService {
 
     // 2. 保存用户消息到数据库
     await _database.insertMessage(_messageToCompanion(userMessage));
-  debugLog(() => '✅ 用户消息已保存');
+    debugPrint('✅ 用户消息已保存');
     yield userMessage;
 
     try {
       // 3. 获取会话和智能体信息
       final session = await _getSessionById(sessionId);
-  debugLog(() => '📝 会话ID: ${session.id}, 智能体ID: ${session.personaId}');
+      debugPrint('📝 会话ID: ${session.id}, 智能体ID: ${session.personaId}');
 
       final persona = await _getPersonaById(session.personaId);
-  debugLog(() => '🤖 智能体: ${persona.name}, 提示词: ${persona.systemPrompt}');
+      debugPrint('🤖 智能体: ${persona.name}, 提示词: ${persona.systemPrompt}');
 
       final llmConfig = await _getLlmConfigById(persona.apiConfigId);
-  debugLog(() => '🔧 LLM配置: ${llmConfig.name} (${llmConfig.provider})');
+      debugPrint('🔧 LLM配置: ${llmConfig.name} (${llmConfig.provider})');
 
       // 检查是否有图片但模型不支持视觉
       if (imageUrls.isNotEmpty && !ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.vision)) {
         final warningMessage = '模型 ${llmConfig.defaultModel ?? "当前模型"} 不支持视觉功能，无法处理图片内容';
-  debugLog(() => '⚠️ 视觉模型检查失败: $warningMessage');
+        debugPrint('⚠️ 视觉模型检查失败: $warningMessage');
         
         // 创建警告消息
         final warningAIMessage = ChatMessageFactory.createErrorMessage(
@@ -547,10 +552,10 @@ class ChatService {
       final provider = LlmProviderFactory.createProvider(
         llmConfig.toLlmConfig(),
       );
-  debugLog(() => '🤖 AI Provider已创建');
+      debugPrint('🤖 AI Provider已创建');
       
       if (imageUrls.isNotEmpty) {
-  debugLog(() => '🖼️ 发送包含${imageUrls.length}张图片的消息到模型: ${llmConfig.defaultModel}');
+        debugPrint('🖼️ 发送包含${imageUrls.length}张图片的消息到模型: ${llmConfig.defaultModel}');
       }
 
       // 4.5. 检查是否需要RAG增强
@@ -571,15 +576,15 @@ class ChatService {
           .read(multiKnowledgeBaseProvider)
           .currentKnowledgeBase;
 
-  debugLog(() => '🔧 RAG状态检查:');
-  debugLog(() => '  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
-  debugLog(() => '  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
-  debugLog(() => '  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
+      debugPrint('🔧 RAG状态检查:');
+      debugPrint('  - RAG开关: ${ragEnabled ? "启用" : "禁用"}');
+      debugPrint('  - 知识库配置: ${knowledgeConfig != null ? "存在" : "不存在"}');
+      debugPrint('  - 当前知识库: ${currentKnowledgeBase?.name ?? "未选择"}');
       if (knowledgeConfig != null) {
-  debugLog(() => '  - 配置名称: ${knowledgeConfig.name}');
-  debugLog(() => '  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
+        debugPrint('  - 配置名称: ${knowledgeConfig.name}');
+        debugPrint('  - 嵌入模型: ${knowledgeConfig.embeddingModelName}');
       }
-  debugLog(() => '  - 查询内容: "$content"');
+      debugPrint('  - 查询内容: "$content"');
 
       // 判断是否需要RAG增强（兼容新旧版本）
       bool shouldUseRag = false;
@@ -604,13 +609,13 @@ class ChatService {
           currentKnowledgeBase != null &&
           shouldUseRag) {
         try {
-          debugLog(() => '🔍 使用RAG增强用户查询');
-          final kbN2 = currentKnowledgeBase.name;
-          final kbId2 = currentKnowledgeBase.id;
-          debugLog(() => '📊 知识库: $kbN2 ($kbId2)');
-          final cfgN2 = knowledgeConfig.name;
-          final cfgEmbed2 = knowledgeConfig.embeddingModelName;
-          debugLog(() => '⚙️ 配置: $cfgN2 - $cfgEmbed2');
+          debugPrint('🔍 使用RAG增强用户查询');
+          debugPrint(
+            '📊 知识库: ${currentKnowledgeBase.name} (${currentKnowledgeBase.id})',
+          );
+          debugPrint(
+            '⚙️ 配置: ${knowledgeConfig.name} - ${knowledgeConfig.embeddingModelName}',
+          );
 
           if (ragService is RagService) {
             // 使用传统RAG服务
@@ -624,8 +629,8 @@ class ChatService {
 
             if (ragResult.usedContexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
-              debugLog(() => '✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
-              debugLog(() => '📝 增强后的提示词长度: ${enhancedPrompt.length}');
+              debugPrint('✅ 传统RAG增强成功，使用了${ragResult.usedContexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
             } else {
               // 未找到相关知识库内容，使用原始查询
             }
@@ -641,46 +646,46 @@ class ChatService {
 
             if (ragResult.contexts.isNotEmpty) {
               enhancedPrompt = ragResult.enhancedPrompt;
-              debugLog(() => '✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
-              debugLog(() => '📝 增强后的提示词长度: ${enhancedPrompt.length}');
+              debugPrint('✅ 增强RAG增强成功，使用了${ragResult.contexts.length}个上下文');
+              debugPrint('📝 增强后的提示词长度: ${enhancedPrompt.length}');
 
               // 显示使用的上下文信息（增强RAG的contexts是字符串列表）
               for (int i = 0; i < ragResult.contexts.length; i++) {
                 final context = ragResult.contexts[i];
-                debugLog(() => '📄 上下文${i + 1}: 长度=${context.length}');
+                debugPrint('📄 上下文${i + 1}: 长度=${context.length}');
               }
             } else {
-              debugLog(() => 'ℹ️ 未找到相关知识库内容，使用原始查询');
+              debugPrint('ℹ️ 未找到相关知识库内容，使用原始查询');
               if (ragResult.error != null) {
-                debugLog(() => '⚠️ 增强RAG检索错误: ${ragResult.error}');
+                debugPrint('⚠️ 增强RAG检索错误: ${ragResult.error}');
               }
             }
           } else {
-            debugLog(() => '⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
+            debugPrint('⚠️ 未知的RAG服务类型: ${ragService.runtimeType}');
           }
         } catch (e, stackTrace) {
-          debugLog(() => '⚠️ RAG增强失败，使用原始查询: $e');
-          debugLog(() => '📍 错误详情: ${e.toString()}');
-          debugLog(() => '🔍 堆栈跟踪: ${stackTrace.toString()}');
+          debugPrint('⚠️ RAG增强失败，使用原始查询: $e');
+          debugPrint('📍 错误详情: ${e.toString()}');
+          debugPrint('🔍 堆栈跟踪: ${stackTrace.toString()}');
 
           // 记录更详细的错误信息以便调试
           if (e.toString().contains('timeout')) {
-            debugLog(() => '💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
+            debugPrint('💡 建议: RAG检索超时，请检查网络连接或降低相似度阈值');
           } else if (e.toString().contains('embedding')) {
-            debugLog(() => '💡 建议: 嵌入服务异常，请检查API配置');
+            debugPrint('💡 建议: 嵌入服务异常，请检查API配置');
           } else if (e.toString().contains('database')) {
-            debugLog(() => '💡 建议: 数据库连接异常，请检查知识库状态');
+            debugPrint('💡 建议: 数据库连接异常，请检查知识库状态');
           }
         }
       } else {
         if (!ragEnabled) {
-          debugLog(() => 'ℹ️ RAG功能已禁用，使用原始查询');
+          debugPrint('ℹ️ RAG功能已禁用，使用原始查询');
         } else if (knowledgeConfig == null) {
-          debugLog(() => '⚠️ 没有知识库配置，使用原始查询');
+          debugPrint('⚠️ 没有知识库配置，使用原始查询');
         } else if (currentKnowledgeBase == null) {
-          debugLog(() => '⚠️ 没有选中知识库，使用原始查询');
+          debugPrint('⚠️ 没有选中知识库，使用原始查询');
         } else if (!shouldUseRag) {
-          debugLog(() => 'ℹ️ 查询不需要RAG增强，使用原始查询');
+          debugPrint('ℹ️ 查询不需要RAG增强，使用原始查询');
         }
       }
 
@@ -723,7 +728,7 @@ class ChatService {
         );
       }
 
-  debugLog(() => '💬 上下文消息数量: ${contextMessages.length}');
+      debugPrint('💬 上下文消息数量: ${contextMessages.length}');
 
       // 6.5. 检查是否需要网络搜索
       String finalPrompt = enhancedPrompt;
@@ -738,13 +743,13 @@ class ChatService {
         final dbgOrchestrator = await _database.getSetting(
           GeneralSettingsKeys.searchOrchestratorEndpoint,
         );
-  debugLog(() => '🔍 搜索状态检查:');
-  debugLog(() => '  - 搜索开关: ${searchConfig.searchEnabled ? "启用" : "禁用"}');
-  debugLog(() => '  - 来源: ${dbgSource ?? searchConfig.defaultEngine}');
-  debugLog(() => '  - 启用的搜索引擎: ${searchConfig.enabledEngines}');
-  debugLog(() => '  - 默认搜索引擎: ${searchConfig.defaultEngine}');
-  debugLog(() => '  - orchestrator: ${dbgOrchestrator ?? ''}');
-  debugLog(() => '  - 用户查询: "$content"');
+        debugPrint('🔍 搜索状态检查:');
+        debugPrint('  - 搜索开关: ${searchConfig.searchEnabled ? "启用" : "禁用"}');
+        debugPrint('  - 来源: ${dbgSource ?? searchConfig.defaultEngine}');
+        debugPrint('  - 启用的搜索引擎: ${searchConfig.enabledEngines}');
+        debugPrint('  - 默认搜索引擎: ${searchConfig.defaultEngine}');
+        debugPrint('  - orchestrator: ${dbgOrchestrator ?? ''}');
+        debugPrint('  - 用户查询: "$content"');
 
         // 修改逻辑：如果用户主动启用了搜索，就直接搜索，不需要AI判断
         // 只有在自动搜索模式下才使用shouldSearch判断
@@ -753,13 +758,13 @@ class ChatService {
         if (searchConfig.searchEnabled) {
           // 用户已启用搜索开关，直接执行搜索
           shouldExecuteSearch = true;
-          debugLog(() => '  - 用户已启用搜索，将执行搜索');
+          debugPrint('  - 用户已启用搜索，将执行搜索');
         } else {
-          debugLog(() => '  - 搜索未启用或无可用引擎，跳过搜索');
+          debugPrint('  - 搜索未启用或无可用引擎，跳过搜索');
         }
 
         if (shouldExecuteSearch) {
-          debugLog(() => '🔍 ✅ 开始执行网络搜索...');
+          debugPrint('🔍 ✅ 开始执行网络搜索...');
 
           // 通知UI开始搜索
           onSearchStatusChanged?.call(true);
@@ -831,17 +836,17 @@ class ChatService {
               final searchContext = aiSearchIntegration
                   .formatSearchResultsForAI(searchResult);
               finalPrompt = '$enhancedPrompt\n\n$searchContext';
-              debugLog(() => '✅ 搜索完成，已将搜索结果添加到上下文');
+              debugPrint('✅ 搜索完成，已将搜索结果添加到上下文');
             } else {
-              debugLog(() => '⚠️ 搜索未返回有效结果');
+              debugPrint('⚠️ 搜索未返回有效结果');
             }
           }
         }
       } on TimeoutException {
-  debugLog(() => '⏰ 搜索整体超时，跳过网络搜索加持');
+        debugPrint('⏰ 搜索整体超时，跳过网络搜索加持');
         onSearchStatusChanged?.call(false);
       } catch (e) {
-  debugLog(() => '❌ 搜索过程中出现错误: $e');
+        debugPrint('❌ 搜索过程中出现错误: $e');
         // 确保搜索状态被重置
         onSearchStatusChanged?.call(false);
         // 搜索失败不影响正常对话，继续使用原始提示
@@ -871,28 +876,6 @@ class ChatService {
       // 检查是否为学习模式 - 学习模式下不使用智能体提示词，因为学习提示词已经包含在消息中
       final isLearningMode = content != finalPrompt; // 如果内容被修改过，说明是学习模式
       
-      // 7.5. 检查是否支持函数调用，如果支持则添加AI工具函数
-      final supportsTools = ModelCapabilityChecker.hasCapability(llmConfig.defaultModel, ModelCapabilityType.functionCalling);
-      List<ToolDefinition>? tools;
-  debugLog(() => '🔧 工具支持检查: model=${llmConfig.defaultModel}, supportsTools=$supportsTools');
-      if (supportsTools) {
-  debugLog(() => '🔧 模型支持函数调用，添加AI工具函数');
-        // 将 DailyManagementTools 的函数定义转换为 ToolDefinition
-        tools = DailyManagementTools.getFunctionDefinitions().map((funcDef) {
-          return ToolDefinition(
-            name: funcDef['name'] as String,
-            description: funcDef['description'] as String,
-            parameters: funcDef['parameters'] as Map<String, dynamic>,
-          );
-        }).toList();
-  final toolCount2 = tools.length;
-  final toolNames2 = tools.map((t) => t.name).join(', ');
-  debugLog(() => '🛠️ 已添加$toolCount2个工具函数');
-  debugLog(() => '🛠️ 工具函数列表: $toolNames2');
-      } else {
-  debugLog(() => '⚠️ 模型不支持函数调用: ${llmConfig.defaultModel}');
-      }
-      
       final chatOptions = ChatOptions(
         model: llmConfig.defaultModel,
         systemPrompt: isLearningMode ? null : persona.systemPrompt, // 学习模式下不使用智能体提示词
@@ -907,13 +890,12 @@ class ChatService {
         ),
         maxReasoningTokens: params.maxReasoningTokens,
         customParams: mergedCustomStream,
-        tools: tools, // 添加工具函数
       );
 
-  debugLog(() =>
+      debugPrint(
         '📊 模型参数: 温度=${chatOptions.temperature}, 最大Token=${chatOptions.maxTokens}, 最大推理Token=${chatOptions.maxReasoningTokens}',
       );
-  debugLog(() => '📝 上下文消息数量: ${contextMessages.length}');
+      debugPrint('📝 上下文消息数量: ${contextMessages.length}');
 
       // 8. 开始流式生成
       String accumulatedRawContent = ''; // 完整原始内容
@@ -922,58 +904,17 @@ class ChatService {
       bool isInThinkingMode = false; // 当前是否在思考模式
       String partialTag = ''; // 处理跨块的标签
       String? aiMessageId;
-      List<ToolCall>? accumulatedToolCalls; // 累积的工具调用
 
       await for (final chunk in provider.generateChatStream(
         contextMessages,
         options: chatOptions,
       )) {
-  debugLog(() =>
-          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}, toolCalls=${chunk.toolCalls?.length ?? 0}',
+        debugPrint(
+          '📦 收到AI响应块: isDone=${chunk.isDone}, delta长度=${chunk.delta?.length ?? 0}',
         );
 
-        // 检查是否有工具调用
-        if (chunk.toolCalls != null && chunk.toolCalls!.isNotEmpty) {
-          accumulatedToolCalls = chunk.toolCalls;
-          debugLog(() => '🔧 检测到工具调用: ${chunk.toolCalls!.map((t) => t.name).join(', ')}');
-        }
-
         if (chunk.isDone) {
-          // 流结束，检查是否有工具调用需要处理
-          if (accumulatedToolCalls != null && accumulatedToolCalls.isNotEmpty) {
-            final toolCallsCount = accumulatedToolCalls.length;
-            debugLog(() => '🛠️ 流结束，处理$toolCallsCount个工具调用');
-            
-            // 创建包含工具调用的结果对象
-            final resultWithTools = ChatResult(
-              content: accumulatedRawContent,
-              model: llmConfig.defaultModel ?? 'gpt-4o',
-              tokenUsage: chunk.tokenUsage ?? const TokenUsage(
-                inputTokens: 0,
-                outputTokens: 0,
-                totalTokens: 0,
-              ),
-              finishReason: chunk.finishReason ?? FinishReason.stop,
-              toolCalls: accumulatedToolCalls,
-              thinkingContent: accumulatedThinking.isNotEmpty ? accumulatedThinking : null,
-            );
-            
-            // 调用工具处理方法
-            final toolCallResult = await _handleToolCalls(
-              resultWithTools,
-              sessionId,
-              userMessage,
-              contextMessages,
-              chatOptions,
-              provider,
-            );
-            
-            debugLog(() => '✅ 工具调用处理完成，返回最终消息');
-            yield toolCallResult.copyWith(status: MessageStatus.sent);
-            break;
-          }
-          
-          // 没有工具调用，保存最终消息到数据库
+          // 流结束，保存最终消息到数据库
           if (aiMessageId != null) {
             final finalMessage =
                 ChatMessageFactory.createAIMessage(
@@ -994,7 +935,7 @@ class ChatService {
             await _database.transaction(() async {
               // 保存AI消息
               await _database.insertMessage(_messageToCompanion(finalMessage));
-              debugLog(() =>
+              debugPrint(
                 '✅ AI消息已保存到数据库 (原始: $accumulatedRawContent.length, 思考: $accumulatedThinking.length, 正文: $accumulatedActualContent.length)',
               );
 
@@ -1008,7 +949,7 @@ class ChatService {
               await _database.updatePersonaUsage(persona.id);
             });
 
-            debugLog(() => '✅ AI消息、会话和智能体统计已在事务中原子性保存');
+            debugPrint('✅ AI消息、会话和智能体统计已在事务中原子性保存');
 
             // 检查是否需要自动命名话题
             _tryAutoNameTopic(
@@ -1022,19 +963,14 @@ class ChatService {
           break;
         }
 
-        // 兼容推理模型：直接累积 Provider 提供的思考增量
-        if (chunk.thinkingDelta != null && chunk.thinkingDelta!.isNotEmpty) {
-          accumulatedThinking += chunk.thinkingDelta!;
-        }
-
         // 处理内容增量
         if (chunk.delta != null && chunk.delta!.isNotEmpty) {
           String deltaText = chunk.delta!;
           accumulatedRawContent += deltaText;
 
           // 调试：输出原始增量内容
-          debugLog(() => '🔍 原始增量 ($deltaText.length字符): "$deltaText"');
-          debugLog(() => '🔄 当前思考模式: $isInThinkingMode, 部分标签: "$partialTag"');
+          debugPrint('🔍 原始增量 ($deltaText.length字符): "$deltaText"');
+          debugPrint('🔄 当前思考模式: $isInThinkingMode, 部分标签: "$partialTag"');
 
           // 检查是否包含任何可能的思考链标签
           if (kDebugMode) {
@@ -1059,7 +995,7 @@ class ChatService {
           partialTag = processed['partialTag'] as String;
 
           if (kDebugMode) {
-              debugLog(() =>
+            debugPrint(
               '✅ 处理结果: 思考模式=$isInThinkingMode, 思考增量=${thinkingDelta?.length ?? 0}, 部分标签="$partialTag"',
             );
           }
@@ -1068,7 +1004,7 @@ class ChatService {
           if (thinkingDelta != null && thinkingDelta.isNotEmpty) {
             accumulatedThinking += thinkingDelta;
             if (kDebugMode) {
-              debugLog(() =>
+              debugPrint(
                 '🧠 思考链增量: $thinkingDelta.length 字符, 总长度: $accumulatedThinking.length',
               );
             }
@@ -1078,7 +1014,9 @@ class ChatService {
           if (contentDelta != null && contentDelta.isNotEmpty) {
             accumulatedActualContent += contentDelta;
             if (kDebugMode) {
-              debugLog(() => '📝 正文内容已累积');
+              debugPrint(
+                '📝 正文内容已累积',
+              );
             }
           }
         }
@@ -1102,13 +1040,12 @@ class ChatService {
           thinkingContent: accumulatedThinking.isNotEmpty
               ? accumulatedThinking
               : null,
-          // 若 Provider 明确标记思考完成，则同步到消息状态
-          thinkingComplete: chunk.thinkingComplete || chunk.isDone,
+          thinkingComplete: false, // 流式过程中始终为false
         );
       }
     } catch (e) {
-  debugLog(() => '❌ 发送消息时出错: $e');
-  debugLog(() => '❌ 错误堆栈: ${StackTrace.current}');
+      debugPrint('❌ 发送消息时出错: $e');
+      debugPrint('❌ 错误堆栈: ${StackTrace.current}');
 
       // 创建错误消息
       final errorMessage = ChatMessageFactory.createErrorMessage(
@@ -1164,7 +1101,7 @@ class ChatService {
     final params = _ref.read(modelParametersProvider);
     final contextWindowSize = params.contextLength.toInt();
 
-  debugLog(() => '📊 使用上下文长度: $contextWindowSize');
+    debugPrint('📊 使用上下文长度: $contextWindowSize');
 
     // 获取最近的消息
     final recentMessages = await _database.getRecentMessages(
@@ -1217,7 +1154,7 @@ class ChatService {
         );
       }
       
-  debugLog(() => '🖼️ 添加图片到上下文消息: ${currentImageUrls.length}张图片');
+      debugPrint('🖼️ 添加图片到上下文消息: ${currentImageUrls.length}张图片');
     }
 
     return filteredMessages;
@@ -1247,7 +1184,7 @@ class ChatService {
     // 如果找到分割线，只返回分割线之后的消息
     if (lastDividerIndex >= 0) {
       final filtered = messages.sublist(lastDividerIndex + 1);
-  debugLog(() => '🎓 学习模式上下文过滤: 原消息${messages.length}条 → 过滤后${filtered.length}条');
+      debugPrint('🎓 学习模式上下文过滤: 原消息${messages.length}条 → 过滤后${filtered.length}条');
       return filtered;
     }
 
@@ -1276,7 +1213,7 @@ class ChatService {
   Future<Persona> _getPersonaById(String personaId) async {
     final personaData = await _database.getPersonaById(personaId);
     if (personaData == null) {
-  debugLog(() => '⚠️ 智能体不存在: $personaId, 使用默认智能体');
+      debugPrint('⚠️ 智能体不存在: $personaId, 使用默认智能体');
       // 返回一个默认的或备用的Persona
       final defaultPersona = Persona.defaultPersona();
       await _database.upsertPersona(defaultPersona.toCompanion());
@@ -1296,12 +1233,12 @@ class ChatService {
 
     // 如果未找到或未提供ID，则回退到第一个可用配置
     if (configData == null) {
-  debugLog(() => '⚠️ LLM配置不存在或未提供: $configId, 尝试寻找第一个可用配置');
+      debugPrint('⚠️ LLM配置不存在或未提供: $configId, 尝试寻找第一个可用配置');
       final firstConfig = await _database.getFirstLlmConfig();
       if (firstConfig == null) {
         throw DatabaseException('没有可用的LLM配置');
       }
-  debugLog(() => '✅ 使用第一个可用LLM配置: ${firstConfig.name}');
+      debugPrint('✅ 使用第一个可用LLM配置: ${firstConfig.name}');
       return firstConfig;
     }
 
@@ -1492,12 +1429,12 @@ class ChatService {
     String contentDelta = '';
     String partialTag = '';
 
-  debugLog(() => '🔧 处理文本 (${text.length}字符): "$text"');
-  debugLog(() => '🔧 初始思考模式: $currentThinkingMode');
+    debugPrint('🔧 处理文本 (${text.length}字符): "$text"');
+    debugPrint('🔧 初始思考模式: $currentThinkingMode');
 
     // 先简单处理：如果发现完整的标签，就分离内容
     if (text.contains('<think>') && text.contains('</think>')) {
-  debugLog(() => '🎯 发现完整的思考链标签对');
+      debugPrint('🎯 发现完整的思考链标签对');
       final thinkStart = text.indexOf('<think>');
       final thinkEnd = text.indexOf('</think>');
 
@@ -1523,16 +1460,18 @@ class ChatService {
 
       // 检查状态切换
       if (text.contains('<think>')) {
-  debugLog(() => '🟢 发现开始标签');
+        debugPrint('🟢 发现开始标签');
         isInThinkingMode = true;
       }
       if (text.contains('</think>')) {
-  debugLog(() => '🔴 发现结束标签');
+        debugPrint('🔴 发现结束标签');
         isInThinkingMode = false;
       }
     }
 
-  debugLog(() => '🔧 处理完成: 思考=${thinkingDelta.length}, 正文=${contentDelta.length}, 模式=$isInThinkingMode');
+    debugPrint(
+      '🔧 处理完成: 思考=${thinkingDelta.length}, 正文=${contentDelta.length}, 模式=$isInThinkingMode',
+    );
 
     return {
       'isInThinkingMode': isInThinkingMode,
@@ -1551,25 +1490,25 @@ class ChatService {
     // 在后台异步执行，不阻塞主流程
     Future.microtask(() async {
       try {
-  debugLog(() => '🏷️ 开始检查自动命名话题条件...');
+        debugPrint('🏷️ 开始检查自动命名话题条件...');
 
         // 检查是否启用了自动命名功能
         final autoNamingEnabled = await _database.getSetting(
           GeneralSettingsKeys.autoTopicNamingEnabled,
         );
         // 默认启用：仅当显式为 'false' 时才禁用
-  debugLog(() => '🏷️ 自动命名功能启用状态: ${autoNamingEnabled ?? 'null(按启用处理)'}');
+        debugPrint('🏷️ 自动命名功能启用状态: ${autoNamingEnabled ?? 'null(按启用处理)'}');
         if (autoNamingEnabled == 'false') {
-          debugLog(() => '🏷️ 自动命名功能被关闭，跳过');
+          debugPrint('🏷️ 自动命名功能被关闭，跳过');
           return;
         }
 
         // 获取会话与默认模型（用于命名的兜底）
         final session = await _getSessionById(sessionId);
-  debugLog(() => '🏷️ 当前会话标题: ${session.title}');
+        debugPrint('🏷️ 当前会话标题: ${session.title}');
         // 会话未命名才处理
         if (session.title != '新对话') {
-          debugLog(() => '🏷️ 会话已被命名，跳过');
+          debugPrint('🏷️ 会话已被命名，跳过');
           return;
         }
 
@@ -1583,13 +1522,13 @@ class ChatService {
         final modelId = await _database.getSetting(
           GeneralSettingsKeys.autoTopicNamingModelId,
         );
-  debugLog(() => '🏷️ 配置的命名模型ID: $modelId');
+        debugPrint('🏷️ 配置的命名模型ID: $modelId');
 
         // 检查是否是第一次对话（只有一条用户消息和一条AI回复）
         final messages = await getSessionMessages(sessionId);
-  debugLog(() => '🏷️ 会话消息数量: ${messages.length}');
+        debugPrint('🏷️ 会话消息数量: ${messages.length}');
         if (messages.length != 2) {
-          debugLog(() => '🏷️ 不是第一次对话，跳过');
+          debugPrint('🏷️ 不是第一次对话，跳过');
           return;
         }
 
@@ -1599,37 +1538,37 @@ class ChatService {
 
         if (modelId != null && modelId.isNotEmpty) {
           final customModel = await _database.getCustomModelById(modelId);
-          debugLog(() => '🏷️ 找到的自定义模型: ${customModel?.name}');
+          debugPrint('🏷️ 找到的自定义模型: ${customModel?.name}');
           if (customModel != null && customModel.isEnabled) {
             final configId = customModel.configId ?? '';
-            debugLog(() => '🏷️ 模型关联的配置ID: $configId');
+            debugPrint('🏷️ 模型关联的配置ID: $configId');
             final modelConfig = await _database.getLlmConfigById(configId);
-            debugLog(() => '🏷️ 找到的LLM配置: ${modelConfig?.name}');
+            debugPrint('🏷️ 找到的LLM配置: ${modelConfig?.name}');
             if (modelConfig != null && modelConfig.isEnabled) {
               namingProviderConfig = modelConfig.toLlmConfig();
               namingModelId = customModel.modelId;
             } else {
-              debugLog(() => '🏷️ 指定命名模型的配置不可用，回退到会话默认模型');
+              debugPrint('🏷️ 指定命名模型的配置不可用，回退到会话默认模型');
             }
           } else {
-            debugLog(() => '🏷️ 指定命名模型不可用，回退到会话默认模型');
+            debugPrint('🏷️ 指定命名模型不可用，回退到会话默认模型');
           }
         } else {
-          debugLog(() => '🏷️ 未配置命名模型，使用会话默认模型命名');
+          debugPrint('🏷️ 未配置命名模型，使用会话默认模型命名');
         }
 
         // 创建命名提示词
         final namingPrompt = _buildTopicNamingPrompt(userContent, aiContent);
-  debugLog(() => '🏷️ 生成的命名提示词长度: ${namingPrompt.length}');
+        debugPrint('🏷️ 生成的命名提示词长度: ${namingPrompt.length}');
 
         // 创建LLM Provider
-  debugLog(() => '🏷️ 创建LLM Provider，使用模型: $namingModelId');
+        debugPrint('🏷️ 创建LLM Provider，使用模型: $namingModelId');
         final provider = LlmProviderFactory.createProvider(
           namingProviderConfig,
         );
 
         // 生成话题名称
-  debugLog(() => '🏷️ 开始调用AI生成话题名称...');
+        debugPrint('🏷️ 开始调用AI生成话题名称...');
         final result = await provider.generateChat(
           [
             ChatMessage(
@@ -1650,9 +1589,9 @@ class ChatService {
 
         // 清理生成的标题
         String topicTitle = result.content.trim();
-  debugLog(() => '🏷️ AI生成的原始标题: "$topicTitle"');
+        debugPrint('🏷️ AI生成的原始标题: "$topicTitle"');
         topicTitle = _cleanTopicTitle(topicTitle);
-  debugLog(() => '🏷️ 清理后的标题: "$topicTitle"');
+        debugPrint('🏷️ 清理后的标题: "$topicTitle"');
 
         // 更新会话标题
         if (topicTitle.isNotEmpty && topicTitle != '新对话') {
@@ -1665,17 +1604,17 @@ class ChatService {
               updatedAt: Value(DateTime.now()),
             ),
           );
-          debugLog(() => '✅ 自动命名话题成功: $topicTitle');
+          debugPrint('✅ 自动命名话题成功: $topicTitle');
 
           // 通知状态管理器更新UI
-          debugLog(() => '🔗 ChatService($_instanceId): 调用标题更新回调');
+          debugPrint('🔗 ChatService($_instanceId): 调用标题更新回调');
           onSessionTitleUpdated?.call(sessionId, topicTitle);
         } else {
-          debugLog(() => '⚠️ 生成的标题为空或无效，跳过更新');
+          debugPrint('⚠️ 生成的标题为空或无效，跳过更新');
         }
       } catch (e) {
         // 静默处理错误，不影响正常对话流程
-  debugLog(() => '⚠️ 自动命名话题失败: $e');
+        debugPrint('⚠️ 自动命名话题失败: $e');
       }
     });
   }
@@ -1715,6 +1654,24 @@ class ChatService {
     return title.trim();
   }
 
+  /// 检查模型是否支持工具函数调用
+  bool _checkModelSupportsTools(String? provider, String? model) {
+    if (provider == null || model == null) return false;
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        // GPT-4和GPT-3.5系列支持函数调用
+        return model.contains('gpt-4') || model.contains('gpt-3.5');
+      case 'anthropic':
+        // Claude系列支持函数调用
+        return model.contains('claude');
+      case 'google':
+        // Gemini Pro支持函数调用
+        return model.contains('gemini-pro') || model.contains('gemini-1.5');
+      default:
+        // 保守起见，未知提供商默认不支持
+        return false;
+    }
+  }
 
   /// 处理工具函数调用
   Future<ChatMessage> _handleToolCalls(
@@ -1725,7 +1682,7 @@ class ChatService {
     ChatOptions chatOptions,
     LlmProvider provider,
   ) async {
-  debugLog(() => '🛠️ 开始处理工具函数调用');
+    debugPrint('🛠️ 开始处理工具函数调用');
     
     try {
       // 获取AI计划桥接服务
@@ -1744,8 +1701,8 @@ class ChatService {
       for (final toolCall in result.toolCalls!) {
         final startTime = DateTime.now();
         
-  debugLog(() => '🔧 执行函数: ${toolCall.name}');
-  debugLog(() => '📋 函数参数: ${toolCall.arguments}');
+        debugPrint('🔧 执行函数: ${toolCall.name}');
+        debugPrint('📋 函数参数: ${toolCall.arguments}');
         
         // 记录活跃函数调用
         activeFunctionCallNotifier.startFunctionCall(
@@ -1764,8 +1721,8 @@ class ChatService {
           final executionTime = DateTime.now().difference(startTime);
           
           if (functionResult.success) {
-            debugLog(() => '✅ 函数执行成功: ${toolCall.name}');
-            debugLog(() => '📊 执行结果: ${functionResult.data}');
+            debugPrint('✅ 函数执行成功: ${toolCall.name}');
+            debugPrint('📊 执行结果: ${functionResult.data}');
             
             // 记录成功统计
             statisticsNotifier.recordSuccess(toolCall.name, executionTime);
@@ -1779,8 +1736,8 @@ class ChatService {
               'execution_time_ms': executionTime.inMilliseconds,
             });
           } else {
-            debugLog(() => '❌ 函数执行失败: ${toolCall.name}');
-            debugLog(() => '💥 错误信息: ${functionResult.error}');
+            debugPrint('❌ 函数执行失败: ${toolCall.name}');
+            debugPrint('💥 错误信息: ${functionResult.error}');
             
             // 记录失败统计
             statisticsNotifier.recordFailure(toolCall.name, executionTime);
@@ -1795,7 +1752,7 @@ class ChatService {
           }
         } catch (e) {
           final executionTime = DateTime.now().difference(startTime);
-          debugLog(() => '💥 函数调用异常: ${toolCall.name} - $e');
+          debugPrint('💥 函数调用异常: ${toolCall.name} - $e');
           
           // 记录失败统计
           statisticsNotifier.recordFailure(toolCall.name, executionTime);
@@ -1840,13 +1797,13 @@ class ChatService {
       aiToolsNotifier.setExecuting(false);
       aiToolsNotifier.clearError();
       
-  debugLog(() => '🎯 工具函数调用处理完成，执行了${functionResults.length}个函数');
+      debugPrint('🎯 工具函数调用处理完成，执行了${functionResults.length}个函数');
       
       return aiMessage;
       
     } catch (e, stackTrace) {
-  debugLog(() => '💥 处理工具函数调用时发生错误: $e');
-  debugLog(() => '📍 错误堆栈: $stackTrace');
+      debugPrint('💥 处理工具函数调用时发生错误: $e');
+      debugPrint('📍 错误堆栈: $stackTrace');
       
       // 更新错误状态
       final aiToolsNotifier = _ref.read(aiToolsStateProvider.notifier);
@@ -1964,19 +1921,10 @@ class ChatService {
     
     buffer.writeln('   📋 找到 ${plans.length} 个计划:');
     for (final plan in plans.take(3)) { // 最多显示3个计划
-      final title = plan['title'] ?? '未命名计划';
+      final title = plan['title'] ?? '未知计划';
       final status = plan['status'] ?? '';
       final progress = plan['progress'] ?? 0;
-      // priority统一转换处理
-      final priorityValue = plan['priority'];
-      String priority = '';
-      if (priorityValue is String) {
-        priority = priorityValue;
-      } else if (priorityValue is int) {
-        // 将整数优先级转换为字符串表示
-        priority = priorityValue == 1 ? 'high' : 
-                  priorityValue == 2 ? 'medium' : 'low';
-      }
+      final priority = plan['priority'] ?? '';
       
       buffer.write('     • $title');
       if (status.isNotEmpty) {
@@ -2019,17 +1967,13 @@ class ChatService {
   /// 格式化计划操作数据
   void _formatPlanOperationData(StringBuffer buffer, Map<String, dynamic> data) {
     final planTitle = data['title'] as String?;
-    final planId = data['plan_id']?.toString();
+    final planId = data['plan_id'] as String?;
     
     if (planTitle != null) {
       buffer.writeln('   📌 计划: $planTitle');
     }
     if (planId != null) {
-      // 只有当ID长度超过8个字符时才截取
-      final displayId = planId.length > 8 
-          ? '${planId.substring(0, 8)}...'
-          : planId;
-      buffer.writeln('   🆔 ID: $displayId');
+      buffer.writeln('   🆔 ID: ${planId.substring(0, 8)}...');
     }
   }
 }
@@ -2068,10 +2012,10 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
       );
     } catch (e, stackTrace) {
       // 详细记录解析失败的错误信息，便于调试
-    debugLog(() => '❌ Failed to parse ChatSessionData: $id');
-    debugLog(() => '❌ Error: $e');
-    debugLog(() => '❌ StackTrace: $stackTrace');
-    debugLog(() =>
+      debugPrint('❌ Failed to parse ChatSessionData: $id');
+      debugPrint('❌ Error: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
+      debugPrint(
         '❌ Raw data - title: $title, personaId: $personaId, config: $config',
       );
 
@@ -2100,8 +2044,8 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
       }
       return [];
     } catch (e, stackTrace) {
-  debugLog(() => '❌ Failed to parse tags JSON: $tagsJson');
-  debugLog(() => '❌ Error: $e, StackTrace: $stackTrace');
+      debugPrint('❌ Failed to parse tags JSON: $tagsJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return [];
     }
   }
@@ -2116,8 +2060,8 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
       }
       return null;
     } catch (e, stackTrace) {
-  debugLog(() => '❌ Failed to parse config JSON: $configJson');
-  debugLog(() => '❌ Error: $e, StackTrace: $stackTrace');
+      debugPrint('❌ Failed to parse config JSON: $configJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return null;
     }
   }
@@ -2132,8 +2076,8 @@ extension ChatSessionDataExtension on ChatSessionsTableData {
       }
       return null;
     } catch (e, stackTrace) {
-  debugLog(() => '❌ Failed to parse metadata JSON: $metadataJson');
-  debugLog(() => '❌ Error: $e, StackTrace: $stackTrace');
+      debugPrint('❌ Failed to parse metadata JSON: $metadataJson');
+      debugPrint('❌ Error: $e, StackTrace: $stackTrace');
       return null;
     }
   }
@@ -2151,7 +2095,7 @@ extension ChatMessageDataExtension on ChatMessagesTableData {
         }
       }
     } catch (e) {
-      debugLog(() => '解析图片URL失败: $e');
+      debugPrint('解析图片URL失败: $e');
     }
 
     return ChatMessage(

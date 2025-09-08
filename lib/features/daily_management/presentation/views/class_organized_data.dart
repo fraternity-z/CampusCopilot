@@ -1,6 +1,6 @@
 // 从traintime_pda直接复制的课程数据组织类
 import 'package:flutter/material.dart';
-import 'package:campus_copilot/model/xidian_ids/classtable.dart';
+import 'package:ai_assistant/model/xidian_ids/classtable.dart';
 
 class ClassOrgainzedData {
   final List<dynamic> data;

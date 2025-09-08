@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "campus_copilot" "\0"
+            VALUE "FileDescription", "ai_assistant" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "campus_copilot" "\0"
+            VALUE "InternalName", "ai_assistant" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "campus_copilot.exe" "\0"
-            VALUE "ProductName", "campus_copilot" "\0"
+            VALUE "OriginalFilename", "ai_assistant.exe" "\0"
+            VALUE "ProductName", "ai_assistant" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

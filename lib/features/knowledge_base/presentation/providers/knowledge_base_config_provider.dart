@@ -124,11 +124,13 @@ class KnowledgeBaseConfigNotifier
 
       // 获取当前配置（保持现有的当前配置，如果不存在则选择默认配置）
       KnowledgeBaseConfig? currentConfig = state.currentConfig;
-      // 尝试在新加载的配置中找到当前配置的更新版本
-      currentConfig = validConfigs
-          .where((c) => c.id == currentConfig!.id)
-          .firstOrNull;
-    
+      if (currentConfig != null) {
+        // 尝试在新加载的配置中找到当前配置的更新版本
+        currentConfig = validConfigs
+            .where((c) => c.id == currentConfig!.id)
+            .firstOrNull;
+      }
+
       // 如果没有找到当前配置，则选择默认配置
       currentConfig ??=
           validConfigs.where((c) => c.isDefault).firstOrNull ??

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/utils/debug_log.dart';
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -196,7 +196,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
             );
           }
         } catch (e) {
-          debugLog(() => '⚠️ 删除向量数据失败，但继续删除文档记录: $e');
+          debugPrint('⚠️ 删除向量数据失败，但继续删除文档记录: $e');
         }
       }
       
@@ -249,7 +249,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
             vectorSearchServiceTypeProvider.future,
           );
 
-          debugLog(() => '🔍 使用向量搜索服务: ${serviceType.name}');
+          debugPrint('🔍 使用向量搜索服务: ${serviceType.name}');
 
           if (vectorSearchService is EnhancedVectorSearchService) {
             // 使用增强向量搜索服务
@@ -304,11 +304,11 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
               await _fallbackTextSearch(query);
             }
           } else {
-            debugLog(() => '❌ 未知的向量搜索服务类型');
+            debugPrint('❌ 未知的向量搜索服务类型');
             await _fallbackTextSearch(query);
           }
         } catch (e) {
-          debugLog(() => '❌ 向量搜索失败，回退到简单搜索: $e');
+          debugPrint('❌ 向量搜索失败，回退到简单搜索: $e');
           await _fallbackTextSearch(query);
         }
       } else {
@@ -387,7 +387,7 @@ class KnowledgeBaseNotifier extends StateNotifier<KnowledgeBaseState> {
             );
           }
         } catch (e) {
-          debugLog(() => '⚠️ 清空向量数据库失败，但继续清空文档记录: $e');
+          debugPrint('⚠️ 清空向量数据库失败，但继续清空文档记录: $e');
         }
       }
       

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// 渐进迁移：优先通过渲染适配层接入 markdown_widget
-import 'package:campus_copilot/shared/markdown/markdown_renderer.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../../../settings/presentation/providers/settings_provider.dart';
-import '../../../../../app/app_router.dart' show generalSettingsProvider;
 
 /// 思考链显示组件
 ///
@@ -36,8 +34,9 @@ class ThinkingChainWidget extends ConsumerStatefulWidget {
 
 class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     with TickerProviderStateMixin {
-  // 移除整体淡入入场动画，仅保留脉动动画
+  late AnimationController _animationController;
   late AnimationController _pulsateController;
+  late Animation<double> _fadeAnimation;
   late Animation<double> _pulsateAnimation;
 
   // 使用 ValueNotifier 替代 setState 减少重建范围
@@ -67,6 +66,11 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     _previewScrollController = ScrollController();
     _activeLineIndex = ValueNotifier<int>(0);
 
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
     _pulsateController =
         AnimationController(
           duration: const Duration(milliseconds: 1000),
@@ -79,9 +83,15 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
           }
         });
 
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     _pulsateAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _pulsateController, curve: Curves.easeInOut),
     );
+
+    _animationController.forward();
 
     if (!widget.isCompleted) {
       _startOptimizedTypingAnimation();
@@ -216,6 +226,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
 
   @override
   void dispose() {
+    _animationController.dispose();
     _pulsateController.dispose();
     _typingTimer?.cancel();
     _previewTimer?.cancel();
@@ -234,7 +245,9 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     }
 
     return RepaintBoundary(
-      child: Container(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,6 +295,7 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
             ],
           ),
         ),
+      ),
     );
   }
 
@@ -513,7 +527,6 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
     settings,
     String displayedContent,
   ) {
-    final general = ref.watch(generalSettingsProvider);
     final bool shouldTruncate =
         !_isExpanded && displayedContent.length > settings.maxDisplayLength;
 
@@ -541,28 +554,25 @@ class _ThinkingChainWidgetState extends ConsumerState<ThinkingChainWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 内容区：根据设置选择 Markdown 或纯文本
-            if (general.enableMarkdownRendering)
-              RepaintBoundary(
-                child: MarkdownRenderer
-                        .defaultRenderer(engine: MarkdownEngine.markdownWidget)
-                    .render(
-                  displayContent,
-                  baseTextStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
-                ),
-              )
-            else
-              SelectableText(
-                displayContent,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.4,
+            // 使用 RepaintBoundary 包裹 MarkdownBody
+            RepaintBoundary(
+              child: MarkdownBody(
+                data: displayContent,
+                styleSheet: MarkdownStyleSheet(
+                  p: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                  code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainer,
+                  ),
                 ),
               ),
+            ),
             // 光标动画
             if (!widget.isCompleted &&
                 displayedContent.length < widget.content.length)
