@@ -199,13 +199,18 @@ class _OptimizedStreamingMessageWidgetState
     });
   }
 
+  /// 获取固定的文字颜色（不随主题颜色变化）
+  Color _getFixedTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    // 浅色系统使用黑色，深色系统使用白色
+    return brightness == Brightness.light ? Colors.black : Colors.white;
+  }
+
   TextStyle? _textStyle() {
     final theme = Theme.of(context);
     return GoogleFonts.inter(
       textStyle: theme.textTheme.bodyMedium?.copyWith(
-        color: widget.message.isFromUser
-            ? theme.colorScheme.onPrimaryContainer
-            : theme.colorScheme.onSurface,
+        color: _getFixedTextColor(context),
         height: 1.7,
         letterSpacing: 0.2,
       ),

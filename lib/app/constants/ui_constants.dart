@@ -67,7 +67,7 @@ class TabConfig {
 /// 侧边栏标签页配置
 class SidebarTabConfig {
   static const Map<SidebarTab, TabConfig> configs = {
-    SidebarTab.assistants: TabConfig(icon: Icons.person, label: '助手'),
+    SidebarTab.assistants: TabConfig(icon: Icons.smart_toy, label: '助手'),
     SidebarTab.topics: TabConfig(icon: Icons.topic, label: '聊天记录'),
     SidebarTab.settings: TabConfig(icon: Icons.settings, label: '参数设置'),
   };

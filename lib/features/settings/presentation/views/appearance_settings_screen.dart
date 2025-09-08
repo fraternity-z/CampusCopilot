@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/utils/keyboard_utils.dart';
 
 import '../providers/settings_provider.dart';
+import '../widgets/theme_color_picker.dart';
 import '../../domain/entities/app_settings.dart' as app_settings;
 
 /// 外观设置页面
@@ -24,6 +25,8 @@ class AppearanceSettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             _buildThemeSection(context, ref),
+            const SizedBox(height: 16),
+            const ThemeColorPicker(),
             const SizedBox(height: 16),
             _buildThinkingChainSection(context, ref),
           ],
