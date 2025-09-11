@@ -573,85 +573,235 @@ class _LearningModeSettingsWeb extends StatelessWidget {
   const _LearningModeSettingsWeb();
   @override
   Widget build(BuildContext context) {
-    String mode = 'socratic';
-    double difficulty = 0.6;
-    int session = 20; // 学习时长（分钟）
-    bool enableHints = true;
-    bool enableReasoning = true;
-    bool enableCitations = false;
-    final subjects = <String>{'数学', '物理'};
-    final allSubjects = ['数学','物理','化学','计算机','历史','文学'];
+    // 预览本地状态
+    String learningStyle = 'guided'; // guided / exploratory / structured
+    String responseDetail = 'normal'; // brief / normal / detailed
+    int maxRounds = 5;
+    bool showHints = true;
+    final triggerKeywords = ['给答案', '直接答案', '最终答案'];
 
-    Widget sectionTitle(String text) => Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-    );
+    final theme = Theme.of(context);
 
-    Widget card(Widget child) => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
-      ),
-      child: child,
+    Widget radioCard({required bool selected, required String title, required String subtitle, VoidCallback? onTap}) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: selected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.3),
+                width: selected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              color: selected ? theme.colorScheme.primary.withValues(alpha: 0.05) : Colors.transparent,
+            ),
+            child: Row(children: [
+              Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant, size: 20),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurface)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    Widget sectionTitle(String t, [String? sub]) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(t, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+        if (sub != null) ...[
+          const SizedBox(height: 8),
+          Text(sub, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
+      ],
     );
 
     return Scaffold(
-      appBar: AppBar(leading: const BackButton(), centerTitle: true, title: const Text('学习模式')),
+      appBar: AppBar(
+        title: Row(children: [
+          Icon(Icons.school_outlined, color: theme.colorScheme.primary, size: 24),
+          const SizedBox(width: 8),
+          const Text('学习模式设置'),
+        ]),
+        leading: const BackButton(),
+      ),
       body: StatefulBuilder(builder: (context, set) {
-        return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), children: [
-          // 模式选择
-          card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            sectionTitle('教学模式'),
-            DropdownButtonFormField<String>(
-              initialValue: mode,
-              items: const [
-                DropdownMenuItem(value: 'socratic', child: Text('苏格拉底式')),
-                DropdownMenuItem(value: 'qa', child: Text('问答式')),
-              ],
-              onChanged: (v) => set(()=> mode = v ?? mode),
-              decoration: const InputDecoration(border: OutlineInputBorder()),
+        return ListView(padding: const EdgeInsets.all(16), children: [
+          // 状态指示条
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
             ),
-          ])),
-
-          const SizedBox(height: 16),
-
-          // 学习参数
-          card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            sectionTitle('学习参数'),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('难度调节'), Text(difficulty.toStringAsFixed(2))]),
-            Slider(value: difficulty, min: 0, max: 1, divisions: 10, onChanged: (v)=>set(()=>difficulty=v)),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('单次学习时长（分钟）'), Text('$session')]),
-            Slider(value: session.toDouble(), min: 10, max: 60, divisions: 10, onChanged: (v)=>set(()=>session=v.round())),
-            const SizedBox(height: 8),
-            SwitchListTile(title: const Text('启用提示链（Hint）'), value: enableHints, onChanged: (v)=>set(()=>enableHints=v)),
-            SwitchListTile(title: const Text('启用逐步推理（Chain-of-Thought）'), value: enableReasoning, onChanged: (v)=>set(()=>enableReasoning=v)),
-          ])),
-
-          const SizedBox(height: 16),
-
-          // 结果格式
-          card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            sectionTitle('结果格式'),
-            SwitchListTile(title: const Text('显示参考/引用'), value: enableCitations, onChanged: (v)=>set(()=>enableCitations=v)),
-          ])),
-
-          const SizedBox(height: 16),
-
-          // 学科与目标
-          card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            sectionTitle('学科选择'),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final s in allSubjects)
-                FilterChip(
-                  label: Text(s),
-                  selected: subjects.contains(s),
-                  onSelected: (sel) => set(() { sel ? subjects.add(s) : subjects.remove(s); }),
-                ),
+            child: Row(children: [
+              Icon(Icons.check_circle_outline, color: theme.colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('学习模式已启用', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text('AI将使用苏格拉底式教学方法，引导您思考', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ])),
             ]),
-          ])),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 学习风格
+          sectionTitle('学习风格', '选择适合您的教学引导方式'),
+          const SizedBox(height: 16),
+          radioCard(
+            selected: learningStyle == 'guided',
+            title: '引导式',
+            subtitle: '通过提问引导学生思考，逐步发现答案',
+            onTap: () => set(() => learningStyle = 'guided'),
+          ),
+          const SizedBox(height: 12),
+          radioCard(
+            selected: learningStyle == 'exploratory',
+            title: '探索式',
+            subtitle: '鼓励学生自主探索，提供开放性问题',
+            onTap: () => set(() => learningStyle = 'exploratory'),
+          ),
+          const SizedBox(height: 12),
+          radioCard(
+            selected: learningStyle == 'structured',
+            title: '结构化',
+            subtitle: '按照知识点结构，循序渐进地学习',
+            onTap: () => set(() => learningStyle = 'structured'),
+          ),
+
+          const SizedBox(height: 32),
+
+          // 回答详细程度
+          sectionTitle('回答详细程度', '控制AI回答的详细程度和引导深度'),
+          const SizedBox(height: 16),
+          radioCard(
+            selected: responseDetail == 'brief',
+            title: '粗略',
+            subtitle: '简单引导，关键提示',
+            onTap: () => set(() => responseDetail = 'brief'),
+          ),
+          const SizedBox(height: 12),
+          radioCard(
+            selected: responseDetail == 'normal',
+            title: '默认',
+            subtitle: '适中引导，逐步提示',
+            onTap: () => set(() => responseDetail = 'normal'),
+          ),
+          const SizedBox(height: 12),
+          radioCard(
+            selected: responseDetail == 'detailed',
+            title: '详细',
+            subtitle: '深入引导，充分解释',
+            onTap: () => set(() => responseDetail = 'detailed'),
+          ),
+
+          const SizedBox(height: 32),
+
+          // 学习会话设置 -> 最大对话轮数
+          sectionTitle('学习会话设置', '配置学习会话的行为和参数'),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('最大对话轮数', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 4),
+                  Text('设置学习会话的最大轮数，达到后AI将给出完整答案', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Text('$maxRounds 轮', style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600)),
+                ),
+              ]),
+              const SizedBox(height: 16),
+              Slider(value: maxRounds.toDouble(), min: 3, max: 15, divisions: 12, label: '$maxRounds 轮', onChanged: (v) => set(() => maxRounds = v.round())),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('3 轮', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text('15 轮', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ]),
+            ]),
+          ),
+
+          const SizedBox(height: 20),
+
+          // 智能答案触发关键词
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.psychology_outlined, color: theme.colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text('智能答案触发', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+              ]),
+              const SizedBox(height: 12),
+              Text('当您在学习过程中使用以下关键词时，AI将直接给出完整答案：', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final k in triggerKeywords)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.colorScheme.primaryContainer, width: 1),
+                    ),
+                    child: Text('"$k"', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                  ),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Icon(Icons.info_outline, size: 16, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                const SizedBox(width: 6),
+                Expanded(child: Text('也可以在对话中直接说"我想要答案"来触发', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8), fontStyle: FontStyle.italic))),
+              ]),
+            ]),
+          ),
+
+          const SizedBox(height: 32),
+
+          // 其他设置：显示学习提示
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('显示学习提示', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text('在学习过程中显示引导性提示信息', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ])),
+              const SizedBox(width: 16),
+              Switch(value: showHints, onChanged: (v) => set(() => showHints = v)),
+            ]),
+          ),
         ]);
       }),
     );
