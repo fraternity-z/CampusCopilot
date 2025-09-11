@@ -125,7 +125,7 @@ dart run build_runner build --delete-conflicting-outputs
 # 监听文件变化自动生成代码
 dart run build_runner watch --delete-conflicting-outputs
 
-# 运行应用
+# 运行应用（原生/桌面）
 flutter run
 
 # 运行测试
@@ -159,6 +159,42 @@ dart run build_runner build --delete-conflicting-outputs
 ```bash
 flutter run
 ```
+
+## 🌐 Web 演示（仅页面展示）
+由于web环境限制，程序无法web运行，为了保证查看生效，本仓库提供了一个独立的 Web 预览入口，用于“只展示页面，不接入平台能力/数据库/登录”。适合在浏览器中快速查看 UI 与导航体验。
+
+- 预览入口：`lib/main_web_preview.dart`
+- 特点：
+  - 不依赖 `dart:io` / Drift / ObjectBox / 代理设置等平台能力
+  - 提供侧边栏（参数设置/助手/聊天记录）、对话页、日常页、设置页（含模型设置、AI 搜索设置、外观设置、学习模式、数据管理、关于）等主要页面的 UI 克隆
+  - 对话输入框、卡片与分段控件按项目风格还原
+
+### 本地浏览器运行
+
+```bash
+# 启动 Chrome 预览
+flutter run -d chrome -t lib/main_web_preview.dart
+
+# 或使用内置 Web 服务器（指定端口）
+flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000 -t lib/main_web_preview.dart
+```
+
+### 构建静态站点
+
+```bash
+flutter build web -t lib/main_web_preview.dart --release
+# 部署到子路径时可指定 base-href
+# flutter build web -t lib/main_web_preview.dart --release --base-href /preview/
+```
+
+### VS Code 一键预览（.vscode/preview.yml）
+
+仓库内已提供 `.vscode/preview.yml`，使用支持该文件的预览插件/环境可直接启动 Web 预览：
+
+- 默认端口：`3000`
+- 启动命令：`flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000 -t lib/main_web_preview.dart`
+
+> 提示：Web 演示仅用于查看 UI。涉及登录、数据库、文件系统、代理等能力的功能在 Web 预览中不会生效。
 
 ### 初始配置
 

@@ -96,128 +96,114 @@ class _AppearanceSettingsWeb extends StatelessWidget {
   const _AppearanceSettingsWeb();
   @override
   Widget build(BuildContext context) {
-    // 本页仅 UI 预览，使用本地状态
-    String themeMode = 'system'; // system / light / dark
-    Color seed = Theme.of(context).colorScheme.primary;
-    double fontScale = 1.0;
-    double radius = 16;
-    String language = 'zh-CN';
+    String themeMode = '跟随系统';
+    bool showChain = false;
+    bool enableAnim = false;
+    int speed = 80;
+    bool autoCollapse = true;
+    int maxLen = 2000;
 
-    Widget sectionTitle(String text) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(text, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-        );
-
-    Widget card(Widget child) => Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
-          ),
-          child: child,
-        );
-
-    final palette = const [
-      Color(0xFF9B87F5), Color(0xFF4F46E5), Color(0xFF22C55E), Color(0xFFF59E0B),
-      Color(0xFFEC4899), Color(0xFF06B6D4), Color(0xFFEF4444), Color(0xFF6366F1),
-    ];
+    Widget card(Widget child) => Card(child: Padding(padding: const EdgeInsets.all(16), child: child));
 
     return Scaffold(
-      appBar: AppBar(leading: const BackButton(), title: const Text('外观设置')),
-      body: StatefulBuilder(builder: (context, set) {
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          children: [
-            // 主题模式
-            card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('主题模式'),
-              Wrap(spacing: 8, children: [
-                ChoiceChip(label: const Text('跟随系统'), selected: themeMode == 'system', onSelected: (_) => set(() => themeMode = 'system')),
-                ChoiceChip(label: const Text('浅色'), selected: themeMode == 'light', onSelected: (_) => set(() => themeMode = 'light')),
-                ChoiceChip(label: const Text('深色'), selected: themeMode == 'dark', onSelected: (_) => set(() => themeMode = 'dark')),
-              ]),
-            ])),
-
-            const SizedBox(height: 16),
-
-            // 主题色
-            card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('主题色'),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8, mainAxisSpacing: 8, crossAxisSpacing: 8),
-                itemCount: palette.length,
-                itemBuilder: (_, i) {
-                  final c = palette[i];
-                  final sel = c.toARGB32() == seed.toARGB32();
-                  return InkWell(
-                    onTap: () => set(() => seed = c),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: c,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: sel ? Colors.white : Colors.black.withValues(alpha: 0.1), width: sel ? 2 : 1),
-                        boxShadow: [BoxShadow(color: c.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 2))],
-                      ),
-                      child: sel ? const Icon(Icons.check, color: Colors.white) : null,
-                    ),
-                  );
-                },
-              ),
-            ])),
-
-            const SizedBox(height: 16),
-
-            // 字体与圆角
-            card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('字体与圆角'),
-              Text('字体缩放：${fontScale.toStringAsFixed(2)}'),
-              Slider(value: fontScale, min: 0.9, max: 1.2, divisions: 6, onChanged: (v) => set(() => fontScale = v)),
-              const SizedBox(height: 8),
-              Text('组件圆角：${radius.toStringAsFixed(0)}'),
-              Slider(value: radius, min: 8, max: 24, divisions: 16, onChanged: (v) => set(() => radius = v)),
-            ])),
-
-            const SizedBox(height: 16),
-
-            // 语言
-            card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionTitle('语言'),
-              DropdownButtonFormField<String>(
-                initialValue: language,
+      appBar: AppBar(title: const Text('外观设置'), elevation: 0, leading: const BackButton()),
+      body: ListView(padding: const EdgeInsets.all(16), children: [
+        // 主题设置
+        card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Icon(Icons.palette, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 8), Text('主题设置', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))]),
+          const SizedBox(height: 16),
+          StatefulBuilder(builder: (context, set) {
+            return ListTile(
+              title: const Text('主题模式'),
+              subtitle: Text(themeMode),
+              trailing: DropdownButton<String>(
+                value: themeMode,
+                borderRadius: BorderRadius.circular(12),
+                dropdownColor: Theme.of(context).colorScheme.surface,
                 items: const [
-                  DropdownMenuItem(value: 'zh-CN', child: Text('中文（简体）')),
-                  DropdownMenuItem(value: 'en-US', child: Text('English')),
+                  DropdownMenuItem(value: '跟随系统', child: Text('跟随系统')),
+                  DropdownMenuItem(value: '浅色', child: Text('浅色')),
+                  DropdownMenuItem(value: '深色', child: Text('深色')),
                 ],
-                onChanged: (v) => set(() => language = v ?? language),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: const OutlineInputBorder(borderSide: BorderSide.none),
-                ),
+                onChanged: (v) => set(() => themeMode = v ?? themeMode),
               ),
-            ])),
+              contentPadding: EdgeInsets.zero,
+            );
+          }),
+        ])),
 
-            const SizedBox(height: 16),
+        const SizedBox(height: 16),
 
-            // 预览卡片
-            card(Row(children: [
-              Container(width: 44, height: 44, decoration: BoxDecoration(color: seed.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.palette, color: seed)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-                Text('预览效果'),
-                SizedBox(height: 4),
-                Text('此处展示卡片/按钮的风格示意（仅UI预览，不改变全局主题）'),
-              ])),
-              const SizedBox(width: 12),
-              FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: seed), child: const Text('按钮')),
-            ])),
-          ],
-        );
-      }),
+        // 主题颜色（简化圆点）
+        card(Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(children: [
+            Icon(Icons.color_lens, color: Theme.of(context).colorScheme.primary, size: 16),
+            const SizedBox(width: 4),
+            Text('主题颜色', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 13)),
+            const Spacer(),
+            for (final c in [
+              const Color(0xFF9B87F5), const Color(0xFF4F46E5), const Color(0xFF22C55E), const Color(0xFFF59E0B),
+              const Color(0xFFEC4899), const Color(0xFF06B6D4), const Color(0xFFEF4444), const Color(0xFF6366F1),
+            ])
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Container(width: 24, height: 24, decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.black.withValues(alpha: 0.08)))),
+              ),
+          ]),
+        )),
+
+        const SizedBox(height: 16),
+
+        // 思考链显示
+        StatefulBuilder(builder: (context, set) {
+          return card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [Icon(Icons.psychology, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 8), Text('思考链显示', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))]),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('启用思考链显示'),
+              subtitle: const Text('显示AI模型的思考链，帮助理解推理过程'),
+              value: showChain,
+              onChanged: (v) => set(() => showChain = v),
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (showChain) ...[
+              const Divider(),
+              SwitchListTile(
+                title: const Text('启用思考链动画'),
+                subtitle: const Text('显示打字机效果的思考链动画'),
+                value: enableAnim,
+                onChanged: (v) => set(() => enableAnim = v),
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (enableAnim) ...[
+                const SizedBox(height: 8),
+                ListTile(
+                  title: const Text('动画速度'),
+                  subtitle: Text('当前: ${speed}ms/字符'),
+                  trailing: SizedBox(width: 150, child: Slider(value: speed.toDouble(), min: 10, max: 200, divisions: 19, label: '${speed}ms', onChanged: (v) => set(() => speed = v.round()))),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+              const Divider(),
+              SwitchListTile(
+                title: const Text('自动折叠长内容'),
+                subtitle: const Text('长思考链内容将自动折叠，可点击展开'),
+                value: autoCollapse,
+                onChanged: (v) => set(() => autoCollapse = v),
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('显示长度限制'),
+                subtitle: Text('超过 $maxLen 字符时${autoCollapse ? "自动折叠" : "截断显示"}'),
+                trailing: SizedBox(width: 150, child: Slider(value: maxLen.toDouble(), min: 500, max: 5000, divisions: 18, label: '$maxLen字符', onChanged: (v) => set(() => maxLen = v.round()))),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ]));
+        }),
+      ]),
     );
   }
 }

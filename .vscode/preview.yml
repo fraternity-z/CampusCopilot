@@ -1,10 +1,11 @@
 # 点击运行后会调用该文件配置自动运行应用，更多运行命令示例可前往https://docs.qq.com/aio/DRUFZcHVvZlJuY3l2?u=7c2feb6441bf45a9850c937243d1d070&p=TDSrqgLJdfWD1BI4QnDlct
 
-autoOpen: false # 打开应用时是否自动开启所有下方apps的预览
-apps: # 支持配置多个应用
-  - port: 3000 # 应用的端口
-    run: echo “请前往preview设置启动命令” # 应用的启动命令
-    root: / # 应用的启动目录
-    name: cloud-studio-app # 应用名称
-    description: 我的Cloud Studio App。 # 应用描述
-    autoOpen: false # 打开应用时是否自动开启预览（优先级高于根级 autoOpen）
+autoOpen: true # 打开工作区时，自动启动下方 apps 中 autoOpen=true 的预览
+apps:
+  - port: 3000
+    # 使用 Flutter 内置 web-server，在 3000 端口启动 Web 预览入口
+    run: flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000 -t lib/main_web_preview.dart
+    root: .
+    name: web-preview
+    description: Campus Copilot Web 预览（仅 UI，无平台能力）
+    autoOpen: true
