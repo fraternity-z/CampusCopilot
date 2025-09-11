@@ -3,9 +3,11 @@
 autoOpen: true # 打开工作区时，自动启动下方 apps 中 autoOpen=true 的预览
 apps:
   - port: 3000
-    # 使用 Flutter 内置 web-server，在 3000 端口启动 Web 预览入口
-    run: flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000 -t lib/main_web_preview.dart
+    # 为兼容部分在线预览代理（出现 http,http://... 的请求行），改为构建静态站点 + Python 静态服务器
+    # 如环境无 Python，可改为：
+    #   run: dart pub global activate dhttpd && flutter build web -t lib/main_web_preview.dart --release && ~/.pub-cache/bin/dhttpd --path build/web --port 3000
+    run: bash -lc "flutter build web -t lib/main_web_preview.dart --release && python -m http.server 3000 -d build/web"
     root: .
     name: web-preview
-    description: Campus Copilot Web 预览（仅 UI，无平台能力）
+    description: Campus Copilot Web 预览（静态托管，仅 UI）
     autoOpen: true

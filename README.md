@@ -192,9 +192,22 @@ flutter build web -t lib/main_web_preview.dart --release
 仓库内已提供 `.vscode/preview.yml`，使用支持该文件的预览插件/环境可直接启动 Web 预览：
 
 - 默认端口：`3000`
-- 启动命令：`flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000 -t lib/main_web_preview.dart`
+- 启动逻辑：先构建静态站点，再用 Python 静态服务器托管 `build/web`
+- 预览入口：打开预览面板选择 `web-preview`
 
-> 提示：Web 演示仅用于查看 UI。涉及登录、数据库、文件系统、代理等能力的功能在 Web 预览中不会生效。
+提示：Web 演示仅用于查看 UI。涉及登录、数据库、文件系统、代理等能力的功能在 Web 预览中不会生效。
+
+### 常见问题（Web 预览）
+
+- 报错 `FormatException: Illegal scheme character (http,http://...)` 或 `Internal Server Error`
+  - 原因：部分在线预览代理向后端透传绝对 URL，`flutter run -d web-server` 的内置服务器无法解析。
+  - 解决：已将 `.vscode/preview.yml` 切换为“构建静态站点 + Python 静态服务器”的方案，避免该问题。
+  - 若环境无 Python，可改用：
+    ```bash
+    dart pub global activate dhttpd \
+      && flutter build web -t lib/main_web_preview.dart --release \
+      && ~/.pub-cache/bin/dhttpd --path build/web --port 3000
+    ```
 
 ### 初始配置
 
