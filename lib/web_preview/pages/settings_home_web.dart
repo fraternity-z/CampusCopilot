@@ -146,13 +146,154 @@ class _ModelSettingsWeb extends StatelessWidget {
   const _ModelSettingsWeb();
   @override
   Widget build(BuildContext context) {
+    final providers = <_ProviderInfo>[
+      _ProviderInfo(
+        name: 'OpenAI',
+        desc: 'OpenAI的GPT系列模型，包括GPT‑3.5和GPT‑4',
+        icon: Icons.psychology_alt_rounded,
+        color: const Color(0xFF67C587),
+        defaultModel: 'gpt-3.5-turbo',
+      ),
+      _ProviderInfo(
+        name: 'Google Gemini',
+        desc: 'Google的Gemini系列模型，支持多模态输入',
+        icon: Icons.auto_awesome_rounded,
+        color: const Color(0xFF6AA9FF),
+        defaultModel: 'gemini-pro',
+      ),
+      _ProviderInfo(
+        name: 'Anthropic Claude',
+        desc: 'Anthropic的Claude系列模型，注重安全性和有用性',
+        icon: Icons.star_rate_rounded,
+        color: const Color(0xFFFFB861),
+        defaultModel: 'claude-3-sonnet-20240229',
+      ),
+      _ProviderInfo(
+        name: 'DeepSeek',
+        desc: 'DeepSeek的高性能大语言模型，支持推理和代码生成',
+        icon: Icons.extension_rounded,
+        color: const Color(0xFFB08FFF),
+        defaultModel: 'deepseek-chat',
+      ),
+    ];
+
     return Scaffold(
-      appBar: AppBar(leading: const BackButton(), title: const Text('模型设置（预览）')),
-      body: ListView(padding: const EdgeInsets.all(16), children: const [
-        ListTile(leading: Icon(Icons.memory), title: Text('OpenAI / gpt-4o-mini')), Divider(),
-        ListTile(leading: Icon(Icons.memory), title: Text('DeepSeek / deepseek-r1')), Divider(),
-        ListTile(leading: Icon(Icons.memory), title: Text('Anthropic / Claude 3.5 Sonnet')),
-      ]),
+      appBar: AppBar(
+        leading: const BackButton(),
+        centerTitle: true,
+        title: const Text('模型设置'),
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        children: [
+          // 顶部说明
+          Text(
+            'AI 提供商配置',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '按名称分组管理各个AI提供商的配置，支持扩展开关和批量删除',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 18),
+          Text('内置提供商', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+
+          // 提供商卡片
+          ...providers.map((p) => _providerCard(context, p)).expand((w) => [w, const SizedBox(height: 12)]),
+        ],
+      ),
+    );
+  }
+
+  Widget _providerCard(BuildContext context, _ProviderInfo p) {
+    final outline = Theme.of(context).colorScheme.outline.withValues(alpha: 0.2);
+    final bg = Theme.of(context).colorScheme.surface;
+    final iconBg = p.color.withValues(alpha: 0.15);
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: outline),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {},
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 左侧品牌图标
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(p.icon, color: p.color, size: 28),
+              ),
+              const SizedBox(width: 14),
+              // 中间信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    Text(
+                      p.desc,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        // 绿色“已支持”
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF57D18D).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(children: const [
+                            Icon(Icons.circle, size: 8, color: Color(0xFF1DBF73)),
+                            SizedBox(width: 6),
+                            Text('已支持', style: TextStyle(color: Color(0xFF1DBF73), fontWeight: FontWeight.w600)),
+                          ]),
+                        ),
+                        const SizedBox(width: 10),
+                        // 默认模型 tag
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(children: [
+                            const Icon(Icons.memory_rounded, size: 14),
+                            const SizedBox(width: 4),
+                            Text(p.defaultModel, style: Theme.of(context).textTheme.bodySmall),
+                          ]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 右箭头
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -206,4 +347,21 @@ class _LearningModeSettingsWeb extends StatelessWidget {
       }),
     );
   }
+}
+
+/// 模型提供商信息（仅用于 Web 预览UI）
+class _ProviderInfo {
+  final String name;
+  final String desc;
+  final IconData icon;
+  final Color color;
+  final String defaultModel;
+
+  const _ProviderInfo({
+    required this.name,
+    required this.desc,
+    required this.icon,
+    required this.color,
+    required this.defaultModel,
+  });
 }
