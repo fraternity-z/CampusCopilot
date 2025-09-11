@@ -4,7 +4,8 @@ import 'daily_overview_page_web.dart';
 /// Web 预览版：日常管理主界面
 /// 不依赖登录/网络/数据库，仅展示页面结构与交互。
 class DailyMainScreenWeb extends StatefulWidget {
-  const DailyMainScreenWeb({super.key});
+  final VoidCallback? onOpenChat;
+  const DailyMainScreenWeb({super.key, this.onOpenChat});
 
   @override
   State<DailyMainScreenWeb> createState() => _DailyMainScreenWebState();
@@ -32,6 +33,14 @@ class _DailyMainScreenWebState extends State<DailyMainScreenWeb> {
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? '日常' : '个人信息'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: '返回对话',
+            icon: const Icon(Icons.chat_outlined),
+            onPressed: widget.onOpenChat,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: PageView(
         controller: _controller,
@@ -86,4 +95,3 @@ class _ProfileViewWeb extends StatelessWidget {
     );
   }
 }
-

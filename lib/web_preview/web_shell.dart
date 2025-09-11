@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'pages/chat_screen_web.dart';
 import 'pages/daily_main_screen_web.dart';
-import 'pages/settings_tab_web.dart';
+import 'pages/settings_home_web.dart';
 import 'pages/data_management_web.dart';
 
 /// Web 预览版：主壳（模拟原项目的侧边导航与页面切换）
@@ -24,8 +24,8 @@ class _MainShellWebState extends State<MainShellWeb> {
         onOpenDaily: () => setState(() => _index = 1),
         onOpenSettings: () => setState(() => _index = 2),
       ),
-      const DailyMainScreenWeb(),
-      const SettingsTabWeb(),
+      DailyMainScreenWeb(onOpenChat: () => setState(() => _index = 0)),
+      const SettingsHomeWeb(),
       const DataManagementWeb(),
     ];
 
@@ -160,4 +160,3 @@ class _NavItem {
   final String label;
   _NavItem(this.icon, this.activeIcon, this.label);
 }
-
