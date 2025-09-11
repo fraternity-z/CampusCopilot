@@ -27,7 +27,7 @@ class _MainShellWebState extends State<MainShellWeb> {
         onOpenSettings: () => setState(() => _index = 2),
       ),
       DailyMainScreenWeb(onOpenChat: () => setState(() => _index = 0)),
-      const SettingsHomeWeb(),
+      SettingsHomeWeb(onBack: () => setState(() => _index = 0)),
       const DataManagementWeb(),
     ];
 

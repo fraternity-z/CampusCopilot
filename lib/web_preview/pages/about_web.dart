@@ -7,7 +7,7 @@ class AboutWeb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('关于（Web 预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('关于（Web 预览）')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -54,4 +54,3 @@ class AboutWeb extends StatelessWidget {
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(k), Text(v, style: const TextStyle(fontWeight: FontWeight.w500))]),
       );
 }
-

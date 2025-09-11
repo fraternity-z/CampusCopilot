@@ -7,7 +7,7 @@ class DataManagementWeb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('数据管理（Web 预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('数据管理（Web 预览）')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         _card(context, title: '备份与恢复', icon: Icons.backup, child: Column(children: [
           ListTile(leading: const Icon(Icons.cloud_upload), title: const Text('导出数据'), subtitle: const Text('预览模式：不真正导出'), onTap: () => _toast(context, '仅预览：导出数据')), const Divider(),
@@ -43,4 +43,3 @@ class DataManagementWeb extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 }
-

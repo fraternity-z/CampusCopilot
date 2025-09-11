@@ -4,12 +4,18 @@ import 'about_web.dart';
 
 /// Web 预览：设置首页（卡片式子页面入口）
 class SettingsHomeWeb extends StatelessWidget {
-  const SettingsHomeWeb({super.key});
+  final VoidCallback? onBack;
+  const SettingsHomeWeb({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('设置（Web 预览）')),
+      appBar: AppBar(
+        leading: onBack != null
+            ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack)
+            : (Navigator.of(context).canPop() ? const BackButton() : null),
+        title: const Text('设置（Web 预览）'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -93,7 +99,7 @@ class _AppearanceSettingsWeb extends StatelessWidget {
     bool dark = Theme.of(context).brightness == Brightness.dark;
     Color seed = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      appBar: AppBar(title: const Text('外观设置（占位）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('外观设置（占位）')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -123,7 +129,7 @@ class _GeneralSettingsWeb extends StatelessWidget {
     bool markdown = true;
     bool autoSave = true;
     return Scaffold(
-      appBar: AppBar(title: const Text('常规设置（预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('常规设置（预览）')),
       body: StatefulBuilder(builder: (context, set) {
         return ListView(padding: const EdgeInsets.all(16), children: [
           SwitchListTile(title: const Text('话题自动命名'), value: autoName, onChanged: (v)=>set(()=>autoName=v)),
@@ -141,7 +147,7 @@ class _ModelSettingsWeb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('模型设置（预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('模型设置（预览）')),
       body: ListView(padding: const EdgeInsets.all(16), children: const [
         ListTile(leading: Icon(Icons.memory), title: Text('OpenAI / gpt-4o-mini')), Divider(),
         ListTile(leading: Icon(Icons.memory), title: Text('DeepSeek / deepseek-r1')), Divider(),
@@ -159,7 +165,7 @@ class _SearchSettingsWeb extends StatelessWidget {
     String provider = 'serpapi';
     final ctrl = TextEditingController();
     return Scaffold(
-      appBar: AppBar(title: const Text('AI 搜索设置（预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('AI 搜索设置（预览）')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         DropdownButtonFormField<String>(
           initialValue: provider,
@@ -186,7 +192,7 @@ class _LearningModeSettingsWeb extends StatelessWidget {
     String mode = 'socratic';
     double difficulty = 0.5;
     return Scaffold(
-      appBar: AppBar(title: const Text('学习模式（预览）')),
+      appBar: AppBar(leading: const BackButton(), title: const Text('学习模式（预览）')),
       body: StatefulBuilder(builder: (context, set){
         return ListView(padding: const EdgeInsets.all(16), children: [
           DropdownButtonFormField<String>(initialValue: mode, items: const [

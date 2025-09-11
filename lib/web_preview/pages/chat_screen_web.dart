@@ -168,53 +168,109 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 6)),
             ],
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20)),
           ),
-          child: Row(children: [
-            // 左侧操作
-            Row(children: [
-              IconButton(icon: const Icon(Icons.add), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.auto_awesome), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.visibility_off_outlined), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
-            ]),
-            const SizedBox(width: 8),
-            // 输入框
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                minLines: 1,
-                maxLines: 6,
-                decoration: const InputDecoration(
-                  hintText: '输入消息...',
-                  border: InputBorder.none,
-                  isDense: true,
+          child: SizedBox(
+            height: 120,
+            child: Stack(
+              children: [
+                // 输入区域（靠上）
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 56, 56),
+                    child: TextField(
+                      controller: _controller,
+                      minLines: 1,
+                      maxLines: 6,
+                      decoration: const InputDecoration(
+                        hintText: '输入消息...',
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _send(),
+                    ),
+                  ),
                 ),
-                onSubmitted: (_) => _send(),
-              ),
+                // 左下角：工具 + 模式分段
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: Row(children: [
+                    IconButton(icon: const Icon(Icons.add), tooltip: '添加', onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.auto_awesome), tooltip: '提示优化', onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.visibility_off_outlined), tooltip: '隐藏敏感', onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.more_vert), tooltip: '更多', onPressed: () {}),
+                    const SizedBox(width: 8),
+                    _segmentedMode(context),
+                  ]),
+                ),
+                // 右下角：发送
+                Positioned(
+                  right: 6,
+                  bottom: 6,
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.blueGrey.shade100,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      color: Colors.blueGrey.shade700,
+                      onPressed: _send,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // 右侧发送
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.blueGrey.shade100,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                icon: const Icon(Icons.send_rounded),
-                color: Colors.blueGrey.shade700,
-                onPressed: _send,
-              ),
-            ),
-          ]),
+          ),
         ),
       ),
+    );
+  }
+
+
+  Widget _segmentedMode(BuildContext context) {
+    // 外层白色胶囊
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(children: [
+        // 选中“聊天”
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(children: [
+            Icon(Icons.chat_bubble_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 6),
+            Text('聊天', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+        const SizedBox(width: 4),
+        // 未选中“学习”
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(children: const [
+            Icon(Icons.school_outlined, size: 16),
+            SizedBox(width: 6),
+            Text('学习'),
+          ]),
+        ),
+      ]),
     );
   }
 
