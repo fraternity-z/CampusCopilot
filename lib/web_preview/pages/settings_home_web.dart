@@ -151,7 +151,7 @@ class _AppearanceSettingsWeb extends StatelessWidget {
                 itemCount: palette.length,
                 itemBuilder: (_, i) {
                   final c = palette[i];
-                  final sel = c.value == seed.value;
+                  final sel = c.toARGB32() == seed.toARGB32();
                   return InkWell(
                     onTap: () => set(() => seed = c),
                     borderRadius: BorderRadius.circular(12),
