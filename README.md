@@ -37,14 +37,18 @@
 - **Modern Material Design**: Material Design 3设计语言
 - **卡片式布局**: 美观的卡片式信息展示
 - **全屏图片查看**: 支持缩放、平移的沉浸式图片查看
-- **代码高亮**: 多语言代码语法高亮显示，支持复制功能<img width="2500" height="1363" alt="屏幕截图 2025-09-08 213157" src="https://github.com/user-attachments/assets/fa587e38-9a8b-4fcb-9580-ae06430b71e8" />
+- **代码高亮**: 多语言代码语法高亮显示，支持复制功能
+
+<img width="2500" height="1363" alt="屏幕截图 2025-09-08 213157" src="https://github.com/user-attachments/assets/fa587e38-9a8b-4fcb-9580-ae06430b71e8" />
 
 - **数学公式**: LaTeX数学公式完整渲染支持
 - **Mermaid图表**: 流程图、时序图、甘特图等图表渲染
 
 ### ⚙️ 高级设置
 - **模型参数**: 温度、最大Token、TopP等参数精确调节
-- **主题切换**: Material Design 3深色/浅色主题自动适配<img width="2533" height="1374" alt="屏幕截图 2025-09-08 213325" src="https://github.com/user-attachments/assets/f932c354-ac26-450f-837e-0331f4117bc1" />
+- **主题切换**: Material Design 3深色/浅色主题自动适配
+
+<img width="2533" height="1374" alt="屏幕截图 2025-09-08 213325" src="https://github.com/user-attachments/assets/f932c354-ac26-450f-837e-0331f4117bc1" />
 
 - **侧边栏管理**: 可折叠的响应式侧边栏设计
 - **数据管理**: 完整的本地数据存储和备份功能
