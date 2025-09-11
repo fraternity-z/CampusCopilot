@@ -7,9 +7,10 @@ import 'settings_tab_web.dart';
 /// - 伪流式回复；
 /// - 不依赖任何网络/数据库/provider。
 class ChatScreenWeb extends StatefulWidget {
+  final VoidCallback? onToggleSidebar;
   final VoidCallback? onOpenDaily;
   final VoidCallback? onOpenSettings;
-  const ChatScreenWeb({super.key, this.onOpenDaily, this.onOpenSettings});
+  const ChatScreenWeb({super.key, this.onToggleSidebar, this.onOpenDaily, this.onOpenSettings});
 
   @override
   State<ChatScreenWeb> createState() => _ChatScreenWebState();
@@ -21,7 +22,7 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
   final List<_Msg> _msgs = [
     const _Msg(role: _Role.assistant, text: '你好，我是你的学习助手。有什么要一起解决的吗？'),
   ];
-  bool _ragEnabled = false; // 仅展示
+  // 预览简化：不保留 RAG 状态开关，避免未使用警告
 
   @override
   void dispose() {
@@ -34,6 +35,11 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: widget.onToggleSidebar,
+          tooltip: '侧边栏',
+        ),
         title: _modelSelector(context),
         centerTitle: true,
         actions: [
@@ -53,16 +59,34 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
           ),
           const SizedBox(width: 8),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(
+            height: 2,
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+              ),
+            ),
+          ),
+        ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          _personaBar(context),
-          const Divider(height: 1),
-          Expanded(child: _messageList(context)),
-          const Divider(height: 1),
-          _inputBar(context),
+          Column(
+            children: [
+              Expanded(child: _emptyOrList(context)),
+              _composerBar(context),
+            ],
+          ),
         ],
       ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
     );
   }
 
@@ -81,24 +105,21 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
     );
   }
 
-  Widget _personaBar(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
-      child: Row(children: [
-        CircleAvatar(radius: 14, backgroundColor: Theme.of(context).colorScheme.primary, child: const Icon(Icons.smart_toy, size: 16, color: Colors.white)),
-        const SizedBox(width: 8),
-        Expanded(child: Text('通用助手 · RAG ${_ragEnabled?"已启用":"未启用"}', maxLines: 1, overflow: TextOverflow.ellipsis)),
-        TextButton.icon(onPressed: () => setState(()=> _ragEnabled = !_ragEnabled), icon: const Icon(Icons.extension), label: Text(_ragEnabled? '关闭RAG':'开启RAG')),
-      ]),
-    );
-  }
-
-  Widget _messageList(BuildContext context) {
+  Widget _emptyOrList(BuildContext context) {
+    if (_msgs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.chat_bubble_outline, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text('开始新的对话', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text('向您的 AI 助手发送消息以开始', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      );
+    }
     return ListView.builder(
       controller: _scroll,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -141,28 +162,58 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
     );
   }
 
-  Widget _inputBar(BuildContext context) {
+  Widget _composerBar(BuildContext context) {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              minLines: 1,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                hintText: '给 AI 发一条消息...',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              onSubmitted: (_) => _send(),
-            ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 6)),
+            ],
+            border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
           ),
-          const SizedBox(width: 8),
-          FilledButton.icon(onPressed: _send, icon: const Icon(Icons.send), label: const Text('发送')),
-        ]),
+          child: Row(children: [
+            // 左侧操作
+            Row(children: [
+              IconButton(icon: const Icon(Icons.add), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.auto_awesome), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.visibility_off_outlined), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+            ]),
+            const SizedBox(width: 8),
+            // 输入框
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                minLines: 1,
+                maxLines: 6,
+                decoration: const InputDecoration(
+                  hintText: '输入消息...',
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+                onSubmitted: (_) => _send(),
+              ),
+            ),
+            // 右侧发送
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.blueGrey.shade100,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.send_rounded),
+                color: Colors.blueGrey.shade700,
+                onPressed: _send,
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -181,7 +232,11 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
   void _simulateStreamReply() {
     const full = '这是一个模拟的流式回复。该页面仅用于 Web 预览，不连接任何模型。';
     int i = 0;
-    _msgs.add(const _Msg(role: _Role.assistant, text: ''));
+    if (_msgs.isEmpty) {
+      _msgs.add(const _Msg(role: _Role.assistant, text: ''));
+    } else {
+      _msgs.add(const _Msg(role: _Role.assistant, text: ''));
+    }
     final idx = _msgs.length - 1;
     Timer.periodic(const Duration(milliseconds: 30), (t) {
       if (!mounted) { t.cancel(); return; }
