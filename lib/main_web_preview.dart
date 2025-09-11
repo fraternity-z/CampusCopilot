@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'web_preview/web_shell.dart';
 import 'web_preview/pages/daily_main_screen_web.dart';
 import 'web_preview/pages/daily_overview_page_web.dart';
 import 'web_preview/pages/plan_list_page_web.dart';
@@ -28,7 +29,12 @@ class _WebPreviewApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Web 预览',
       theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-      home: const _GalleryHome(),
+      // 默认直接进入模拟的主壳，保持与原项目“侧边栏+内容区”的切换方式一致
+      home: const MainShellWeb(),
+      // 仍保留橱窗页的路由入口，便于查看单页演示
+      routes: {
+        '/gallery': (_) => const _GalleryHome(),
+      },
     );
   }
 }

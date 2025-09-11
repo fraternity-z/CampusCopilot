@@ -7,7 +7,9 @@ import 'settings_tab_web.dart';
 /// - 伪流式回复；
 /// - 不依赖任何网络/数据库/provider。
 class ChatScreenWeb extends StatefulWidget {
-  const ChatScreenWeb({super.key});
+  final VoidCallback? onOpenDaily;
+  final VoidCallback? onOpenSettings;
+  const ChatScreenWeb({super.key, this.onOpenDaily, this.onOpenSettings});
 
   @override
   State<ChatScreenWeb> createState() => _ChatScreenWebState();
@@ -36,10 +38,18 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: '日常',
+            icon: const Icon(Icons.calendar_today_outlined),
+            onPressed: widget.onOpenDaily ?? () {},
+          ),
+          IconButton(
+            tooltip: '设置',
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsTabWeb()),
-            ),
+            onPressed: widget.onOpenSettings ?? () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsTabWeb()),
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -211,4 +221,3 @@ class _ChatScreenWebState extends State<ChatScreenWeb> {
 
 enum _Role { user, assistant }
 class _Msg { final _Role role; final String text; const _Msg({required this.role, required this.text}); }
-
